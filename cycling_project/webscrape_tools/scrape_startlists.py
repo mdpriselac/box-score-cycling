@@ -6,9 +6,9 @@ import re
 from random import randint
 from time import sleep
 
-from webscrape_tools.scrape_client import WebClient
-from webscrape_tools.create_race_data import Stage, Race
-from data_loading_tools.load_scraped_data import DB_PATH, TOURS
+from cycling_project.webscrape_tools.scrape_client import WebClient
+from cycling_project.webscrape_tools.create_race_data import Stage, Race
+from cycling_project.data_loading_tools.load_scraped_data import DB_PATH, TOURS
 
 ### Tools for extracting startlist
 def find_team_tables(soup:BeautifulSoup)->BeautifulSoup:

@@ -2,10 +2,12 @@ import os
 import pickle
 from typing import Optional,List
 from dataclasses import dataclass
-from webscrape_tools.create_race_data import Race,Stage
+from cycling_project.webscrape_tools.create_race_data import Race, Stage
 import re
+from dotenv import load_dotenv
 
-DB_PATH = "~/cycling_scraped_data"
+load_dotenv(dotenv_path='../env')
+DB_PATH = os.getenv("DB_PATH")
 TOURS = ['wt','pro','d1']
 
 @dataclass

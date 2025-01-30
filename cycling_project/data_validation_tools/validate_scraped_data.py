@@ -4,8 +4,8 @@ import pickle
 from typing import Union
 import re
 
-from data_loading_tools.load_scraped_data import load_db, load_year_path,DB_PATH, TOURS
-from webscrape_tools.create_race_data import Race, Stage
+from cycling_project.data_loading_tools.load_scraped_data import load_db, load_year_path,DB_PATH, TOURS
+from cycling_project.webscrape_tools.create_race_data import Race, Stage
 
 #db = load_db()
 

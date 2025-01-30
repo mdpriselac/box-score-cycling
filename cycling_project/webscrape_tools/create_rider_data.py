@@ -11,7 +11,7 @@ from dataclasses import dataclass
 from typing import Dict,List,Optional,Union
 from dataclasses import field
 
-from webscrape_tools.create_race_data import Stage, Race
+from cycling_project.webscrape_tools.create_race_data import Stage, Race
 
 
 @dataclass

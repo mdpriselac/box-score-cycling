@@ -31,7 +31,7 @@ from bs4 import BeautifulSoup
 from time import sleep
 from random import randint
 
-from webscrape_tools.scrape_client import WebClient
+from cycling_project.webscrape_tools.scrape_client import WebClient
 
 
 ### Defining the functions to extract race names and urls
