@@ -31,9 +31,6 @@ def extract_stages_w_links(soup):
     options = select.find_all('option')
     return {option.text:option.get('value') for option in options}
 
-    
-
-
 #create a dataclass for stages. It should have a stage name, stage url, race time, list of rider results
 @dataclass
 class Stage:
@@ -42,7 +39,7 @@ class Stage:
     fc_race_id: Optional[int] = None
     race: Optional[str] = None
     year: Optional[int] = None
-    time: Optional[float] = None
+    race_time: Optional[float] = None
     date: Optional[str] = None
     results: List[Dict] = None
     category: Optional[str] = None

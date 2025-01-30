@@ -2,7 +2,7 @@ from typing import List
 import sys
 
 from cycling_project.webscrape_tools.scrape_client import WebClient
-from cycling_project.webscrape_tools.parse_tools import parse_start_list,Team
+from cycling_project.webscrape_tools.start_list_parse_tools import parse_start_list,Team
 
 
 def get_start_list(race_id:int, year:int) -> List[Team]:

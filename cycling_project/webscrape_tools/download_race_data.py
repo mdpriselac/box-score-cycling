@@ -2,6 +2,11 @@ import os
 from random import randint
 from time import sleep
 import pickle
+from dotenv import load_dotenv
+from cycling_project.webscrape_tools.scrape_startlists import scrape_and_add_bib_numbers_to_race
+
+load_dotenv(dotenv_path='../env')
+DB_PATH = os.getenv("DB_PATH")
 
 from cycling_project.webscrape_tools.create_race_data import Race
 
@@ -123,10 +128,13 @@ def update_tour_folder(tour_folder_dir:str)->None:
     for race_name,url in to_scrape:
         race_obj = Race(name=race_name,url=url)
         race_obj.populate_race()
+        #set the tour category for the race
         race_obj.category = tour_folder_dir.split('/')[-1]
+        #check for bib numbers
+        race_obj_w_bib_check = scrape_and_add_bib_numbers_to_race(race=race_obj)
         #save the race_obj as a pick in this tour folder with the format race_name.pkl
         with open(os.path.join(tour_folder_dir, f"{race_name}.pkl"), 'wb') as f:
-            pickle.dump(race_obj, f)
+            pickle.dump(race_obj_w_bib_check, f)
         print(f"Saved {race_name} to {tour_folder_dir}")
         sleep(randint(2,4))
     return None
@@ -176,8 +184,6 @@ def remove_duplicates_across_tours(year_folder_dir:str)->None:
             f.write(f"{race_name},{url}\n")
     print(f"Removed duplicates from {year_folder_dir}")
     return None
-    
-
 
 def update_year_folder(year_folder_dir:str)->None:
     """Given a year folder directory, scrapes and saves any races in each tour folder that have yet to be scraped
@@ -207,8 +213,8 @@ def update_db(base_db_folder:str)->None:
         update_year_folder(year_dir)
         print(f"Finished updating {year_dir}")
     return None
-default_race_db_path = '~/cycling_scraped_data'
+
 if __name__ == '__main__':
     #update the full db
-    update_db(base_db_folder=default_race_db_path)
+    update_db(base_db_folder=DB_PATH)
     

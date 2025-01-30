@@ -2,7 +2,7 @@ from bs4 import BeautifulSoup
 from datetime import datetime, timedelta
 import re
 
-from cycling_project.webscrape_tools.parse_tools import extract_rider_id,extract_team_id
+from cycling_project.webscrape_tools.start_list_parse_tools import extract_rider_id,extract_team_id
 #find a thead that contains, at any level, a th with the text POS or Rider or Team or or Time.
 # We want the table that contains the thead that contains all the ths we want.
 
