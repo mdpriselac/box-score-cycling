@@ -1,7 +1,9 @@
-from scrape_client import WebClient
-from parse_tools import parse_start_list,Team
 from typing import List
 import sys
+
+from webscrape_tools.scrape_client import WebClient
+from webscrape_tools.parse_tools import parse_start_list,Team
+
 
 def get_start_list(race_id:int, year:int) -> List[Team]:
     """Get the start list for a race given a race id and year.

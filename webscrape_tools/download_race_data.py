@@ -1,8 +1,9 @@
 import os
-from create_race_data import Race
 from random import randint
 from time import sleep
 import pickle
+
+from webscrape_tools.create_race_data import Race
 
 TOURS = ['wt','pro','d1']
 

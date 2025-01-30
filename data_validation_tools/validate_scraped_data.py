@@ -1,9 +1,11 @@
 import os
 import pickle
-from load_scraped_data import load_db, load_year_path,DB_PATH, TOURS
-from create_race_data import Race, Stage
+
 from typing import Union
 import re
+
+from data_loading_tools.load_scraped_data import load_db, load_year_path,DB_PATH, TOURS
+from webscrape_tools.create_race_data import Race, Stage
 
 #db = load_db()
 

@@ -25,11 +25,14 @@
 ### That gives us a model. We can then save that model to a file to be loaded in the future. Or we could just add it to a database.
 ### However, what we can now do is progressively save a race at a time and compare the saved models in a directory with the names and urls in the txt file at the top of the directory to see our progress.
 
-from scrape_client import WebClient
+
 import os
 from bs4 import BeautifulSoup
 from time import sleep
 from random import randint
+
+from webscrape_tools.scrape_client import WebClient
+
 
 ### Defining the functions to extract race names and urls
 def find_race_list_table(soup:BeautifulSoup)->None:

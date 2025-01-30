@@ -1,12 +1,13 @@
-from scrape_client import WebClient
 from bs4 import BeautifulSoup
-from get_race_results import extract_race_time, extract_results, extract_race_date
 from typing import List, Dict, Optional
 from dataclasses import dataclass
 import re
 from random import randint
 from time import sleep
 from datetime import datetime
+
+from webscrape_tools.scrape_client import WebClient
+from webscrape_tools.get_race_results import extract_race_time, extract_results, extract_race_date
 
 def stage_finder(soup):
     #check for a selectbox that has id=stageSelect

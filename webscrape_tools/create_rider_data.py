@@ -9,8 +9,9 @@
 
 from dataclasses import dataclass
 from typing import Dict,List,Optional,Union
-from create_race_data import Stage, Race
 from dataclasses import field
+
+from webscrape_tools.create_race_data import Stage, Race
 
 
 @dataclass

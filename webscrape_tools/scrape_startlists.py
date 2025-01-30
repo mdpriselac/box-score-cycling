@@ -1,13 +1,14 @@
 from bs4 import BeautifulSoup
-from scrape_client import WebClient
 import os
 import pickle
 from typing import Dict,List,Union
 import re
-from create_race_data import Stage, Race
-from load_scraped_data import DB_PATH, TOURS
 from random import randint
 from time import sleep
+
+from webscrape_tools.scrape_client import WebClient
+from webscrape_tools.create_race_data import Stage, Race
+from data_loading_tools.load_scraped_data import DB_PATH, TOURS
 
 ### Tools for extracting startlist
 def find_team_tables(soup:BeautifulSoup)->BeautifulSoup:

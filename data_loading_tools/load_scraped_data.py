@@ -2,7 +2,7 @@ import os
 import pickle
 from typing import Optional,List
 from dataclasses import dataclass
-from create_race_data import Race,Stage
+from webscrape_tools.create_race_data import Race,Stage
 import re
 
 DB_PATH = "~/cycling_scraped_data"
