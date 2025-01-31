@@ -11,8 +11,14 @@ from dataclasses import dataclass
 from typing import Dict,List,Optional,Union
 from dataclasses import field
 
-from cycling_project.webscrape_tools.create_race_data import Stage, Race
+from dotenv import load_dotenv
+import os
 
+from cycling_project.webscrape_tools.create_race_data import Stage, Race
+from cycling_project.data_loading_tools.load_scraped_data import FCCyclingTour,FCCyclingYear,FCCyclingDB
+
+load_dotenv(dotenv_path='../env')
+DB_PATH = os.getenv("DB_PATH")
 
 @dataclass
 class RiderResult:
@@ -24,10 +30,10 @@ class RiderResult:
     time_gap: Union[float,str]
     team: Optional[str] = None
     team_id: Optional[int] = None
-    raw_number: Optional[int] = None
     team_number: Optional[int] = None
     personal_number: Optional[int] = None
     age: Optional[int] = None
+    raw_bib_number: Optional[str] = None
     
     def __post_init__(self):
         if self.place == '':
@@ -45,20 +51,20 @@ class RiderResult:
             except:
                 pass
         #make sure teh bib number is a string
-        if isinstance(self.raw_number,int):
+        if isinstance(self.raw_bib_number,int):
             #convert to string
-            self.raw_number = str(self.raw_number)
+            self.raw_bib_number = str(self.raw_bib_number)
         #set the team and personal numbers based on the length of the raw bib number
-        if isinstance(self.raw_number,str):
-            if len(self.raw_number) == 1:
+        if isinstance(self.raw_bib_number,str):
+            if len(self.raw_bib_number) == 1:
                 self.team_number = 0
-                self.personal_number = int(self.raw_number)
-            elif len(self.raw_number) == 2:
-                self.team_number = int(self.raw_number[0])
-                self.personal_number = int(self.raw_number[1])
-            elif len(self.raw_number) == 3:
-                self.team_number = int(self.raw_number[0:-1])
-                self.personal_number = int(self.raw_number[-1])
+                self.personal_number = int(self.raw_bib_number)
+            elif len(self.raw_bib_number) == 2:
+                self.team_number = int(self.raw_bib_number[0])
+                self.personal_number = int(self.raw_bib_number[1])
+            elif len(self.raw_bib_number) == 3:
+                self.team_number = int(self.raw_bib_number[0:-1])
+                self.personal_number = int(self.raw_bib_number[-1])
 
 @dataclass
 class RiderCareer:
@@ -83,6 +89,7 @@ class RiderCareer:
         gap = result.get('gap',None)
         team = result.get('team',None)
         team_id = result.get('team_id',None)
+        raw_bib_number = result.get('bib_number',None)
         race_year = race.year
         age = self.get_age(race_year)
         tour = race.category
@@ -110,7 +117,8 @@ class RiderCareer:
                           time_gap=gap,
                           team=team,
                           team_id=team_id,
-                          age=age)
+                          age=age,
+                          raw_bib_number=raw_bib_number)
         #Check if the year has been added to the race and team history
         #If not, add the year. 
         if race_year not in self.race_history.keys():
@@ -150,7 +158,7 @@ class RiderDB:
         #check for a rider object
         rider_id = int(rider_id)
         rider = self.riders.get(rider_id,None)
-        #if there is no rider object, create one
+        #if there is no rider object, create one. After we create one we'll check all the rider information that can be added from a result but shouldn't change.
         if rider is None:
             name = result_dict.get('name',None)
             rider = RiderCareer(fc_rider_id=rider_id,name=name)
@@ -181,4 +189,29 @@ class RiderDB:
         rider.add_race_result(race=race,result=result_dict)
         #Update the rider object in the rider database
         self.riders[rider_id] = rider
-        
+
+    def add_tour(self,tour:FCCyclingTour):
+        #cycle through
+        for race in tour.races:
+            if not race.stage_race:
+                for result in race.results:
+                    try:
+                        self.add_rider_result(race=race,result_dict=result)
+                    except:
+                        print(f"Error adding result for {race.name}")
+            else:
+                for stage in race.stages:
+                    for result in stage.results:
+                        try:
+                            self.add_rider_result(race=stage,result_dict=result)
+                        except:
+                            print(f"Error adding result for {race.name}, {stage.name}")
+    
+    def add_year(self,year:FCCyclingYear):
+        self.add_tour(year.wt)
+        self.add_tour(year.pro)
+        self.add_tour(year.d1)
+    
+    
+                
+

@@ -136,7 +136,7 @@ def update_tour_folder(tour_folder_dir:str)->None:
         with open(os.path.join(tour_folder_dir, f"{race_name}.pkl"), 'wb') as f:
             pickle.dump(race_obj_w_bib_check, f)
         print(f"Saved {race_name} to {tour_folder_dir}")
-        sleep(randint(2,4))
+        sleep(randint(2,5))
     return None
 
 def remove_duplicates_across_tours(year_folder_dir:str)->None:

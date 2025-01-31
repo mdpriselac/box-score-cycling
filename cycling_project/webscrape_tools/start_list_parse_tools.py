@@ -21,7 +21,7 @@ def extract_rider_id(href: Optional[str]) -> Optional[str]:
     """Extract rider ID from href like 'rider.php?r=1905&y=2012'"""
     if not href:
         return None
-    match = re.search(r'r=(\d+)&', href)
+    match = re.search(r'r=(\d+)', href)
     return match.group(1) if match else None
 
 def extract_team_id(href: Optional[str]) -> Optional[str]:

@@ -18,7 +18,7 @@ def stage_finder(soup):
         #get all the select boxes, see if any of their text has the phrase 'GC' or 'Stage:' in it
         for select in soup.find_all('select'):
             for option in select.find_all('option'):
-                if 'GC' in option.text or 'Stage:' in option.text:
+                if 'Stage:' in option.text:
                     return select
     return None
 
@@ -39,6 +39,7 @@ class Stage:
     fc_race_id: Optional[int] = None
     race: Optional[str] = None
     year: Optional[int] = None
+    time: Optional[float] = None #this will be removed over time
     race_time: Optional[float] = None
     date: Optional[str] = None
     results: List[Dict] = None
@@ -67,6 +68,10 @@ class Race:
             race_id = re.search(r'race.php\?r=(\d+)&', self.url).group(1)
             self.fc_race_id = race_id
             race_year = re.search(r'&y=(\d+)', self.url).group(1)
+            try:
+                self.year = int(race_year.strip())
+            except:
+                print(f"Error converting year to int for {self.name}")
             clean_url = f"https://firstcycling.com/race.php?r={race_id}&y={race_year}"
             response = client.get(clean_url)
             soup = BeautifulSoup(response.text, 'html.parser')
@@ -90,14 +95,19 @@ class Race:
                 self.stage_race = True
                 self.stages = []
                 for stage_name, stage_url in stages.items():
-                    #ignore GC stage, it's been collected in the results 
-                    if "GC" in stage_name.lower():
-                        continue
                     stage_url = f"https://firstcycling.com/race.php?r={race_id}&y={race_year}&e={stage_url.strip()}"
                     print(f"Starting to scrape {stage_name} at {stage_url}")
+                    #Create the stage object
                     stage = Stage(name=stage_name, url=stage_url,race=self.name)
+                    #Populate the fields directly from parent race
+                    stage.category = self.category
+                    stage.year = self.year
+                    stage.fc_race_id = self.fc_race_id
+                    #Pull the site
                     stage_resp = client.get(stage_url)
+                    #Create the soup
                     stage_soup = BeautifulSoup(stage_resp.text, 'html.parser')
+                    #Start parsing the stage
                     try:
                         stage.time = extract_race_time(stage_soup)
                     except:
@@ -110,7 +120,7 @@ class Race:
                         stage.date = extract_race_date(stage_soup)
                     except:
                         print(f"Error finding date for {stage_name}")
-                    stage.category = self.category
+                    
                     self.stages.append(stage)
                     sleep(randint(1,3))
                 print(f"Finished scraping all stages for {self.name}")

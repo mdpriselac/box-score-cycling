@@ -30,9 +30,12 @@ import os
 from bs4 import BeautifulSoup
 from time import sleep
 from random import randint
-
 from cycling_project.webscrape_tools.scrape_client import WebClient
+from dotenv import load_dotenv
 
+load_dotenv(dotenv_path='../env')
+DB_PATH = os.getenv("DB_PATH")
+print(DB_PATH)
 
 ### Defining the functions to extract race names and urls
 def find_race_list_table(soup:BeautifulSoup)->None:
@@ -135,7 +138,7 @@ pro_tour_id = 21
 #.1 level, division 3, third level
 dot_one_tour_id = 22
 
-def create_race_year_db(year:str,race_data_dir:str='./')->None:
+def create_race_year_db(year:str,race_data_dir:str=DB_PATH)->None:
     """
     Creates a directory structure for a given year and saves a list of races and their webpage urls for all three tour levels in that year. Optionally you can specify the base directory where the directory structure will be created.
     Args:
@@ -145,6 +148,8 @@ def create_race_year_db(year:str,race_data_dir:str='./')->None:
         Nothing. However, it will create a subdirectory for the year. Within th year subdirectory it will create 3 subdirectories, one for each tour level. Within each tour level subdirectory it will create a text file. Each line in the text file will be a name and url for a race in that year and tour level."""
     #Check if there's a directory for the year, create it if not
     year_dir = os.path.join(race_data_dir,year)
+    print(race_data_dir)
+    print(year_dir)
     if not os.path.exists(year_dir):
         os.makedirs(year_dir)
     #Check if there are directories for wt, pro, and d1 divisions, create them if not
@@ -203,4 +208,4 @@ def create_race_year_db(year:str,race_data_dir:str='./')->None:
     print(f"Finished getting all race lists for {year}")
     
 if __name__ == "__main__":
-    create_race_year_db(year='2024',race_data_dir='~/cycling_scraped_data')
+    create_race_year_db(year='2024',race_data_dir=DB_PATH)

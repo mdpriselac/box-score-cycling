@@ -1,7 +1,8 @@
 import os
 import pickle
+import json
 from typing import Optional,List
-from dataclasses import dataclass
+from dataclasses import dataclass,asdict
 from cycling_project.webscrape_tools.create_race_data import Race, Stage
 import re
 from dotenv import load_dotenv
@@ -64,7 +65,40 @@ class FCCyclingYear:
     wt:FCCyclingTour
     pro:FCCyclingTour
     d1:FCCyclingTour
-
+    
+    def export_jsons(self,db_base_path:str):
+        #create the year directory if it doesn't exist
+        year_dir = os.path.join(db_base_path,self.year)
+        if not os.path.exists(year_dir):
+            os.makedirs(year_dir)
+        #create the wt directory if it doesn't exist
+        wt_dir = os.path.join(year_dir,'wt')
+        if not os.path.exists(wt_dir):
+            os.makedirs(wt_dir)
+        #export each race in the wt tour to a json file with the race object name as the file_name.json
+        for race in self.wt.races:
+            with open(os.path.join(wt_dir,f"{race.name}.json"),'w') as f:
+                #create the json string from the race object. The race object is a dataclass. use the built in 
+                #asdict method to convert to a dictionary, convert to string, write to file
+                json.dump(asdict(race),f,indent=4)
+                
+        #create the pro directory if it doesn't exist
+        pro_dir = os.path.join(year_dir,'pro')
+        if not os.path.exists(pro_dir):
+            os.makedirs(pro_dir)
+        #export each race in the pro tour
+        for race in self.pro.races:
+            with open(os.path.join(pro_dir,f"{race.name}.json"),'w') as f:
+                json.dump(asdict(race),f,indent=4)
+        #create the d1 directory if it doesn't exist
+        d1_dir = os.path.join(year_dir,'d1')
+        if not os.path.exists(d1_dir):
+            os.makedirs(d1_dir)
+        #export each race in the d1 tour
+        for race in self.d1.races:
+            with open(os.path.join(d1_dir,f"{race.name}.json"),'w') as f:
+                json.dump(asdict(race),f,indent=4)
+                
 @dataclass
 class FCCyclingDB:
     years:List[FCCyclingYear]
@@ -102,8 +136,10 @@ def load_tour_path(tour_dir_path:str)->list:
     for file in race_files:
         with open(os.path.join(tour_dir_path,file), 'rb') as f:
             r_o = pickle.load(f)
-            #Ensure the year
-            r_o.year = int(re.search(r'&y=(\d+)', r_o.url).group(1))
+            r_o.category = tour_dir_path.split('/')[-1]
+            if r_o.stage_race:
+                for stage in r_o.stages:
+                    stage.category = r_o.category
             race_objects.append(r_o)
     print(f"Loaded {tour_dir_path}")
     

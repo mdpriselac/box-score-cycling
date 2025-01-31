@@ -153,14 +153,15 @@ def update_race_object(race:Union[Race,Stage],bib_number_list:List[Dict[str,Unio
     race.results = results
     return race
 
-def scrape_and_add_bib_numbers_to_race(race:Race,client=WebClient("https://firstcycling.com"))->Race:
+def scrape_and_add_bib_numbers_to_race(race:Race)->Race:
     """Scrape and add bib numbers to a race object"""
     #get the race url
     start_list_url = race.url + '&k=8'
     #get the startlist page
+    client = WebClient("https://firstcycling.com")
     response = client.get(start_list_url)
-    client.close()
     soup = BeautifulSoup(response.text,'html.parser')
+    
     #check for bib numbers 
     bib_list = extract_bibs_from_startlist_soup(soup)
     if bib_list == []:
@@ -179,6 +180,7 @@ def scrape_and_add_bib_numbers_to_race(race:Race,client=WebClient("https://first
         updated_stage = update_race_object(race=stage,bib_number_list=bib_list)
         updated_stages.append(updated_stage)
     updated_race.stages = updated_stages
+    client.close()
     sleep(randint(1,3))
     return updated_race
 
