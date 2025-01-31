@@ -10,6 +10,7 @@
 from dataclasses import dataclass
 from typing import Dict,List,Optional,Union
 from dataclasses import field
+from datetime import datetime
 
 from dotenv import load_dotenv
 import os
@@ -35,6 +36,7 @@ class RiderResult:
     personal_number: Optional[int] = None
     age: Optional[int] = None
     raw_bib_number: Optional[str] = None
+    race_date: Optional[str] = None
     
     def __post_init__(self):
         if self.place == '':
@@ -92,6 +94,7 @@ class RiderCareer:
         team_id = result.get('team_id',None)
         raw_bib_number = result.get('bib_number',None)
         race_year = race.year
+        race_date = race.date
         age = self.get_age(race_year)
         tour = race.category
         if isinstance(race,Stage):
@@ -114,6 +117,7 @@ class RiderCareer:
                           race_tour=tour,
                           race_name=race_name,
                           race_year=race_year,
+                          race_date=race_date,
                           race_fc_id=race.fc_race_id,
                           place=place,
                           time_gap=gap,
@@ -133,13 +137,14 @@ class RiderCareer:
 
         return None
     
-    def generate_race_history(self,prior_to_year:int=None,race_type:str|list=None,tour_type:str|list=None)->List[RiderResult]:
+    def generate_race_history(self,prior_to_year:int=None,race_type:str|list=None,tour_type:str|list=None,prior_to_date:str=None)->List[RiderResult]:
         """Create a race history for the rider up to a given year. If no year is given, will return career history with filters.
         Can filter for race_type (gc, stage, one_day) and tour_type (wt, pro, d1) as well.
         Args:
             prior_to_year (int): Year to generate history up to. If None, will return full career history length
             race_type (str|list): The type of race result to filter for. Can be 'gc', 'stage', 'one_day' or a list of these. If none, will get all.
             tour_type (str|list): The type of tour to filter for. Can be 'wt', 'pro', 'd1' or a list of these. If none, will get all.
+            prior_to_date (str): Date in YYYY-MM-DD format to filter results to before this date.
         Returns:
             List[RiderResult]: List of RiderResult objects that match the filters.
         """
@@ -165,7 +170,29 @@ class RiderCareer:
         
         if prior_to_year is None:
             prior_to_year = max(self.race_history.keys())+1
-        
+
+        #implement a prior to date filter
+        if isinstance(prior_to_date,str):
+            try:
+                prior_to_dto = datetime.strptime(prior_to_date,'%Y-%m-%d')
+            except:
+                print("Error converting prior_to_date to datetime object, make sure it is formatted as a string YYYY-MM-DD")
+                return None
+            for year in range(self.career_start,prior_to_dto.year + 1):
+                raw_year_history = self.race_history.get(year,None)
+                if raw_year_history is not None:
+                    for result in raw_year_history:
+                        #get the datetime object for the date
+                        try:
+                            result_race_date = datetime.strptime(result.race_date,'%Y-%m-%d')
+                        except:
+                            print(f"Error converting {result.race_name} date to datetime object")
+                            continue
+                        if result_race_date < prior_to_dto and result.race_type in race_type_filter and result.race_tour in tour_filter:
+                            race_history.append(result)
+            return race_history
+            
+        #If there's no prior_to_date, cycle through the years up to the prior_to_year and append the results that match the filters
         for year in range(self.career_start,prior_to_year):
             raw_year_history = self.race_history.get(year,None)
         
