@@ -28,6 +28,7 @@ class RiderResult:
     race_fc_id: int
     place: Union[int,str]
     time_gap: Union[float,str]
+    race_year: Optional[int] = None
     team: Optional[str] = None
     team_id: Optional[int] = None
     team_number: Optional[int] = None
@@ -112,6 +113,7 @@ class RiderCareer:
         res = RiderResult(race_type=type,
                           race_tour=tour,
                           race_name=race_name,
+                          race_year=race_year,
                           race_fc_id=race.fc_race_id,
                           place=place,
                           time_gap=gap,
@@ -131,16 +133,46 @@ class RiderCareer:
 
         return None
     
-    def generate_full_history(self,prior_to_race_id:int,prior_to_race_year:int):
-        #Generate a full rider history up to a year and 
-        #For each race return race type (one day, stage, gc), race category (wt, pro, d1), team bib number (0-21), personal bib number(1-9), place, time gap
-        return None
-    
-    def generate_year_history(self,year:int,prior_to_race:int):
-        return None
-    
-    def generate_race_history(self,race_id:int,prior_to_year:int):
-        return None
+    def generate_race_history(self,prior_to_year:int=None,race_type:str|list=None,tour_type:str|list=None)->List[RiderResult]:
+        """Create a race history for the rider up to a given year. If no year is given, will return career history with filters.
+        Can filter for race_type (gc, stage, one_day) and tour_type (wt, pro, d1) as well.
+        Args:
+            prior_to_year (int): Year to generate history up to. If None, will return full career history length
+            race_type (str|list): The type of race result to filter for. Can be 'gc', 'stage', 'one_day' or a list of these. If none, will get all.
+            tour_type (str|list): The type of tour to filter for. Can be 'wt', 'pro', 'd1' or a list of these. If none, will get all.
+        Returns:
+            List[RiderResult]: List of RiderResult objects that match the filters.
+        """
+        
+        if prior_to_year is None and race_type is None and tour_type is None:
+            return self.race_history
+
+        race_history = []
+        
+        if isinstance(race_type,str):
+            race_type_filter = [race_type]
+        elif isinstance(race_type,list):
+            race_type_filter = race_type
+        else:
+            race_type_filter = ['gc','stage','one_day']
+            
+        if isinstance(tour_type,str):
+            tour_filter = [tour_type]
+        elif isinstance(tour_type,list):
+            tour_filter = tour_type
+        else:
+            tour_filter = ['wt','pro','d1']
+        
+        if prior_to_year is None:
+            prior_to_year = max(self.race_history.keys())+1
+        
+        for year in range(self.career_start,prior_to_year):
+            raw_year_history = self.race_history.get(year,None)
+        
+            if raw_year_history is not None:
+                race_history.extend([result for result in raw_year_history if result.race_type in race_type_filter and result.race_tour in tour_filter])
+        
+        return race_history
 
 
 @dataclass
@@ -194,6 +226,9 @@ class RiderDB:
         #cycle through
         for race in tour.races:
             if not race.stage_race:
+                if race.results is None:
+                    print(f"No results for {race.name}")
+                    continue
                 for result in race.results:
                     try:
                         self.add_rider_result(race=race,result_dict=result)
@@ -201,6 +236,9 @@ class RiderDB:
                         print(f"Error adding result for {race.name}")
             else:
                 for stage in race.stages:
+                    if stage.results is None:
+                        print(f"No results for {race.name}, {stage.name}")
+                        continue
                     for result in stage.results:
                         try:
                             self.add_rider_result(race=stage,result_dict=result)
