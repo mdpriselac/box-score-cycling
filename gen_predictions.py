@@ -1,0 +1,3 @@
+from cycling_project.prediction_tools.average_based_predictions import full_prediction_script
+
+full_prediction_script()

@@ -16,9 +16,9 @@ from dotenv import load_dotenv
 import os
 
 from cycling_project.webscrape_tools.create_race_data import Stage, Race
-from cycling_project.data_loading_tools.load_scraped_data import FCCyclingTour,FCCyclingYear,FCCyclingDB
+from cycling_project.data_loading_tools.load_scraped_data import FCCyclingTour,FCCyclingYear,load_year_path
 
-load_dotenv(dotenv_path='../env')
+load_dotenv(dotenv_path='../../env')
 DB_PATH = os.getenv("DB_PATH")
 
 @dataclass
@@ -278,5 +278,22 @@ class RiderDB:
         self.add_tour(year.d1)
     
     
-                
 
+def create_rider_db(db_path:str = DB_PATH)->RiderDB:
+    """Create a RiderDB object from a db_path. Defaults to the environmetnal variable DB_PATH
+    Args:
+        db_path (str, optional): The path to the db. Defaults to DB_PATH.
+    Returns:
+        RiderDB: A RiderDB object
+        """
+    #Create a RiderDB object
+    rider_db = RiderDB()
+    #Get a list of the year directories in the db_path
+    year_dirs = [f for f in os.listdir(db_path) if os.path.isdir(os.path.join(db_path,f)) and len(f)==4]
+    #For each year directory, load the db, add it to the rider_db
+    for year_dir in year_dirs:
+        year_path = os.path.join(db_path,year_dir)
+        year_db = load_year_path(year_path)
+        rider_db.add_year(year_db)
+    
+    return rider_db
