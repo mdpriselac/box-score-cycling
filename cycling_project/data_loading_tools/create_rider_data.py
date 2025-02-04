@@ -212,7 +212,7 @@ class RiderDB:
         #get the rider id
         rider_id = result_dict.get('rider_id',None)
         if rider_id is None:
-            print("No rider id in result dict")
+            #print("No rider id in result dict")
             return None
         #check for a rider object
         rider_id = int(rider_id)
@@ -228,7 +228,7 @@ class RiderDB:
             if rider.dob is None:
                 rider.dob = res_dob
             elif rider.dob != res_dob:
-                print(f"DOB mismatch for rider {rider.name}. Rider DOB: {rider.dob}, Result DOB: {res_dob}, updating rider to new DOB")
+                #print(f"DOB mismatch for rider {rider.name}. Rider DOB: {rider.dob}, Result DOB: {res_dob}, updating rider to new DOB")
                 rider.dob = res_dob
         
         #Check if there's a career_start in the rider object. If there, check the race.year. If the race.year is less than the career_start in the rider object, update the career start to the race_year

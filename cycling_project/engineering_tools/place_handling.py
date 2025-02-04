@@ -10,13 +10,13 @@
 
 def place_bucketer(place:int|str)->int:
     if place is None:
-        print("Place is None for this rider, returning None, check data")
+        #print("Place is None for this rider, returning None, check data")
         return None
     if isinstance(place,str):
         try:
             place = int(place.strip())
         except:
-            print(f"Place is a string that can't be converted to an int: {place}")
+            #print(f"Place is a string that can't be converted to an int: {place}")
             return 7
     if isinstance(place, int):
         if place == 1:
