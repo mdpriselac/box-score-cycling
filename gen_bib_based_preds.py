@@ -8,11 +8,11 @@ rider_db = create_rider_db()
 race_db = load_db()
 
 
-    
+race_types = ['stage','one_day']    
 prediction_dict = {}
-for year in range(2011,2017):
-    prediction_tuple = train_predict_year_w_bib(year_to_predict=year,full_db=race_db,rider_db=rider_db)
+for year in range(2018,2019):
+    prediction_tuple = train_predict_year_w_bib(year_to_predict=year,full_db=race_db,rider_db=rider_db,race_type=race_types,target_race_type=race_types)
     prediction_dict[year] = prediction_tuple
 
-with open(f'bib_place_predictor_predictions-all.pkl','wb') as f:
+with open(f'bib_place_predictor_predictions-2018-no-gc.pkl','wb') as f:
     pickle.dump(prediction_dict,f)

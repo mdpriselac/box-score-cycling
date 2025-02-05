@@ -1,6 +1,6 @@
 from cycling_project.webscrape_tools.create_race_data import Race, Stage
-from cycling_project.data_loading_tools.create_rider_data import RiderDB,create_rider_db,DB_PATH
-from cycling_project.data_loading_tools.load_scraped_data import FCCyclingYear,FCCyclingTour,FCCyclingDB,load_year_path
+from cycling_project.data_loading_tools.create_rider_data import RiderDB
+from cycling_project.data_loading_tools.load_scraped_data import FCCyclingYear,FCCyclingTour,FCCyclingDB
 from cycling_project.engineering_tools.place_handling import place_bucketer
 from random import shuffle
 from typing import Union,List,Dict,Tuple
@@ -9,7 +9,6 @@ import pickle
 import numpy as np
 
 from sklearn.linear_model import LinearRegression
-from sklearn.metrics import mean_squared_error
 
 #Steps to building model
 ## Training the predictor
@@ -197,7 +196,7 @@ def extract_bib_place_training_data_from_race(race:Union[Race,Stage],rider_db:Ri
     
 
 # Extract training data from a tour
-def extract_bib_place_training_data_from_tour(tour:FCCyclingTour,rider_db:RiderDB,race_type=['gc','stage','one_day'],tour_type=['wt','pro','d1'])->Tuple:
+def extract_bib_place_training_data_from_tour(tour:FCCyclingTour,rider_db:RiderDB,race_type=['gc','stage','one_day'],tour_type=['wt','pro','d1'],target_race_type:list=['gc','stage','one_day'])->Tuple:
     """Extracts training data for a linear regression model to predict bucketed places for riders in a given tour. 
     Args:
         tour: The FCCyclingTour object to use for training the model.
@@ -210,7 +209,16 @@ def extract_bib_place_training_data_from_tour(tour:FCCyclingTour,rider_db:RiderD
     #Go through through each race in the the tour and extract the training and meta data from the race.
     for race in tour.races:
         if race.stage_race:
+            #If it's a stage race but neither stages nor gc are being sought out, skip the race.
+            if 'stage' not in target_race_type and 'gc' not in target_race_type:
+                continue
             for stage in race.stages:
+                #If the stage is a stage, skip it if we're not looking for stages
+                if 'stage' in stage.name.lower() and 'stage' not in target_race_type:
+                    continue
+                #If the stage is a gc, skip it if we're not looking for gcs
+                if 'gc' not in target_race_type and stage.name.lower().strip() == 'gc':
+                    continue
                 try:
                     race_res_meta_d_tuple = extract_bib_place_training_data_from_race(race=stage,rider_db=rider_db,race_type=race_type,tour_type=tour_type)
                     if race_res_meta_d_tuple is None:
@@ -223,6 +231,9 @@ def extract_bib_place_training_data_from_tour(tour:FCCyclingTour,rider_db:RiderD
                     print(f"Error extracting training data from {race.name}, {stage.name}")
                     continue
         else:
+            #Skip one days if one_day not in target race type
+            if 'one_day' not in target_race_type:
+                continue
             try: 
                 race_res_meta_d_tuple = extract_bib_place_training_data_from_race(race=race,rider_db=rider_db,race_type=race_type,tour_type=tour_type)
                 if race_res_meta_d_tuple is None:
@@ -237,7 +248,7 @@ def extract_bib_place_training_data_from_tour(tour:FCCyclingTour,rider_db:RiderD
     return tour_training_data,tour_meta_data
                 
 
-def extract_year_training_data(year_db:FCCyclingYear,rider_db:RiderDB,race_type=['gc','stage','one_day'],tour_type=['wt','pro','d1'])->Tuple:
+def extract_year_training_data(year_db:FCCyclingYear,rider_db:RiderDB,race_type=['gc','stage','one_day'],tour_type=['wt','pro','d1'],target_race_type:list=['gc','stage','one_day'],target_tour_type:list=['wt','pro','d1'])->Tuple:
     """Extracts training data for a linear regression model to predict bucketed places for riders in a given year. 
     Args:
         year_db: The FCCyclingYear object to use for training the model.
@@ -247,26 +258,26 @@ def extract_year_training_data(year_db:FCCyclingYear,rider_db:RiderDB,race_type=
     #Initialize the meta data dictionary
     year_meta_data = {'num_histories':0,'num_riders':0,'num_races':0}
     #Go through each tour in the year and extract the training and meta data from the tour.
-    if year_db.wt.races is None or year_db.wt.races==[]:
+    if year_db.wt.races is None or year_db.wt.races==[] or 'wt' not in target_tour_type:
         wt_training_data = []
     else:
-        wt_training_data,wt_meta_data = extract_bib_place_training_data_from_tour(tour=year_db.wt,rider_db=rider_db,race_type=race_type,tour_type=tour_type)
+        wt_training_data,wt_meta_data = extract_bib_place_training_data_from_tour(tour=year_db.wt,rider_db=rider_db,race_type=race_type,tour_type=tour_type,target_race_type=target_race_type)
         year_meta_data['num_histories'] += wt_meta_data['num_histories']
         year_meta_data['num_riders'] += wt_meta_data['num_riders']
         year_meta_data['num_races'] += wt_meta_data['num_races']
     
-    if year_db.pro.races is None or year_db.pro.races==[]:
+    if year_db.pro.races is None or year_db.pro.races==[] or 'pro' not in target_tour_type:
         pro_training_data = []
     else:
-        pro_training_data,pro_meta_data = extract_bib_place_training_data_from_tour(tour=year_db.pro,rider_db=rider_db,race_type=race_type,tour_type=tour_type)
+        pro_training_data,pro_meta_data = extract_bib_place_training_data_from_tour(tour=year_db.pro,rider_db=rider_db,race_type=race_type,tour_type=tour_type,target_race_type=target_race_type)
         year_meta_data['num_histories'] += pro_meta_data['num_histories']
         year_meta_data['num_riders'] += pro_meta_data['num_riders']
         year_meta_data['num_races'] += pro_meta_data['num_races']
     
-    if year_db.d1.races is None or year_db.d1.races==[]:
+    if year_db.d1.races is None or year_db.d1.races==[] or 'd1' not in target_tour_type:
         d1_training_data = []
     else:
-        d1_training_data,d1_meta_data = extract_bib_place_training_data_from_tour(tour=year_db.d1,rider_db=rider_db,race_type=race_type, tour_type=tour_type)
+        d1_training_data,d1_meta_data = extract_bib_place_training_data_from_tour(tour=year_db.d1,rider_db=rider_db,race_type=race_type, tour_type=tour_type,target_race_type=target_race_type)
         year_meta_data['num_histories'] += d1_meta_data['num_histories']
         year_meta_data['num_riders'] += d1_meta_data['num_riders']
         year_meta_data['num_races'] += d1_meta_data['num_races']
@@ -276,7 +287,7 @@ def extract_year_training_data(year_db:FCCyclingYear,rider_db:RiderDB,race_type=
     year_training_data = wt_training_data + pro_training_data + d1_training_data
     return year_training_data, year_meta_data
     
-def prepare_training_data_for_bib_place_predictor(year_to_predict:int,full_db:FCCyclingDB,rider_db:RiderDB,race_type=['gc','stage','one_day'],tour_type=['wt','pro','d1'])->Tuple:
+def prepare_training_data_for_bib_place_predictor(year_to_predict:int,full_db:FCCyclingDB,rider_db:RiderDB,race_type=['gc','stage','one_day'],tour_type=['wt','pro','d1'],target_race_type:list=['gc','stage','one_day'],target_tour_type:list=['wt','pro','d1'])->Tuple:
     #get the years to train.
     years_to_train = [year for year in full_db.years if int(year.year) < year_to_predict]
     if len(years_to_train) == 0:
@@ -287,7 +298,7 @@ def prepare_training_data_for_bib_place_predictor(year_to_predict:int,full_db:FC
     for year in years_to_train:
         try:
             
-            year_training_data,year_meta_data = extract_year_training_data(year_db=year,rider_db=rider_db,race_type=race_type,tour_type=tour_type)
+            year_training_data,year_meta_data = extract_year_training_data(year_db=year,rider_db=rider_db,race_type=race_type,tour_type=tour_type,target_race_type=target_race_type,target_tour_type=target_tour_type)
             if year_training_data is None:
                 continue
             print(f"{year.year}: {year_meta_data}")
@@ -381,14 +392,21 @@ def predict_race_w_bib_data(race:Union[Race,Stage],bib_model:LinearRegression,ri
     return race_predictions, race_meta_data
         
 
-def predict_tour_w_bib(tour:FCCyclingTour,bib_model:LinearRegression,rider_db:RiderDB,race_type=['gc','stage','one_day'],tour_type=['wt','pro','d1'])->Tuple[List[List[Tuple[int,str,float,int]]],Dict]:
+def predict_tour_w_bib(tour:FCCyclingTour,bib_model:LinearRegression,rider_db:RiderDB,race_type=['gc','stage','one_day'],tour_type=['wt','pro','d1'],target_race_type:list=['gc','stage','one_day'])->Tuple[List[List[Tuple[int,str,float,int]]],Dict]:
     #Initialize Tour predictions and Meta Data
     tour_predictions = []
     tour_meta_data = {'num_histories':0,'num_riders':0, 'num_races':0}
     #Work through each race in tour.results, predict it, add predictions to tour predictions, increase the tour meta data
     for race in tour.races:
         if race.stage_race:
+            if "gc" not in target_race_type and "stage" not in target_race_type:
+                continue
             for stage in race.stages:
+                if "stage" in stage.name.lower() and "stage" not in target_race_type:
+                    continue
+                if "gc" not in target_race_type and stage.name.lower().strip() == "gc":
+                    continue
+                    
                 try:
                     race_predictions,race_meta_data = predict_race_w_bib_data(race=stage,bib_model=bib_model,rider_db=rider_db,race_type=race_type,tour_type=tour_type)
                     if race_predictions is None:
@@ -404,6 +422,8 @@ def predict_tour_w_bib(tour:FCCyclingTour,bib_model:LinearRegression,rider_db:Ri
                     print(f"Error predicting {race.name}, {stage.name}")
                     continue
         else:
+            if 'one_day' not in target_race_type:
+                continue
             try:
                 race_predictions,race_meta_data = predict_race_w_bib_data(race=race,bib_model=bib_model,rider_db=rider_db,race_type=race_type,tour_type=tour_type)
                 if race_predictions is None:
@@ -424,15 +444,15 @@ def predict_tour_w_bib(tour:FCCyclingTour,bib_model:LinearRegression,rider_db:Ri
             
     return tour_predictions, tour_meta_data
 
-def predict_year_w_bib(year_db:FCCyclingYear,bib_model:LinearRegression,rider_db:RiderDB,race_type=['gc','stage','one_day'],tour_type=['wt','pro','d1']):
+def predict_year_w_bib(year_db:FCCyclingYear,bib_model:LinearRegression,rider_db:RiderDB,race_type=['gc','stage','one_day'],tour_type=['wt','pro','d1'],target_race_type:list=['gc','stage','one_day'],target_tour_type:list=['wt','pro','d1']):
     #Initialize year predictions and meta data
     year_predictions = []
     year_meta_data = {'num_histories':0,'num_riders':0,'num_races':0}
     #Go through the world tour, pro tour, and dot one tour to predict each race.
-    if len(year_db.wt.races)==0:
+    if len(year_db.wt.races)==0 or 'wt' not in target_tour_type:
         wt_predictions = []
     else: 
-        wt_predictions,wt_meta_data = predict_tour_w_bib(tour=year_db.wt,bib_model=bib_model,rider_db=rider_db,race_type=race_type,tour_type=tour_type)
+        wt_predictions,wt_meta_data = predict_tour_w_bib(tour=year_db.wt,bib_model=bib_model,rider_db=rider_db,race_type=race_type,tour_type=tour_type,target_race_type=target_race_type)
         if wt_predictions is None:
             wt_predictions = []
         #Add each race individual from the wt_predictions list, rather than the whole list
@@ -443,10 +463,10 @@ def predict_year_w_bib(year_db:FCCyclingYear,bib_model:LinearRegression,rider_db
         year_meta_data['num_riders'] += wt_meta_data['num_riders']
         year_meta_data['num_races'] += wt_meta_data['num_races']
     #Go through the pro tour, predict all the races
-    if len(year_db.pro.races)==0:
+    if len(year_db.pro.races)==0 or 'pro' not in target_tour_type:
         pro_predictions = []
     else:
-        pro_predictions, pro_meta_data = predict_tour_w_bib(tour=year_db.pro,bib_model=bib_model,rider_db=rider_db,race_type=race_type,tour_type=tour_type)
+        pro_predictions, pro_meta_data = predict_tour_w_bib(tour=year_db.pro,bib_model=bib_model,rider_db=rider_db,race_type=race_type,tour_type=tour_type,target_race_type=target_race_type)
         if pro_predictions is None:
             pro_predictions = []
         else:
@@ -456,10 +476,10 @@ def predict_year_w_bib(year_db:FCCyclingYear,bib_model:LinearRegression,rider_db
             year_meta_data['num_riders'] += pro_meta_data['num_riders']
             year_meta_data['num_races'] += pro_meta_data['num_races']
     #go through the dot one tour and predict all the races
-    if len(year_db.d1.races)==0:
+    if len(year_db.d1.races)==0 or 'd1' not in target_tour_type:
         d1_predictions = []
     else:
-        d1_predictions,d1_meta_data = predict_tour_w_bib(tour=year_db.d1,bib_model=bib_model,rider_db=rider_db,race_type=race_type,tour_type=tour_type)
+        d1_predictions,d1_meta_data = predict_tour_w_bib(tour=year_db.d1,bib_model=bib_model,rider_db=rider_db,race_type=race_type,tour_type=tour_type,target_race_type=target_race_type)
         if d1_predictions is None:
             d1_predictions = []
         else:
@@ -475,10 +495,10 @@ def predict_year_w_bib(year_db:FCCyclingYear,bib_model:LinearRegression,rider_db
     
     return year_predictions, year_meta_data
 
-def train_predict_year_w_bib(year_to_predict:int,full_db:FCCyclingDB,rider_db:RiderDB,race_type=['gc','stage','one_day'],tour_type=['wt','pro','d1']):
+def train_predict_year_w_bib(year_to_predict:int,full_db:FCCyclingDB,rider_db:RiderDB,race_type=['gc','stage','one_day'],tour_type=['wt','pro','d1'],target_race_type:list=['gc','stage','one_day'],target_tour_type:list=['wt','pro','d1']):
     #prepare the training data
     try:
-        full_training_data,full_training_meta_data = prepare_training_data_for_bib_place_predictor(year_to_predict=year_to_predict,full_db=full_db,rider_db=rider_db,race_type=race_type,tour_type=tour_type)    
+        full_training_data,full_training_meta_data = prepare_training_data_for_bib_place_predictor(year_to_predict=year_to_predict,full_db=full_db,rider_db=rider_db,race_type=race_type,tour_type=tour_type,target_tour_type=target_tour_type,target_race_type=target_race_type)    
         if full_training_data is None:
             print(f"No training data found for {year_to_predict}, skipping")
             return None,None
@@ -506,7 +526,7 @@ def train_predict_year_w_bib(year_to_predict:int,full_db:FCCyclingDB,rider_db:Ri
         print(f"No year found for {year_to_predict}, skipping")
         return None,None
     try:
-        year_predictions,year_meta_data = predict_year_w_bib(year_db=target_year,bib_model=bib_model,rider_db=rider_db,race_type=race_type,tour_type=tour_type)    
+        year_predictions,year_meta_data = predict_year_w_bib(year_db=target_year,bib_model=bib_model,rider_db=rider_db,race_type=race_type,tour_type=tour_type,target_race_type=target_race_type,target_tour_type=target_tour_type)    
         if year_predictions is None:
             print(f"No predictions found for {year_to_predict}, skipping")
             return None,None

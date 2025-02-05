@@ -170,7 +170,7 @@ def create_race_predictions(race:Union[Race,Stage],rider_db:RiderDB,tour_type:st
 
 
 #Now that we can predict a single race, let's predict a tour.
-def create_tour_year_prediction_data(tour:FCCyclingTour,rider_db:RiderDB,tour_type:str|list=['wt','pro','d1'],race_type:str|list=['gc','stage','one_day'])->list:
+def create_tour_year_prediction_data(tour:FCCyclingTour,rider_db:RiderDB,tour_type:str|list=['wt','pro','d1'],race_type:str|list=['gc','stage','one_day'],target_race_type:list=['gc','stage','one_day'])->list:
     
     #Predict each race to get the individual predictions with the actual results         
     if len(tour.races)==0:
@@ -178,6 +178,8 @@ def create_tour_year_prediction_data(tour:FCCyclingTour,rider_db:RiderDB,tour_ty
         return None
     year_predictions = []
     for race in tour.races:
+        if race.category not in target_race_type:
+            continue
         if race.stage_race:
             for stage in race.stages:
                 try:
@@ -198,10 +200,13 @@ def create_tour_year_prediction_data(tour:FCCyclingTour,rider_db:RiderDB,tour_ty
 
     return year_predictions
 
-def create_year_prediction_data(year_db:FCCyclingYear,rider_db:RiderDB,race_type:str|list=['gc','stage','one_day'],tour_type:str|list=['wt','pro','d1'])->list:
+def create_year_prediction_data(year_db:FCCyclingYear,rider_db:RiderDB,race_type:str|list=['gc','stage','one_day'],tour_type:str|list=['wt','pro','d1'],target_race_type:list=['gc','stage','one_day'],target_tour_type:list=['wt','pro','d1'])->list:
     #predict year.wt
     #try:
-    wt_preds = create_tour_year_prediction_data(tour=year_db.wt,rider_db=rider_db,tour_type=tour_type,race_type=race_type)
+    if 'wt' in target_tour_type:
+        wt_preds = create_tour_year_prediction_data(tour=year_db.wt,rider_db=rider_db,tour_type=tour_type,race_type=race_type,target_race_type=target_race_type)
+    else:
+        wt_preds = []
     #    if wt_preds is None:
     #        print(f"No predictions for {year_db.year} wt")
     #        wt_preds = []
@@ -210,7 +215,10 @@ def create_year_prediction_data(year_db:FCCyclingYear,rider_db:RiderDB,race_type
     #    wt_preds = []
     #predict year.pro
     #try:
-    pro_preds = create_tour_year_prediction_data(tour=year_db.pro,rider_db=rider_db,tour_type=tour_type,race_type=race_type)
+    if 'pro' in target_tour_type:
+        pro_preds = create_tour_year_prediction_data(tour=year_db.pro,rider_db=rider_db,tour_type=tour_type,race_type=race_type,target_race_type=target_race_type)
+    else:
+        pro_preds = []
     #    if pro_preds is None:
     #        print(f"No predictions for {year_db.year} pro")
     #       pro_preds = []
@@ -219,7 +227,10 @@ def create_year_prediction_data(year_db:FCCyclingYear,rider_db:RiderDB,race_type
     #    pro_preds = []
     #predict year.d1
     #try:
-    d1_preds = create_tour_year_prediction_data(tour=year_db.d1,rider_db=rider_db,tour_type=tour_type,race_type=race_type)
+    if 'd1' in target_tour_type:
+        d1_preds = create_tour_year_prediction_data(tour=year_db.d1,rider_db=rider_db,tour_type=tour_type,race_type=race_type,target_race_type=target_race_type)
+    else:
+        d1_preds = []
     #    if d1_preds is None:
     #        print(f"No predictions for {year_db.year} d1")
     #        d1_preds = []
@@ -250,7 +261,7 @@ def full_prediction_script():
         year_name = year.year
         predicted_years[year_name] = create_year_prediction_data(year,rider_db)
     #Save the predictions to a pkl file
-    with open('predicted_years.pkl','wb') as f:
+    with open('avg_only_based_preds-all.pkl','wb') as f:
         pickle.dump(predicted_years,f)
     return predicted_years
 
