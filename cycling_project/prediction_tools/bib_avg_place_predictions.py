@@ -1,5 +1,5 @@
 from cycling_project.webscrape_tools.create_race_data import Race, Stage
-from cycling_project.data_loading_tools.create_rider_data import RiderDB
+from cycling_project.data_loading_tools.create_rider_data import RiderDB,RiderCareer
 from cycling_project.data_loading_tools.load_scraped_data import FCCyclingYear,FCCyclingTour,FCCyclingDB
 from cycling_project.engineering_tools.place_handling import place_bucketer
 from random import shuffle
@@ -36,6 +36,9 @@ from sklearn.linear_model import LinearRegression
  
 # Go to the next year and repeat the process for each year.
 
+
+### Tool
+#### Extract Bib Numbers
 def get_bib_nums(raw_bib_num:List[str])->Tuple[int]:
     """Converts a list of strings to a list of integers. If the string can't be converted to an int, it's skipped and not added to the list.
     Args:
@@ -60,7 +63,8 @@ def get_bib_nums(raw_bib_num:List[str])->Tuple[int]:
             personal_number = int(raw_bib_num[-1])
     return team_number,personal_number
 
-
+#### Validation Tools
+#### Validate Rider Result Dictionary for having bib numbers
 def validate_bib_race_result_dict(rider_dict:Dict)->Union[Dict,None]:
     """Validates a rider result dictionary to see if it has the necessary keys and values to generate a rider prediction. If it does, returns the dict. If not, prints an error message and returns None.
     Args:
@@ -100,6 +104,7 @@ def validate_bib_race_result_dict(rider_dict:Dict)->Union[Dict,None]:
     
     return rider_dict
 
+##### Validate Race for having bib numbers
 def validate_race_for_bib_prediction(race:Union[Race,Stage])->Union[Race,Stage]:
     """Checks a Race or Stage object to see if it has usable results. If it does, returns the object. If not, prints an error message and returns None.
     Args:
@@ -126,6 +131,38 @@ def validate_race_for_bib_prediction(race:Union[Race,Stage])->Union[Race,Stage]:
 
     return race
 
+#### Extract multiple different types of prior race history data for race_type and tour_type specific averages
+##### Get a specific race type and tour type average result for a rider
+def get_rider_hist_w_unknown_date_min_req(rider_career:RiderCareer,prior_to_time:str|int=None,min_req_history:int=3,avg_default:float=6.0,race_type=['gc','stage','one_day'],tour_type=['wt','pro','d1']):
+    if isinstance(prior_to_time,int):
+        rider_history = rider_career.generate_race_history(prior_to_year=prior_to_time,race_type=race_type,tour_type=tour_type)
+    elif isinstance(prior_to_time,str):
+        rider_history = rider_career.generate_race_history(prior_to_date=prior_to_time,race_type=race_type,tour_type=tour_type)
+    else:
+        rider_history = []
+    if len(rider_history) < min_req_history:
+        avg_place = avg_default
+    else:
+        avg_place = sum([place_bucketer(rider_history.place) for rider_history in rider_history])/len(rider_history)
+    return avg_place,len(rider_history)
+
+##### Get all different race_type and tour_type average finishing places for a rider
+def extract_specific_career_averages(rider_career:RiderCareer,prior_to_time:str|int=None,min_req_history:int=3):
+    #Let's establish a standard order: gc,stage,one_day,wt,pro,d1. Those will be the average results we'll use
+    #Get the average gc place
+    gc_avg,gc_hist_len = get_rider_hist_w_unknown_date_min_req(rider_career,prior_to_time=prior_to_time,min_req_history=min_req_history,race_type=['gc'])
+    #Get the average stage place
+    stage_avg,stage_hist_len = get_rider_hist_w_unknown_date_min_req(rider_career,prior_to_time=prior_to_time,min_req_history=min_req_history,race_type=['stage'])
+    #Get the average one day place
+    one_day_avg,one_day_hist_len = get_rider_hist_w_unknown_date_min_req(rider_career,prior_to_time=prior_to_time,min_req_history=min_req_history,race_type=['one_day'])
+    #Get the average wt place
+    wt_avg,wt_hist_len = get_rider_hist_w_unknown_date_min_req(rider_career,prior_to_time=prior_to_time,min_req_history=min_req_history,tour_type=['wt'])
+    #Get the average pro place
+    pro_avg,pro_hist_len = get_rider_hist_w_unknown_date_min_req(rider_career,prior_to_time=prior_to_time,min_req_history=min_req_history,tour_type=['pro'])
+    #Get the average d1 place
+    d1_avg,d1_hist_len = get_rider_hist_w_unknown_date_min_req(rider_career,prior_to_time=prior_to_time,min_req_history=min_req_history,tour_type=['d1'])
+    total_hist_len = wt_hist_len + pro_hist_len + d1_hist_len
+    return gc_avg,stage_avg,one_day_avg,wt_avg,pro_avg,d1_avg,total_hist_len
 
 # Extract training data from a race
 def extract_bib_place_training_data_from_race(race:Union[Race,Stage],rider_db:RiderDB,race_type=['gc','stage','one_day'],tour_type=['wt','pro','d1'])->Tuple[List[Tuple[int,str,int,int,float,int]],Dict]:
@@ -172,21 +209,11 @@ def extract_bib_place_training_data_from_race(race:Union[Race,Stage],rider_db:Ri
         if rider_career is None:
             print(f"Rider id {rider_id} not found in the rider_db, skipping")
             continue
-        if isinstance(prior_to_date,int):
-            rider_history = rider_career.generate_race_history(prior_to_year=prior_to_date,race_type=race_type,tour_type=tour_type)
-        else:
-            rider_history = rider_career.generate_race_history(prior_to_date=prior_to_date,race_type=race_type,tour_type=tour_type)
-        #Now that we have our rider history we can make our predicted finishing place by calculating the average finishing place up to this point in the rider's career.
-        #If the rider history is empty, set the average finish to 6 for above top 30
-        if rider_history is None or rider_history==[]:
-            avg_place = 6
-        else:
-            #Calculate the average place
-            avg_place = sum([place_bucketer(race_res.place) for race_res in rider_history])/len(rider_history)
+        gc_avg,stage_avg,one_day_avg,wt_avg,pro_avg,d1_avg,total_hist_len = extract_specific_career_averages(rider_career=rider_career,prior_to_time=prior_to_date)
         #return a tuple of id, name, team number, personal number, average place, and actual place
-        training_data.append((rider_id,validated_rider_result_dict['name'],team_num,personal_num,avg_place,actual_bucketed_place))
+        training_data.append((rider_id,validated_rider_result_dict['name'],team_num,personal_num,gc_avg,stage_avg,one_day_avg,wt_avg,pro_avg,d1_avg,actual_bucketed_place))
         #increment the number of histories by the len of rider_history, increment the riders processed by 1
-        meta_data_tracking['num_histories'] += len(rider_history)
+        meta_data_tracking['num_histories'] += total_hist_len
         meta_data_tracking['num_riders'] += 1
         
     if training_data is None or training_data == []:
@@ -316,9 +343,11 @@ def prepare_training_data_for_bib_place_predictor(year_to_predict:int,full_db:FC
 
 def train_bib_place_predictor(prepared_training_data:List[Tuple[int,str,int,int,float,int]])->LinearRegression:
     """Trains a linear regression model to predict bucketed places for riders in a given year."""
-    #Get the features and target from the training data
-    X = [rider[2:5] for race in prepared_training_data for rider in race]
-    y = [rider[5] for race in prepared_training_data for rider in race]
+    #Get the features and target from the training data.
+    #These features are set up for the 6 different average places and the team and personal bib numbers
+    #rider_id,validated_rider_result_dict['name'],team_num,personal_num,gc_avg,stage_avg,one_day_avg,wt_avg,pro_avg,d1_avg,actual_bucketed_place
+    X = [rider[2:10] for race in prepared_training_data for rider in race]
+    y = [rider[10] for race in prepared_training_data for rider in race]
     #Train the model
     model = LinearRegression(n_jobs=-1)
     model.fit(X,y)
@@ -366,25 +395,21 @@ def predict_race_w_bib_data(race:Union[Race,Stage],bib_model:LinearRegression,ri
         if rider_career is None:
             #print(f"Rider id {rider_id} not found in the rider_db, skipping")
             continue
-        if isinstance(prior_to_date,int):
-            rider_history = rider_career.generate_race_history(prior_to_year=prior_to_date,race_type=race_type,tour_type=tour_type)
-        else:
-            rider_history = rider_career.generate_race_history(prior_to_date=prior_to_date,race_type=race_type,tour_type=tour_type)
+        if rider_career is None:
+            print(f"Rider id {rider_id} not found in the rider_db, skipping")
+            continue
+        gc_avg,stage_avg,one_day_avg,wt_avg,pro_avg,d1_avg,total_hist_len = extract_specific_career_averages(rider_career=rider_career,prior_to_time=prior_to_date)
         #Now that we have our rider history we can make our predicted finishing place by calculating the average finishing place up to this point in the rider's career.
         #If the rider history is empty, set the average finish to 6 for above top 30
-        if rider_history is None or rider_history==[]:
-            avg_place = 6
-        else:
-            #Calculate the average place
-            avg_place = sum([place_bucketer(race_res.place) for race_res in rider_history])/len(rider_history)
-        predicted_bucketed_place = bib_model.predict([[team_num,personal_num,avg_place]])[0]
+        
+        predicted_bucketed_place = bib_model.predict([[team_num,personal_num,gc_avg,stage_avg,one_day_avg,wt_avg,pro_avg,d1_avg]])[0]
         if predicted_bucketed_place is None:
             print(f"Predicted place is None for rider id {rider_id}, skipping")
         else:
         #add a tuple of id, name, predicted place, and actual place to race_predictions
             race_predictions.append((rider_id,validated_rider_result_dict['name'],predicted_bucketed_place,actual_bucketed_place))
            #increment the number of histories by the len of rider_history, increment the riders processed by 1
-            race_meta_data['num_histories'] += len(rider_history)
+            race_meta_data['num_histories'] += total_hist_len
             race_meta_data['num_riders'] += 1
     if len(race_meta_data)==0:
         print(f"No predictions found for {race.name} skipping")
@@ -513,6 +538,7 @@ def train_predict_year_w_bib(year_to_predict:int,full_db:FCCyclingDB,rider_db:Ri
             print(f"No model found for {year_to_predict}, skipping")
             return None,None
         print(f"Model trained for {year_to_predict}, coefficients: {bib_model.coef_}")
+        weights_dict = {'team':bib_model.coef_[0],'personal':bib_model.coef_[1],'gc':bib_model.coef_[2],'stage':bib_model.coef_[3],'one_day':bib_model.coef_[4],'wt':bib_model.coef_[5],'pro':bib_model.coef_[6],'d1':bib_model.coef_[7]}
     except:
         print(f"Error training model for {year_to_predict}")
         return None,None
@@ -534,7 +560,7 @@ def train_predict_year_w_bib(year_to_predict:int,full_db:FCCyclingDB,rider_db:Ri
         print(f"Error predicting year {year_to_predict}")
         return None,None
     
-    return year_predictions,year_meta_data,full_training_meta_data
+    return year_predictions,year_meta_data,full_training_meta_data,weights_dict
         
 
                 

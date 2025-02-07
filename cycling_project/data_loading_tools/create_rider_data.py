@@ -176,7 +176,7 @@ class RiderCareer:
             try:
                 prior_to_dto = datetime.strptime(prior_to_date,'%Y-%m-%d')
             except:
-                print("Error converting prior_to_date to datetime object, make sure it is formatted as a string YYYY-MM-DD")
+                #print("Error converting prior_to_date to datetime object, make sure it is formatted as a string YYYY-MM-DD")
                 return None
             for year in range(self.career_start,prior_to_dto.year + 1):
                 raw_year_history = self.race_history.get(year,None)
@@ -186,7 +186,7 @@ class RiderCareer:
                         try:
                             result_race_date = datetime.strptime(result.race_date,'%Y-%m-%d')
                         except:
-                            print(f"Error converting {result.race_name} date to datetime object")
+                            #print(f"Error converting {result.race_name} date to datetime object")
                             continue
                         if result_race_date < prior_to_dto and result.race_type in race_type_filter and result.race_tour in tour_filter:
                             race_history.append(result)
