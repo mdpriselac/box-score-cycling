@@ -107,25 +107,35 @@ def validate_bib_race_result_dict(rider_dict:Dict)->Union[Dict,None]:
 ##### Validate Race for having bib numbers
 def validate_race_for_bib_prediction(race:Union[Race,Stage])->Union[Race,Stage]:
     """Checks a Race or Stage object to see if it has usable results. If it does, returns the object. If not, prints an error message and returns None.
+    Immediately Invalid conditions: race.results is None, [], '', or less than 20 results.
+    If there are enough results to check, it will check to see if there are at least 5 valid bib numbers in the results. If there are, it will return the race. If there 5 invalid results, it will return None.
     Args:
         race: Race or Stage object to check for results
     Returns:
         Race or Stage object with results or None"""
 
     #Check if the results are empty, if so, can't generate a rider prediction or history
-    if race.results is None or race.results==[] or race.results=='' or len(race.results)<5:
+    if race.results is None or race.results==[] or race.results=='' or len(race.results)<20:
         print(f"No results found for {race.name}, cannot generate a rider list")
         return None
     
     #run through results to see if there's at least one valid rider result, if not return None
-    bib_found = False
-    
+    valid_bib_result_dict_counter = 0
+    invalid_bib_result_dict_counter = 0
+    valid_race_found = False
     for rider_res_dict in race.results:
         rider_res_dict = validate_bib_race_result_dict(rider_res_dict)
-        if rider_res_dict is not None:
-            bib_found = True
+        if rider_res_dict is None:
+            invalid_bib_result_dict_counter += 1
+        else:
+            valid_bib_result_dict_counter += 1
+        if valid_bib_result_dict_counter > 5:
+            valid_race_found = True
             break
-    if not bib_found:    
+        if invalid_bib_result_dict_counter > 5:
+            break
+        
+    if not valid_race_found:    
         print(f"No valid bib numbers found for {race.name}, skipping")
         return None
 
@@ -134,6 +144,17 @@ def validate_race_for_bib_prediction(race:Union[Race,Stage])->Union[Race,Stage]:
 #### Extract multiple different types of prior race history data for race_type and tour_type specific averages
 ##### Get a specific race type and tour type average result for a rider
 def get_rider_hist_w_unknown_date_min_req(rider_career:RiderCareer,prior_to_time:str|int=None,min_req_history:int=3,avg_default:float=6.0,race_type=['gc','stage','one_day'],tour_type=['wt','pro','d1']):
+    """Given a RiderCareer object, prior to date (either an actual date as a string or a year only date as an int), a minimum required history length for returning a non default value, a default place bucket, and then the race_type or tour_type to be included in the average, returns an average finishing bucket.
+    Args:
+        rider_career: RiderCareer object
+        prior_to_time: A string date or int year to generate the average finishing place up to.
+        min_req_history: Minimum required history length to return a non default value.
+        avg_default: Default value to return if the rider doesn't have enough history.
+        race_type: List of strings ('gc','stage','one_day') to specify the race type to include in the average.
+        tour_type: List of strings ('wt','pro','d1') to specify the tour type to include in the average.
+    Returns:
+        float that's the average finishing place. If the rider doesn't have enough history, returns the default value. If the rider has enough history, returns the average finishing place bucketed.
+    """
     if isinstance(prior_to_time,int):
         rider_history = rider_career.generate_race_history(prior_to_year=prior_to_time,race_type=race_type,tour_type=tour_type)
     elif isinstance(prior_to_time,str):
@@ -148,6 +169,14 @@ def get_rider_hist_w_unknown_date_min_req(rider_career:RiderCareer,prior_to_time
 
 ##### Get all different race_type and tour_type average finishing places for a rider
 def extract_specific_career_averages(rider_career:RiderCareer,prior_to_time:str|int=None,min_req_history:int=3):
+    """Utilizes the get_rider_hist_w_unknown_date_min_req function to extract the average finishing place for a rider across the desired ranges. 
+    Change this function to alter which average finishing places are returned for the rider when regressing the model.
+    Args:
+        rider_career: RiderCareer object
+        prior_to_time: A string date or int year to generate the average finishing place up to.
+        min_req_history: Minimum required history length to return a non default value.
+    Returns:
+        a tuple of average finishing places for gc, stage, one_day, wt, pro, d1, and the total history length used to generate the averages."""
     #Let's establish a standard order: gc,stage,one_day,wt,pro,d1. Those will be the average results we'll use
     #Get the average gc place
     gc_avg,gc_hist_len = get_rider_hist_w_unknown_date_min_req(rider_career,prior_to_time=prior_to_time,min_req_history=min_req_history,race_type=['gc'])

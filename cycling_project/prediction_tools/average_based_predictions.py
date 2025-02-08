@@ -178,19 +178,26 @@ def create_tour_year_prediction_data(tour:FCCyclingTour,rider_db:RiderDB,tour_ty
         return None
     year_predictions = []
     for race in tour.races:
-        if race.category not in target_race_type:
-            continue
         if race.stage_race:
-            for stage in race.stages:
-                try:
-                    race_pred_tuple = create_race_predictions(stage,rider_db,race_type=race_type,tour_type=tour_type)
-                    if race_pred_tuple is None:
-                        print(f"Error in predicting {race.name}, {stage.name}, will not add to year predictions")
-                    year_predictions.append(race_pred_tuple)
-                except:
-                    print(f"Error in predicting {stage.name}, {race.name}, skipping")
-                    continue
+            if 'stage' not in target_race_type and 'gc' not in target_race_type:
+                continue
+            else:
+                for stage in race.stages:
+                    if 'stage' not in target_race_type and 'stage:' in stage.name.lower():
+                        continue
+                    if 'gc' not in target_race_type and 'gc' in stage.name.lower():
+                        continue
+                    try:
+                        race_pred_tuple = create_race_predictions(stage,rider_db,race_type=race_type,tour_type=tour_type)
+                        if race_pred_tuple is None:
+                            print(f"Error in predicting {race.name}, {stage.name}, will not add to year predictions")
+                        year_predictions.append(race_pred_tuple)
+                    except:
+                        print(f"Error in predicting {stage.name}, {race.name}, skipping")
+                        continue
         else:
+            if 'one_day' not in target_race_type:
+                continue
             try:
                 race_pred_tuple = create_race_predictions(race,rider_db)
                 year_predictions.append(race_pred_tuple)
@@ -243,13 +250,17 @@ def create_year_prediction_data(year_db:FCCyclingYear,rider_db:RiderDB,race_type
         return None
     return wt_preds+pro_preds+d1_preds
     
-def full_prediction_script():
+def full_prediction_script(years:List[int]=None):
     rider_db = create_rider_db()
     #Read the DB_Path to get a list of year directories
     year_dirs = [f for f in os.listdir(DB_PATH) if os.path.isdir(os.path.join(DB_PATH,f)) and len(f)==4]
-    #Get years with races to predict
+    #Get specific with races to predict if specified
+    if years is not None:
+        filtered_years = [year for year in year_dirs if int(year) in years]
+    else:
+        filtered_years = year_dirs
     years_to_predict = []
-    for year_dir in year_dirs:
+    for year_dir in filtered_years:
         year_db = load_year_path(os.path.join(DB_PATH,year_dir))
         if len(year_db.wt.races)>0 or len(year_db.pro.races)>0 or len(year_db.d1.races)>0:
             years_to_predict.append(year_db)
@@ -264,10 +275,6 @@ def full_prediction_script():
     with open('avg_only_based_preds-all.pkl','wb') as f:
         pickle.dump(predicted_years,f)
     return predicted_years
-
-
-if __name__ == '__main__':
-    full_prediction_script()
 
 
             
