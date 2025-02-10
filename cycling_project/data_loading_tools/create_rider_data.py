@@ -68,6 +68,7 @@ class RiderResult:
             elif len(self.raw_bib_number) == 3:
                 self.team_number = int(self.raw_bib_number[0:-1])
                 self.personal_number = int(self.raw_bib_number[-1])
+    
 
 @dataclass
 class RiderCareer:
@@ -149,7 +150,7 @@ class RiderCareer:
             List[RiderResult]: List of RiderResult objects that match the filters.
         """
         
-        if prior_to_year is None and race_type is None and tour_type is None:
+        if prior_to_year is None and prior_to_date is None and race_type is None and tour_type is None:
             return self.race_history
 
         race_history = []
@@ -173,6 +174,7 @@ class RiderCareer:
 
         #implement a prior to date filter
         if isinstance(prior_to_date,str):
+            #print("Filtering by prior to date")
             try:
                 prior_to_dto = datetime.strptime(prior_to_date,'%Y-%m-%d')
             except:
@@ -194,6 +196,7 @@ class RiderCareer:
             
         #If there's no prior_to_date, cycle through the years up to the prior_to_year and append the results that match the filters
         for year in range(self.career_start,prior_to_year):
+            #print('No prior to date filter, just getting years')
             raw_year_history = self.race_history.get(year,None)
         
             if raw_year_history is not None:
