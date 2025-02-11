@@ -1,4 +1,5 @@
 from cycling_project.webscrape_tools.create_race_data import Race,Stage
+from cycling_project.data_loading_tools.load_scraped_data import load_db, FCCyclingDB,FCCyclingTour,FCCyclingYear
 from typing import Union
 import numpy as np
 from collections import Counter
@@ -9,13 +10,18 @@ def extract_finishing_time_distributions(race:Union[Race,Stage]):
         print(f"{race.name} has no results, skipping finishing time distributions")
         return None
     #check for empty results
-    if len(race.results) < 3:
+    if len(race.results) < 20:
         print(f"{race.name} has too few results, skipping finishing time distributions")
         return None
     if isinstance(race,Race):
         race_time = race.race_time
     elif isinstance(race,Stage):
-        race_time = race.time
+        try:
+            race_time = race.time
+            if race_time is None or race_time =='':
+                race_time = race.race_time
+        except:
+            race_time is None
     #check for missing finishing times
     if race_time is None or race_time=='' or race_time==[]:
         print(f"{race.name} has no times, skipping finishing time distributions")
@@ -26,7 +32,8 @@ def extract_finishing_time_distributions(race:Union[Race,Stage]):
         if isinstance(result.get('gap'),(float,int)):
             finishing_gaps.append(result.get('gap'))
         else:
-            print(f"Non-time gap for {result.get('name')}, skipping")
+            continue
+            #print(f"Non-time gap for {result.get('name')}, skipping")
     gap_avg = sum(finishing_gaps)/len(finishing_gaps)
     gap_stdev = np.std(finishing_gaps)
     
@@ -141,3 +148,107 @@ def extract_finishing_time_distributions(race:Union[Race,Stage]):
     all_data['finish_time_data'] = finish_time_data
     
     return all_data
+
+#Next we want to develop tools for extracting races and stages from the database
+#As we load the races we want to make sure we have the tour and race type.
+
+#A Tour Level Race DB will have a list of races objects. One for each one day and stage race. Stage races need to be unpacked.
+#The information we're going to want for these races is going to be something like:
+# Race ID, Race Name, Race Year, Race Date, Tour Type, Race Type, and then the finishing time distribution
+
+#So, start with a function to parse a full race (ie netural stage race/one_day race object) object. 
+
+def generate_finishing_time_data_from_race(race:Race)->list:
+    #Check if it's a stage race or a one_day.
+    if not race.stage_race:
+        #If it'a s one_day, we can just process it as is
+        #See if we can get finishing time data. if not, return None
+        try:
+            finishing_time_data = extract_finishing_time_distributions(race)
+            if finishing_time_data is None:
+                print(f"{race.name}, {race.year}, has no finishing time data")
+                return None
+        except:
+            print(f"Error processing {race.name}, {race.year} for finishing time data")
+            return None
+        #now let's get the rest of the data
+        tour_type = race.category
+        race_type = "one_day"
+        race_id = race.fc_race_id
+        race_name = race.name
+        race_date = race.date
+        race_year = race.year
+        race_data_dict = {'race_id':race_id,'race_name':race_name,'tour_type':tour_type,'race_type':race_type,'race_date':race_date,'race_year':race_year,'finishing_time_data':finishing_time_data}
+        return [race_data_dict]
+    else:
+        tour_type = race.category
+        parent_race_name = race.name
+        race_year = race.year
+        race_id = race.fc_race_id
+        stage_data = []
+        for stage in race.stages:
+            #See if we can get finishing time data. if not, return None
+            try:
+                finishing_time_data = extract_finishing_time_distributions(stage)
+                if finishing_time_data is None:
+                    print(f"{parent_race_name}, {stage.name}, {stage.year}, has no finishing time data")
+                    continue
+            except:
+                print(f"Error processing {parent_race_name}, {stage.name}, {stage.year} for finishing time data")
+                continue
+            #now let's get the rest of the data
+            if stage.name.strip() == "GC":
+                race_type = "gc"
+            else:
+                race_type = "stage"
+            race_date = stage.date
+            race_name = f"{parent_race_name}: {stage.name}"
+            race_data_dict = {'race_id':race_id,'race_name':race_name,'tour_type':tour_type,'race_type':race_type,'race_date':race_date,'race_year':race_year,'finishing_time_data':finishing_time_data}
+            stage_data.append(race_data_dict)
+        if len(stage_data)==0:
+            print(f"No stages with finishing time data for {race.name}, {race.year}")
+            return None
+        return stage_data
+
+def generate_finishing_time_data_from_tour(tour:FCCyclingTour)->list:
+    tour_race_data = []
+    for race in tour.races:
+        race_data = generate_finishing_time_data_from_race(race)
+        if race_data is not None:
+            tour_race_data.extend(race_data)
+    
+    return tour_race_data
+
+def generate_finishing_time_data_from_year(year:FCCyclingYear)->list:
+    year_race_data = []
+    #First, try wt
+    try:
+        wt_data = generate_finishing_time_data_from_tour(year.wt)
+        if len(wt_data) == 0:
+            print(f"No data for WT races in {year.year}")
+        else:
+            print(f"Found {len(wt_data)} WT races with time data for {year.year}")
+            year_race_data.extend(wt_data)
+    except:
+        print(f"Error processing WT data for {year.year}")
+    #Next, try pro
+    try:
+        pro_data = generate_finishing_time_data_from_tour(year.pro)
+        if len(pro_data) == 0:
+            print(f"No data for Pro races in {year.year}")
+        else:
+            print(f"Found {len(pro_data)} Pro races with time data for {year.year}")
+            year_race_data.extend(pro_data)
+    except:
+        print(f"Error processing Pro data for {year.year}")
+    #Next try d1
+    try:
+        d1_data = generate_finishing_time_data_from_tour(year.d1)
+        if len(d1_data) == 0:
+            print(f"No data for .1 races for {year.year}")
+        else:
+            print(f"Found {len(d1_data)} .1 races with time data for {year.year}")
+            year_race_data.extend(d1_data)
+    except:
+        print(f"Error processing .1 data for {year.year}")
+    return year_race_data
