@@ -7,8 +7,9 @@ from typing import Union,List,Dict,Tuple
 import os
 import pickle
 import numpy as np
-
+from sklearn.utils.class_weight import compute_sample_weight
 from sklearn.linear_model import LinearRegression
+from mord import LogisticAT,LogisticIT
 
 #Steps to building model
 ## Training the predictor
@@ -377,8 +378,9 @@ def train_bib_place_predictor(prepared_training_data:List[Tuple[int,str,int,int,
     #rider_id,validated_rider_result_dict['name'],team_num,personal_num,gc_avg,stage_avg,one_day_avg,wt_avg,pro_avg,d1_avg,actual_bucketed_place
     X = [rider[2:10] for race in prepared_training_data for rider in race]
     y = [rider[10] for race in prepared_training_data for rider in race]
+    #sample_weights = compute_sample_weight(class_weight='balanced', y=y)
     #Train the model
-    model = LinearRegression(n_jobs=-1)
+    model = LinearRegression()
     model.fit(X,y)
     return model
 
@@ -566,7 +568,7 @@ def train_predict_year_w_bib(year_to_predict:int,full_db:FCCyclingDB,rider_db:Ri
         if bib_model is None:
             print(f"No model found for {year_to_predict}, skipping")
             return None,None
-        print(f"Model trained for {year_to_predict}, coefficients: {bib_model.coef_}")
+        print(f"Model trained for {year_to_predict}, coefficients: ")
         weights_dict = {'team':bib_model.coef_[0],'personal':bib_model.coef_[1],'gc':bib_model.coef_[2],'stage':bib_model.coef_[3],'one_day':bib_model.coef_[4],'wt':bib_model.coef_[5],'pro':bib_model.coef_[6],'d1':bib_model.coef_[7]}
     except:
         print(f"Error training model for {year_to_predict}")
