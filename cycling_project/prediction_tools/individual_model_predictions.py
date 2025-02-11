@@ -5,11 +5,13 @@ from cycling_project.webscrape_tools.create_race_data import Race,Stage
 from cycling_project.engineering_tools.place_handling import place_bucketer
 
 import pandas as pd
+import numpy as np
 
 #import RandomForestRegressor
-from sklearn.ensemble import RandomForestRegressor
+from mord import LogisticAT
 from sklearn.preprocessing import MinMaxScaler
-from sklearn.metrics import mean_squared_error
+from sklearn.metrics import mean_squared_error,mean_absolute_error,confusion_matrix
+from sklearn.utils.class_weight import compute_sample_weight
 
 from dataclasses import asdict
 from typing import List,Dict,Union,Optional
@@ -17,7 +19,7 @@ import json
 import os
 
 class RiderModel(RiderCareer):
-    rider_model = Optional[RandomForestRegressor]
+    rider_model = Optional[LogisticAT]
     def __init__(self, fc_rider_id: int, name: str):
         super().__init__(fc_rider_id, name)
         self.rider_model = None
@@ -84,8 +86,10 @@ class RiderModel(RiderCareer):
 
     def create_model(self,training_data:pd.DataFrame,target_data:pd.Series):
         #create training data
-        model = RandomForestRegressor(n_estimators=150,max_depth=10)
-        model.fit(training_data, target_data)
+        #Get sample weights for unbalanced distribution
+        sample_weights = compute_sample_weight(class_weight='balanced', y=target_data)
+        model = LogisticAT()
+        model.fit(training_data, target_data,sample_weight=sample_weights)
         #pair each coefficient with the column name
         #coefficients = model.coef_
         #feature_names = training_data.columns
@@ -98,7 +102,7 @@ class RiderModel(RiderCareer):
         #Get the number of training examples
         train_count = training_data.shape[0]
         #Get the training error as mse
-        train_error = mean_squared_error(target_data,model.predict(training_data))
+        train_error = mean_absolute_error(target_data,model.predict(training_data))
         return model, train_error, train_count, coeff_dict
     
     def predict_place(self,race:Union[Race,Stage],result_dict:Dict):
@@ -270,3 +274,47 @@ def predict_year(year:FCCyclingYear,rider_db:RiderDB):
     except:
         print(f'Error predicting d1 for {year.year}')
     return year_predictions
+
+def ordinal_metrics(y_true, y_pred):
+    """Calculate multiple metrics for ordinal classification"""
+    # Basic error metrics
+    mae = mean_absolute_error(y_true, y_pred)
+    
+    # Calculate how often we're off by N steps
+    diff = np.abs(y_true - y_pred)
+    exact = np.mean(diff == 0)
+    off_by_1 = np.mean(diff <= 1)
+    off_by_2 = np.mean(diff <= 2)
+    
+    # Quadratic weighted kappa
+    # Penalizes errors quadratically based on distance
+    rounded_y_pred = np.round(y_pred).astype(int)
+    conf_mat = confusion_matrix(y_true, rounded_y_pred)
+    n_classes = conf_mat.shape[0]
+    w_mat = np.zeros((n_classes, n_classes))
+    for i in range(n_classes):
+        for j in range(n_classes):
+            w_mat[i, j] = (i - j) ** 2
+    
+    # Normalize confusion matrix
+    conf_mat = conf_mat.astype(float)
+    n_obs = float(conf_mat.sum())
+    conf_mat = conf_mat / n_obs
+    
+    # Expected frequencies under independence
+    r_sum = conf_mat.sum(axis=1)
+    c_sum = conf_mat.sum(axis=0)
+    exp_mat = np.outer(r_sum, c_sum)
+    
+    # Calculate kappa
+    num = np.sum(w_mat * conf_mat)
+    den = np.sum(w_mat * exp_mat)
+    kappa = 1 - (num / den)
+    
+    return {
+        'MAE': mae,
+        'Exact_Match': exact,
+        'Within_1': off_by_1,
+        'Within_2': off_by_2,
+        'Quadratic_Kappa': kappa
+    }
