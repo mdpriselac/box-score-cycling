@@ -1,8 +1,13 @@
 from cycling_project.webscrape_tools.create_race_data import Race,Stage
-from cycling_project.data_loading_tools.load_scraped_data import load_db, FCCyclingDB,FCCyclingTour,FCCyclingYear
+from cycling_project.data_loading_tools.load_scraped_data import load_db, load_year_path,FCCyclingDB,FCCyclingTour,FCCyclingYear,DB_PATH
 from typing import Union
+from datetime import datetime
 import numpy as np
+from scipy.stats import zscore
 from collections import Counter
+from typing import List
+import os
+import pandas as pd
 
 def extract_finishing_time_distributions(race:Union[Race,Stage]):
     #check for null results
@@ -178,7 +183,9 @@ def generate_finishing_time_data_from_race(race:Race)->list:
         race_name = race.name
         race_date = race.date
         race_year = race.year
-        race_data_dict = {'race_id':race_id,'race_name':race_name,'tour_type':tour_type,'race_type':race_type,'race_date':race_date,'race_year':race_year,'finishing_time_data':finishing_time_data}
+        race_data_dict = {'race_id':race_id,'race_name':race_name,'tour_type':tour_type,'race_type':race_type,'race_date':race_date,'race_year':race_year}
+        for sub_d in finishing_time_data.values():
+            race_data_dict.update(sub_d)
         return [race_data_dict]
     else:
         tour_type = race.category
@@ -203,7 +210,9 @@ def generate_finishing_time_data_from_race(race:Race)->list:
                 race_type = "stage"
             race_date = stage.date
             race_name = f"{parent_race_name}: {stage.name}"
-            race_data_dict = {'race_id':race_id,'race_name':race_name,'tour_type':tour_type,'race_type':race_type,'race_date':race_date,'race_year':race_year,'finishing_time_data':finishing_time_data}
+            race_data_dict = {'race_id':race_id,'race_name':race_name,'tour_type':tour_type,'race_type':race_type,'race_date':race_date,'race_year':race_year}
+            for sub_d in finishing_time_data.values():
+                race_data_dict.update(sub_d)
             stage_data.append(race_data_dict)
         if len(stage_data)==0:
             print(f"No stages with finishing time data for {race.name}, {race.year}")
@@ -252,3 +261,184 @@ def generate_finishing_time_data_from_year(year:FCCyclingYear)->list:
     except:
         print(f"Error processing .1 data for {year.year}")
     return year_race_data
+
+def gen_race_char_db(year_range:List[int],db_base_path:str=DB_PATH)->pd.DataFrame:
+    db_l = []
+    finishing_dist_cols = ['max_group_size','max_group_proportion','max_group_finish_time_percentile','max_group_position','max_group_zscore','max_group_gap_to_winner','group_count','avg_group_size','stdev_group_size','avg_group_gap','stdev_group_gap','proportion_grouped','winner_zscore','last_zscore','5th_percentile_zscore','10th_percentile_zscore','25th_percentile_zscore','50th_percentile_zscore','75th_percentile_zscore','90th_percentile_zscore','95th_percentile_zscore','avg_gap','stdev_gap','winning_time','gap_to_last','finishing_times_filled_proportion','non_finisher_proportion']
+    for year in year_range:
+        year_dir_path = os.path.join(db_base_path,f"{year}")
+        try:
+            yeardb = load_year_path(year_dir_path)
+            race_char_l = generate_finishing_time_data_from_year(yeardb)
+            if race_char_l is None or race_char_l == []:
+                print(f"No Race Data for {year}")
+            db_l.extend(race_char_l)
+        except:
+            print(f"Error loading {year} database")
+    df = pd.concat([pd.DataFrame.from_dict(race_c,orient='index') for race_c in db_l],axis=1).T
+    df = df.dropna()
+    #convert df to numerical dtypes
+    for col in finishing_dist_cols:
+        try:
+            df[col] = pd.to_numeric(df[col],errors='coerce')
+        except:
+            continue
+    #convert race_date to datetime
+    df['race_date'] = pd.to_datetime(df['race_date'],errors='coerce')
+    #Sort by race_date, ascending
+    df.sort_values(by='race_date',ascending=True,inplace=True)
+    #reset the index so it's numbers counting up from zero
+    df.index = range(len(df))
+    
+    return df
+
+    
+#let's write three functions, one for gc, one for one_day, and one for stages. Each function will produce a dataframe with the key finishing time data that has been processed and cleaned to remove duplicate features as well as extreme outlier races (we'll be trimming the data by about 10% total for each race)
+#We'll use only races in each of these data frames for predicting rider performance in that type of race.
+#The first way that I want to use this is to see if we can use it to bucket riders into categories. What I want to try to extract is the values/weights/coefficients that are most useful for segmenting riders into categories when it comes to predicitng finishign places. 
+#In the first pass we used LinearRegression coefficients for different categories. But I would like to see if we can get some thing usable and interpretable from an ordinal regression model.
+#I have filtering conditions special for GC, one_day, and stages. Let's set that up and see what we can get about riders.
+
+class RaceCharDB:
+    def __init__(self,year_range:List[int],db_base_path:str=DB_PATH):
+        self.year_range = year_range
+        self.db_base_path = db_base_path
+        self.db = gen_race_char_db(year_range,db_base_path)
+        self._non_data_cols = ['race_id','race_name','tour_type','race_type','race_date','race_year']
+        self.gen_gc_db()
+        self.gen_one_day_db()
+        self.gen_stage_db()
+        
+    
+    def _filter_outliers(self,df:pd.DataFrame, z_score_limit:float=3.5):
+        filtered_df = df.copy()
+        for col in [col for col in filtered_df.columns if col != 'winning_time']:
+            #Calculate the zscore for each row in the column
+            zscores = zscore(filtered_df[col])
+            #Filter out the rows where the zscore is greater than 3.5
+            filtered_df = filtered_df.loc[np.abs(zscores) <= z_score_limit]
+        print(f"Outlier Races removed: {df.shape[0]-filtered_df.shape[0]}, {1-filtered_df.shape[0]/df.shape[0]:.2%}")
+        return filtered_df
+    
+    
+  
+    def gen_gc_db(self,outlier_limit:float=3.5) -> pd.DataFrame:
+        gc_db = self.db[self.db['race_type'] == 'gc'].copy()
+        if gc_db.shape[0] == 0:
+            print("No GC results in the database for this year range")
+            self.gc = gc_db
+            return gc_db
+        #drop the group and max group columns
+        gc_db.drop(columns=['max_group_size','max_group_proportion','max_group_finish_time_percentile','max_group_position','max_group_zscore','max_group_gap_to_winner','group_count','avg_group_size','stdev_group_size','avg_group_gap','stdev_group_gap','proportion_grouped'],inplace=True) 
+        #drop redundant columns
+        gc_db.drop(columns=['5th_percentile_zscore','10th_percentile_zscore','avg_gap','stdev_gap'],inplace=True)
+        #drop last place influence cols
+        gc_db.drop(columns=['gap_to_last','75th_percentile_zscore','90th_percentile_zscore','95th_percentile_zscore','last_zscore','finishing_times_filled_proportion'],inplace=True)
+        #get the data only colums to filter outliers
+        gc_data_only = gc_db.drop(columns=self._non_data_cols)
+        #filter outliers
+        gc_filtered = self._filter_outliers(gc_data_only,outlier_limit)
+        #print the 
+        #merge the filtered data back into the original dataframe
+        final_gc_df = gc_db.loc[gc_filtered.index].copy()
+        self.gc = final_gc_df
+        return final_gc_df
+
+    def gen_one_day_db(self,outlier_limit:float=3.25) -> pd.DataFrame:
+        one_day_db = self.db[self.db['race_type']=='one_day'].copy()
+        if one_day_db.shape[0] == 0:
+            print(f"No one day races in the database for this year range")
+            self.one_day = one_day_db
+            return one_day_db
+        #drop redundant columns
+        redundant_one_day_cols = ['max_group_proportion', 'stdev_group_size', 'avg_group_size','max_group_position','max_group_zscore',	'max_group_gap_to_winner','stdev_group_gap','avg_gap', 'gap_to_last']
+        one_day_db.drop(columns=redundant_one_day_cols,inplace=True)
+        #filter outliers for one_day
+        one_day_data_only = one_day_db.drop(columns=self._non_data_cols)
+        one_day_filtered = self._filter_outliers(one_day_data_only,outlier_limit)
+        #merge the filtered data back into the original dataframe
+        one_day_final_df = one_day_db.loc[one_day_filtered.index].copy()
+        self.one_day = one_day_final_df
+        return one_day_final_df
+    
+    def gen_stage_db(self,outlier_limit:float=3.25) -> pd.DataFrame:
+        stage_db = self.db[self.db['race_type']=='stage'].copy()
+        if stage_db.shape[0] == 0:
+            print(f"No stages in the database for this year range")
+            self.stage = stage_db
+            return stage_db
+        #drop redundant columns
+        redundant_stage_cols = ['max_group_proportion', 'stdev_group_size','max_group_position','max_group_gap_to_winner','stdev_gap','10th_percentile_zscore']
+        stage_db.drop(columns=redundant_stage_cols,inplace=True)
+        #filter outliers for stages
+        stage_data_only = stage_db.drop(columns=self._non_data_cols)
+        stage_filtered = self._filter_outliers(stage_data_only,outlier_limit)
+        #merge the filtered data back into the original dataframe
+        stage_final_df = stage_db.loc[stage_filtered.index].copy()
+        self.stage = stage_final_df
+        return stage_final_df
+    
+    def __post_init__(self):
+        self.gen_gc_db()
+        self.gen_one_day_db()
+        self.gen_stage_db()
+
+    def find_prior_races(self,race_type:str,prior_to_date:str,fc_race_id:int|None=None)->pd.DataFrame:
+        #convert prior to date to datetime
+        try:
+            prior_to_date_dto = datetime.strptime(prior_to_date,'%Y-%m-%d')
+        except:
+            print(f"Error converting {prior_to_date} to datetime. Make sure it is YYYY-MM-DD")
+            return None
+        #get the right db
+        if race_type.lower().strip()=='gc':
+            db = self.gc
+        elif race_type.lower().strip()=='one_day':
+            db = self.one_day
+        elif race_type.lower().strip()=='stage':
+            db = self.stage
+        else:
+            print("You must select a race_type from 'gc', 'one_day', or 'stage'")
+            return None
+        #Filter db for rows only with dates prior to prior_to_date
+        prior_race_db = db.loc[db['race_date'] < prior_to_date_dto].copy()
+        if prior_race_db.shape[0] == 0:
+            print(f"{race_type} has no races prior to {prior_to_date}")
+            return prior_race_db 
+        #If fc_race_id is provided, only get those races as well
+        if fc_race_id is not None:
+            #get the races where the fc_race_id is in the race_id column
+            prior_race_history_db = prior_race_db.loc[prior_race_db['race_id'].astype(int)==fc_race_id].copy()
+            if prior_race_history_db.shape[0] == 0:
+                print(f"{fc_race_id} not found in the races prior to {prior_to_date}")
+            return prior_race_history_db
+        else:
+            return prior_race_db
+    
+    def race_lookup(self,fc_race_id:int,race_type:str,year:int,stage_name:str|None=None)->pd.DataFrame:
+        #get the right db
+        if race_type.lower().strip()=='gc':
+            db = self.gc
+        elif race_type.lower().strip()=='one_day':
+            db = self.one_day
+        elif race_type.lower().strip()=='stage':
+            db = self.stage
+            #if stage_name is None, return an error and message
+            if stage_name is None:
+                print("You must provide a stage_name for stage lookup")
+                return None
+        else:
+            print("You must select a race_type from 'gc', 'one_day', or 'stage'")
+            return None
+        if stage_name:
+            race_data = db.loc[(db['race_id'].astype(int)==fc_race_id) & (db['race_year'].astype(int)==year)].copy()
+            #get the row that contains the stage name in the race_name column
+            stage_data = race_data.loc[race_data['race_name'].str.contains(stage_name,case=False)].copy()
+            if stage_data.shape[0] == 0:
+                print(f"No data found for {fc_race_id} in {year} with stage name {stage_name}")
+            return stage_data
+        else:
+            race_data = db.loc[(db['race_id'].astype(int)==fc_race_id) & (db['race_year'].astype(int)==year)].copy()
+            if race_data.shape[0] == 0:
+                print(f"No data found for {fc_race_id} in {year}")
+            return race_data
