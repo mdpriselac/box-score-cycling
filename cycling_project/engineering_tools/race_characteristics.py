@@ -41,6 +41,9 @@ def extract_finishing_time_distributions(race:Union[Race,Stage]):
             #print(f"Non-time gap for {result.get('name')}, skipping")
     gap_avg = sum(finishing_gaps)/len(finishing_gaps)
     gap_stdev = np.std(finishing_gaps)
+    if gap_stdev == 0.0:
+        print(f"Standard deviation of gaps is 0, setting to .0001 to avoid divide by zero")
+        gap_stdev = .0001
     
     #Get finishing times
     finishing_times = [gap + total_time for gap in finishing_gaps if isinstance(gap,(int,float))]
@@ -53,20 +56,28 @@ def extract_finishing_time_distributions(race:Union[Race,Stage]):
     #get the gaps between finishing groups by sorting the unique finishing times and getting the gaps between them
     sorted_times = sorted(list(set(finishing_times)))
     group_gaps = [sorted_times[i+1]-sorted_times[i] for i in range(len(sorted_times)-1)]
+    if group_gaps == []:
+        print(f"No groups found, setting group_gaps to [0] to avoid divide by zero")
+        group_gaps = [0]
     #get the average gap between groups
     avg_group_gap = sum(group_gaps)/len(group_gaps)
     #get the std deviation of the gaps between groups
     stdev_group_gap = np.std(group_gaps)
     #get the possible finishing group counts, which is just the number of seconds between the first and last finishing time
     possible_groups = sorted_times[-1]-sorted_times[0]
+    if possible_groups == 0:
+        print(f"Possible groups is 0, setting to 1 to avoid divide by zero since there's only one group")
+        possible_groups = 1
     #get the proportion of possible groups that are actual groups
     finish_times_filled_proportion = unique_finishing_times/possible_groups
     #Get the sizes of all the groups, ie count how many people have the same finishing time
     group_sizes = Counter(finishing_times)
     #Get the number of groups that are larger than 1
     group_count = len([k for k,v in group_sizes.items() if v > 1])
-    #proportion finishers that are grouped
-    proportion_grouped = group_count/unique_finishing_times
+    #Get the number of riders in groups larger than 1
+    grouped_rider_count = sum([v for v in group_sizes.values() if v > 1])
+    #proportion of finishing times that are groups (ie have more than one person with the same time)
+    proportion_grouped = grouped_rider_count/len(finishing_times)
     #Get the max group size
     max_group_size = max(group_sizes.values())
     #get the average group size
@@ -82,7 +93,7 @@ def extract_finishing_time_distributions(race:Union[Race,Stage]):
     max_group_percentile = finishing_times.index(min_max_group_time)/len(finishing_times)
     #get the max group finishing position
     max_group_position = finishing_times.index(min_max_group_time) + 1
-    #get the zscore for the 10th, 25th, 75th and 90th percetile finishing times
+    #get the zscore for the 5th, 10th, 25th, 75th, 90th, 95th percetile finishing times
     zscores = {}
     if np.std(finishing_times) == 0.0:
         print(f"Standard deviation of finishing times is 0, setting to .001 to avoid divide by zero")
@@ -98,9 +109,9 @@ def extract_finishing_time_distributions(race:Union[Race,Stage]):
     last_zscore = (max(finishing_times)-np.mean(finishing_times))/finish_stdev
     #get the finishing time zscore for the max group finishing time
     max_group_zscore = (min_max_group_time-np.mean(finishing_times))/finish_stdev
-    #get the gap to the winner for the 10th, 25th, 75th and 90th percentile finishing times
+    #get the gap to the winner for the 5th, 10th, 25th, 75th, 90th and 95th percentile finishing times
     gaps_to_winner = {}
-    for percentile in [10,25,50,75,90]:
+    for percentile in [5,10,25,50,75,90,95]:
         gaps_to_winner[str(percentile)] = np.percentile(finishing_times,percentile)-min(finishing_times)
     #get the gap to the winner for the max group finishing time
     max_group_gap_to_winner = min_max_group_time-min(finishing_times)
@@ -116,7 +127,7 @@ def extract_finishing_time_distributions(race:Union[Race,Stage]):
     
     #group data
     group_data = {}
-    group_data['group_count'] = unique_finishing_times
+    group_data['group_count'] = group_count
     group_data['avg_group_size'] = avg_group_size
     group_data['stdev_group_size'] = stdev_group_size
     group_data['avg_group_gap'] = avg_group_gap
@@ -144,6 +155,13 @@ def extract_finishing_time_distributions(race:Union[Race,Stage]):
     finish_time_data['gap_to_last'] = max(finishing_times)-min(finishing_times)
     finish_time_data['finishing_times_filled_proportion'] = finish_times_filled_proportion
     finish_time_data['non_finisher_proportion'] = non_finisher_proportion
+    finish_time_data['5th_percentile_gap'] = gaps_to_winner['5']
+    finish_time_data['10th_percentile_gap'] = gaps_to_winner['10']
+    finish_time_data['25th_percentile_gap'] = gaps_to_winner['25']
+    finish_time_data['50th_percentile_gap'] = gaps_to_winner['50']
+    finish_time_data['75th_percentile_gap'] = gaps_to_winner['75']
+    finish_time_data['90th_percentile_gap'] = gaps_to_winner['90']
+    finish_time_data['95th_percentile_gap'] = gaps_to_winner['95']
         
     #combine all the data into one dictionary
     all_data = {}
@@ -204,12 +222,12 @@ def generate_finishing_time_data_from_race(race:Race)->list:
                 print(f"Error processing {parent_race_name}, {stage.name}, {stage.year} for finishing time data")
                 continue
             #now let's get the rest of the data
-            if stage.name.strip() == "GC":
+            if "GC" in stage.name.strip():
                 race_type = "gc"
             else:
                 race_type = "stage"
             race_date = stage.date
-            race_name = f"{parent_race_name}: {stage.name}"
+            race_name = f"{parent_race_name}, {stage.name}"
             race_data_dict = {'race_id':race_id,'race_name':race_name,'tour_type':tour_type,'race_type':race_type,'race_date':race_date,'race_year':race_year}
             for sub_d in finishing_time_data.values():
                 race_data_dict.update(sub_d)
@@ -314,7 +332,12 @@ class RaceCharDB:
         filtered_df = df.copy()
         for col in [col for col in filtered_df.columns if col != 'winning_time']:
             #Calculate the zscore for each row in the column
-            zscores = zscore(filtered_df[col])
+            col_mean = filtered_df[col].mean()
+            col_std = filtered_df[col].std()
+            if col_std == 0.0:
+                print(f"Standard deviation of {col} is 0, setting to .001 to avoid divide by zero")
+                col_std = .001
+            zscores = (filtered_df[col] - col_mean) / col_std
             #Filter out the rows where the zscore is greater than 3.5
             filtered_df = filtered_df.loc[np.abs(zscores) <= z_score_limit]
         print(f"Outlier Races removed: {df.shape[0]-filtered_df.shape[0]}, {1-filtered_df.shape[0]/df.shape[0]:.2%}")
@@ -322,7 +345,7 @@ class RaceCharDB:
     
     
   
-    def gen_gc_db(self,outlier_limit:float=3.5) -> pd.DataFrame:
+    def gen_gc_db(self,outlier_limit:float=4.0) -> pd.DataFrame:
         gc_db = self.db[self.db['race_type'] == 'gc'].copy()
         if gc_db.shape[0] == 0:
             print("No GC results in the database for this year range")
@@ -331,9 +354,9 @@ class RaceCharDB:
         #drop the group and max group columns
         gc_db.drop(columns=['max_group_size','max_group_proportion','max_group_finish_time_percentile','max_group_position','max_group_zscore','max_group_gap_to_winner','group_count','avg_group_size','stdev_group_size','avg_group_gap','stdev_group_gap','proportion_grouped'],inplace=True) 
         #drop redundant columns
-        gc_db.drop(columns=['5th_percentile_zscore','10th_percentile_zscore','avg_gap','stdev_gap'],inplace=True)
+        gc_db.drop(columns=['winner_zscore','10th_percentile_zscore','avg_gap','stdev_gap'],inplace=True)
         #drop last place influence cols
-        gc_db.drop(columns=['gap_to_last','75th_percentile_zscore','90th_percentile_zscore','95th_percentile_zscore','last_zscore','finishing_times_filled_proportion'],inplace=True)
+        gc_db.drop(columns=['gap_to_last','75th_percentile_zscore','90th_percentile_zscore','95th_percentile_zscore','last_zscore','finishing_times_filled_proportion','75th_percentile_gap','90th_percentile_gap','95th_percentile_gap'],inplace=True)
         #get the data only colums to filter outliers
         gc_data_only = gc_db.drop(columns=self._non_data_cols)
         #filter outliers
@@ -344,15 +367,18 @@ class RaceCharDB:
         self.gc = final_gc_df
         return final_gc_df
 
-    def gen_one_day_db(self,outlier_limit:float=3.25) -> pd.DataFrame:
+    def gen_one_day_db(self,outlier_limit:float=4.0) -> pd.DataFrame:
         one_day_db = self.db[self.db['race_type']=='one_day'].copy()
         if one_day_db.shape[0] == 0:
             print(f"No one day races in the database for this year range")
             self.one_day = one_day_db
             return one_day_db
         #drop redundant columns
-        redundant_one_day_cols = ['max_group_proportion', 'stdev_group_size', 'avg_group_size','max_group_position','max_group_zscore',	'max_group_gap_to_winner','stdev_group_gap','avg_gap', 'gap_to_last']
+        redundant_one_day_cols = ['winner_zscore','max_group_proportion', 'stdev_group_size', 'avg_group_size','max_group_position','max_group_zscore',	'max_group_gap_to_winner','stdev_group_gap','avg_gap', 'gap_to_last']
         one_day_db.drop(columns=redundant_one_day_cols,inplace=True)
+        #Drop the back half of distribution columns
+        back_half_cols = ['75th_percentile_zscore','90th_percentile_zscore','95th_percentile_zscore','last_zscore','75th_percentile_gap','90th_percentile_gap','95th_percentile_gap']
+        one_day_db.drop(columns=back_half_cols,inplace=True)
         #filter outliers for one_day
         one_day_data_only = one_day_db.drop(columns=self._non_data_cols)
         one_day_filtered = self._filter_outliers(one_day_data_only,outlier_limit)
@@ -361,15 +387,17 @@ class RaceCharDB:
         self.one_day = one_day_final_df
         return one_day_final_df
     
-    def gen_stage_db(self,outlier_limit:float=3.25) -> pd.DataFrame:
+    def gen_stage_db(self,outlier_limit:float=4.0) -> pd.DataFrame:
         stage_db = self.db[self.db['race_type']=='stage'].copy()
         if stage_db.shape[0] == 0:
             print(f"No stages in the database for this year range")
             self.stage = stage_db
             return stage_db
         #drop redundant columns
-        redundant_stage_cols = ['max_group_proportion', 'stdev_group_size','max_group_position','max_group_gap_to_winner','stdev_gap','10th_percentile_zscore']
+        redundant_stage_cols = ['max_group_proportion', 'stdev_group_size','max_group_position','max_group_gap_to_winner','stdev_gap','winner_zscore','10th_percentile_zscore']
         stage_db.drop(columns=redundant_stage_cols,inplace=True)
+        back_half_cols = ['75th_percentile_zscore','90th_percentile_zscore','95th_percentile_zscore','last_zscore','gap_to_last','75th_percentile_gap','90th_percentile_gap','95th_percentile_gap']
+        stage_db.drop(columns=back_half_cols,inplace=True)
         #filter outliers for stages
         stage_data_only = stage_db.drop(columns=self._non_data_cols)
         stage_filtered = self._filter_outliers(stage_data_only,outlier_limit)
@@ -410,7 +438,8 @@ class RaceCharDB:
             #get the races where the fc_race_id is in the race_id column
             prior_race_history_db = prior_race_db.loc[prior_race_db['race_id'].astype(int)==fc_race_id].copy()
             if prior_race_history_db.shape[0] == 0:
-                print(f"{fc_race_id} not found in the races prior to {prior_to_date}")
+                pass
+                #print(f"{fc_race_id} not found in the races prior to {prior_to_date}")
             return prior_race_history_db
         else:
             return prior_race_db
@@ -425,20 +454,22 @@ class RaceCharDB:
             db = self.stage
             #if stage_name is None, return an error and message
             if stage_name is None:
-                print("You must provide a stage_name for stage lookup")
+                #print("You must provide a stage_name for stage lookup")
                 return None
         else:
-            print("You must select a race_type from 'gc', 'one_day', or 'stage'")
+            #print("You must select a race_type from 'gc', 'one_day', or 'stage'")
             return None
         if stage_name:
             race_data = db.loc[(db['race_id'].astype(int)==fc_race_id) & (db['race_year'].astype(int)==year)].copy()
             #get the row that contains the stage name in the race_name column
             stage_data = race_data.loc[race_data['race_name'].str.contains(stage_name,case=False)].copy()
             if stage_data.shape[0] == 0:
-                print(f"No data found for {fc_race_id} in {year} with stage name {stage_name}")
+                pass
+                #print(f"No data found for {fc_race_id} in {year} with stage name {stage_name}")
             return stage_data
         else:
             race_data = db.loc[(db['race_id'].astype(int)==fc_race_id) & (db['race_year'].astype(int)==year)].copy()
             if race_data.shape[0] == 0:
-                print(f"No data found for {fc_race_id} in {year}")
+                pass
+                #print(f"No data found for {fc_race_id} in {year}")
             return race_data
