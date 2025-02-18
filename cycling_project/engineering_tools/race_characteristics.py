@@ -72,6 +72,11 @@ def extract_finishing_time_distributions(race:Union[Race,Stage]):
     finish_times_filled_proportion = unique_finishing_times/possible_groups
     #Get the sizes of all the groups, ie count how many people have the same finishing time
     group_sizes = Counter(finishing_times)
+    #Get just the sizes of actual groups (ie groups larger than 1)
+    group_sizes_over_1 = [v for v in group_sizes.values() if v > 1]
+    if len(group_sizes_over_1)==0:
+        print(f"No groups larger than 1 found, setting group_sizes_over_1 to [0] to avoid divide by zero")
+        group_sizes_over_1 = [0]
     #Get the number of groups that are larger than 1
     group_count = len([k for k,v in group_sizes.items() if v > 1])
     #Get the number of riders in groups larger than 1
@@ -81,9 +86,9 @@ def extract_finishing_time_distributions(race:Union[Race,Stage]):
     #Get the max group size
     max_group_size = max(group_sizes.values())
     #get the average group size
-    avg_group_size = sum(group_sizes.values())/len(group_sizes)
+    avg_group_size = sum(group_sizes_over_1)/len(group_sizes_over_1)
     #get the std deviation of the group sizes
-    stdev_group_size = np.std(list(group_sizes.values()))
+    stdev_group_size = np.std(group_sizes_over_1)
     #get the proportion of the total field that is in the largest group
     max_group_proportion = max_group_size/len(race.results)
     #find the group that is the size of the largest group size and has the lowest finishing time
@@ -93,16 +98,16 @@ def extract_finishing_time_distributions(race:Union[Race,Stage]):
     max_group_percentile = finishing_times.index(min_max_group_time)/len(finishing_times)
     #get the max group finishing position
     max_group_position = finishing_times.index(min_max_group_time) + 1
-    #get the zscore for the 5th, 10th, 25th, 75th, 90th, 95th percetile finishing times
-    zscores = {}
+    #get the zscore for the 0th through 50th percentile times, focusing only on the front half as the back half is often compromised in terms of effort.
+    front_half_zscores = {}
     if np.std(finishing_times) == 0.0:
         print(f"Standard deviation of finishing times is 0, setting to .001 to avoid divide by zero")
         finish_stdev = .001
     else:
         finish_stdev = np.std(finishing_times)
     
-    for percentile in [5,10,25,50,75,90,95]:
-        zscores[str(percentile)] = (np.percentile(finishing_times,percentile)-np.mean(finishing_times))/finish_stdev
+    for percentile in [0,5,10,15,20,25,30,35,40,45,50]:
+        front_half_zscores[str(percentile)] = (np.percentile(finishing_times,percentile)-np.mean(finishing_times))/finish_stdev
     #get the finishing time zscore for the winner
     winner_zscore = (min(finishing_times)-np.mean(finishing_times))/finish_stdev
     #get the finishing time zscore for the last finisher
@@ -139,13 +144,16 @@ def extract_finishing_time_distributions(race:Union[Race,Stage]):
     distribution_data = {}
     distribution_data['winner_zscore'] = winner_zscore
     distribution_data['last_zscore'] = last_zscore
-    distribution_data['5th_percentile_zscore'] = zscores['5']
-    distribution_data['10th_percentile_zscore'] = zscores['10']
-    distribution_data['25th_percentile_zscore'] = zscores['25']
-    distribution_data['50th_percentile_zscore'] = zscores['50']
-    distribution_data['75th_percentile_zscore'] = zscores['75']
-    distribution_data['90th_percentile_zscore'] = zscores['90']
-    distribution_data['95th_percentile_zscore'] = zscores['95']
+    distribution_data['5th_percentile_zscore'] = front_half_zscores['5']
+    distribution_data['10th_percentile_zscore'] = front_half_zscores['10']
+    distribution_data['15th_percentile_zscore'] = front_half_zscores['15']
+    distribution_data['20th_percentile_zscore'] = front_half_zscores['20']
+    distribution_data['25th_percentile_zscore'] = front_half_zscores['25']
+    distribution_data['30th_percentile_zscore'] = front_half_zscores['30']
+    distribution_data['35th_percentile_zscore'] = front_half_zscores['35']
+    distribution_data['40th_percentile_zscore'] = front_half_zscores['40']
+    distribution_data['45th_percentile_zscore'] = front_half_zscores['45']
+    distribution_data['50th_percentile_zscore'] = front_half_zscores['50']
     
     #Finishing time data
     finish_time_data = {}
@@ -345,7 +353,7 @@ class RaceCharDB:
     
     
   
-    def gen_gc_db(self,outlier_limit:float=4.0) -> pd.DataFrame:
+    def gen_gc_db(self,outlier_limit:float=5.0) -> pd.DataFrame:
         gc_db = self.db[self.db['race_type'] == 'gc'].copy()
         if gc_db.shape[0] == 0:
             print("No GC results in the database for this year range")
@@ -367,7 +375,7 @@ class RaceCharDB:
         self.gc = final_gc_df
         return final_gc_df
 
-    def gen_one_day_db(self,outlier_limit:float=4.0) -> pd.DataFrame:
+    def gen_one_day_db(self,outlier_limit:float=5.0) -> pd.DataFrame:
         one_day_db = self.db[self.db['race_type']=='one_day'].copy()
         if one_day_db.shape[0] == 0:
             print(f"No one day races in the database for this year range")
@@ -387,7 +395,7 @@ class RaceCharDB:
         self.one_day = one_day_final_df
         return one_day_final_df
     
-    def gen_stage_db(self,outlier_limit:float=4.0) -> pd.DataFrame:
+    def gen_stage_db(self,outlier_limit:float=5.0) -> pd.DataFrame:
         stage_db = self.db[self.db['race_type']=='stage'].copy()
         if stage_db.shape[0] == 0:
             print(f"No stages in the database for this year range")
