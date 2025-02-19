@@ -7,8 +7,11 @@
 from cycling_project.webscrape_tools.create_race_data import Race,Stage
 from cycling_project.engineering_tools.race_characteristics import extract_finishing_time_distributions,generate_finishing_time_data_from_race, generate_finishing_time_data_from_tour, generate_finishing_time_data_from_year
 from cycling_project.data_loading_tools.load_scraped_data import load_db, load_year_path,FCCyclingDB,FCCyclingTour,FCCyclingYear,DB_PATH
+import os
+import pandas as pd
 import numpy as np
-from typing import Union
+from typing import Union,List
+from datetime import datetime
 
 ## Biggest Group Metric:
 ## This metric goes up the larger the group and the closer to the front this group is.
@@ -217,3 +220,94 @@ def process_year_for_five_dimensions(year:FCCyclingYear)->list:
     #process d1
     five_dim_year_data.extend(process_tour_for_five_dimensinos(year.d1))
     return five_dim_year_data
+
+def create_five_dim_db(year_range:List[int],db_path:str=DB_PATH)->list:
+    """"""
+    #First, load the race db
+    db_data = []
+    for year in year_range:
+        year_path = os.path.join(db_path,str(year))
+        year_db = load_year_path(year_path)
+        year_five_dim_l = process_year_for_five_dimensions(year_db)
+        db_data.extend(year_five_dim_l)
+        
+    db_data_dict = {}
+    i = 0
+    for race_dict in db_data:
+        db_data_dict[i] = race_dict
+        i += 1
+    db_data_df_full = pd.DataFrame.from_dict(db_data_dict,orient='index')
+    key_cols_f_d = ['race_id','race_name','tour_type','race_type','race_date','race_year','total_time', 'abandon_proportion','biggest_group', 'shattered', 'clumpiness']
+    return db_data_df_full[key_cols_f_d].copy()
+
+class FiveDimDB:
+    def __init__(self,year_range:List[int],db_path:str=DB_PATH):
+        self.db = create_five_dim_db(year_range=year_range,db_path=db_path)
+        self._non_data_cols = ['race_id','race_name','tour_type','race_type','race_date','race_year']
+        self._five_dim_cols = ['total_time', 'abandon_proportion','biggest_group', 'shattered', 'clumpiness']
+        self.gc = self.db[self.db['race_type'].str.lower().str.strip() == 'gc'].copy()
+        self.one_day = self.db[self.db['race_type'].str.lower().str.strip() == 'one_day'].copy()
+        self.stage = self.db[self.db['race_type'].str.lower().str.strip() == 'stage'].copy()
+    
+    def race_lookup(self,fc_race_id:int,race_type:str,year:int,stage_name:str|None=None)->pd.DataFrame:
+        #get the right db
+        if race_type.lower().strip()=='gc':
+            db = self.gc
+        elif race_type.lower().strip()=='one_day':
+            db = self.one_day
+        elif race_type.lower().strip()=='stage':
+            db = self.stage
+            #if stage_name is None, return an error and message
+            if stage_name is None:
+                #print("You must provide a stage_name for stage lookup")
+                return None
+        else:
+            #print("You must select a race_type from 'gc', 'one_day', or 'stage'")
+            return None
+        if stage_name:
+            race_data = db.loc[(db['race_id'].astype(int)==fc_race_id) & (db['race_year'].astype(int)==year)].copy()
+            #get the row that contains the stage name in the race_name column
+            stage_data = race_data.loc[race_data['race_name'].str.contains(stage_name,case=False)].copy()
+            if stage_data.shape[0] == 0:
+                pass
+                #print(f"No data found for {fc_race_id} in {year} with stage name {stage_name}")
+            return stage_data
+        else:
+            race_data = db.loc[(db['race_id'].astype(int)==fc_race_id) & (db['race_year'].astype(int)==year)].copy()
+            if race_data.shape[0] == 0:
+                pass
+                #print(f"No data found for {fc_race_id} in {year}")
+            return race_data
+    
+    def find_prior_races(self,race_type:str,prior_to_date:str,fc_race_id:int|None=None)->pd.DataFrame:
+        #convert prior to date to datetime
+        try:
+            prior_to_date_dto = datetime.strptime(prior_to_date,'%Y-%m-%d')
+        except:
+            print(f"Error converting {prior_to_date} to datetime. Make sure it is YYYY-MM-DD")
+            return None
+        #get the right db
+        if race_type.lower().strip()=='gc':
+            db = self.gc
+        elif race_type.lower().strip()=='one_day':
+            db = self.one_day
+        elif race_type.lower().strip()=='stage':
+            db = self.stage
+        else:
+            print("You must select a race_type from 'gc', 'one_day', or 'stage'")
+            return None
+        #Filter db for rows only with dates prior to prior_to_date
+        prior_race_db = db.loc[db['race_date'] < prior_to_date_dto].copy()
+        if prior_race_db.shape[0] == 0:
+            print(f"{race_type} has no races prior to {prior_to_date}")
+            return prior_race_db 
+        #If fc_race_id is provided, only get those races as well
+        if fc_race_id is not None:
+            #get the races where the fc_race_id is in the race_id column
+            prior_race_history_db = prior_race_db.loc[prior_race_db['race_id'].astype(int)==fc_race_id].copy()
+            if prior_race_history_db.shape[0] == 0:
+                pass
+                #print(f"{fc_race_id} not found in the races prior to {prior_to_date}")
+            return prior_race_history_db
+        else:
+            return prior_race_db

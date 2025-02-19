@@ -14,14 +14,16 @@
 
 from typing import List,Union
 from cycling_project.webscrape_tools.create_race_data import Race,Stage
-from cycling_project.engineering_tools.race_characteristics import RaceCharDB,extract_finishing_time_distributions
+from cycling_project.engineering_tools.race_kinds import FiveDimDB
 from cycling_project.engineering_tools.rider_race_char_scores import RiderRaceCharScores
+from cycling_project.engineering_tools.race_characteristics import extract_finishing_time_distributions
 from cycling_project.engineering_tools.place_handling import place_bucketer
+from cycling_project.engineering_tools.race_kinds import calculate_five_race_dimensions,process_race_for_five_dimensions
 from random import shuffle
 import pandas as pd
 
 #create the RaceCharDB
-race_char_db = RaceCharDB(year_range=range(2010,2025))
+race_char_db = FiveDimDB(year_range=range(2010,2025))
 
 
 def predict_race_on_chars(race:Union[Race,Stage]):
@@ -31,9 +33,18 @@ def predict_race_on_chars(race:Union[Race,Stage]):
         print(f"{race.name} does not have time data for finishing time distribution characteristics.")
         return None
     #go through each rider result and predict finishing place bucket based on their model. Set default to 6.0
-    if race.results is None or len(race.results) < 15:
+    
+    if race.results is None or len(race.results) < 23:
         print(f"{race.name} has too few results to predict.")
         return None
+    #flatten race_char dict if not already flat
+    flat_race_char = {}
+    for k,v in race_char.items():
+        if not isinstance(v,dict):
+            flat_race_char[k] = v
+        else:
+            flat_race_char.update(v)
+    race_char = calculate_five_race_dimensions(flat_race_char )
     #get the race year
     race_predictions = {}
     for res_dict in race.results:
@@ -131,7 +142,7 @@ def predict_race_on_chars(race:Union[Race,Stage]):
         else:
             predicted_place_capped = predicted_place
         #create a bucketed place
-        bucketed_predicted_place = place_bucketer(int(predicted_place_capped))
+        bucketed_predicted_place = int(predicted_place_capped)
         #append rider_id, rider_name, predicted place, bucketed actual place) to predictions
         race_predictions[rider_id] = {'rider_name':rider.rider_name,'predicted_place_raw':predicted_place,'predicted_place_capped':predicted_place_capped,'predicted_place_bucketed':bucketed_predicted_place,'actual_place':actual_place_bucketed}
         #race_predictions[rider_id].update(thresholds_dict[rider_id])
@@ -148,7 +159,7 @@ def predict_race_on_chars(race:Union[Race,Stage]):
     pred_df['predicted_race_bucketed'] = pred_df['predicted_race_place'].apply(place_bucketer)
     #Create a random race ordering
     possible_places = list(range(1,len(pred_df)+1))
-    for i in range(5):
+    for i in range(20):
         shuffle(possible_places)
     pred_df['random_race_order'] = possible_places
     pred_df['bucketed_random_race_order'] = pred_df['random_race_order'].apply(place_bucketer)

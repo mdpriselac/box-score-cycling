@@ -7,7 +7,7 @@
 from cycling_project.data_loading_tools.create_rider_data import create_rider_db,DB_PATH
 #Get the place bucketer function
 from cycling_project.engineering_tools.place_handling import place_bucketer
-from cycling_project.engineering_tools.race_characteristics import RaceCharDB
+from cycling_project.engineering_tools.race_kinds import FiveDimDB
 #get the regression tools
 #from mord import LogisticAT
 from sklearn.linear_model import LinearRegression
@@ -91,7 +91,7 @@ class RiderRaceCharScores:
         self.one_day_scaler = None
         self.stage_scaler = None
     
-    def generate_training_data(self,ref_race_char_db:RaceCharDB):
+    def generate_training_data(self,ref_race_char_db:FiveDimDB):
         gc_data = []
         one_day_data = []
         stage_data = []
@@ -126,7 +126,7 @@ class RiderRaceCharScores:
             stage_data = None
         return gc_data, one_day_data, stage_data
     
-    def train_models(self,race_char_db:RaceCharDB):
+    def train_models(self,race_char_db:FiveDimDB):
         #go back through and add error and sample size tracking meta data
         gc_data, one_day_data, stage_data = self.generate_training_data(ref_race_char_db=race_char_db)
         cols_to_drop = ['actual_place'] + race_char_db._non_data_cols
