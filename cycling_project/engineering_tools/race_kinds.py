@@ -4,106 +4,132 @@
 ## We're going to have a shattered score, riders are distributed relatively evenly across a wide range of finish times. This dimension will find time trials and mountain top finishes stages
 ## We're going to have a clumpiness score, riders are distributed in a few clumps. This dimension will find hilly stages
 ## We're going to have a total finish time score. This dimension will find time trials and long hard stages.
-from cycling_project.webscrape_tools.create_race_data import Race,Stage
-from cycling_project.engineering_tools.race_characteristics import extract_finishing_time_distributions,generate_finishing_time_data_from_race, generate_finishing_time_data_from_tour, generate_finishing_time_data_from_year
-from cycling_project.data_loading_tools.load_scraped_data import load_db, load_year_path,FCCyclingDB,FCCyclingTour,FCCyclingYear,DB_PATH
+from cycling_project.webscrape_tools.create_race_data import Race
+from cycling_project.engineering_tools.race_characteristics import generate_finishing_time_data_from_race, generate_finishing_time_data_from_tour, generate_finishing_time_data_from_year
+from cycling_project.data_loading_tools.load_scraped_data import load_year_path,FCCyclingTour,FCCyclingYear,DB_PATH
 import os
 import pandas as pd
 import numpy as np
-from typing import Union,List
+from typing import List
 from datetime import datetime
 
 ## Biggest Group Metric:
 ## This metric goes up the larger the group and the closer to the front this group is.
-def biggest_group_metric(finish_time_dist_dict:dict)->float:
-    #First, get max group size based component of the score
-    #max_group_data = finish_time_dist_dict['max_group_data'] #the max time data will be unpacked already
-    #get the raw size of the group    
-    max_group_size = finish_time_dist_dict['max_group_size']
-    #Get the proportional size of the group
+def biggest_group_metric(finish_time_dist_dict: dict) -> float:
+    """
+    Calculate a metric that represents the size and influence of the biggest group in a bike race.
+    Returns a normalized score between 0 and 1, where:
+    - 1 means the entire race finishes in one group and the winner is in that group
+    - 0 means either no significant group or the largest group had no influence on the race outcome
+    
+    Args:
+        finish_time_dist_dict: Dictionary output by the extract_finishing_time_distributions function
+                              from the race_characteristics module.
+    
+    Returns:
+        float: A score between 0 and 1 representing the size and influence of the biggest group
+    """
+    # Extract data about the biggest group
     max_group_proportion = finish_time_dist_dict['max_group_proportion']
-    #We want the size score to go up primarily based on the size of the group and then that score can be boosted further by the higher proportion of the race that finished in the group.
-    #At most the final size score should go up 50% if the entire race finishes in the group. So, divide the max_group_proportion by 2 and multiply the result + 1 by the max group size.
-    size_score = max_group_size * (1 + (max_group_proportion / 2)) 
-    #Second, now that we have a size score, let's get an influence score by seeing how close the the front of the race.
-    #Let's start with the max_group_position. A winning max group would be 1. Once max group is below 25th percentile it's not really a part of the race. We can have a sliding scale from there that falls off more rapidly the further from the winning position you get
     max_group_percentile = finish_time_dist_dict['max_group_finish_time_percentile']
-    # We want the influence score to fall off faster initially and then more gradually as you get closer to the 25th percentile.
-    influence_score = max((1 - (max_group_percentile/.20)),0) ** 2.5
-    if influence_score < 0:
-        influence_score = 0.0
-    #Now we can multiply the size score by the influence score to get the final score
-    final_group_score = size_score * influence_score
-    #Finally, let's make sure we're in a reasonable score range. The max score possible here is something like 270 if you have ~180 riders, all of them finish in the last group and the group wins. Let's divide by 300
-    final_group_score = final_group_score / 200
-    #We're now scaled approximately between 0 and 1
-    return final_group_score
+    
+    # Size component: normalized directly using proportion rather than raw size
+    # This ensures this component is already between 0 and 1
+    size_score = max_group_proportion
+    
+    # Influence component: how close to the front of the race
+    # Transformed to be between 0 and 1, with emphasis on being near the front
+    # Using a sigmoid-like function to create a smooth falloff
+    if max_group_percentile <= 0.01:  # If the group contains the winner
+        influence_score = 1.0
+    else:
+        # Set cutoff at 30% (0.30) - groups beyond this point have minimal influence
+        cutoff = 0.3
+        if max_group_percentile >= cutoff:
+            influence_score = 0.0
+        else:
+            # Use a power function for smooth falloff between 0 and cutoff
+            # Higher powers increase the penalty for being further from the front
+            influence_score = ((cutoff - max_group_percentile) / cutoff) ** 2
+    
+    # Final score combines size and influence
+    # Using a weighted geometric mean to ensure result is between 0 and 1
+    # Adjusting weights to prioritize influence over size (0.6 vs 0.4)
+    final_score = (size_score ** 0.3) * (influence_score ** 0.7)
+    
+    return final_score
 
 
 ## Evenness Metric:
 ## This metric goes up the more evenly distributed the riders are across the finish times.
-def time_gap_evenness_metric(finish_time_dist_dict:dict)->float:
+def time_gap_evenness_metric(finish_time_dist_dict: dict) -> float:
     """
-    Calculate a metric that:
-    1. Increases with larger differences between gaps
-    2. Heavily penalizes zero differences
-    3. Rewards more uniform (but non-zero) differences
+    Create a metric that measures how evenly distributed finishing times are across the space of possible finishing times.
+    A perfect score of 1.0 indicates perfectly even spacing between each percentile.
     
     Args:
-        finish_time_dist_dict: the dict of race finishing characteristics
-    """
-    #Get the zscore data
-    #zscore_data = finish_time_dist_dict['distribution_data'] the zscore data will be unpacked already
-    pct_0 = finish_time_dist_dict['winner_zscore']
-    pct_5 = finish_time_dist_dict['5th_percentile_zscore']
-    pct_10 = finish_time_dist_dict['10th_percentile_zscore']
-    pct_15 = finish_time_dist_dict['15th_percentile_zscore']
-    pct_20 = finish_time_dist_dict['20th_percentile_zscore']
-    pct_25 = finish_time_dist_dict['25th_percentile_zscore']
-    pct_30 = finish_time_dist_dict['30th_percentile_zscore']
-    pct_35 = finish_time_dist_dict['35th_percentile_zscore']
-    pct_40 = finish_time_dist_dict['40th_percentile_zscore']
-    pct_45 = finish_time_dist_dict['45th_percentile_zscore']
-    pct_50 = finish_time_dist_dict['50th_percentile_zscore']
-    # if these are all the same, we want a low shattered score. if these are all different but evenly spaced out we want a high shattered score.
-    # We can use the variance of these numbers to get a sense of how evenly spaced they are.
-    gaps = [pct_0,pct_5, pct_10, pct_15, pct_20, pct_25, pct_30, pct_35, pct_40, pct_45, pct_50]
-    gap_diffs = np.diff(gaps)
-    gap_diff_var = np.var(gap_diffs)
-
-    # Penalize zero differences
-    zero_penalty = np.sum(gap_diffs == 0) * 0.1
+        finish_time_dist_dict: the dict produced by the extract_finishing_time_distributions function.
     
-    # Get average difference size (excluding zeros)
-    non_zero_diffs = gap_diffs[gap_diffs != 0]
-    if len(non_zero_diffs) == 0:
+    Returns:
+        a float between 0 and 1 representing the evenness of the finish times.
+    """
+    # Get the gap data
+    pct_winner = 0
+    pct_5 = finish_time_dist_dict['5th_percentile_gap']
+    pct_10 = finish_time_dist_dict['10th_percentile_gap']
+    pct_15 = finish_time_dist_dict['15th_percentile_gap']
+    pct_20 = finish_time_dist_dict['20th_percentile_gap']
+    pct_25 = finish_time_dist_dict['25th_percentile_gap']
+    pct_30 = finish_time_dist_dict['30th_percentile_gap']
+    pct_35 = finish_time_dist_dict['35th_percentile_gap']
+    pct_40 = finish_time_dist_dict['40th_percentile_gap']
+    pct_45 = finish_time_dist_dict['45th_percentile_gap']
+    pct_50 = finish_time_dist_dict['50th_percentile_gap']
+    
+    # If there are no time gaps, return 0
+    if pct_50 == pct_winner:
         return 0
     
-    avg_diff = np.mean(non_zero_diffs)
+    # Get the raw gaps
+    gaps = [pct_winner, pct_5, pct_10, pct_15, pct_20, pct_25, pct_30, pct_35, pct_40, pct_45, pct_50]
     
-    # Reward larger differences but normalize to prevent extreme values
-    size_component = avg_diff
+    # Calculate the differences between consecutive gaps
+    gap_diffs = np.diff(gaps)
     
-    # Reward lower variance (but avoid dividing by zero)
-    variance_component = 1 / (1 + gap_diff_var)
+    # If there are any zero differences, apply penalty
+    zero_count = np.sum(gap_diffs == 0)
+    zero_penalty = zero_count * 0.1
     
-    # Combine components
-    metric = (size_component * variance_component) - zero_penalty
+    # In a perfectly even distribution, all differences would be equal
     
-    # Ensure non-negative result
-    return max(0, metric)
+    # Calculate how much each actual difference deviates from the ideal
+    # Use coefficient of variation (normalized measure of dispersion)
+    if np.mean(gap_diffs) > 0:
+        cv = np.std(gap_diffs) / np.mean(gap_diffs)
+        # When CV=0, differences are perfectly even
+        evenness_score = 1 / (1 + cv)
+    else:
+        evenness_score = 0
+    
+    # Apply zero penalty
+    final_score = evenness_score * (1 - zero_penalty)
+    
+    # Ensure bounds between 0 and 1
+    return final_score
     
 def calculate_clumpiness_score(finish_time_dist_dict:dict)->float:
     """
-    Calculate a clumpiness metric that:
-    1. Increases with more groups (group_count)
-    2. Increases with higher proportion of riders in groups (proportion_grouped)
-    3. Decreases with larger average group size (avg_group_size)
+    Calculates a clumpiness metric from a finishing time data distribution dictinoary produced by the extract_finishing_time_distributions function in the race_characteristics module.
+    The metric works as follows:
     
+    1. Increases with more groups (group_count), up to 15 groups
+    2. Increases with higher proportion of riders in groups (proportion_grouped)
+    3. Increases with groups around the sweetspot of clumpiness of 5-15 average group size, decreases outside of that range, and gets set to 0 when too big.
+    
+    The goal of the metric is to find races that are clumpy. That is, it is not a shattered race where everyone is on their own. Instead they have been broken into a few groups.
+    There is a size penalty functino in here that is designed to penalize the score when the average group size is too small (under 5) or too large (over 15). This is to avoid rewarding shattered races or big group finishes. We want to find the clumpy races here.
     Args:
-        group_count: Number of groups
-        proportion_grouped: Proportion of riders in groups (0-1)
-        avg_group_size: Average size of groups
+        finish_time_dist_dict: the dict produced by the extract_finishing_time_distributions function
     """
     #get the group data
     #group_data = finish_time_dist_dict['group_data'] #the group data should be unpacked already
@@ -112,35 +138,32 @@ def calculate_clumpiness_score(finish_time_dist_dict:dict)->float:
     avg_group_size = finish_time_dist_dict['avg_group_size']
     
     
-    
-    # Normalize group count (assuming max ~90 groups as might happen in time trials )
-    group_component = group_count/90
+    # Normalize group count by assuming 15. If we have more than 15 total groups in a race we've got something clumpy to shattered. Fewer than 15 we're really looking at a group or reduced group sprint probably. Much more than 15 and we're headed towards shattered.
+    # So, we can divide by 15 and then cap at 1. This will give us a score between 0 and 1 for this component
+    group_component = min(group_count/15,1)
     
     # Use proportion_grouped directly (already 0-1)
     proportion_component = proportion_grouped
     
     # Penalize or reward group sizes based on a smooth function
-    # Create a parabolic size penalty that's minimal around 10, increases sharply below 5 and above 15
-    def size_penalty_function(x):
-        # Shift the parabola to have minimum at x=10
-        shifted_x = (x - 10)
-        # Scale the parabola to be gentle in the middle and steep at edges
-        if x <= 4:
-            # Sharp penalty for very small groups
-            return max(0, 1 - (x/4)**2)
-        elif x >= 25:
-            # Sharp penalty for large groups
-            return max(0, 1 - ((50-x)/25)**2)
-        else:
-            # Gentle curve in the sweet spot
-            return 1 - (shifted_x/10)**2
-
-    size_penalty = size_penalty_function(avg_group_size)
+    # Create a parabolic size penalty function. Between 5 and 15 the size score will be between 2 and 2.75, increasing from 2 to 2.75 and then decreasing from 2.75 to 2 as you move from 5 to 10 and then 10 to 5. 
+    # At 1 is is about a .3 discount, and above 20 it gets negative again meaning we don't have a clumpy race. At 18 it dips below 1 and so starts to be a slight penalty.
+    # Need to rework the key stats here to take into account only the top half of the race.
+    def size_multiplier(x):
+        # 
+        return  2.75 - 0.03*(x - 10)**2
+    
+    #This will naturally set to 0 cases where the average group size is bigger than 15.
+    size_score = size_multiplier(avg_group_size)
     
     # Combine components with weights
-    metric = (group_component * .5 + proportion_component * .5) * size_penalty
-    
-    return max(0, min(1, metric))
+    #Group component will be bewteen 0 and 1, proportion component will be between 0 and 1, size score will max at 2.75 or be negative. To normalize between 0 and 1, we can divide by 2.75
+    metric = group_component * proportion_component * size_score
+    # Ensure non-negative result
+    metric = max(0, metric)
+    #normalize the metric to be between 0 and 1
+    normalized_metric = metric / 2.75
+    return normalized_metric
 
 #Now we have three metrics. let's create our final five dimensional race rating score: total time, abandon proportion, biggest group, shattered, clumpiness
 def calculate_five_race_dimensions(finish_time_dist_dict:dict)->dict:
@@ -170,7 +193,12 @@ def calculate_five_race_dimensions(finish_time_dist_dict:dict)->dict:
     return {'total_time':normalized_total_time, 'abandon_proportion':abaondon_proportion, 'biggest_group':biggest_group, 'shattered':shattered, 'clumpiness':clumpiness}
 
 def process_race_for_five_dimensions(race:Race)->dict:
-    """Take in a competition object and return the five dimensional rating"""
+    """Take in a competition object and return the five dimensional rating for each competition (ie a one day, stage, or gc) in the race object. It simply adds the five dimension race data dict to the existing tiem distribution data dict for each dict in the list generated by getting the race time distribution data for each competition in the race object.
+    Args:
+        race: a race object (ie a one day or stage race)
+    Returns:
+        a list of dicts with the five dimensional data added to the existing time distribution data
+        """
     #First, check if we can get finishing time data from it
     race_data = generate_finishing_time_data_from_race(race)
     if len(race_data) == 0:
@@ -189,7 +217,12 @@ def process_race_for_five_dimensions(race:Race)->dict:
     return five_dim_race_data
 
 def process_tour_for_five_dimensinos(tour:FCCyclingTour)->list:
-    """Take in a tour object and return the five dimensional rating"""
+    """Take in a tour object and return the five dimensional rating and time distribution data for each competitoin object (gc, stage, one day) in the tour.
+    Args:
+        tour: a tour object with races
+    Returns:
+        a list of dicts with the five dimensional data added to the existing time distribution data
+    """
     #First, check if we can get finishing time data from it
     tour_data = generate_finishing_time_data_from_tour(tour)
     if len(tour_data) == 0:
@@ -207,7 +240,12 @@ def process_tour_for_five_dimensinos(tour:FCCyclingTour)->list:
     return five_dim_tour_data
 
 def process_year_for_five_dimensions(year:FCCyclingYear)->list:
-    """Take in a year object and return the five dimensional rating"""
+    """Take in a year object and return the five dimensional rating for each race within each tour level in the year.
+    Args:
+        year: a year object with tours
+    Returns:
+        a list of dicts with the five dimensional data added to the existing time distribution data
+    """
     #First, check if we can get finishing time data from it
     year_data = generate_finishing_time_data_from_year(year)
     if len(year_data) == 0:
@@ -221,8 +259,15 @@ def process_year_for_five_dimensions(year:FCCyclingYear)->list:
     five_dim_year_data.extend(process_tour_for_five_dimensinos(year.d1))
     return five_dim_year_data
 
-def create_five_dim_db(year_range:List[int],db_path:str=DB_PATH)->list:
-    """"""
+def create_five_dim_db(year_range:List[int],db_path:str=DB_PATH)->pd.DataFrame:
+    """
+    Given a list of years as integers from 2010 to 2025, and a db_path for a db with years as folders, return a pandas DataFrame with race id, name, tour type, race type, date, year, and the five dimensions as columns in the dataframe. Each row is a race.
+    Args:
+        year_range: a list of years as integers from 2010 to 2025
+        db_path: the path to the db with years as folders, optional
+    Returns:
+        dataframe with all races, key identifying race info and five dimensions
+    """
     #First, load the race db
     db_data = []
     for year in year_range:
@@ -241,6 +286,9 @@ def create_five_dim_db(year_range:List[int],db_path:str=DB_PATH)->list:
     return db_data_df_full[key_cols_f_d].copy()
 
 class FiveDimDB:
+    """
+    A class for creating and managing a race database where races have the five key dimensions and identifying race data.
+    The class object is initialized with a year range (list of ints) and an optional db_path (path to the db with years as folders). The class has methods for looking up specific races and finding all races prior to a give date."""
     def __init__(self,year_range:List[int],db_path:str=DB_PATH):
         self.db = create_five_dim_db(year_range=year_range,db_path=db_path)
         self._non_data_cols = ['race_id','race_name','tour_type','race_type','race_date','race_year']
@@ -250,6 +298,17 @@ class FiveDimDB:
         self.stage = self.db[self.db['race_type'].str.lower().str.strip() == 'stage'].copy()
     
     def race_lookup(self,fc_race_id:int,race_type:str,year:int,stage_name:str|None=None)->pd.DataFrame:
+        """
+        Given a race_id, race_type (gc, one_day, stage), year, and optional stage_name (if selecting a stage), return a
+        dataframe where the row is the specified race data.
+        Args:
+            fc_race_id: an int that is the fc_race_id of the race
+            race_type: a string (gc, one_day, stage) that is the type of race
+            year: an int that is the year you're interested in
+            stage_name: an optional string that is the name of the stage you're interested in. mandatory if selecting stage race_type.
+        Returns:
+            a one row dataframe with the race data in question."""
+        
         #get the right db
         if race_type.lower().strip()=='gc':
             db = self.gc
@@ -280,6 +339,16 @@ class FiveDimDB:
             return race_data
     
     def find_prior_races(self,race_type:str,prior_to_date:str,fc_race_id:int|None=None)->pd.DataFrame:
+        """
+        Given a race_type, a prior_to_date (YYYY-MM-DD), and an optional fc_race_id as int, return a dataframe with all races of the specified race_type that happened prior to teh given date.
+        Args:
+            race_type: a string (gc, one_day, stage) that is the race type you're interested in
+            prior_to_date: a string that is the date you're interested in (YYYY-MM-DD)
+            fc_race_id: an optional int that represents the race id of a specific race
+        Returns:
+            a dataframe with all the prior races in the db to the specified date of the specified race type"""
+        
+        
         #convert prior to date to datetime
         try:
             prior_to_date_dto = datetime.strptime(prior_to_date,'%Y-%m-%d')

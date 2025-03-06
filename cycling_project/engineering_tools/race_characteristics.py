@@ -9,15 +9,24 @@ from typing import List
 import os
 import pandas as pd
 
-def extract_finishing_time_distributions(race:Union[Race,Stage]):
+def extract_finishing_time_distributions(race:Union[Race,Stage])->Union[dict,None]:
+    """
+    Given a race competition (ie a Race object for a one day or a stage object), check if there are finishing times and extract the finishing time distribution patterns we're interested in.
+    Returns a dictionary with four keys, each of which contains a dictionary of the data we're interested in. The keys are max_group_data, group_data, distribution_data, and finish_time_data.
+    Args: 
+        race: the race to extract finishing time data from (Race object or Stage object)
+    Returns:
+        a dictionary with four keys, each of which contains a dictionary of the data we're interested in. The keys are max_group_data, group_data, distribution_data, and finish_time_data.
+    """
     #check for null results
     if race.results is None:
         print(f"{race.name} has no results, skipping finishing time distributions")
         return None
     #check for empty results
-    if len(race.results) < 20:
+    if len(race.results) < 30:
         print(f"{race.name} has too few results, skipping finishing time distributions")
         return None
+    
     if isinstance(race,Race):
         race_time = race.race_time
     elif isinstance(race,Stage):
@@ -32,6 +41,10 @@ def extract_finishing_time_distributions(race:Union[Race,Stage]):
         print(f"{race.name} has no times, skipping finishing time distributions")
         return None
     total_time = race_time
+    #Check if we pulled GC from a TTT stage for a stage race
+    if total_time/14400 >=1.9 and 'stage:' in race.name.lower():
+        print(f"{race.name} has too long of a race time (over 7hrs 40min), probably pulling GC times for a TTT stage skipping finishing time distributions")
+        return None
     finishing_gaps = []
     for result in race.results:
         if isinstance(result.get('gap'),(float,int)):
@@ -116,7 +129,7 @@ def extract_finishing_time_distributions(race:Union[Race,Stage]):
     max_group_zscore = (min_max_group_time-np.mean(finishing_times))/finish_stdev
     #get the gap to the winner for the 5th, 10th, 25th, 75th, 90th and 95th percentile finishing times
     gaps_to_winner = {}
-    for percentile in [5,10,25,50,75,90,95]:
+    for percentile in [5,10,15,20,25,30,35,40,45,50]:
         gaps_to_winner[str(percentile)] = np.percentile(finishing_times,percentile)-min(finishing_times)
     #get the gap to the winner for the max group finishing time
     max_group_gap_to_winner = min_max_group_time-min(finishing_times)
@@ -165,11 +178,14 @@ def extract_finishing_time_distributions(race:Union[Race,Stage]):
     finish_time_data['non_finisher_proportion'] = non_finisher_proportion
     finish_time_data['5th_percentile_gap'] = gaps_to_winner['5']
     finish_time_data['10th_percentile_gap'] = gaps_to_winner['10']
+    finish_time_data['15th_percentile_gap'] = gaps_to_winner['15']
+    finish_time_data['20th_percentile_gap'] = gaps_to_winner['20']
     finish_time_data['25th_percentile_gap'] = gaps_to_winner['25']
+    finish_time_data['30th_percentile_gap'] = gaps_to_winner['30']
+    finish_time_data['35th_percentile_gap'] = gaps_to_winner['35']
+    finish_time_data['40th_percentile_gap'] = gaps_to_winner['40']
+    finish_time_data['45th_percentile_gap'] = gaps_to_winner['45']
     finish_time_data['50th_percentile_gap'] = gaps_to_winner['50']
-    finish_time_data['75th_percentile_gap'] = gaps_to_winner['75']
-    finish_time_data['90th_percentile_gap'] = gaps_to_winner['90']
-    finish_time_data['95th_percentile_gap'] = gaps_to_winner['95']
         
     #combine all the data into one dictionary
     all_data = {}
@@ -189,7 +205,14 @@ def extract_finishing_time_distributions(race:Union[Race,Stage]):
 
 #So, start with a function to parse a full race (ie netural stage race/one_day race object) object. 
 
-def generate_finishing_time_data_from_race(race:Race)->list:
+def generate_finishing_time_data_from_race(race:Race)->Union[list,None]:
+    """Take in a Race object and get a list of dictionaries with the finishing time data for each stage, as extacted by the extract_finishing_time_distributions function.
+    Gives back a list for each stage and GC if it's a stage race, or a list with just one set of data if it's a one day race. If there are no finishing times, return None.
+    Args:
+        race: Race object that we want to fully process for finishing time data.
+    Returns:
+        a list of dictionaries with the finishing time data for each stage, as extacted by the extract_finishing_time_distributions function.
+    """
     #Check if it's a stage race or a one_day.
     if not race.stage_race:
         #If it'a s one_day, we can just process it as is
@@ -246,6 +269,12 @@ def generate_finishing_time_data_from_race(race:Race)->list:
         return stage_data
 
 def generate_finishing_time_data_from_tour(tour:FCCyclingTour)->list:
+    """Process a tour level object and return a list of dictionaries with all the races from that tour level object. It will return a flattened list so each stage and gc from a stage race will be an entry in the list along side each one day.
+    Args:
+        tour: FCCyclingTour object that we want to fully process for finishing time data.
+    Returns:
+        a list of dictionaries with the finishing time data for each stage, as extacted by the extract_finishing_time_distributions function.
+    """
     tour_race_data = []
     for race in tour.races:
         race_data = generate_finishing_time_data_from_race(race)
@@ -255,6 +284,11 @@ def generate_finishing_time_data_from_tour(tour:FCCyclingTour)->list:
     return tour_race_data
 
 def generate_finishing_time_data_from_year(year:FCCyclingYear)->list:
+    """Process a full year worth tours, WT, Pro, and .1, and return a list of dictionaries with finishing time data for all races with finishing time objects. Returns a flattend list of finishing time characteristics for each stage or gc or one day of a tour and all tours are in one list as well.
+    Args: 
+        year: FCCyclingYear object that we want to fully process for finishing time data.
+    Returns:
+        a list of dictionaries with the finishing time data for each stage, as extacted by the extract_finishing_time_distributions function."""
     year_race_data = []
     #First, try wt
     try:
@@ -289,7 +323,16 @@ def generate_finishing_time_data_from_year(year:FCCyclingYear)->list:
     return year_race_data
 
 def gen_race_char_db(year_range:List[int],db_base_path:str=DB_PATH)->pd.DataFrame:
+    """
+    Given a range of years (as a a linst of integers that should be within 2010 and 2025), create a dataframe with the finishing time characteristics for each race. Each row of the dataframe is a race (GC, Stage, or one day), the columns are the key data columns. 
+    Adjust those columns by updating the finishing-dist_cols variable within this function.
+    Args:
+        year_range: a list of integers representing the years to include in the database. Should be between 2010 and 2025.
+        db_base_path: the base path to the database. Defaults to DB_PATH. The database path should have a folder for each year.
+    Returns:
+        a dataframe with the finishing time characteristics for each race."""
     db_l = []
+    #Need to update this with the key columns that I care about
     finishing_dist_cols = ['max_group_size','max_group_proportion','max_group_finish_time_percentile','max_group_position','max_group_zscore','max_group_gap_to_winner','group_count','avg_group_size','stdev_group_size','avg_group_gap','stdev_group_gap','proportion_grouped','winner_zscore','last_zscore','5th_percentile_zscore','10th_percentile_zscore','25th_percentile_zscore','50th_percentile_zscore','75th_percentile_zscore','90th_percentile_zscore','95th_percentile_zscore','avg_gap','stdev_gap','winning_time','gap_to_last','finishing_times_filled_proportion','non_finisher_proportion']
     for year in year_range:
         year_dir_path = os.path.join(db_base_path,f"{year}")
@@ -326,6 +369,12 @@ def gen_race_char_db(year_range:List[int],db_base_path:str=DB_PATH)->pd.DataFram
 #I have filtering conditions special for GC, one_day, and stages. Let's set that up and see what we can get about riders.
 
 class RaceCharDB:
+    """A class to represent a race characteristic database. Created by passiing a list of years as integers to the constructor (should be between 2010 and 2025) and a path to a databse file structure that has the stored race data with a foldder for each year.
+    The class object then creates a dataframe with the finishing time characteristics for each type of race: GC, Stage, One Day.
+    The key utility with this class object is to filter out different characteristics for different types of races. Each class method, gen_gc_db, gen_one_day_db, and gen_stag_db has a differet list for columns to ignore and drop based on the race.
+    We can also filter out outlier races based on z-score for each column. The default is 3.5, but this can be changed by passing a different value to the outlier_limit parameter.
+    The class also has a method to return all races and their characteristics prior to a given date or year, of a given race type, or by a given fc_race_id.
+    Finally, the class has a method to look up a race directly and return the characteristics for that race."""
     def __init__(self,year_range:List[int],db_base_path:str=DB_PATH):
         self.year_range = year_range
         self.db_base_path = db_base_path
@@ -337,6 +386,12 @@ class RaceCharDB:
         
     
     def _filter_outliers(self,df:pd.DataFrame, z_score_limit:float=3.5):
+        """Filter outlier races based on a z-score for each race characteristic column. The default is 3.5, but this can be changed by passing a different value to the z_score_limit parameter.
+        Args:
+            df: the dataframe to filter
+            z_score_limit: the z-score limit to use for filtering. Default is 3.5.
+        Returns:
+            a filtered dataframe with outliers dropped."""
         filtered_df = df.copy()
         for col in [col for col in filtered_df.columns if col != 'winning_time']:
             #Calculate the zscore for each row in the column
@@ -354,6 +409,11 @@ class RaceCharDB:
     
   
     def gen_gc_db(self,outlier_limit:float=5.0) -> pd.DataFrame:
+        """Creates a dataframe with the finishing time characteristics for all GC races in the database. The dataframe is filtered for outliers and the self.gc attribute is set to the resulting dataframe.
+        Args:
+            outlier_limit: the z-score limit to use for filtering. Default is 5.0.
+        Returns:
+            a dataframe with the finishing time characteristics of GC. It also sets the self.gc attribute to the dataframe."""
         gc_db = self.db[self.db['race_type'] == 'gc'].copy()
         if gc_db.shape[0] == 0:
             print("No GC results in the database for this year range")
@@ -376,6 +436,12 @@ class RaceCharDB:
         return final_gc_df
 
     def gen_one_day_db(self,outlier_limit:float=5.0) -> pd.DataFrame:
+        """Creates a dataframe with the finishing time characteristics for all one day races in the database. The dataframe is filtered for outliers and the self.one_day attribute is set to the resulting dataframe.
+        Args:
+            outlier_limit: the z-score limit to use for filtering. Default is 5.0.
+        Returns:
+            a dataframe with the finishing time characteristics
+        """
         one_day_db = self.db[self.db['race_type']=='one_day'].copy()
         if one_day_db.shape[0] == 0:
             print(f"No one day races in the database for this year range")
@@ -396,6 +462,12 @@ class RaceCharDB:
         return one_day_final_df
     
     def gen_stage_db(self,outlier_limit:float=5.0) -> pd.DataFrame:
+        """Creates a dataframe with the finishing time characteristics for all stages in the database. Also filters out outliers and sets the self.stage attribute to the resulting dataframe.
+        Args:
+            outlier_limit: the z-score limit to use for filtering. Default is 5.0.
+        Returns:
+            a dataframe with the finishing time characteristics of stages. It also sets the self.stage attribute to the dataframe.
+        """
         stage_db = self.db[self.db['race_type']=='stage'].copy()
         if stage_db.shape[0] == 0:
             print(f"No stages in the database for this year range")
@@ -420,6 +492,14 @@ class RaceCharDB:
         self.gen_stage_db()
 
     def find_prior_races(self,race_type:str,prior_to_date:str,fc_race_id:int|None=None)->pd.DataFrame:
+        """Returns a dataframe with all races that are prior to given date, passed as YYYY-MM-DD str and race type (gc, stage, one_day). Can also filter by fc_race_id to pickout specific races.
+        Args:
+            race_type: the type of race to filter by. Should be one of 'gc', 'stage', or 'one_day'.
+            prior_to_date: the date to filter by. Should be in YYYY-MM-DD format.
+            fc_race_id: the fc_race_id for the race to filter by, passed as an int. If None, will return all races.
+        Returns:
+            a dataframe with all the races prior to the given date of the given race type.
+        """
         #convert prior to date to datetime
         try:
             prior_to_date_dto = datetime.strptime(prior_to_date,'%Y-%m-%d')
@@ -453,6 +533,16 @@ class RaceCharDB:
             return prior_race_db
     
     def race_lookup(self,fc_race_id:int,race_type:str,year:int,stage_name:str|None=None)->pd.DataFrame:
+        """Look up a specific race in the database by passing an fc_race_id as an int, the race_type as a str (gc, stage, or one_day), the year as an int, and an optional stage_name as a str if looking up a stage. Will throw an error if set race_type to stage but don't pass a stage name
+        Args:
+            fc_race_id: the fc_race_id as an int for the race. This will be the same for all stages and the gc of a stage race.
+            race_type: the race_type as a str. Should be one of 'gc', 'stage', or 'one_day'.
+            year: the year as an int
+            stage_name: the stage name as a str. Only needed if race_type is set to 'stage'.
+        Returns:
+            a one row dataframe with with the race characteristics
+        """
+        
         #get the right db
         if race_type.lower().strip()=='gc':
             db = self.gc

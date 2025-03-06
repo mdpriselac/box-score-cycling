@@ -9,6 +9,15 @@
 # 7:DNF/OTL/DNS (yes, DNS is not a DNF but we're going to treat it as such for simplicity)
 
 def place_bucketer(place:int|str)->int:
+    """
+    Buckets a place given as an int or a string into a place bucket from 0 to 7, where 7 covers DNS/DNF/OOL/OTL etc., ie any race where the place is not given as something convertible to an int.
+    Changing the buckets here can have a significant impact on how the predictions behave. 
+    Args:
+        place (int|str): The place to be bucketed, given as an int or a string.
+    Returns:
+        int: The place bucket, from 0 to 7.
+    """
+    
     if place is None:
         #print("Place is None for this rider, returning None, check data")
         return None

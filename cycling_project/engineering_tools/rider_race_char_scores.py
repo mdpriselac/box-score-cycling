@@ -16,7 +16,7 @@ import pandas as pd
 import numpy as np
 from sklearn.utils.class_weight import compute_sample_weight
 rider_db = create_rider_db(DB_PATH)
-
+from typing import Tuple
 
 # for pulling race char data, we need to do the following
 ## 1. Validate that the current race has race time data to create race finishing charactaristics
@@ -67,6 +67,12 @@ def prepare_ordinal_targets(X, y):
 
 #Next we need a class for working with the rider's history to get their specific model weights.
 class RiderRaceCharScores:
+    """Class for working with Rider's that can get rider specific model weights for each race type across the five dimensions of race characteristics.
+    Class method for generating training data to train a rider specific model for predicted bucket place against five dimensions of race characteristics.
+    Class method for training rider specific modes for each race type against the five dimensions of race characteristics.
+    
+    Initialization requires a rider_id and a prior_to_year (int) to collect the correct races from the rider's history to use in generating data.
+    """
     def __init__(self, rider_id,prior_to_year=2025):
         self.fc_rider_id = rider_id
         rider_object = rider_db.riders.get(rider_id, None)
@@ -91,7 +97,17 @@ class RiderRaceCharScores:
         self.one_day_scaler = None
         self.stage_scaler = None
     
-    def generate_training_data(self,ref_race_char_db:FiveDimDB):
+    def generate_training_data(self,ref_race_char_db:FiveDimDB)->Tuple[list,list,list]:
+        """Generate training data for a rider specific model for predicted bucket place against five dimensions of race characteristics. Minimum requirements for training data:
+        gc: 10
+        one_day: 15
+        stage: 50
+        
+        Args:
+            ref_race_char_db: a FiveDimDB object to draw race data for for the rider
+        Returns:
+            three lists, each entry of which is a dataframe with the five race characteristics, actual place, and key race id info (id, race_type, year, name) for a single race in the rider history
+        """
         gc_data = []
         one_day_data = []
         stage_data = []
@@ -126,7 +142,15 @@ class RiderRaceCharScores:
             stage_data = None
         return gc_data, one_day_data, stage_data
     
-    def train_models(self,race_char_db:FiveDimDB):
+    def train_models(self,race_char_db:FiveDimDB)->Tuple[Tuple[dict,list|None],Tuple[dict,list|None],Tuple[dict,list|None]]:
+        """Train a rider specific model for predicted bucket place against five dimensions of race characteristics.
+        Models are currently set to LinearRegression, but could be changed
+        First generates training data using the generate_training_data method. 
+        Args:
+            race_char_db: a FiveDimDB object to pull race data from
+        Returns:
+            three tuples, each of which contains first a list of tuples of coefficient names and coefficients and second a list of thresholds for the model (or none if a simple linear regression is trained)
+        """
         #go back through and add error and sample size tracking meta data
         gc_data, one_day_data, stage_data = self.generate_training_data(ref_race_char_db=race_char_db)
         cols_to_drop = ['actual_place'] + race_char_db._non_data_cols
