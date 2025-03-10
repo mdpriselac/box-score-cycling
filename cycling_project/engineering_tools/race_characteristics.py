@@ -42,7 +42,7 @@ def extract_finishing_time_distributions(race:Union[Race,Stage])->Union[dict,Non
         return None
     total_time = race_time
     #Check if we pulled GC from a TTT stage for a stage race
-    if total_time/14400 >=1.9 and 'stage:' in race.name.lower():
+    if total_time/28800 >=1.0 and 'stage:' in race.name.lower():
         print(f"{race.name} has too long of a race time (over 7hrs 40min), probably pulling GC times for a TTT stage skipping finishing time distributions")
         return None
     finishing_gaps = []

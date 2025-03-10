@@ -91,3 +91,4 @@ venv.bak/
 *.hdf5
 *.pkl
 *.joblib
+*.parquet

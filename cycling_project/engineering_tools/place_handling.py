@@ -2,10 +2,10 @@
 # 0:Winner
 # 1:Podium
 # 2:Top 5
-# 3:Top 10 (here we make a change from the uci to reflect the idea that top 10 is a bit more natural in terms of thinkign about an out come or performacne than 8)
-# 4:Top 15
-# 5:Top 30
-# 6:Outside top 30
+# 3:Top 15 (here we make a change from the uci to reflect the idea that top 10 is a bit more natural in terms of thinkign about an out come or performacne than 8)
+# 4:Top 30
+# 5:Top 50
+# 6:Finish over 50
 # 7:DNF/OTL/DNS (yes, DNS is not a DNF but we're going to treat it as such for simplicity)
 
 def place_bucketer(place:int|str)->int:
@@ -34,11 +34,11 @@ def place_bucketer(place:int|str)->int:
             return 1
         elif place <= 5:
             return 2
-        elif place <= 10:
-            return 3
         elif place <= 15:
-            return 4
+            return 3
         elif place <= 30:
+            return 4
+        elif place <= 50:
             return 5
         else:
             return 6

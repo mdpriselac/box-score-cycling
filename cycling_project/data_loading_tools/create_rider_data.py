@@ -251,6 +251,20 @@ class RiderDB:
         rider.add_race_result(race=race,result=result_dict)
         #Update the rider object in the rider database
         self.riders[rider_id] = rider
+    
+    def get_rider_by_id(self,rider_id:int)->RiderCareer:
+        """Get a rider by their id. If the rider is not in the database, raise a ValueError
+        Args:
+            rider_id (int): The rider id to get.
+        Raises:
+            ValueError: If the rider is not in the database.
+        Returns:
+            RiderCareer: The rider object.
+        """
+        rider = self.riders.get(rider_id,None)
+        if rider is None:
+            raise ValueError(f"Rider {rider_id} not found in database")
+        return rider
 
     def add_tour(self,tour:FCCyclingTour):
         #cycle through

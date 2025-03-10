@@ -64,3 +64,23 @@ Our two simple approaches have drawbacks and benefits:
 - The Average History approach means tht predictions aren't based on as much training data (only the data of each individual rider), and it isn't as fine grained but the prediction is tailored to each individual rider.
 
 Next we'll combine the strengths of these approache: we'll train a model for each rider based on richer information set. For now the informatoin that we feed into the individual rider training will be the information we used for the population level model. However, over time, we'll start adding in other information: previous race history at specific events, race course specific information, and competitor information, race date information. As the features are getting more complex, we're also going to be experimenting with different regression tools.
+
+
+
+# To Work On
+
+Next steps have different dimesions to work on.
+
+Continuing in individual model direction:
+    - incorporate more data into the individual prediction algorithms. For example, for the next case, also incorporate tour level into the prediction system by one hot encoding it. 
+    - From there we can incorporate age (normalize to 28). 
+    - We can incorporate bib and team numbers. 
+    - Incorporate a race_type finishing bucket proportion system ie what proportion do they finish in a given race bucket for the race_type that we're predicting.
+    - Create a time scaling feature to discount older results beyond 3 years.
+    - Incorporate a specific race history to that particular race (applicable in one_days and gc only)
+
+
+Aiming towards a population level model direction:
+    - Have each rider represented by their 5 race char dim coefficients, each race_type can have its own model trained with race_characteristics and tour_level against bucketed place. That way you train one model and can predict whole races quickly with the same model.
+    - Can progressively incoporate more information into this model: age, team and personal bib numbers.
+    - Since this model will have lots of data to work with, could train a more sophisticaed model, an ordinal regression model with sample weights, for example. 

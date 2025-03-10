@@ -75,18 +75,18 @@ class RiderRaceCharScores:
     """
     def __init__(self, rider_id,prior_to_year=2025):
         self.fc_rider_id = rider_id
-        rider_object = rider_db.riders.get(rider_id, None)
-        if rider_object == None:
+        self.rider_object = rider_db.riders.get(rider_id, None)
+        if self.rider_object == None:
             raise ValueError(f'Rider ID {rider_id} not found in rider_db')
-        self.rider_name = rider_object.name
-        result_hist_list = rider_object.generate_race_history(prior_to_year=prior_to_year)
+        self.rider_name = self.rider_object.name
+        result_hist_list = self.rider_object.generate_race_history(prior_to_year=prior_to_year)
         if result_hist_list is None:
             raise ValueError(f'Rider ID {rider_id} has no race history')
 
         self.result_history = [res for res in result_hist_list]
-        self.gc_model = LinearRegression()
-        self.one_day_model = LinearRegression()
-        self.stage_model = LinearRegression()
+        self.gc_model = LinearRegression(n_jobs=-1)
+        self.one_day_model = LinearRegression(n_jobs=-1)
+        self.stage_model = LinearRegression(n_jobs=-1)
         self.gc_coefs = None
         #self.gc_thresholds = None
         self.one_day_coefs = None
@@ -99,10 +99,10 @@ class RiderRaceCharScores:
     
     def generate_training_data(self,ref_race_char_db:FiveDimDB)->Tuple[list,list,list]:
         """Generate training data for a rider specific model for predicted bucket place against five dimensions of race characteristics. Minimum requirements for training data:
-        gc: 10
-        one_day: 15
-        stage: 50
-        
+        gc: 5
+        one_day: 5
+        stage: 25
+        TO ADJUST: Consider training all models on inputs from all race types. ie gc model based on gc, one_day, and stage coefficients
         Args:
             ref_race_char_db: a FiveDimDB object to draw race data for for the rider
         Returns:
@@ -134,15 +134,15 @@ class RiderRaceCharScores:
             elif res_race_type.lower().strip() == 'stage':
                 stage_data.append(race_chars)
         #Let's set minimum data requirements of having done at least 10 of a race type before we can train a model for a rider.
-        if len(gc_data) < 10:
+        if len(gc_data) < 5:
             gc_data = None
-        if len(one_day_data) < 15:
+        if len(one_day_data) < 5:
             one_day_data = None
-        if len(stage_data) < 50:
+        if len(stage_data) < 25:
             stage_data = None
         return gc_data, one_day_data, stage_data
     
-    def train_models(self,race_char_db:FiveDimDB)->Tuple[Tuple[dict,list|None],Tuple[dict,list|None],Tuple[dict,list|None]]:
+    def train_models(self,race_char_db:FiveDimDB)->Tuple[Tuple[list,list|None],Tuple[list,list|None],Tuple[list,list|None]]:
         """Train a rider specific model for predicted bucket place against five dimensions of race characteristics.
         Models are currently set to LinearRegression, but could be changed
         First generates training data using the generate_training_data method. 
@@ -161,8 +161,8 @@ class RiderRaceCharScores:
             scaled_X = gc_scaler.fit_transform(gc_X)
             y = gc_data['actual_place']
             try:
-                scaled_X, y, sample_weights = prepare_ordinal_targets(scaled_X, y)
-                self.gc_model.fit(scaled_X,y, sample_weight=sample_weights)
+                #scaled_X, y, sample_weights = prepare_ordinal_targets(scaled_X, y)
+                self.gc_model.fit(scaled_X,y) #, sample_weight=sample_weights
                 self.gc_coefs = list(zip(self.gc_model.coef_,gc_X.columns))
                 #self.gc_thresholds = self.gc_model.theta_
                 self.gc_scaler = gc_scaler
@@ -175,8 +175,8 @@ class RiderRaceCharScores:
             scaled_X = one_day_scaler.fit_transform(one_day_X)
             y = one_day_data['actual_place']
             try:
-                scaled_X, y, sample_weights = prepare_ordinal_targets(scaled_X, y)
-                self.one_day_model.fit(scaled_X,y, sample_weight=sample_weights)
+                #scaled_X, y, sample_weights = prepare_ordinal_targets(scaled_X, y)
+                self.one_day_model.fit(scaled_X,y)#, sample_weight=sample_weights
                 self.one_day_coefs = list(zip(self.one_day_model.coef_,one_day_X.columns))
                 #self.one_day_thresholds = self.one_day_model.theta_
                 self.one_day_scaler = one_day_scaler
@@ -189,8 +189,8 @@ class RiderRaceCharScores:
             scaled_X = stage_scaler.fit_transform(stage_X)
             y = stage_data['actual_place']
             try:
-                scaled_X, y, sample_weights = prepare_ordinal_targets(scaled_X, y)
-                self.stage_model.fit(scaled_X, y, sample_weight=sample_weights)
+                #scaled_X, y, sample_weights = prepare_ordinal_targets(scaled_X, y)
+                self.stage_model.fit(scaled_X, y)#, sample_weight=sample_weights
                 self.stage_coefs = list(zip(self.stage_model.coef_,stage_X.columns))
                 #self.stage_thresholds = self.stage_model.theta_
                 self.stage_scaler = stage_scaler

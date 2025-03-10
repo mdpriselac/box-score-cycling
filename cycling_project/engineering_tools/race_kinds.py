@@ -180,7 +180,7 @@ def calculate_five_race_dimensions(finish_time_dist_dict:dict)->dict:
     """
     #get the total time data, it will be in seconds. Normalize it to 4 hours
     winning_time = finish_time_dist_dict['winning_time']
-    normalized_total_time = winning_time / 14400
+    normalized_total_time = winning_time / 28800
     #get the abandon data
     abaondon_proportion = finish_time_dist_dict['non_finisher_proportion']
     #Get the biggest group metric

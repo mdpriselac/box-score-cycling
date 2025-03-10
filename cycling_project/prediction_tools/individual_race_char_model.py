@@ -34,7 +34,7 @@ def predict_race_on_chars(race:Union[Race,Stage]):
         return None
     #go through each rider result and predict finishing place bucket based on their model. Set default to 6.0
     
-    if race.results is None or len(race.results) < 23:
+    if race.results is None or len(race.results) < 30:
         print(f"{race.name} has too few results to predict.")
         return None
     #flatten race_char dict if not already flat
@@ -44,7 +44,7 @@ def predict_race_on_chars(race:Union[Race,Stage]):
             flat_race_char[k] = v
         else:
             flat_race_char.update(v)
-    race_char = calculate_five_race_dimensions(flat_race_char )
+    race_char = calculate_five_race_dimensions(flat_race_char)
     #get the race year
     race_predictions = {}
     for res_dict in race.results:
