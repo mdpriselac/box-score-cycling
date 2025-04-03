@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
-from sklearn.cluster import KMeans, DBSCAN, AgglomerativeClustering
+from sklearn.cluster import KMeans, DBSCAN, AgglomerativeClustering,HDBSCAN
 from sklearn.mixture import GaussianMixture
 from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
@@ -125,6 +125,8 @@ class RaceClusterAnalyzer:
             self.model = KMeans(n_clusters=n_clusters, random_state=42, **kwargs)
         elif algorithm == 'dbscan':
             self.model = DBSCAN(**kwargs)
+        elif algorithm == 'hdbscan':
+            self.model = HDBSCAN(**kwargs)
         elif algorithm == 'hierarchical':
             self.model = AgglomerativeClustering(n_clusters=n_clusters, **kwargs)
         elif algorithm == 'gmm':
@@ -384,7 +386,7 @@ class RaceClusterAnalyzer:
             # Create a basic single-row heatmap
             cluster_means_df = pd.DataFrame([np.mean(self.features, axis=0)], columns=feature_names)
             cluster_means_df.index = [f'Cluster {unique_clusters[0]}']
-            plt.figure(figsize=(min(12, len(feature_names) * 0.8), 3))
+            plt.figure(figsize=(min(16, len(feature_names) * 0.8), 5))  # Minimum height of 5 inches
             sns.heatmap(cluster_means_df, annot=True, cmap='viridis', fmt='.2f', linewidths=0.5)
             plt.title('Feature Means for Single Cluster')
             plt.tight_layout()
@@ -415,7 +417,14 @@ class RaceClusterAnalyzer:
         
         # Adjust figure size based on number of features and clusters
         fig_width = min(16, max(8, len(feature_names) * 0.5))
-        fig_height = max(3, len(unique_clusters) * 0.8)
+        
+        # Ensure minimum height regardless of cluster count
+        # Calculate height for each row and add padding
+        row_height = 1.2  # Height per cluster row in inches
+        min_height = 5    # Minimum figure height in inches
+        
+        # Calculate height based on cluster count, with a minimum
+        fig_height = max(min_height, len(unique_clusters) * row_height)
         
         # Plot heatmap
         plt.figure(figsize=(fig_width, fig_height))
@@ -424,13 +433,26 @@ class RaceClusterAnalyzer:
         if len(feature_names) > 8:
             plt.xticks(rotation=45, ha='right')
         
+        # Adjust font size based on number of clusters
+        annot_fontsize = 10 if len(unique_clusters) >= 4 else 12
+        
         # Create heatmap with custom formatting
         fmt = '.2f' if z_scores.abs().max().max() < 10 else '.1f'
-        ax = sns.heatmap(z_scores, annot=True, cmap='coolwarm', center=0, 
-                   fmt=fmt, linewidths=0.5, cbar_kws={'label': 'Z-score'})
+        ax = sns.heatmap(
+            z_scores, 
+            annot=True, 
+            cmap='coolwarm', 
+            center=0, 
+            fmt=fmt, 
+            linewidths=0.5, 
+            annot_kws={"size": annot_fontsize},
+            cbar_kws={'label': 'Z-score'}
+        )
         
-        plt.title('Feature Importance by Cluster (Z-scored)')
-        plt.ylabel('Cluster')
+        plt.title('Feature Importance by Cluster (Z-scored)', fontsize=14)
+        plt.ylabel('Cluster', fontsize=12)
+        
+        # Adjust layout
         plt.tight_layout()
         
         # Store the feature importance information

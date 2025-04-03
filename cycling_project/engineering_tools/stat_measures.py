@@ -232,7 +232,7 @@ def process_top_level_race_stat_measures(race:Race)->list:
                 stage_stat_dict['date'] = stage.date
                 stage_stat_dict['fc_race_id'] = stage.fc_race_id
                 stage_stat_dict['tour'] = stage.category
-                if stage.name.lower().strip() == 'gc':
+                if stage.name.lower().strip().replace(':','') == 'gc':
                     stage_stat_dict['race_type'] = 'gc'
                 else:
                     stage_stat_dict['race_type'] = 'stage'
