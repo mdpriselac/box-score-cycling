@@ -17,3 +17,15 @@
   5. Configuration:
     - Added pytest.ini with markers for unit/integration/slow tests
     - Configured test discovery paths
+
+    To run the tests, use:
+  # Run all tests
+  pytest
+
+  # Run only unit tests
+  pytest -m unit
+
+  # Run only integration tests
+  pytest -m integration
+
+  The tests use mocked HTTP responses to avoid making actual network requests, making them reliable and fast to run.

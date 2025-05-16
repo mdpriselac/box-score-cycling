@@ -9,6 +9,7 @@ from bs4 import BeautifulSoup
 from time import sleep
 from random import randint
 from typing import List, Tuple, Optional
+from pathlib import Path
 
 from cycling_project.webscrape_tools.scrape_client import WebClient
 from cycling_project.webscrape_tools.logging_config import get_logger
@@ -17,10 +18,35 @@ from dotenv import load_dotenv
 # Configure logger
 logger = get_logger("find_races")
 
-# Load environment variables
-load_dotenv(dotenv_path='../env')
-DB_PATH = os.getenv("DB_PATH")
+# Set a default path for DB_PATH if environment variable is not set
+DEFAULT_DB_PATH = os.path.join(str(Path.home()), "cycling_data/scraped_data")
+
+# Load environment variables - using absolute path resolution
+module_dir = os.path.dirname(os.path.abspath(__file__))
+project_root = os.path.dirname(os.path.dirname(module_dir))
+env_path = os.path.join(project_root, ".env")
+
+# Try to load from .env file if it exists
+if os.path.exists(env_path):
+    load_dotenv(dotenv_path=env_path)
+    logger.info(f"Loaded environment from {env_path}")
+else:
+    logger.warning(f"No .env file found at {env_path}")
+
+# Get DB_PATH with a fallback to DEFAULT_DB_PATH
+DB_PATH = os.getenv("DB_PATH", DEFAULT_DB_PATH)
+
+# Ensure DB_PATH exists
+if not DB_PATH:
+    logger.warning("DB_PATH environment variable not set, using default path")
+    DB_PATH = DEFAULT_DB_PATH
+
 logger.info(f"Database path: {DB_PATH}")
+
+# Create the directory if it doesn't exist
+if not os.path.exists(DB_PATH):
+    os.makedirs(DB_PATH)
+    logger.info(f"Created database directory: {DB_PATH}")
 
 # Constants
 BASE_URL = "https://firstcycling.com"
@@ -132,14 +158,14 @@ def extract_races(soup: BeautifulSoup) -> Optional[List[Tuple[str, str]]]:
             
     return races
 
-def create_race_year_db(year: str, race_data_dir: str = DB_PATH) -> None:
+def create_race_year_db(year: str, race_data_dir: str = None) -> None:
     """
     Creates a directory structure for a given year and saves a list of races and their webpage urls for all three tour levels in that year. 
     Optionally you can specify the base directory where the directory structure will be created.
     
     Args:
         year: four digit year as a string
-        race_data_dir: base directory where the year directory will be created. Default is the current directory.
+        race_data_dir: base directory where the year directory will be created. Default is DB_PATH.
         
     Returns:
         Nothing. However, it will create a subdirectory for the year. Within the year subdirectory 
@@ -147,7 +173,11 @@ def create_race_year_db(year: str, race_data_dir: str = DB_PATH) -> None:
         it will create a text file. Each line in the text file will be a name and url for a race in 
         that year and tour level.
     """
-    logger.info(f"Creating race database for {year}")
+    # If no race_data_dir is provided, use the global DB_PATH
+    if race_data_dir is None:
+        race_data_dir = DB_PATH
+        
+    logger.info(f"Creating race database for {year} in {race_data_dir}")
     
     #Check if there's a directory for the year, create it if not
     year_dir = os.path.join(race_data_dir, year)
@@ -224,4 +254,4 @@ def _process_tour_level(client: WebClient, year: str, tour_name: str, tour_url: 
         logger.error(f"Error processing {tour_name} races for {year}: {e}")
     
 if __name__ == "__main__":
-    create_race_year_db(year='2024', race_data_dir=DB_PATH)
+    create_race_year_db(year='2025')
