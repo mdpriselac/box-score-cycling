@@ -65,6 +65,79 @@ class RaceClusterAnalyzer:
         
         self.filtered_data = self.data[self.data['race_type'].isin(race_types)].copy()
         return self.filtered_data
+
+    def filter_tour_levels(self, tour_levels: List[str]) -> pd.DataFrame:
+        """
+        Filter the data to include only races from specified tour levels.
+        
+        Args:
+            tour_levels: List of tour levels to include ('wt', 'pro', 'd1')
+            
+        Returns:
+            Filtered DataFrame
+        """
+        if not tour_levels:
+            raise ValueError("At least one tour level must be specified")
+        
+        # If filtered_data doesn't exist yet, start with the full dataset
+        if self.filtered_data is None:
+            self.filtered_data = self.data.copy()
+        
+        # Map common alternative names
+        level_map = {
+            'wt': ['wt', 'world tour', 'worldtour'],
+            'pro': ['pro', 'pro series', 'proseries', 'uci pro'],
+            'd1': ['d1', 'division 1', 'continental', 'uci continental']
+        }
+        
+        # Create a list of all valid tour values to include
+        valid_levels = []
+        for level in tour_levels:
+            level = level.lower()
+            for key, values in level_map.items():
+                if level in values:
+                    valid_levels.append(key)
+                    break
+        
+        # Filter the dataframe by the tour column (case-insensitive)
+        mask = self.filtered_data['tour'].str.lower().isin(valid_levels)
+        self.filtered_data = self.filtered_data[mask].copy()
+        
+        return self.filtered_data
+
+    def reset_filters(self) -> pd.DataFrame:
+        """
+        Reset all filters and return to the original dataset.
+        
+        Returns:
+            Original DataFrame
+        """
+        self.filtered_data = self.data.copy()
+        return self.filtered_data
+
+    def apply_filters(self, race_types: List[str] = None, tour_levels: List[str] = None) -> pd.DataFrame:
+        """
+        Apply both race type and tour level filters in one step.
+        
+        Args:
+            race_types: List of race types to include ('gc', 'stage', 'one_day')
+            tour_levels: List of tour levels to include ('wt', 'pro', 'd1')
+            
+        Returns:
+            Filtered DataFrame
+        """
+        # Start fresh with the original data
+        self.filtered_data = self.data.copy()
+        
+        # Apply race type filter if specified
+        if race_types:
+            self.filter_race_types(race_types)
+        
+        # Apply tour level filter if specified
+        if tour_levels:
+            self.filter_tour_levels(tour_levels)
+        
+        return self.filtered_data
     
     def prepare_features(self, exclude_cols: List[str] = None, include_cols: List[str] = None) -> np.ndarray:
         """
@@ -185,13 +258,14 @@ class RaceClusterAnalyzer:
         
         return metrics
     
-    def optimal_k(self, k_range: range = range(2, 11), metric: str = 'silhouette') -> Tuple[int, List[float]]:
+    def optimal_k(self, k_range: range = range(2, 11), metric: str = 'silhouette', min_cluster_size: int = 5) -> Tuple[int, List[float]]:
         """
         Find the optimal number of clusters for K-means.
         
         Args:
             k_range: Range of k values to test
             metric: Metric to optimize ('silhouette', 'davies_bouldin', 'calinski_harabasz')
+            min_cluster_size: Minimum size for any cluster to be considered valid
             
         Returns:
             Tuple of (optimal k, list of metric values)
@@ -205,6 +279,17 @@ class RaceClusterAnalyzer:
             model = KMeans(n_clusters=k, random_state=42)
             labels = model.fit_predict(self.scaled_features)
             
+            # Check if any cluster has fewer members than min_cluster_size
+            if min_cluster_size > 0:
+                unique_labels, counts = np.unique(labels, return_counts=True)
+                if np.any(counts < min_cluster_size):
+                    # Assign a very low score for invalid clustering (based on metric type)
+                    if metric in ['silhouette', 'calinski_harabasz']:
+                        scores.append(float('-inf'))  # Lower is worse for these metrics
+                    else:  # davies_bouldin
+                        scores.append(float('inf'))   # Higher is worse for Davies-Bouldin
+                    continue
+            
             if metric == 'silhouette':
                 score = silhouette_score(self.scaled_features, labels)
                 scores.append(score)
@@ -216,6 +301,11 @@ class RaceClusterAnalyzer:
                 scores.append(score)
             else:
                 raise ValueError(f"Unsupported metric: {metric}")
+        
+        # If all clusterings were invalid (all scores are infinite), return the lowest k
+        if all(s == float('-inf') for s in scores) or all(s == float('inf') for s in scores):
+            print("Warning: No clustering satisfied the minimum cluster size requirement.")
+            return k_range[0], scores
         
         optimal_k = k_range[np.argmax(scores)]
         return optimal_k, scores
@@ -268,6 +358,11 @@ class RaceClusterAnalyzer:
             if col in self.filtered_data.columns:
                 viz_df[col] = self.filtered_data[col].values
         
+        # Calculate cluster sizes
+        cluster_sizes = viz_df['cluster'].value_counts().sort_index().to_dict()
+        cluster_size_text = ', '.join([f"Cluster {k}: {v}" for k, v in cluster_sizes.items()])
+        title = f'Cluster Visualization using {method.upper()} (Sizes: {cluster_size_text})'
+        
         if interactive:
             # Check if required dependencies for interactive plotting are available
             has_nbformat = importlib.util.find_spec('nbformat') is not None
@@ -287,10 +382,30 @@ class RaceClusterAnalyzer:
             fig = px.scatter(
                 viz_df, x='x', y='y', 
                 color='cluster', symbol='race_type',
-                title=f'Cluster Visualization using {method.upper()}',
+                title=title,
                 labels={'x': x_label, 'y': y_label, 'cluster': 'Cluster', 'race_type': 'Race Type'},
                 hover_data=viz_df.columns
             )
+            
+            # Add cluster size annotation to the plot
+            cluster_annotations = [
+                f"<b>Cluster {k}: {v} races</b>" for k, v in cluster_sizes.items()
+            ]
+            annotation_text = "<br>".join(cluster_annotations)
+            
+            fig.add_annotation(
+                xref="paper", yref="paper",
+                x=0.01, y=0.99,
+                text=annotation_text,
+                showarrow=False,
+                font=dict(size=12),
+                bgcolor="rgba(255,255,255,0.8)",
+                align="left",
+                bordercolor="black",
+                borderwidth=1,
+                borderpad=4
+            )
+            
             return fig
         else:
             # Create matplotlib visualization
@@ -301,21 +416,22 @@ class RaceClusterAnalyzer:
             for cluster in clusters:
                 for race_type in race_types:
                     mask = (viz_df['cluster'] == cluster) & (viz_df['race_type'] == race_type)
-                    ax.scatter(
-                        viz_df.loc[mask, 'x'], 
-                        viz_df.loc[mask, 'y'],
-                        label=f'Cluster {cluster}, {race_type}',
-                        marker=self._get_marker_for_race_type(race_type),
-                        alpha=0.7
-                    )
+                    if np.sum(mask) > 0:  # Only plot if there are points
+                        ax.scatter(
+                            viz_df.loc[mask, 'x'], 
+                            viz_df.loc[mask, 'y'],
+                            label=f'Cluster {cluster} ({cluster_sizes.get(cluster, 0)}), {race_type}',
+                            marker=self._get_marker_for_race_type(race_type),
+                            alpha=0.7
+                        )
             
             ax.set_xlabel(x_label)
             ax.set_ylabel(y_label)
-            ax.set_title(f'Cluster Visualization using {method.upper()}')
+            ax.set_title(title)
             ax.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
             plt.tight_layout()
             return fig
-    
+
     def interactive_cluster_viz(self, method: str = 'pca') -> None:
         """
         Create and display an interactive visualization if possible, with fallback to static.
@@ -376,6 +492,9 @@ class RaceClusterAnalyzer:
         if len(feature_names) != self.features.shape[1]:
             raise ValueError(f"Number of feature names ({len(feature_names)}) does not match feature count ({self.features.shape[1]})")
         
+        # Calculate cluster sizes
+        cluster_sizes = pd.Series(self.cluster_labels).value_counts().sort_index().to_dict()
+        
         # Calculate feature means for each cluster
         cluster_means = []
         unique_clusters = sorted(set(self.cluster_labels))
@@ -385,7 +504,7 @@ class RaceClusterAnalyzer:
             print("Warning: Need at least 2 clusters for meaningful feature importance visualization.")
             # Create a basic single-row heatmap
             cluster_means_df = pd.DataFrame([np.mean(self.features, axis=0)], columns=feature_names)
-            cluster_means_df.index = [f'Cluster {unique_clusters[0]}']
+            cluster_means_df.index = [f'Cluster {unique_clusters[0]} (n={cluster_sizes.get(unique_clusters[0], 0)})']
             plt.figure(figsize=(min(16, len(feature_names) * 0.8), 5))  # Minimum height of 5 inches
             sns.heatmap(cluster_means_df, annot=True, cmap='viridis', fmt='.2f', linewidths=0.5)
             plt.title('Feature Means for Single Cluster')
@@ -404,7 +523,8 @@ class RaceClusterAnalyzer:
         
         # Create a DataFrame for visualization
         cluster_means_df = pd.DataFrame(cluster_means, columns=feature_names)
-        cluster_means_df.index = [f'Cluster {c}' for c in unique_clusters]
+        # Include cluster size in the index
+        cluster_means_df.index = [f'Cluster {c} (n={cluster_sizes.get(c, 0)})' for c in unique_clusters]
         
         # Z-score normalization for better visualization
         try:
@@ -449,7 +569,9 @@ class RaceClusterAnalyzer:
             cbar_kws={'label': 'Z-score'}
         )
         
-        plt.title('Feature Importance by Cluster (Z-scored)', fontsize=14)
+        # Create title with cluster sizes summary
+        cluster_size_text = ', '.join([f"Cluster {c}: {cluster_sizes.get(c, 0)}" for c in unique_clusters])
+        plt.title(f'Feature Importance by Cluster (Z-scored)\nCluster Sizes: {cluster_size_text}', fontsize=14)
         plt.ylabel('Cluster', fontsize=12)
         
         # Adjust layout
@@ -473,22 +595,39 @@ class RaceClusterAnalyzer:
         # Count race types within each cluster
         counts_df = pd.crosstab(self.filtered_data['cluster'], self.filtered_data['race_type'])
         
+        # Calculate cluster sizes
+        cluster_sizes = self.filtered_data['cluster'].value_counts().sort_index()
+        
+        # Add total count as a column
+        counts_df['total'] = cluster_sizes
+        
         # Convert to percentages
-        percentage_df = counts_df.div(counts_df.sum(axis=1), axis=0) * 100
+        percentage_df = counts_df[counts_df.columns[:-1]].div(counts_df['total'], axis=0) * 100
         
         # Plot stacked bar chart
         fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 6))
         
-        counts_df.plot(kind='bar', stacked=True, ax=ax1, colormap='viridis')
+        counts_df[counts_df.columns[:-1]].plot(kind='bar', stacked=True, ax=ax1, colormap='viridis')
+        
+        # Add cluster size annotations
+        for i, count in enumerate(cluster_sizes):
+            ax1.text(i, count + 0.5, f'n={count}', ha='center')
+            
         ax1.set_title('Count of Race Types in Each Cluster')
         ax1.set_xlabel('Cluster')
         ax1.set_ylabel('Count')
         ax1.legend(title='Race Type')
         
         percentage_df.plot(kind='bar', stacked=True, ax=ax2, colormap='viridis')
+        
+        # Add cluster size annotations to percentage plot
+        for i, count in enumerate(cluster_sizes):
+            ax2.text(i, 101, f'n={count}', ha='center')
+            
         ax2.set_title('Percentage of Race Types in Each Cluster')
         ax2.set_xlabel('Cluster')
         ax2.set_ylabel('Percentage')
+        ax2.set_ylim(0, 110)  # Make room for the annotations
         ax2.legend(title='Race Type')
         
         plt.tight_layout()
