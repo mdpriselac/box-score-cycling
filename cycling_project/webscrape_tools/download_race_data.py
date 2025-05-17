@@ -8,13 +8,12 @@ from dotenv import load_dotenv
 from cycling_project.webscrape_tools.scrape_startlists import scrape_and_add_bib_numbers_to_race
 from cycling_project.webscrape_tools.create_race_data import Race
 from cycling_project.webscrape_tools.logging_config import get_logger
+from cycling_project.webscrape_tools.find_races import DB_PATH
 
 # Configure logger
 logger = get_logger("download_race_data")
 
-# Load environment variables
-load_dotenv(dotenv_path='../env')
-DB_PATH = os.getenv("DB_PATH")
+# Register the DB_PATH variable
 logger.info(f"Database path: {DB_PATH}")
 
 # Constants
