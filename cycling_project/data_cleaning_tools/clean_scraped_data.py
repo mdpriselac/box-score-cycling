@@ -10,9 +10,8 @@ from dotenv import load_dotenv
 from cycling_project.webscrape_tools.scrape_client import WebClient
 from cycling_project.data_loading_tools.load_scraped_data import load_tour_path
 from cycling_project.webscrape_tools.find_races import find_race_list_table,find_race_data_column
+from cycling_project.webscrape_tools.find_races import DB_PATH
 
-load_dotenv(dotenv_path='../env')
-DB_PATH = os.getenv("DB_PATH")
 #Set the tour ids
 #World Tour level, division 1, top level
 world_tour_id = 1

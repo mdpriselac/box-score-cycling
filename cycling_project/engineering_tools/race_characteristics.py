@@ -1,5 +1,6 @@
 from cycling_project.webscrape_tools.create_race_data import Race,Stage
-from cycling_project.data_loading_tools.load_scraped_data import load_db, load_year_path,FCCyclingDB,FCCyclingTour,FCCyclingYear,DB_PATH
+from cycling_project.data_loading_tools.load_scraped_data import load_db, load_year_path,FCCyclingDB,FCCyclingTour,FCCyclingYear
+from cycling_project.webscrape_tools.find_races import DB_PATH
 from typing import Union
 from datetime import datetime
 import numpy as np

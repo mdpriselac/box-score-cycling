@@ -1,7 +1,8 @@
 import numpy as np
 from scipy import stats
 from cycling_project.webscrape_tools.create_race_data import Race,Stage
-from cycling_project.data_loading_tools.load_scraped_data import FCCyclingTour,FCCyclingYear,DB_PATH,load_year_path
+from cycling_project.data_loading_tools.load_scraped_data import FCCyclingTour,FCCyclingYear,load_year_path
+from cycling_project.webscrape_tools.find_races import DB_PATH
 from typing import Union
 import pandas as pd
 import os

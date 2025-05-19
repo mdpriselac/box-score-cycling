@@ -4,7 +4,8 @@
 # Then let's see if they can be segmented both within and across those models based on their performance in different. We'll be using their coefficients as the means to group them.
 
 #get the race and rider dbs
-from cycling_project.data_loading_tools.create_rider_data import create_rider_db,DB_PATH
+from cycling_project.data_loading_tools.create_rider_data import create_rider_db
+from cycling_project.webscrape_tools.find_races import DB_PATH
 #Get the place bucketer function
 from cycling_project.engineering_tools.place_handling import place_bucketer
 from cycling_project.engineering_tools.race_kinds import FiveDimDB

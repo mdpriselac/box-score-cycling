@@ -4,11 +4,9 @@ import json
 from typing import Optional,List
 from dataclasses import dataclass,asdict
 from cycling_project.webscrape_tools.create_race_data import Race, Stage
+from cycling_project.webscrape_tools.find_races import DB_PATH
 import re
-from dotenv import load_dotenv
 
-load_dotenv(dotenv_path='../env')
-DB_PATH = os.getenv("DB_PATH")
 TOURS = ['wt','pro','d1']
 
 @dataclass

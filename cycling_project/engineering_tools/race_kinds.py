@@ -6,7 +6,8 @@
 ## We're going to have a total finish time score. This dimension will find time trials and long hard stages.
 from cycling_project.webscrape_tools.create_race_data import Race
 from cycling_project.engineering_tools.race_characteristics import generate_finishing_time_data_from_race, generate_finishing_time_data_from_tour, generate_finishing_time_data_from_year
-from cycling_project.data_loading_tools.load_scraped_data import load_year_path,FCCyclingTour,FCCyclingYear,DB_PATH
+from cycling_project.data_loading_tools.load_scraped_data import load_year_path,FCCyclingTour,FCCyclingYear
+from cycling_project.webscrape_tools.find_races import DB_PATH
 import os
 import pandas as pd
 import numpy as np

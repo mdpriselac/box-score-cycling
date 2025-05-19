@@ -12,14 +12,11 @@ from typing import Dict,List,Optional,Union
 from dataclasses import field
 from datetime import datetime
 
-from dotenv import load_dotenv
 import os
 
 from cycling_project.webscrape_tools.create_race_data import Stage, Race
 from cycling_project.data_loading_tools.load_scraped_data import FCCyclingTour,FCCyclingYear,load_year_path
-
-load_dotenv(dotenv_path='../../env')
-DB_PATH = os.getenv("DB_PATH")
+from cycling_project.webscrape_tools.find_races import DB_PATH
 
 @dataclass
 class RiderResult:
