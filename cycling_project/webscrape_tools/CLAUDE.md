@@ -1,87 +1,17 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Database location: the database we're working with is at database/database/cycling_races.db
+Database type: sqlite
+Database Structure and Access Information: db_migration_update_1.md
 
-## Codebase Overview
+You can use sqlite to directly access and test the database.
 
-This is a collection of tools for web scraping cycling race data from FirstCycling.com. The codebase allows:
-- Finding races by year and tour level
-- Scraping race results including stage information
-- Scraping race startlists and rider information
-- Downloading and storing race data in a structured format
+We're using uv to run python and manage our environment. Use the `uv run` functionality to run scripts and python commands. 
 
-## Key Components
+# Rules for Creating Code
 
-### Web Scraping Client
-- `scrape_client.py`: Contains the `WebClient` class, which handles HTTP requests with built-in rate limiting and error handling.
+Whenever you create a module or python file that is not just just for testing but to house code that will be imported elsewhere you must also create a markdown file with the exact same name as the python file followed.by the .md suffix instead of the .py suffix. The guide should be a succinct summary of the classes and functinos in the file with the exact names and argument formats for any methods or inputs to functions. Someone should be able to read the markdown file alone and be able to use the classes and functions in their code without committing any errors in their code.
 
-### Race Discovery
-- `find_races.py`: Contains functions to identify lists of races and their URLs by year and tour level (World Tour, .Pro, and .1).
-- `create_race_year_db()`: Creates a file structure for storing race data and generates text files listing races by tour level.
+Whenever you are importing code from a file, make sure you check the corresponding markdown file before writing any code so that you know exactly the right class names, methods and functions as well as the inputs for those files.
 
-### Race Results Scraping
-- `get_race_results.py`: Functions for extracting race data from race pages.
-- `create_race_data.py`: Contains `Race` and `Stage` classes that represent races and scrape their webpages.
-
-### Startlist Scraping
-- `get_startlist.py`: Functions to extract pre-race startlist information.
-- `start_list_parse_tools.py`: Classes and functions for parsing startlists, including `Team` and `Rider` objects.
-
-### Data Management
-- `download_race_data.py`: Functions for systematically downloading race data.
-- `scrape_startlists.py`: Functions for scraping and adding bib numbers to race data.
-
-## Common Operations
-
-### Creating File Structure for Race Data
-```python
-from cycling_project.webscrape_tools.find_races import create_race_year_db
-
-# Create directory structure for 2024 races 
-create_race_year_db(year='2024', race_data_dir=DB_PATH)
-```
-
-### Scraping Race Results
-```python
-from cycling_project.webscrape_tools.create_race_data import Race
-
-# Create Race object from race name and URL
-race = Race(name="Tour de France", url="https://firstcycling.com/race.php?r=17&y=2024")
-
-# Scrape race data
-race.populate_race()
-
-# Save race data
-import pickle
-with open("tour_de_france.pkl", "wb") as f:
-    pickle.dump(race, f)
-```
-
-### Getting Race Startlists
-```python
-from cycling_project.webscrape_tools.get_startlist import get_start_list
-
-# Get startlist for race with ID 17 (Tour de France) for year 2024
-startlist = get_start_list(race_id=17, year=2024)
-
-# Process teams and riders
-for team in startlist:
-    print(team.name)
-    for rider in team.riders:
-        print(f"  {rider.number}: {rider.name}")
-```
-
-## Development Notes
-
-- The codebase uses Beautiful Soup for HTML parsing
-- Rate limiting is built into the WebClient to avoid getting blocked
-- Data is currently saved as pickle files in a directory structure
-- Environment variables are used to configure the base path for data storage
-
-## Planned Improvements
-
-- Adding cloud storage options
-- Creating proper database storage for races and riders
-- Implementing tools to check scraping progress
-- Consolidating scraping functions and class definitions
-- Creating tools for accessing and analyzing the scraped data
+You must follow this python-markdown pairing for all code you write.
