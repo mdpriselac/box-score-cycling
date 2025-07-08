@@ -1,0 +1,29 @@
+{
+  "algorithm": "hierarchical",
+  "percentile": 70,
+  "feature_columns": [
+    "variance_absolute",
+    "winning_time",
+    "largest_group_size",
+    "time_gap_evenness_metric",
+    "clumpiness_score",
+    "riders_in_groups",
+    "total_groups",
+    "skewness_absolute"
+  ],
+  "timestamp": "20250708_085755",
+  "model_path": "database/race_kinds/models/hierarchical_70th_20250708_085755.pkl",
+  "metadata": {
+    "best_score": 0.8137662338560114,
+    "feature_selection_used": true,
+    "feature_selection_categories": [
+      "wt",
+      "pro"
+    ],
+    "analysis_categories": [
+      "wt",
+      "pro"
+    ],
+    "competition_type": "gc"
+  }
+}

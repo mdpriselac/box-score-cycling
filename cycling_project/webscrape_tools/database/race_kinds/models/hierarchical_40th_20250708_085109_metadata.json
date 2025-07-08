@@ -1,0 +1,35 @@
+{
+  "algorithm": "hierarchical",
+  "percentile": 40,
+  "feature_columns": [
+    "clumpiness_score",
+    "biggest_group_metric",
+    "avg_group_size",
+    "selection_metric",
+    "gini_coefficient",
+    "std_group_size",
+    "proportion_in_groups",
+    "time_gap_evenness_metric",
+    "total_groups",
+    "std_deviation_normalized",
+    "total_race_duration",
+    "50th_percentile_gap",
+    "variance_absolute",
+    "skewness_normalized"
+  ],
+  "timestamp": "20250708_085109",
+  "model_path": "database/race_kinds/models/hierarchical_40th_20250708_085109.pkl",
+  "metadata": {
+    "best_score": 0.7700044079328408,
+    "feature_selection_used": true,
+    "feature_selection_categories": [
+      "wt",
+      "pro"
+    ],
+    "analysis_categories": [
+      "wt",
+      "pro"
+    ],
+    "competition_type": "stage_one_day"
+  }
+}

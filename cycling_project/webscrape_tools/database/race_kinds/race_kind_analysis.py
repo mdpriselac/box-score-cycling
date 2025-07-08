@@ -12,6 +12,7 @@ import sqlite3
 from sklearn.preprocessing import StandardScaler, RobustScaler
 from sklearn.cluster import KMeans, DBSCAN, AgglomerativeClustering
 from sklearn.mixture import GaussianMixture
+from race_kind_models import PredictableAgglomerativeClustering
 from sklearn.decomposition import PCA
 from sklearn.metrics import (
     silhouette_score, calinski_harabasz_score, davies_bouldin_score,
@@ -180,7 +181,7 @@ class RaceKindAnalyzer:
     
     def kmeans_clustering(
         self,
-        n_clusters_range: range = range(2, 11),
+        n_clusters_range: range = range(3, 11),
         random_state: int = 42
     ) -> Dict[str, Any]:
         """
@@ -244,7 +245,7 @@ class RaceKindAnalyzer:
     
     def hierarchical_clustering(
         self,
-        n_clusters_range: range = range(2, 11),
+        n_clusters_range: range = range(3, 11),
         linkage_method: str = 'ward'
     ) -> Dict[str, Any]:
         """
@@ -271,8 +272,8 @@ class RaceKindAnalyzer:
         }
         
         for n_clusters in n_clusters_range:
-            # Fit hierarchical clustering
-            hc = AgglomerativeClustering(n_clusters=n_clusters, linkage=linkage_method)
+            # Fit hierarchical clustering with predictable wrapper
+            hc = PredictableAgglomerativeClustering(n_clusters=n_clusters, linkage=linkage_method)
             labels = hc.fit_predict(self.scaled_features)
             
             # Calculate metrics
@@ -377,7 +378,7 @@ class RaceKindAnalyzer:
     
     def gaussian_mixture_clustering(
         self,
-        n_components_range: range = range(2, 11),
+        n_components_range: range = range(3, 11),
         random_state: int = 42
     ) -> Dict[str, Any]:
         """

@@ -14,6 +14,7 @@ import numpy as np
 from race_kind_analysis import RaceKindAnalyzer
 from race_kind_evaluation import RaceKindEvaluator
 from feature_selection import FeatureSelector
+from race_kind_models import RaceKindModelManager
 
 # Database path
 DB_PATH = "~/Documents/Cycling Project/cycling_project/webscrape_tools/database/database/cycling_races.db"
@@ -28,6 +29,8 @@ def analyze_single_percentile(
     feature_selection_categories: list = None,
     analysis_categories: list = None,
     eval_categories: list = None,
+    save_model: bool = False,
+    save_features: bool = False,
     db_path: str = DB_PATH
 ):
     """
@@ -42,6 +45,8 @@ def analyze_single_percentile(
         feature_selection_categories: Race categories for feature selection (e.g., ['wt', 'pro'])
         analysis_categories: Race categories for race kind analysis (e.g., ['wt'])
         eval_categories: Race categories for evaluation (e.g., ['wt', 'pro', 'd1'])
+        save_model: Whether to save the best model
+        save_features: Whether to calculate and save race kind features
         db_path: Path to database
     """
     print(f"\n{'='*60}")
@@ -168,7 +173,7 @@ def analyze_single_percentile(
                     print(f"    - {race['race_name']} - {race['competition_name']}")
         
         elif method == 'hierarchical':
-            results = analyzer.hierarchical_clustering(range(2, min(8, len(analyzer.data)//10)))
+            results = analyzer.hierarchical_clustering(range(3, min(8, len(analyzer.data)//10)))
             best_k = results['best_n_clusters']
             print(f"\nBest number of clusters: {best_k}")
             print(f"Silhouette score: {results['best_score']:.3f}")
@@ -246,6 +251,75 @@ def analyze_single_percentile(
                     'score_difference': eval_silhouette - results['best_score'],
                     'cluster_distribution': eval_characteristics
                 }
+        
+        # Save model and features if requested
+        if (save_model or save_features) and method in ['kmeans', 'hierarchical', 'gaussian_mixture']:
+            model_manager = RaceKindModelManager(db_path)
+            
+            # Get the best model
+            if method == 'kmeans' and 'best_n_clusters' in results:
+                best_k = results['best_n_clusters']
+                best_model = results['cluster_results'][best_k]['model']
+            elif method == 'hierarchical' and 'best_n_clusters' in results:
+                best_k = results['best_n_clusters']
+                best_model = results['cluster_results'][best_k]['model']
+            elif method == 'gaussian_mixture' and 'best_n_components' in results:
+                best_k = results['best_n_components']
+                best_model = results['cluster_results'][best_k]['model']
+            else:
+                best_model = None
+            
+            if best_model and save_model:
+                # Prepare metadata
+                metadata = {
+                    'best_score': results['best_score'],
+                    'feature_selection_used': use_feature_selection,
+                    'feature_selection_categories': feature_selection_categories,
+                    'analysis_categories': analysis_categories,
+                    'competition_type': competition_type
+                }
+                
+                # Save the model
+                model_path = model_manager.save_model(
+                    model=best_model,
+                    algorithm=method,
+                    percentile=percentile,
+                    feature_columns=analyzer.feature_columns,
+                    scaler=analyzer.scaler,
+                    metadata=metadata
+                )
+                results['saved_model_path'] = model_path
+                
+            if best_model and save_features:
+                # Create table name
+                comp_type_suffix = f"_{competition_type}" if competition_type else ""
+                table_name = f"race_kind_features_{method}_{percentile}{comp_type_suffix}"
+                
+                # Create table
+                model_manager.create_race_kind_features_table(
+                    table_name=table_name,
+                    algorithm=method,
+                    percentile=percentile,
+                    feature_columns=analyzer.feature_columns,
+                    metadata=metadata if save_model else None
+                )
+                
+                # Calculate and store features
+                competition_ids = analyzer.data['competition_id'].tolist()
+                features_df = model_manager.calculate_race_kind_features(
+                    X=analyzer.scaled_features,
+                    model=best_model,
+                    algorithm=method
+                )
+                
+                model_manager.store_race_kind_features(
+                    table_name=table_name,
+                    competition_ids=competition_ids,
+                    features_df=features_df
+                )
+                
+                results['features_table_name'] = table_name
+                print(f"\nSaved race kind features to table: {table_name}")
         
         return results
         
@@ -837,6 +911,18 @@ def main():
         help='Race categories for evaluation (e.g., wt pro d1)'
     )
     
+    parser.add_argument(
+        '--save-model',
+        action='store_true',
+        help='Save the best model for later use'
+    )
+    
+    parser.add_argument(
+        '--save-features',
+        action='store_true',
+        help='Calculate and save race kind features to database'
+    )
+    
     args = parser.parse_args()
     
     # Run selected mode
@@ -853,6 +939,8 @@ def main():
             feature_selection_categories=args.feature_selection_categories,
             analysis_categories=args.analysis_categories,
             eval_categories=args.eval_categories,
+            save_model=args.save_model,
+            save_features=args.save_features,
             db_path=args.db_path
         )
     

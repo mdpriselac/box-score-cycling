@@ -68,8 +68,18 @@ We need a few different tools for creating and collecting rider data.
 2. Once we can test and reliably generate race features across races, we'll start looking at developing race kinds.
     - This phase of the project is essentially complete. By utilizing the database/rice_kinds/find_race_kinds.py script we can perform automatic feature selection from the race feature database, feed the features into a race kind analysis system, and then select an optimal percentile + clustering algorithm for our race kinds.
     - Now that we know we can find good clusters, we need two next steps to prepare for rider data:
-        - First, we need to know the features that are being used to support the good clustering. These will be race characterstics that can be used as prediction inputs for rider performance when using UCI points as the dependent variable.
-        - Second, we need to get the model out of the clustering algorithm. This will allow us to create both categorical data for each race (ie which cluster it belongs to) and also more fine grained cluster score data (ie something like the probability that a given race with its characteristics belongs to each of the given clusters)
+        - First, we need to know the features that are being used to support the good clustering. These will be race characterstics that can be used as prediction inputs for rider performance when using UCI points as the dependent variable. This information is available through the find_race_kinds.py file.
+        - Second, we need to get the model out of the clustering algorithm. This will allow us to create both categorical data for each race (ie which cluster it belongs to) and also more fine grained cluster score data such as: 
+            - Distances to all centers (you already have this)
+            - Local density - how "typical" is this race within its cluster
+            - Boundary distance - how far from cluster edge   
+            - To get this stuff we need access to the model.
+                - See the claude discussion i have for some examples of these. Called Cycling Race Data Feature Analysis.
+                - From a preliminary analysis the likely algorithms we'll be using will be kmeans or hierarchical (AgglomerativeClustering)
+    - So, to sum up, we need a last piece that will create a race_kind_features_{algo}_{percentile used} table where each competition is linked to these race kind features: each race's cluster label (one hot encoded), distances from each cluster center, local density, and boundary distance. we should also store for this table the race features that were used to create these clusters. We also need a way to save the models for future use and we need a way to apply those models to new races to get their race kind features.
+    - Once this in place, the rider performance prediction models can draw data from race result, the competition race features that were used in the clustering algorith, and the race kind features created based on the clustering algoriths.
+    - Let's keep this last piece in the race_kinds folder
+
 3. Once we have a clear picture of race kinds, we can start working on the rider data.
     - Several targets for rider analyses:
         - rider models should be developed against predicted UCI points (both versions to see which fares better)
@@ -86,5 +96,7 @@ We need a few different tools for creating and collecting rider data.
             - by uci earnings/race
             - by their strenghts and weaknesses/scaling with race clusters
             - by their strengths and weakness/scaling with race features
+
+        
 4. Once we have an account of riders, we can add strength of field (or even a more fine grained, do we have a lot of climbers, or a lot of strong sprinter specialists, etc.) in a race to factor that into predictions.
 5. Our overall prediction model should take in rider characteristics, race characteristics (including this field strength stuff) and a yield rider level predictions. Then we can see from there if we can spit out a race prediction (at least for top 30) by just ordering the rider level predictions
