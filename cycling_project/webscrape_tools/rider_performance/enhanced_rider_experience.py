@@ -14,6 +14,10 @@ import numpy as np
 from typing import Dict, List, Optional, Tuple
 import warnings
 
+# Suppress numpy warnings about empty slices and divide by zero
+warnings.filterwarnings('ignore', category=RuntimeWarning, message='Mean of empty slice')
+warnings.filterwarnings('ignore', category=RuntimeWarning, message='invalid value encountered')
+
 
 class EnhancedRiderExperience:
     """
@@ -211,7 +215,13 @@ class EnhancedRiderExperience:
             if len(type_results) > 0:
                 features[f'prior_{comp_type}_points_actual'].append(type_results['uci_points_actual'].sum())
                 features[f'prior_{comp_type}_points_proportional'].append(type_results['uci_points_proportional'].sum())
-                features[f'prior_{comp_type}_success_rate'].append((type_results['uci_points_actual'] > 0).mean())
+                # Calculate success rate with proper handling for empty results
+                successes = (type_results['uci_points_actual'] > 0)
+                if len(successes) > 0:
+                    success_rate = successes.mean()
+                else:
+                    success_rate = 0.0
+                features[f'prior_{comp_type}_success_rate'].append(success_rate)
                 features[f'prior_{comp_type}_races'].append(len(type_results))
             else:
                 features[f'prior_{comp_type}_points_actual'].append(0)
@@ -237,7 +247,13 @@ class EnhancedRiderExperience:
             if len(cat_results) > 0:
                 features[f'prior_{category}_points_actual'].append(cat_results['uci_points_actual'].sum())
                 features[f'prior_{category}_points_proportional'].append(cat_results['uci_points_proportional'].sum())
-                features[f'prior_{category}_success_rate'].append((cat_results['uci_points_actual'] > 0).mean())
+                # Calculate success rate with proper handling for empty results
+                successes = (cat_results['uci_points_actual'] > 0)
+                if len(successes) > 0:
+                    success_rate = successes.mean()
+                else:
+                    success_rate = 0.0
+                features[f'prior_{category}_success_rate'].append(success_rate)
                 features[f'prior_{category}_races'].append(len(cat_results))
             else:
                 features[f'prior_{category}_points_actual'].append(0)
@@ -263,10 +279,23 @@ class EnhancedRiderExperience:
             features['total_prior_races'].append(total_races)
             features['total_prior_uci_points_actual'].append(prior_results['uci_points_actual'].sum())
             features['total_prior_uci_points_proportional'].append(prior_results['uci_points_proportional'].sum())
-            features['overall_success_rate'].append((prior_results['uci_points_actual'] > 0).mean())
+            # Calculate overall success rate with proper handling
+            successes = (prior_results['uci_points_actual'] > 0)
+            if len(successes) > 0:
+                overall_success_rate = successes.mean()
+            else:
+                overall_success_rate = 0.0
+            features['overall_success_rate'].append(overall_success_rate)
             
             # Performance consistency (variance only)
-            point_variance = prior_results['uci_points_actual'].var() if total_races > 1 else 0
+            if total_races > 1:
+                with warnings.catch_warnings():
+                    warnings.simplefilter("ignore", RuntimeWarning)
+                    point_variance = prior_results['uci_points_actual'].var()
+                    if pd.isna(point_variance):
+                        point_variance = 0
+            else:
+                point_variance = 0
             features['points_variance'].append(point_variance)
             
             # Add rider age from current race
@@ -347,8 +376,17 @@ class EnhancedRiderExperience:
         
         # Calculate correlation between race feature value and rider points earned
         if len(prior_results) >= 3:  # Need minimum samples for meaningful correlation
-            correlation = prior_results[feature_col].corr(prior_results['uci_points_actual'])
-            if pd.isna(correlation):
+            # Check if there's variance in both columns to avoid divide by zero warnings
+            feature_variance = prior_results[feature_col].var()
+            points_variance = prior_results['uci_points_actual'].var()
+            
+            if feature_variance > 0 and points_variance > 0:
+                with warnings.catch_warnings():
+                    warnings.simplefilter("ignore", RuntimeWarning)
+                    correlation = prior_results[feature_col].corr(prior_results['uci_points_actual'])
+                    if pd.isna(correlation):
+                        correlation = 0
+            else:
                 correlation = 0
         else:
             correlation = 0
@@ -365,7 +403,11 @@ class EnhancedRiderExperience:
             high_feature_races = prior_results[prior_results[feature_col] >= median_value]
             
             if len(high_feature_races) > 0:
-                high_feature_success = (high_feature_races['uci_points_actual'] > 0).mean()
+                successes = (high_feature_races['uci_points_actual'] > 0)
+                if len(successes) > 0:
+                    high_feature_success = successes.mean()
+                else:
+                    high_feature_success = 0
             else:
                 high_feature_success = 0
         else:
@@ -387,7 +429,16 @@ class EnhancedRiderExperience:
             for cluster in prior_results[feature_col].unique():
                 cluster_races = prior_results[prior_results[feature_col] == cluster]
                 if len(cluster_races) > 0:
-                    cluster_performance[cluster] = cluster_races['uci_points_actual'].mean()
+                    points = cluster_races['uci_points_actual']
+                    if len(points) > 0:
+                        with warnings.catch_warnings():
+                            warnings.simplefilter("ignore", RuntimeWarning)
+                            mean_points = points.mean()
+                            if pd.isna(mean_points):
+                                mean_points = 0
+                        cluster_performance[cluster] = mean_points
+                    else:
+                        cluster_performance[cluster] = 0
             
             # Find best cluster performance
             if cluster_performance:
@@ -414,8 +465,17 @@ class EnhancedRiderExperience:
         else:
             # For continuous race kind features - calculate performance correlation
             if len(prior_results) >= 3:
-                correlation = prior_results[feature_col].corr(prior_results['uci_points_actual'])
-                if pd.isna(correlation):
+                # Check if there's variance in both columns to avoid divide by zero warnings
+                feature_variance = prior_results[feature_col].var()
+                points_variance = prior_results['uci_points_actual'].var()
+                
+                if feature_variance > 0 and points_variance > 0:
+                    with warnings.catch_warnings():
+                        warnings.simplefilter("ignore", RuntimeWarning)
+                        correlation = prior_results[feature_col].corr(prior_results['uci_points_actual'])
+                        if pd.isna(correlation):
+                            correlation = 0
+                else:
                     correlation = 0
             else:
                 correlation = 0

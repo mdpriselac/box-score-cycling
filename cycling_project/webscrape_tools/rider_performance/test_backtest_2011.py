@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Quick test script to run backtest for 2022.
-Trains on all data up to 2021-12-31, tests on 2022.
+Quick test script to run backtest for 2011.
+Trains on all data up to 2010-12-31, tests on 2011.
 """
 
 from temporal_backtest import TemporalBacktester
@@ -14,11 +14,11 @@ if __name__ == "__main__":
     print("Initializing backtester...")
     backtester = TemporalBacktester(db_path)
     
-    # Run for 2022 with actual UCI points
-    print("\nRunning backtest for 2022 with ACTUAL UCI points...")
+    # Run for 2011 with actual UCI points
+    print("\nRunning backtest for 2011 with ACTUAL UCI points...")
     results_actual = backtester.run_temporal_backtest(
-        test_year=2022,
-        min_results=100,  # Increased for faster training - only established riders
+        test_year=2011,
+        min_results=50,  # Increased for faster training - only established riders
         target_variable='uci_points_actual',
         num_boost_round=100,  # Fewer rounds for quick test
         early_stopping_rounds=10,
@@ -29,10 +29,10 @@ if __name__ == "__main__":
     
     # Optional: Also test proportional points
     print("\n" + "="*80)
-    print("Running backtest for 2022 with PROPORTIONAL UCI points...")
+    print("Running backtest for 2011 with PROPORTIONAL UCI points...")
     results_prop = backtester.run_temporal_backtest(
-        test_year=2022,
-        min_results=100,  # Match the actual points test
+        test_year=2011,
+        min_results=50,  # Match the actual points test
         target_variable='uci_points_proportional',
         num_boost_round=100,  # Fewer rounds for quick test
         early_stopping_rounds=10,

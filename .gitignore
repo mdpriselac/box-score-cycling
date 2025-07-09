@@ -10,6 +10,8 @@ __pycache__/
 
 # Database
 cycling_project/webscrape_tools/database/database/cycling_races.db
+cycling_project/webscrape_tools/database/database/cycling_races*.db
+cycling_project/webscrape_tools/database/database/cycling_races*.db*
 
 # Distribution / packaging
 .Python

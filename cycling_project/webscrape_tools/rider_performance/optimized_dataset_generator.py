@@ -17,18 +17,46 @@ from enhanced_rider_experience import EnhancedRiderExperience
 class OptimizedDatasetGenerator:
     """Fast dataset generator using batch processing and caching."""
     
-    def __init__(self, db_path: str, use_enhanced_experience: bool = False):
+    def __init__(self, db_path: str, use_enhanced_experience: bool = True):
         self.db_path = db_path
         self.result_features = RiderResultFeatures(db_path)
         self.use_enhanced_experience = use_enhanced_experience
         
-        # Initialize enhanced experience calculator if requested
-        if self.use_enhanced_experience:
-            self.enhanced_experience = EnhancedRiderExperience()
+        # Experience features are now pre-computed in the database
+        self.experience_feature_names = self._get_experience_feature_names_from_db()
         
-        # Cache for rider histories
+        # Cache for rider histories (no longer needed for enhanced features)
         self._rider_histories = {}
-        self._rider_experience_cache = {}
+    
+    def _get_experience_feature_names_from_db(self) -> List[str]:
+        """Dynamically get experience feature names from the database schema."""
+        conn = sqlite3.connect(self.db_path)
+        try:
+            cursor = conn.cursor()
+            cursor.execute("PRAGMA table_info(rider_results)")
+            columns = cursor.fetchall()
+            
+            # Find columns that are experience features (added by the migration)
+            experience_columns = []
+            for column in columns:
+                col_name = column[1]  # Column name is at index 1
+                if (col_name.startswith('prior_') or 
+                    col_name.startswith('total_prior_') or
+                    col_name == 'rider_age' or
+                    col_name.endswith('_success_rate')):
+                    experience_columns.append(col_name)
+            
+            # Add calculated features that we derive from the base data
+            calculated_features = ['overall_success_rate', 'prior_wt_success_rate', 
+                                 'prior_gc_success_rate', 'prior_stage_success_rate', 
+                                 'prior_one_day_success_rate']
+            
+            # Combine and return unique features
+            all_features = list(set(experience_columns + calculated_features))
+            return sorted(all_features)
+            
+        finally:
+            conn.close()
     
     def generate_datasets_fast(self, 
                               cutoff_date: str,
@@ -55,10 +83,8 @@ class OptimizedDatasetGenerator:
         pairs = self._get_all_pairs_batch(cutoff_date, min_results)
         print(f"Found {len(pairs)} rider-competition pairs")
         
-        # Step 2: Pre-calculate all rider histories
-        unique_riders = list(set(pair[0] for pair in pairs))
-        print(f"Pre-calculating histories for {len(unique_riders)} riders...")
-        self._precompute_rider_histories(unique_riders, cutoff_date)
+        # Step 2: Experience features are now pre-computed in database
+        # No need to pre-calculate rider histories for experience features
         
         # Step 3: Get all competition features in batch
         print("Loading competition features...")
@@ -73,6 +99,13 @@ class OptimizedDatasetGenerator:
             dataset = self._process_pairs_sequential(pairs, competition_features, cutoff_date)
         
         # Step 5: Split by competition type
+        if dataset.empty:
+            print("No data found - returning empty datasets")
+            return {
+                'gc_dataset': pd.DataFrame(),
+                'stage_one_day_dataset': pd.DataFrame()
+            }
+        
         gc_dataset = dataset[dataset['competition_type'] == 'gc'].copy()
         stage_one_day_dataset = dataset[
             dataset['competition_type'].isin(['stage', 'one_day'])
@@ -112,63 +145,7 @@ class OptimizedDatasetGenerator:
         finally:
             conn.close()
     
-    def _precompute_rider_histories(self, rider_ids: List[int], cutoff_date: str):
-        """Pre-compute all rider histories to avoid repeated queries."""
-        conn = sqlite3.connect(self.db_path)
-        try:
-            # Get all rider results in one query
-            placeholders = ','.join('?' * len(rider_ids))
-            
-            if self.use_enhanced_experience:
-                # Include additional columns needed for enhanced experience features
-                query = f"""
-                SELECT 
-                    rr.rider_id,
-                    rr.competition_id,
-                    rr.id as result_id,
-                    c.date as competition_date,
-                    c.competition_type,
-                    r.category as race_category,
-                    rr.place,
-                    rr.time_gap,
-                    rr.percentile,
-                    rr.rider_age
-                FROM rider_results rr
-                JOIN competitions c ON rr.competition_id = c.id
-                JOIN races r ON c.race_id = r.id
-                WHERE rr.rider_id IN ({placeholders})
-                AND c.date <= ?
-                ORDER BY rr.rider_id, c.date
-                """
-            else:
-                # Basic query for simple experience features
-                query = f"""
-                SELECT 
-                    rr.rider_id,
-                    rr.competition_id,
-                    c.date as competition_date,
-                    c.competition_type,
-                    r.category as race_category,
-                    rr.place,
-                    rr.time_gap,
-                    rr.percentile,
-                    rr.rider_age
-                FROM rider_results rr
-                JOIN competitions c ON rr.competition_id = c.id
-                JOIN races r ON c.race_id = r.id
-                WHERE rr.rider_id IN ({placeholders})
-                AND c.date <= ?
-                ORDER BY rr.rider_id, c.date
-                """
-            
-            df = pd.read_sql_query(query, conn, params=rider_ids + [cutoff_date])
-            
-            # Group by rider and store
-            for rider_id, rider_data in df.groupby('rider_id'):
-                self._rider_histories[rider_id] = rider_data.sort_values('competition_date')
-                
-        finally:
-            conn.close()
+    
     
     def _get_competition_features_batch(self, pairs: List[Tuple[int, int]]) -> Dict[int, Dict]:
         """Get all competition features in batch queries."""
@@ -378,7 +355,7 @@ class OptimizedDatasetGenerator:
             
             # Calculate experience features
             experience_features = self._calculate_experience_features(
-                rider_id, comp_info['competition_date'], cutoff_date
+                rider_id, competition_id, comp_info['competition_date']
             )
             
             # Calculate UCI points
@@ -450,50 +427,103 @@ class OptimizedDatasetGenerator:
             conn.close()
     
     def _calculate_experience_features(self, rider_id: int, 
-                                     competition_date: str, cutoff_date: str) -> Dict:
-        """Calculate experience features from cached rider history."""
-        rider_history = self._rider_histories.get(rider_id)
-        if rider_history is None or len(rider_history) == 0:
-            return self._get_zero_experience_features()
-        
-        # Filter to races before this competition
-        prior_races = rider_history[rider_history['competition_date'] < competition_date]
-        
-        if len(prior_races) == 0:
-            return self._get_zero_experience_features()
-        
-        # Calculate metrics
-        total_prior = len(prior_races)
-        
-        return {
-            'total_prior_races': total_prior,
-            'prior_gc_races': len(prior_races[prior_races['competition_type'] == 'gc']),
-            'prior_stage_races': len(prior_races[prior_races['competition_type'] == 'stage']),
-            'prior_one_day_races': len(prior_races[prior_races['competition_type'] == 'one_day']),
-            'prior_wt_races': len(prior_races[prior_races['race_category'] == 'wt']),
-            'prior_pro_races': len(prior_races[prior_races['race_category'] == 'pro']),
-            'prior_d1_races': len(prior_races[prior_races['race_category'] == 'd1']),
-            'prior_wt_proportion': len(prior_races[prior_races['race_category'] == 'wt']) / total_prior,
-            'total_prior_uci_points_actual': 0,  # Would need to calculate from history
-            'total_prior_uci_points_proportional': 0,
-            'rider_age_at_race': prior_races.iloc[-1]['rider_age'] if len(prior_races) > 0 else 0
-        }
+                                     competition_id: int, competition_date: str) -> Dict:
+        """Get experience features from pre-computed database values."""
+        conn = sqlite3.connect(self.db_path)
+        try:
+            # Get pre-computed experience features directly from database
+            query = """
+            SELECT 
+                prior_wt_points_actual, prior_wt_points_proportional,
+                prior_pro_points_actual, prior_pro_points_proportional,
+                prior_d1_points_actual, prior_d1_points_proportional,
+                prior_gc_points_actual, prior_gc_points_proportional,
+                prior_stage_points_actual, prior_stage_points_proportional,
+                prior_one_day_points_actual, prior_one_day_points_proportional,
+                prior_wt_races, prior_pro_races, prior_d1_races,
+                prior_gc_races, prior_stage_races, prior_one_day_races,
+                total_prior_races, total_prior_points_actual,
+                total_prior_points_proportional, prior_wt_proportion,
+                rider_age
+            FROM rider_results
+            WHERE rider_id = ? AND competition_id = ?
+            """
+            
+            cursor = conn.cursor()
+            cursor.execute(query, (rider_id, competition_id))
+            row = cursor.fetchone()
+            
+            if row:
+                # Map database columns to feature names
+                experience_features = {
+                    'prior_wt_points_actual': row[0],
+                    'prior_wt_points_proportional': row[1],
+                    'prior_pro_points_actual': row[2],
+                    'prior_pro_points_proportional': row[3],
+                    'prior_d1_points_actual': row[4],
+                    'prior_d1_points_proportional': row[5],
+                    'prior_gc_points_actual': row[6],
+                    'prior_gc_points_proportional': row[7],
+                    'prior_stage_points_actual': row[8],
+                    'prior_stage_points_proportional': row[9],
+                    'prior_one_day_points_actual': row[10],
+                    'prior_one_day_points_proportional': row[11],
+                    'prior_wt_races': row[12],
+                    'prior_pro_races': row[13],
+                    'prior_d1_races': row[14],
+                    'prior_gc_races': row[15],
+                    'prior_stage_races': row[16],
+                    'prior_one_day_races': row[17],
+                    'total_prior_races': row[18],
+                    'total_prior_points_actual': row[19],
+                    'total_prior_points_proportional': row[20],
+                    'prior_wt_proportion': row[21],
+                    'rider_age': row[22]
+                }
+                
+                # Calculate success rates from the base data
+                total_races = experience_features['total_prior_races']
+                if total_races > 0:
+                    experience_features['overall_success_rate'] = (
+                        1.0 if experience_features['total_prior_points_actual'] > 0 else 0.0
+                    )
+                    experience_features['prior_wt_success_rate'] = (
+                        1.0 if experience_features['prior_wt_points_actual'] > 0 else 0.0
+                    )
+                    experience_features['prior_gc_success_rate'] = (
+                        1.0 if experience_features['prior_gc_points_actual'] > 0 else 0.0
+                    )
+                    experience_features['prior_stage_success_rate'] = (
+                        1.0 if experience_features['prior_stage_points_actual'] > 0 else 0.0
+                    )
+                    experience_features['prior_one_day_success_rate'] = (
+                        1.0 if experience_features['prior_one_day_points_actual'] > 0 else 0.0
+                    )
+                else:
+                    experience_features['overall_success_rate'] = 0.0
+                    experience_features['prior_wt_success_rate'] = 0.0
+                    experience_features['prior_gc_success_rate'] = 0.0
+                    experience_features['prior_stage_success_rate'] = 0.0
+                    experience_features['prior_one_day_success_rate'] = 0.0
+                
+                return experience_features
+            else:
+                # No result found - return zero features
+                return self._get_zero_experience_features()
+                
+        finally:
+            conn.close()
     
     def _get_zero_experience_features(self) -> Dict:
         """Get zero experience features for first-time riders."""
-        return {
-            'total_prior_races': 0,
-            'prior_gc_races': 0,
-            'prior_stage_races': 0,
-            'prior_one_day_races': 0,
-            'prior_wt_races': 0,
-            'prior_pro_races': 0,
-            'prior_d1_races': 0,
-            'prior_wt_proportion': 0.0,
-            'total_prior_uci_points_actual': 0,
-            'total_prior_uci_points_proportional': 0,
-            'rider_age_at_race': 0
-        }
+        zero_features = {}
+        for feature_name in self.experience_feature_names:
+            # Special handling for proportion/rate features (should be 0.0)
+            if 'proportion' in feature_name or 'rate' in feature_name:
+                zero_features[feature_name] = 0.0
+            else:
+                zero_features[feature_name] = 0
+        return zero_features
 
 
 if __name__ == "__main__":
