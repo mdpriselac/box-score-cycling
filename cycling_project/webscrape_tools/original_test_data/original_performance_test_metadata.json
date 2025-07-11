@@ -1,0 +1,12 @@
+{
+  "type": "sample",
+  "sample_size": 100,
+  "actual_riders": 100,
+  "total_records": 45954,
+  "feature_tables": [
+    "race_features_70",
+    "race_features_80",
+    "race_features_90"
+  ],
+  "generation_date": "2025-07-11T11:37:27.235048"
+}

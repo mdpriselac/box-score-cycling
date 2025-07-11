@@ -1,0 +1,19 @@
+{
+  "type": "parallel_sample",
+  "sample_size": 100,
+  "actual_riders": 100,
+  "successful_riders": 94,
+  "total_records": 1179,
+  "feature_tables": [
+    "race_features_70",
+    "race_features_80",
+    "race_features_90"
+  ],
+  "generation_date": "2025-07-11T11:38:22.015077",
+  "processing_time_seconds": 4.374679803848267,
+  "parallel_processing": {
+    "n_workers": 4,
+    "chunk_count": 4,
+    "riders_per_second": 21.48728689064539
+  }
+}
