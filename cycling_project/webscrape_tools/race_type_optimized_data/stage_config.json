@@ -1,0 +1,14 @@
+{
+  "race_type": "stage",
+  "percentile": "race_features_30",
+  "features": [
+    "skewness_absolute",
+    "time_gap_evenness_metric",
+    "abandon_ratio",
+    "kurtosis_absolute",
+    "winning_time",
+    "included_finishers"
+  ],
+  "n_riders": 3413,
+  "export_date": "2025-07-11T10:53:44.876380"
+}

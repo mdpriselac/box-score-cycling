@@ -1,0 +1,103 @@
+RACE TYPE CORRELATION META-ANALYSIS REPORT
+======================================================================
+
+Analysis Date: 2025-07-11T10:53:44.789470
+Race Types Analyzed: gc, stage, one_day, stage_one_day, all
+
+SUMMARY OF RECOMMENDATIONS BY RACE TYPE
+======================================================================
+
+Race Type      Best Percentile  Features  Clusters  Silhouette  Riders  
+------------------------------------------------------------------------
+GC             30               12        3         0.219       3386    
+STAGE          30               6         3         0.290       3562    
+ONE_DAY        30               8         3         0.221       2985    
+STAGE_ONE_DAY  90               5         3         0.279       4657    
+ALL            90               5         3         0.328       3183    
+
+FEATURE COMPARISONS ACROSS RACE TYPES
+======================================================================
+
+Total unique features across all race types: 19
+Features common to all race types: 2
+
+UNIVERSALLY IMPORTANT FEATURES:
+   1. abandon_ratio
+   2. winning_time
+
+RACE TYPE SPECIFIC FEATURES:
+----------------------------------------
+
+ALL specific features (3):
+  - clumpiness_score
+  - largest_group_size
+  - total_finishers
+
+GC specific features (10):
+  - 40th_percentile_gap
+  - biggest_group_metric
+  - gini_coefficient
+  - included_finishers
+  - kurtosis_absolute
+  - largest_group_position
+  - shannon_entropy_absolute
+  - shannon_entropy_normalized
+  - skewness_absolute
+  - time_gap_evenness_metric
+
+ONE_DAY specific features (6):
+  - 45th_percentile_gap
+  - kurtosis_absolute
+  - riders_in_groups
+  - selection_metric
+  - skewness_absolute
+  - std_group_size
+
+STAGE specific features (4):
+  - included_finishers
+  - kurtosis_absolute
+  - skewness_absolute
+  - time_gap_evenness_metric
+
+STAGE_ONE_DAY specific features (3):
+  - clumpiness_score
+  - included_finishers
+  - largest_group_size
+
+CLUSTERING QUALITY COMPARISON
+======================================================================
+
+Ranked by clustering quality (silhouette score):
+
+1. ALL
+   Clusters: 3
+   Silhouette: 0.3281
+   Cluster sizes: [598, 1320, 1265]
+   Quality: Good separation
+
+2. STAGE
+   Clusters: 3
+   Silhouette: 0.2900
+   Cluster sizes: [1056, 882, 1475]
+   Quality: Moderate separation
+
+3. STAGE_ONE_DAY
+   Clusters: 3
+   Silhouette: 0.2794
+   Cluster sizes: [1552, 947, 2158]
+   Quality: Moderate separation
+
+4. ONE_DAY
+   Clusters: 3
+   Silhouette: 0.2209
+   Cluster sizes: [727, 554, 994]
+   Quality: Moderate separation
+
+5. GC
+   Clusters: 3
+   Silhouette: 0.2190
+   Cluster sizes: [797, 1140, 1002]
+   Quality: Moderate separation
+
+======================================================================
+END OF META-ANALYSIS REPORT

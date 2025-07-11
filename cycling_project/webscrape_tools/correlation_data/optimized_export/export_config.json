@@ -1,0 +1,20 @@
+{
+  "export_date": "2025-07-10T21:41:56.294421",
+  "percentile": "race_features_90",
+  "features": [
+    "std_group_size",
+    "total_groups",
+    "kurtosis_absolute",
+    "skewness_normalized",
+    "clumpiness_score",
+    "std_deviation_normalized",
+    "abandon_ratio",
+    "riders_in_groups",
+    "gini_coefficient",
+    "included_finishers",
+    "winning_time",
+    "largest_group_size"
+  ],
+  "total_records": 5988,
+  "unique_riders": 499
+}

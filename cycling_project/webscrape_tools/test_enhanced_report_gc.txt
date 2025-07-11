@@ -1,0 +1,110 @@
+COMPREHENSIVE FEATURE SELECTION ANALYSIS REPORT
+============================================================
+
+Analysis Date: 2025-07-11T10:19:39.845897
+Rider Results Analyzed: 24
+Percentiles Analyzed: race_features_70, race_features_80, race_features_90
+Maximum Features Constraint: 20
+
+1. PERCENTILE ANALYSIS & SELECTION RATIONALE
+==================================================
+🏆 RECOMMENDED PERCENTILE: race_features_70
+
+WHY THIS PERCENTILE WAS SELECTED:
+-----------------------------------
+📊 Correlation Quality Metrics:
+   • Signal Strength: 0.2556
+     (Combination of correlation strength and variance - higher is better)
+   • Mean Absolute Correlation: 0.2485
+     (Average strength of rider-feature relationships)
+   • Correlation Variance: 0.0287
+     (How much correlations vary between riders - higher = more discriminative)
+   • Feature Coverage: 100.0%
+     (Proportion of features with data from multiple riders)
+
+🎯 Clustering Quality Metrics:
+   • Optimal Clusters: 2
+   • Silhouette Score: 0.3054
+     (Good cluster separation - clear rider types emerge)
+   • Cluster Sizes: [10, 13]
+     (Well-balanced cluster sizes)
+
+🏷️  CLUSTER PROFILES:
+--------------------
+
+   Cluster 1 (10 riders):
+   Top distinguishing features:
+     1. total_finishers              -0.192 (imp: 0.192)
+     2. included_finishers           -0.192 (imp: 0.192)
+     3. winning_time                 +0.147 (imp: 0.147)
+     4. kurtosis_absolute            -0.141 (imp: 0.141)
+
+   Cluster 2 (13 riders):
+   Top distinguishing features:
+     1. 50th_percentile_gap          -0.417 (imp: 0.417)
+     2. variance_normalized          -0.408 (imp: 0.408)
+     3. std_deviation_normalized     -0.408 (imp: 0.408)
+     4. 45th_percentile_gap          -0.408 (imp: 0.408)
+
+COMPARISON WITH OTHER PERCENTILES:
+-----------------------------------
+Rank Percentile       Combined  Why Better/Worse
+-----------------------------------------------------------------
+1    race_features_70 0.5190    Best overall balance
+2    race_features_80 0.4921    Moderate performance
+3    race_features_90 0.4390    Moderate performance
+
+2. FEATURE SELECTION & REDUNDANCY ANALYSIS
+=============================================
+🎯 SELECTED FEATURES: 8 features
+
+FEATURE SELECTION PROCESS:
+-------------------------
+📉 Redundancy Reduction:
+   • Removed 29 redundant features (93.5% reduction)
+   • Kept highest quality feature from each redundant group
+   • Example redundant groups:
+     - Kept 'winning_time', removed 28 similar features
+     - Kept 'total_finishers', removed 1 similar features
+
+🏅 TOP SELECTED FEATURES (by quality score):
+----------------------------------------
+   1. winning_time                   0.8035 ✓ Selected
+   2. 50th_percentile_gap            0.7699 ✗ Removed (redundant)
+   3. shannon_entropy_normalized     0.7533 ✓ Selected
+   4. variance_normalized            0.7403 ✗ Removed (redundant)
+   5. std_deviation_normalized       0.7403 ✗ Removed (redundant)
+   6. 45th_percentile_gap            0.7303 ✗ Removed (redundant)
+   7. total_race_duration            0.7029 ✗ Removed (redundant)
+   8. std_deviation_absolute         0.6982 ✗ Removed (redundant)
+   9. variance_absolute              0.6982 ✗ Removed (redundant)
+  10. largest_group_size             0.6879 ✗ Removed (redundant)
+  11. std_group_size                 0.6684 ✗ Removed (redundant)
+  12. 40th_percentile_gap            0.6524 ✗ Removed (redundant)
+  13. 35th_percentile_gap            0.6301 ✗ Removed (redundant)
+  14. 30th_percentile_gap            0.6231 ✗ Removed (redundant)
+  15. 25th_percentile_gap            0.6114 ✗ Removed (redundant)
+  ... and 6 more selected features
+
+3. FEATURE QUALITY CRITERIA
+==============================
+Features were ranked based on:
+• Mean Absolute Correlation: How strongly features relate to rider performance
+• Discriminative Power: How well features distinguish between different riders
+• Sample Size: How many riders have valid data for each feature
+• Dynamic Range: The spread of correlation values across riders
+
+4. EXPECTED OUTCOMES WITH SELECTED FEATURES
+=============================================
+🎯 Rider Classification:
+   • Expected 2 distinct rider types
+   • Using race_features_70 (top 70% of race finishers)
+   • With 8 optimized features
+   • Moderate confidence in rider type separation
+
+5. TECHNICAL SUMMARY
+====================
+Analysis Basis: Combined correlation quality and clustering analysis
+Data Points: 24 rider results
+Features Considered: ~40-50 per percentile
+Final Feature Set: 8 features

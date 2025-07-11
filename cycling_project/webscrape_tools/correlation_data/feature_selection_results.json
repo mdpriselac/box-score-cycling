@@ -1,0 +1,167 @@
+{
+  "analysis_metadata": {
+    "timestamp": "2025-07-10T21:41:56.243001",
+    "total_rider_results": 499,
+    "percentiles_analyzed": [
+      "race_features_30",
+      "race_features_40",
+      "race_features_50",
+      "race_features_60",
+      "race_features_70",
+      "race_features_80",
+      "race_features_90"
+    ],
+    "max_features_constraint": 25,
+    "analysis_components": [
+      "correlation_quality",
+      "clustering_quality",
+      "feature_redundancy"
+    ]
+  },
+  "recommendations": {
+    "percentile_recommendations": {
+      "best_for_correlation_quality": "race_features_90",
+      "best_for_clustering": "race_features_30",
+      "consensus_percentiles": [
+        "race_features_90",
+        "race_features_80"
+      ],
+      "best_overall": "race_features_90",
+      "percentile_scores": {
+        "race_features_30": {
+          "correlation_score": 0.15,
+          "clustering_score": 0.5742622467006714,
+          "combined_score": 0.43284149780044756
+        },
+        "race_features_40": {
+          "correlation_score": 0.3603512399795498,
+          "clustering_score": 0.5466986367866375,
+          "combined_score": 0.48458283785094164
+        },
+        "race_features_50": {
+          "correlation_score": 0.5650835291171333,
+          "clustering_score": 0.5422381480518388,
+          "combined_score": 0.5498532750736036
+        },
+        "race_features_60": {
+          "correlation_score": 0.5857086301094737,
+          "clustering_score": 0.5405036432530983,
+          "combined_score": 0.5555719722052235
+        },
+        "race_features_70": {
+          "correlation_score": 0.5963374563853453,
+          "clustering_score": 0.5520305655805913,
+          "combined_score": 0.5667995291821759
+        },
+        "race_features_80": {
+          "correlation_score": 0.7926243630804277,
+          "clustering_score": 0.5646061417496158,
+          "combined_score": 0.6406122155265531
+        },
+        "race_features_90": {
+          "correlation_score": 0.8844421732334442,
+          "clustering_score": 0.5694874796253988,
+          "combined_score": 0.6744723774947472
+        }
+      }
+    },
+    "feature_recommendations": {
+      "race_features_90": {
+        "recommended_features": [
+          "std_group_size",
+          "total_groups",
+          "kurtosis_absolute",
+          "skewness_normalized",
+          "clumpiness_score",
+          "std_deviation_normalized",
+          "abandon_ratio",
+          "riders_in_groups",
+          "gini_coefficient",
+          "included_finishers",
+          "winning_time",
+          "largest_group_size"
+        ],
+        "num_features": 12,
+        "redundancy_reduction": {
+          "total_redundant_features": 30,
+          "features_removed": 25,
+          "reduction_rate": 0.8333333333333334
+        },
+        "selection_method": "redundancy_aware"
+      },
+      "race_features_80": {
+        "recommended_features": [
+          "std_group_size",
+          "total_groups",
+          "kurtosis_normalized",
+          "skewness_normalized",
+          "clumpiness_score",
+          "std_deviation_normalized",
+          "abandon_ratio",
+          "riders_in_groups",
+          "gini_coefficient",
+          "included_finishers",
+          "winning_time",
+          "largest_group_size"
+        ],
+        "num_features": 12,
+        "redundancy_reduction": {
+          "total_redundant_features": 30,
+          "features_removed": 25,
+          "reduction_rate": 0.8333333333333334
+        },
+        "selection_method": "redundancy_aware"
+      },
+      "race_features_70": {
+        "recommended_features": [
+          "total_groups",
+          "std_group_size",
+          "kurtosis_absolute",
+          "total_finishers",
+          "skewness_absolute",
+          "clumpiness_score",
+          "std_deviation_normalized",
+          "abandon_ratio",
+          "riders_in_groups",
+          "gini_coefficient",
+          "winning_time",
+          "largest_group_size"
+        ],
+        "num_features": 12,
+        "redundancy_reduction": {
+          "total_redundant_features": 30,
+          "features_removed": 25,
+          "reduction_rate": 0.8333333333333334
+        },
+        "selection_method": "redundancy_aware"
+      }
+    },
+    "summary": {
+      "recommended_percentile": "race_features_90",
+      "recommended_features": [
+        "std_group_size",
+        "total_groups",
+        "kurtosis_absolute",
+        "skewness_normalized",
+        "clumpiness_score",
+        "std_deviation_normalized",
+        "abandon_ratio",
+        "riders_in_groups",
+        "gini_coefficient",
+        "included_finishers",
+        "winning_time",
+        "largest_group_size"
+      ],
+      "feature_count": 12,
+      "analysis_basis": "Combined correlation quality and clustering analysis"
+    }
+  },
+  "summary_statistics": {
+    "percentiles_analyzed": 7,
+    "top_percentile_features": {
+      "race_features_90": 37,
+      "race_features_80": 37,
+      "race_features_70": 37
+    }
+  }
+}
