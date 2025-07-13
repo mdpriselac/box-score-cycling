@@ -1,0 +1,15 @@
+{
+  "race_type": "gc",
+  "percentile": "race_features_90",
+  "features": [
+    "biggest_group_metric",
+    "total_race_duration",
+    "shannon_entropy_absolute",
+    "abandon_ratio",
+    "total_finishers",
+    "kurtosis_absolute",
+    "largest_group_position"
+  ],
+  "n_riders": 8533,
+  "export_date": "2025-07-13T12:31:50.241036"
+}

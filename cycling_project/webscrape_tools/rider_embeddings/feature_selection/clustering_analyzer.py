@@ -30,7 +30,8 @@ class ClusteringQualityAnalyzer:
         self, 
         correlation_results: List[Dict[str, Any]], 
         percentile: str,
-        min_features: int = 5
+        min_features: int = 5,
+        selected_features: Optional[List[str]] = None
     ) -> Tuple[np.ndarray, List[int], List[str]]:
         """
         Convert correlation results to a matrix suitable for clustering.
@@ -39,6 +40,7 @@ class ClusteringQualityAnalyzer:
             correlation_results: List of correlation results
             percentile: Percentile to analyze (e.g., 'race_features_100')
             min_features: Minimum number of valid features required per rider
+            selected_features: If provided, only use these features for clustering
             
         Returns:
             Tuple of (correlation_matrix, rider_result_ids, feature_names)
@@ -54,12 +56,16 @@ class ClusteringQualityAnalyzer:
         if not valid_results:
             raise ValueError(f"No valid results found for percentile {percentile}")
         
-        # Get all possible features
-        all_features = set()
-        for result in valid_results:
-            all_features.update(result['feature_correlations'][percentile].keys())
-        
-        feature_names = sorted(list(all_features))
+        # Get features to use
+        if selected_features:
+            # Use only the selected features
+            feature_names = selected_features
+        else:
+            # Get all possible features
+            all_features = set()
+            for result in valid_results:
+                all_features.update(result['feature_correlations'][percentile].keys())
+            feature_names = sorted(list(all_features))
         
         # Build correlation matrix
         correlation_matrix = []
@@ -95,7 +101,8 @@ class ClusteringQualityAnalyzer:
         correlation_results: List[Dict[str, Any]], 
         percentile: str,
         k_range: List[int] = None,
-        scale_features: bool = True
+        scale_features: bool = True,
+        selected_features: Optional[List[str]] = None
     ) -> Dict[str, Any]:
         """
         Analyze clustering quality for a specific percentile.
@@ -105,6 +112,7 @@ class ClusteringQualityAnalyzer:
             percentile: Percentile to analyze
             k_range: Range of k values to test for clustering
             scale_features: Whether to standardize features before clustering
+            selected_features: If provided, only use these features for clustering
             
         Returns:
             Dictionary with clustering quality metrics
@@ -114,7 +122,7 @@ class ClusteringQualityAnalyzer:
         
         # Prepare data
         correlation_matrix, rider_ids, feature_names = self.prepare_correlation_matrix(
-            correlation_results, percentile
+            correlation_results, percentile, selected_features=selected_features
         )
         
         # Scale features if requested
@@ -293,7 +301,9 @@ class ClusteringQualityAnalyzer:
         self, 
         correlation_results: List[Dict[str, Any]], 
         percentile: str,
-        k: int = None
+        k: int = None,
+        selected_features: Optional[List[str]] = None,
+        precomputed_analysis: Optional[Dict[str, Any]] = None
     ) -> Dict[str, Any]:
         """
         Analyze characteristics of clusters for a specific percentile and k.
@@ -302,12 +312,19 @@ class ClusteringQualityAnalyzer:
             correlation_results: List of correlation results
             percentile: Percentile to analyze
             k: Number of clusters (if None, uses optimal k)
+            selected_features: If provided, only use these features for clustering
+            precomputed_analysis: If provided, use this analysis instead of computing new one
             
         Returns:
             Dictionary with cluster characteristics
         """
         # Get clustering analysis
-        analysis = self.analyze_clustering_quality(correlation_results, percentile)
+        if precomputed_analysis:
+            analysis = precomputed_analysis
+        else:
+            analysis = self.analyze_clustering_quality(
+                correlation_results, percentile, selected_features=selected_features
+            )
         
         if k is None:
             k = analysis['optimal_k']
@@ -317,7 +334,7 @@ class ClusteringQualityAnalyzer:
         
         # Prepare data
         correlation_matrix, rider_ids, feature_names = self.prepare_correlation_matrix(
-            correlation_results, percentile
+            correlation_results, percentile, selected_features=selected_features
         )
         
         # Get cluster labels

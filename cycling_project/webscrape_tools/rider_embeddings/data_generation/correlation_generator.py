@@ -244,7 +244,13 @@ class CorrelationDataGenerator:
         
         # Convert types for efficient storage
         df['rider_result_id'] = df['rider_result_id'].astype('int32')
-        df['n_races'] = df['n_races'].astype('int16')
+        
+        # Handle n_races - ensure it's numeric (not dict from error results)
+        if 'n_races' in df.columns:
+            # Convert any dict values to 0
+            df['n_races'] = df['n_races'].apply(lambda x: x if isinstance(x, (int, float)) else 0)
+            df['n_races'] = df['n_races'].astype('int16')
+        
         df['percentile'] = df['percentile'].astype('category')
         df['feature'] = df['feature'].astype('category')
         

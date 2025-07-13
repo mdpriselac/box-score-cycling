@@ -41,8 +41,9 @@ def process_rider_chunk_with_shared_data(chunk_data: Dict[str, Any]) -> List[Dic
     shared_data = chunk_data.get('shared_data', {})
     chunk_id = chunk_data.get('chunk_id', 'unknown')
     
-    # Set up logging
-    logging.basicConfig(level=logging.INFO, format=f'Worker-{chunk_id}: %(message)s')
+    # Set up logging with enhanced chunk ID
+    display_id = chunk_id if isinstance(chunk_id, str) and '/' in chunk_id else chunk_id
+    logging.basicConfig(level=logging.INFO, format=f'Worker-{display_id}: %(message)s')
     logger = logging.getLogger(f'worker_{chunk_id}')
     
     try:
@@ -304,10 +305,10 @@ class EnhancedParallelCorrelationGenerator(ParallelCorrelationGenerator):
         calculator_config: Dict[str, Any] = None
     ) -> None:
         """
-        Generate correlations using enhanced parallel processing with shared data.
+        Generate correlations using enhanced parallel processing with race type specific sampling.
         
         Args:
-            sample_size: Number of rider results to sample
+            sample_size: Number of rider results to sample (distributed across race types)
             feature_tables: List of feature tables to analyze
             output_name: Name for output file
             calculator_config: Configuration for the correlation calculator
@@ -324,22 +325,68 @@ class EnhancedParallelCorrelationGenerator(ParallelCorrelationGenerator):
                 'min_races_gc': 8
             }
         
-        self.logger.info(f"Generating enhanced parallel sample for {sample_size} rider results")
+        self.logger.info(f"Generating enhanced parallel sample for {sample_size} rider results using race type logic")
         
-        # Step 1: Get sample rider results using optimized two-step approach
-        self.logger.info("Step 1: Getting sample rider results...")
+        # Step 1: Get sample rider results using race type specific approach
+        self.logger.info("Step 1: Getting sample rider results by race type...")
         sample_start = time.time()
         
-        sample_results = self._get_sample_rider_results_optimized(sample_size)
+        # Define race types and their minimum requirements (same as full mode)
+        race_type_configs = {
+            'gc': {
+                'competition_types': ['gc'],
+                'min_races': calculator_config.get('min_races_gc', 8)
+            },
+            'stage': {
+                'competition_types': ['stage'],
+                'min_races': calculator_config.get('min_races_stage', 15)
+            },
+            'one_day': {
+                'competition_types': ['one_day'],
+                'min_races': calculator_config.get('min_races_one_day', 10)
+            },
+            'stage_one_day': {
+                'competition_types': ['stage', 'one_day'],
+                'min_races': calculator_config.get('min_races_one_day', 10)
+            },
+            'all': {
+                'competition_types': ['gc', 'stage', 'one_day'],
+                'min_races': calculator_config.get('min_races_all', 25)
+            }
+        }
+        
+        # Get samples from each race type (distribute sample_size across race types)
+        all_sample_results = self._get_sample_results_by_race_type(
+            race_type_configs, 
+            sample_size
+        )
+        
+        # Combine all results
+        sample_results = []
+        for race_type, results in all_sample_results.items():
+            sample_results.extend(results)
         
         if not sample_results:
             self.logger.error("No eligible rider results found")
             return
         
+        # Shuffle to mix race types
+        import random
+        random.shuffle(sample_results)
+        
+        # Limit to requested sample size
+        sample_results = sample_results[:sample_size]
+        
         rider_result_ids = [r[0] for r in sample_results]
         sample_time = time.time() - sample_start
         
         self.logger.info(f"Step 1 complete: {len(sample_results)} rider results in {sample_time:.2f}s")
+        
+        # Log breakdown by race type
+        for race_type, results in all_sample_results.items():
+            if results:
+                actual_in_sample = len([r for r in sample_results if r in results])
+                self.logger.info(f"  {race_type}: {len(results)} available, {actual_in_sample} in final sample")
         
         # Step 2: Pre-load all data
         if self.preload_all_data:
@@ -387,14 +434,18 @@ class EnhancedParallelCorrelationGenerator(ParallelCorrelationGenerator):
         self.logger.info("Step 3: Processing correlations in parallel...")
         processing_start = time.time()
         
-        # Split into chunks
-        chunk_size = max(1, len(sample_results) // self.n_workers)
+        # OPTIMIZATION: Use smaller, more balanced chunks for better load distribution
+        optimal_chunk_size = min(50, max(10, len(sample_results) // (self.n_workers * 3)))
         sample_chunks = [
-            sample_results[i:i+chunk_size] 
-            for i in range(0, len(sample_results), chunk_size)
+            sample_results[i:i+optimal_chunk_size] 
+            for i in range(0, len(sample_results), optimal_chunk_size)
         ]
         
+        total_chunks = len(sample_chunks)
+        self.logger.info(f"Split {len(sample_results)} riders into {total_chunks} chunks of ~{optimal_chunk_size} riders each")
+        
         all_results = []
+        completed_chunks = 0
         
         with ProcessPoolExecutor(max_workers=self.n_workers) as executor:
             # Submit all chunks
@@ -405,7 +456,7 @@ class EnhancedParallelCorrelationGenerator(ParallelCorrelationGenerator):
                     'feature_tables': feature_tables,
                     'calculator_config': calculator_config,
                     'shared_data': shared_data,
-                    'chunk_id': i
+                    'chunk_id': f"sample-{i+1}/{total_chunks}"  # Enhanced chunk ID with progress
                 }
                 
                 if self.preload_all_data:
@@ -418,14 +469,22 @@ class EnhancedParallelCorrelationGenerator(ParallelCorrelationGenerator):
                 
                 future_to_chunk[future] = i
             
-            # Collect results
+            # Collect results with progress tracking
             for future in as_completed(future_to_chunk):
                 chunk_id = future_to_chunk[future]
                 try:
                     chunk_results = future.result()
                     all_results.extend(chunk_results)
+                    completed_chunks += 1
+                    
+                    # Log progress
+                    successful_in_chunk = len([r for r in chunk_results if r.get('feature_correlations')])
+                    self.logger.info(f"Sample chunk {completed_chunks}/{total_chunks} complete: "
+                                   f"{successful_in_chunk}/{len(sample_chunks[chunk_id])} successful")
+                    
                 except Exception as e:
-                    self.logger.error(f"Enhanced chunk {chunk_id} failed: {e}")
+                    completed_chunks += 1
+                    self.logger.error(f"Sample chunk {completed_chunks}/{total_chunks} failed: {e}")
         
         processing_time = time.time() - processing_start
         total_time = sample_time + preload_time + processing_time
@@ -484,6 +543,507 @@ class EnhancedParallelCorrelationGenerator(ParallelCorrelationGenerator):
             self.logger.info(f"Saved {len(df)} records to {output_file}")
         else:
             self.logger.warning("No successful results to save")
+    
+    def _flatten_correlation_result(self, result: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """
+        Flatten correlation result based on calculator type.
+        
+        For race_type calculators, includes race_type column.
+        For standard calculators, uses base implementation.
+        """
+        # Check if this is race type data by looking at the structure
+        if 'feature_correlations' in result and result['feature_correlations']:
+            # Get first key to check structure
+            first_key = next(iter(result['feature_correlations']))
+            
+            # If the value is another dict, this is race type data
+            if isinstance(result['feature_correlations'][first_key], dict):
+                # Race type structure: {race_type: {percentile: {feature: correlation}}}
+                return self._flatten_race_type_result(result)
+            else:
+                # Standard structure: {percentile: {feature: correlation}}
+                return super()._flatten_correlation_result(result)
+        
+        return []
+    
+    def _flatten_race_type_result(self, result: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """
+        Flatten race type correlation result into list of records for parquet storage.
+        
+        Each record represents one rider-race_type-percentile-feature correlation.
+        """
+        flat_records = []
+        
+        rider_result_id = result['rider_result_id']
+        calculation_date = result['metadata']['calculation_date']
+        
+        # Iterate through race types
+        for race_type, percentile_data in result['feature_correlations'].items():
+            n_races = result['metadata']['n_races'].get(race_type, 0)
+            
+            # Iterate through percentiles within each race type
+            for percentile, correlations in percentile_data.items():
+                for feature, correlation in correlations.items():
+                    record = {
+                        'rider_result_id': rider_result_id,
+                        'race_type': race_type,
+                        'percentile': percentile,
+                        'feature': feature,
+                        'correlation': correlation,
+                        'n_races': n_races,
+                        'calculation_date': calculation_date
+                    }
+                    flat_records.append(record)
+        
+        return flat_records
+    
+    def generate_all_correlations_parallel_enhanced(
+        self,
+        feature_tables: List[str] = None,
+        limit: Optional[int] = None,
+        resume: bool = True,
+        calculator_type: str = 'race_type',
+        calculator_config: Dict[str, Any] = None,
+        checkpoint_interval: int = 10000
+    ) -> None:
+        """
+        Generate correlations for all eligible riders using enhanced parallel processing.
+        
+        This method processes the full dataset with optimized memory management by:
+        1. For each race type, finding rider results with sufficient prior races of that type
+        2. Processing results in chunks to avoid loading all data at once
+        3. Using the enhanced parallel processing with pre-loaded shared data per chunk
+        4. Providing checkpoint/resume capability for long runs
+        
+        Args:
+            feature_tables: List of feature tables to analyze
+            limit: Optional limit on number of riders to process
+            resume: Whether to resume from checkpoint
+            calculator_type: Type of calculator ('race_type' or 'standard')
+            calculator_config: Configuration for the correlation calculator
+            checkpoint_interval: Number of rider results to process before saving checkpoint
+        """
+        if feature_tables is None:
+            feature_tables = self._get_all_feature_tables()
+        
+        if calculator_config is None:
+            calculator_config = {
+                'type': 'race_type',
+                'min_races_all': 150,
+                'min_races_stage': 100,
+                'min_races_one_day': 30,
+                'min_races_gc': 20
+            }
+        
+        self.logger.info("="*80)
+        self.logger.info("ENHANCED PARALLEL CORRELATION GENERATION - FULL DATASET")
+        self.logger.info("="*80)
+        self.logger.info(f"Feature tables: {feature_tables}")
+        self.logger.info(f"Calculator type: {calculator_type}")
+        self.logger.info(f"Checkpoint interval: {checkpoint_interval} riders")
+        
+        # Load or create checkpoint
+        checkpoint_file = self.output_dir / "checkpoint_enhanced.json"
+        if resume and checkpoint_file.exists():
+            with open(checkpoint_file, 'r') as f:
+                checkpoint = json.load(f)
+            self.logger.info(f"Resuming from checkpoint: {checkpoint['processed_riders']} riders processed")
+        else:
+            checkpoint = {
+                'processed_riders': 0,
+                'total_riders': 0,
+                'feature_tables': feature_tables,
+                'calculator_config': calculator_config,
+                'start_time': datetime.now().isoformat(),
+                'batches_completed': []
+            }
+        
+        # For race type calculator, we need to get eligible results for each race type
+        if calculator_type == 'race_type':
+            self.logger.info("Race type calculator detected - will query eligible results by race type")
+            
+            # Define race types and their minimum requirements
+            race_type_configs = {
+                'gc': {
+                    'competition_types': ['gc'],
+                    'min_races': calculator_config.get('min_races_gc', 20)
+                },
+                'stage': {
+                    'competition_types': ['stage'],
+                    'min_races': calculator_config.get('min_races_stage', 100)
+                },
+                'one_day': {
+                    'competition_types': ['one_day'],
+                    'min_races': calculator_config.get('min_races_one_day', 30)
+                },
+                'stage_one_day': {
+                    'competition_types': ['stage', 'one_day'],
+                    'min_races': calculator_config.get('min_races_one_day', 30)
+                },
+                'all': {
+                    'competition_types': ['gc', 'stage', 'one_day'],
+                    'min_races': calculator_config.get('min_races_all', 150)
+                }
+            }
+            
+            # Get eligible rider results for each race type
+            all_eligible_results = self._get_eligible_results_by_race_type(
+                race_type_configs, 
+                limit, 
+                checkpoint.get('last_processed_race_type', None)
+            )
+            
+            checkpoint['total_results'] = sum(len(results) for results in all_eligible_results.values())
+            self.logger.info(f"Found {checkpoint['total_results']} total eligible rider results across all race types")
+            
+            # Process each race type's results
+            for race_type, eligible_results in all_eligible_results.items():
+                if not eligible_results:
+                    continue
+                    
+                self.logger.info(f"\nProcessing {race_type}: {len(eligible_results)} eligible results")
+                
+                # Skip if we've already processed this race type
+                if checkpoint.get('completed_race_types', {}).get(race_type, False):
+                    self.logger.info(f"  Skipping {race_type} (already completed)")
+                    continue
+                
+                # Process in chunks
+                chunk_size = min(checkpoint_interval, 5000)
+                race_type_processed = checkpoint.get('race_type_progress', {}).get(race_type, 0)
+                
+                # Calculate total chunks for this race type
+                total_chunks = (len(eligible_results) + chunk_size - 1) // chunk_size
+                
+                # Skip already processed results for this race type
+                if race_type_processed > 0:
+                    eligible_results = eligible_results[race_type_processed:]
+                    self.logger.info(f"  Resuming from result {race_type_processed}")
+                
+                for chunk_index, chunk_start in enumerate(range(0, len(eligible_results), chunk_size)):
+                    chunk_end = min(chunk_start + chunk_size, len(eligible_results))
+                    chunk_results = eligible_results[chunk_start:chunk_end]
+                    
+                    # Calculate actual chunk number (accounting for resumed processing)
+                    actual_chunk_number = (race_type_processed // chunk_size) + chunk_index + 1
+                    
+                    self.logger.info(f"  Processing chunk {actual_chunk_number}/{total_chunks}: results {race_type_processed + chunk_start + 1} to {race_type_processed + chunk_end}")
+                    
+                    # Process this chunk
+                    self._process_chunk_enhanced(
+                        chunk_results,
+                        feature_tables,
+                        calculator_config,
+                        batch_number=checkpoint.get('batch_number', 0),
+                        progress_info=f"{race_type} chunk {actual_chunk_number}/{total_chunks}"
+                    )
+                    
+                    # Update checkpoint
+                    checkpoint['batch_number'] = checkpoint.get('batch_number', 0) + 1
+                    checkpoint['last_processed_race_type'] = race_type
+                    
+                    if 'race_type_progress' not in checkpoint:
+                        checkpoint['race_type_progress'] = {}
+                    checkpoint['race_type_progress'][race_type] = race_type_processed + chunk_end
+                    
+                    # Save checkpoint
+                    with open(checkpoint_file, 'w') as f:
+                        json.dump(checkpoint, f, indent=2)
+                
+                # Mark race type as completed
+                if 'completed_race_types' not in checkpoint:
+                    checkpoint['completed_race_types'] = {}
+                checkpoint['completed_race_types'][race_type] = True
+                checkpoint['race_type_progress'][race_type] = 0  # Reset for next run
+                
+                with open(checkpoint_file, 'w') as f:
+                    json.dump(checkpoint, f, indent=2)
+                    
+                self.logger.info(f"  Completed {race_type}")
+            
+            total_processed = checkpoint['total_results']
+            
+        else:
+            # For standard calculator, use the original approach
+            self.logger.info("Standard calculator - using original query approach")
+            raise NotImplementedError("Standard calculator not yet implemented for enhanced full dataset processing")
+            total_processed = 0
+        
+        # Save final metadata
+        self._save_generation_metadata(checkpoint, feature_tables)
+        
+        # Clean up checkpoint file
+        if checkpoint_file.exists():
+            checkpoint_file.unlink()
+        
+        self.logger.info("\n" + "="*80)
+        self.logger.info("ENHANCED PARALLEL GENERATION COMPLETE!")
+        self.logger.info(f"Processed {total_processed} riders")
+        self.logger.info("="*80)
+    
+    def _process_chunk_enhanced(
+        self,
+        chunk_results: List[Tuple[int, str]],
+        feature_tables: List[str],
+        calculator_config: Dict[str, Any],
+        batch_number: int,
+        progress_info: str = None
+    ) -> None:
+        """
+        Process a chunk of rider results using enhanced parallel processing.
+        """
+        if progress_info:
+            self.logger.info(f"Processing {progress_info}: batch {batch_number} with {len(chunk_results)} rider results")
+        else:
+            self.logger.info(f"Processing batch {batch_number} with {len(chunk_results)} rider results")
+        
+        # Extract unique rider result IDs
+        rider_result_ids = [r[0] for r in chunk_results]
+        
+        # Pre-load all data for this chunk
+        self.logger.info("  Pre-loading data for chunk...")
+        preload_start = time.time()
+        
+        loader = BatchedDatabaseLoader(self.db_path)
+        loader.preload_all_data(rider_result_ids, feature_tables)
+        
+        # Prepare shared data
+        shared_data = {
+            'rider_histories': {},
+            'race_features': {}
+        }
+        
+        # Extract rider histories
+        for rider_result_id in rider_result_ids:
+            history = loader.get_cached_rider_history(rider_result_id)
+            shared_data['rider_histories'][rider_result_id] = history
+        
+        # Extract race features
+        for feature_table in feature_tables:
+            all_comp_ids = set()
+            for history in shared_data['rider_histories'].values():
+                all_comp_ids.update(h['competition_id'] for h in history)
+            
+            features = loader.get_cached_race_features(list(all_comp_ids), feature_table)
+            shared_data['race_features'][feature_table] = features
+        
+        preload_time = time.time() - preload_start
+        self.logger.info(f"  Pre-loading complete in {preload_time:.2f}s")
+        
+        # Clear the loader's cache to free memory
+        loader.clear_cache()
+        
+        # Process in parallel
+        self.logger.info("  Processing correlations in parallel...")
+        processing_start = time.time()
+        
+        # Create smaller sub-chunks for parallel processing
+        optimal_chunk_size = min(50, max(10, len(chunk_results) // (self.n_workers * 3)))
+        sub_chunks = [
+            chunk_results[i:i+optimal_chunk_size] 
+            for i in range(0, len(chunk_results), optimal_chunk_size)
+        ]
+        
+        all_results = []
+        
+        with ProcessPoolExecutor(max_workers=self.n_workers) as executor:
+            futures = []
+            for i, sub_chunk in enumerate(sub_chunks):
+                chunk_data = {
+                    'rider_result_data': sub_chunk,
+                    'feature_tables': feature_tables,
+                    'calculator_config': calculator_config,
+                    'shared_data': shared_data,
+                    'chunk_id': f"{batch_number}-{i}"
+                }
+                
+                future = executor.submit(process_rider_chunk_with_shared_data, chunk_data)
+                futures.append(future)
+            
+            # Collect results
+            for future in as_completed(futures):
+                try:
+                    sub_results = future.result()
+                    all_results.extend(sub_results)
+                except Exception as e:
+                    self.logger.error(f"Sub-chunk processing failed: {e}")
+        
+        processing_time = time.time() - processing_start
+        self.logger.info(f"  Processing complete in {processing_time:.2f}s")
+        
+        # Save results for this batch
+        if all_results:
+            self._save_results_in_batches(
+                all_results,
+                {'batch_number': batch_number * 1000},  # Offset batch numbers
+                feature_tables
+            )
+            
+            successful_results = [r for r in all_results if r.get('feature_correlations')]
+            if progress_info:
+                self.logger.info(f"  {progress_info} complete: {len(successful_results)}/{len(chunk_results)} successful")
+            else:
+                self.logger.info(f"  Batch {batch_number} complete: {len(successful_results)}/{len(chunk_results)} successful")
+    
+    def _get_eligible_results_by_race_type(
+        self, 
+        race_type_configs: Dict[str, Dict[str, Any]], 
+        limit: Optional[int] = None,
+        resume_from_race_type: Optional[str] = None
+    ) -> Dict[str, List[Tuple[int, str]]]:
+        """
+        Get eligible rider results for each race type based on minimum prior races of that type.
+        
+        Args:
+            race_type_configs: Dictionary of race type configurations
+            limit: Optional limit on total results
+            resume_from_race_type: Race type to resume from (skip earlier types)
+            
+        Returns:
+            Dictionary mapping race type to list of (rider_result_id, competition_date) tuples
+        """
+        eligible_results = {}
+        total_results = 0
+        skip_mode = resume_from_race_type is not None
+        
+        with sqlite3.connect(self.db_path) as conn:
+            cursor = conn.cursor()
+            
+            for race_type, config in race_type_configs.items():
+                # Skip if we haven't reached the resume point yet
+                if skip_mode and race_type != resume_from_race_type:
+                    continue
+                skip_mode = False  # Start processing from this race type
+                
+                self.logger.info(f"\nQuerying eligible results for {race_type}...")
+                
+                competition_types = config['competition_types']
+                min_races = config['min_races']
+                
+                # Build the competition type filter
+                if len(competition_types) == 1:
+                    type_filter = f"= '{competition_types[0]}'"
+                else:
+                    type_list = "', '".join(competition_types)
+                    type_filter = f"IN ('{type_list}')"
+                
+                # Optimized query using window functions - much faster than correlated subqueries
+                query = f"""
+                WITH race_type_results AS (
+                    SELECT 
+                        rr.id as rider_result_id,
+                        rr.rider_id,
+                        c.date as competition_date,
+                        c.competition_type,
+                        -- Use window function to count prior races - much faster
+                        ROW_NUMBER() OVER (
+                            PARTITION BY rr.rider_id 
+                            ORDER BY c.date
+                        ) - 1 as prior_races_of_type
+                    FROM rider_results rr
+                    JOIN competitions c ON rr.competition_id = c.id
+                    WHERE c.date <= '2025-01-01'
+                    AND c.competition_type {type_filter}
+                    ORDER BY rr.rider_id, c.date
+                )
+                SELECT rider_result_id, competition_date
+                FROM race_type_results
+                WHERE prior_races_of_type >= ?
+                ORDER BY rider_result_id
+                """
+                
+                if limit and total_results >= limit:
+                    # We've reached the limit
+                    remaining = limit - total_results
+                    query += f" LIMIT {remaining}"
+                
+                cursor.execute(query, (min_races,))
+                results = cursor.fetchall()
+                
+                eligible_results[race_type] = results
+                total_results += len(results)
+                
+                self.logger.info(f"  Found {len(results)} eligible results for {race_type} (min {min_races} prior races)")
+                
+                if limit and total_results >= limit:
+                    self.logger.info(f"  Reached limit of {limit} total results")
+                    break
+        
+        return eligible_results
+    
+    def _get_sample_results_by_race_type(
+        self, 
+        race_type_configs: Dict[str, Dict[str, Any]], 
+        total_sample_size: int
+    ) -> Dict[str, List[Tuple[int, str]]]:
+        """
+        Get sample rider results for each race type, distributing the total sample size.
+        
+        Args:
+            race_type_configs: Dictionary of race type configurations
+            total_sample_size: Total number of results to sample across all race types
+            
+        Returns:
+            Dictionary mapping race type to list of (rider_result_id, competition_date) tuples
+        """
+        sample_results = {}
+        
+        # Distribute sample size across race types (equal distribution)
+        sample_per_type = max(1, total_sample_size // len(race_type_configs))
+        
+        with sqlite3.connect(self.db_path) as conn:
+            cursor = conn.cursor()
+            
+            for race_type, config in race_type_configs.items():
+                self.logger.info(f"Sampling {sample_per_type} results for {race_type}...")
+                
+                competition_types = config['competition_types']
+                min_races = config['min_races']
+                
+                # Build the competition type filter
+                if len(competition_types) == 1:
+                    type_filter = f"= '{competition_types[0]}'"
+                else:
+                    type_list = "', '".join(competition_types)
+                    type_filter = f"IN ('{type_list}')"
+                
+                # Optimized query using window functions with random sampling
+                query = f"""
+                WITH race_type_results AS (
+                    SELECT 
+                        rr.id as rider_result_id,
+                        rr.rider_id,
+                        c.date as competition_date,
+                        c.competition_type,
+                        -- Use window function to count prior races - much faster
+                        ROW_NUMBER() OVER (
+                            PARTITION BY rr.rider_id 
+                            ORDER BY c.date
+                        ) - 1 as prior_races_of_type
+                    FROM rider_results rr
+                    JOIN competitions c ON rr.competition_id = c.id
+                    WHERE c.date <= '2025-01-01'
+                    AND c.competition_type {type_filter}
+                    ORDER BY rr.rider_id, c.date
+                ),
+                eligible_results AS (
+                    SELECT rider_result_id, competition_date
+                    FROM race_type_results
+                    WHERE prior_races_of_type >= ?
+                )
+                SELECT rider_result_id, competition_date
+                FROM eligible_results
+                ORDER BY RANDOM()
+                LIMIT ?
+                """
+                
+                cursor.execute(query, (min_races, sample_per_type))
+                results = cursor.fetchall()
+                
+                sample_results[race_type] = results
+                self.logger.info(f"  Sampled {len(results)} results for {race_type}")
+        
+        return sample_results
     
     def _get_sample_rider_results_optimized(self, sample_size: int) -> List[Tuple[int, str]]:
         """

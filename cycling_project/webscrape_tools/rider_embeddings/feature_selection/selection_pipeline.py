@@ -77,37 +77,9 @@ class FeatureSelectionPipeline:
         correlation_quality = self.correlation_analyzer.analyze_percentile_quality(correlation_results)
         percentile_rankings_corr = self.correlation_analyzer.rank_percentiles(correlation_quality)
         
-        # 2. Clustering Quality Analysis  
-        print("2. Running clustering quality analysis...")
-        clustering_comparison = self.clustering_analyzer.compare_percentiles(
-            correlation_results, percentiles, k_range
-        )
-        
-        # 2b. Get cluster characteristics for top percentiles
-        print("2b. Analyzing cluster characteristics...")
-        cluster_characteristics = {}
-        for percentile in percentiles:
-            if percentile in clustering_comparison.get('percentile_analyses', {}):
-                try:
-                    # Get the optimal k from the existing analysis
-                    percentile_analysis = clustering_comparison['percentile_analyses'][percentile]
-                    optimal_k = percentile_analysis.get('optimal_k')
-                    
-                    if optimal_k:
-                        characteristics = self.clustering_analyzer.get_cluster_characteristics(
-                            correlation_results, percentile, k=optimal_k
-                        )
-                        cluster_characteristics[percentile] = characteristics
-                    else:
-                        print(f"   Warning: No optimal k found for {percentile}")
-                except Exception as e:
-                    print(f"   Warning: Could not get characteristics for {percentile}: {e}")
-        
-        clustering_comparison['cluster_characteristics'] = cluster_characteristics
-        
-        # 3. Feature Analysis for Top Percentiles
-        print("3. Analyzing features for top percentiles...")
-        top_percentiles = [p[0] for p in percentile_rankings_corr[:3]]
+        # 2. Feature Analysis for All Percentiles
+        print("2. Analyzing features for all percentiles...")
+        top_percentiles = list(correlation_quality.keys())  # Analyze all percentiles
         
         feature_analyses = {}
         redundancy_analyses = {}
@@ -152,18 +124,80 @@ class FeatureSelectionPipeline:
                 print(f"   Warning: Could not analyze {percentile}: {e}")
                 warnings.warn(f"Analysis failed for {percentile}: {e}")
         
+        # 3. Run clustering analysis on selected features for each percentile
+        print("3. Running clustering analysis on selected features...")
+        selected_features_clustering = {}
+        
+        # For each percentile that has feature recommendations
+        for percentile in redundancy_analyses.keys():
+            if percentile in redundancy_analyses:
+                redundancy_data = redundancy_analyses[percentile]
+                selection_rec = redundancy_data['selection_recommendations']
+                
+                # Get the selected features
+                if selection_rec['final_selection']:
+                    selected_features = selection_rec['final_selection']
+                else:
+                    # Fall back to top features minus redundant ones
+                    top_features = [f[0] for f in feature_analyses[percentile]['rankings'][:30]]
+                    features_to_remove = set(selection_rec['features_to_remove'])
+                    selected_features = [f for f in top_features if f not in features_to_remove]
+                    
+                    if max_features and len(selected_features) > max_features:
+                        selected_features = selected_features[:max_features]
+                
+                if selected_features:
+                    try:
+                        print(f"   Analyzing clustering for {percentile} with {len(selected_features)} selected features...")
+                        
+                        # Run clustering on selected features only
+                        selected_analysis = self.clustering_analyzer.analyze_clustering_quality(
+                            correlation_results,
+                            percentile,
+                            k_range=k_range,
+                            selected_features=selected_features
+                        )
+                        
+                        # Get cluster characteristics for selected features
+                        optimal_k = selected_analysis.get('optimal_k')
+                        if optimal_k:
+                            try:
+                                characteristics = self.clustering_analyzer.get_cluster_characteristics(
+                                    correlation_results,
+                                    percentile,
+                                    k=optimal_k,
+                                    selected_features=selected_features,
+                                    precomputed_analysis=selected_analysis
+                                )
+                                # Merge the characteristics into selected_analysis
+                                selected_analysis.update(characteristics)
+                            except Exception as e:
+                                print(f"   Warning: Could not get cluster characteristics for {percentile}: {e}")
+                        
+                        selected_features_clustering[percentile] = {
+                            'analysis': selected_analysis,
+                            'features_used': selected_features,
+                            'num_features': len(selected_features)
+                        }
+                        
+                    except Exception as e:
+                        print(f"   Warning: Could not re-analyze clustering for {percentile}: {e}")
+                        import traceback
+                        traceback.print_exc()
+                        warnings.warn(f"Selected features clustering failed for {percentile}: {e}")
+        
         # 4. Generate Integrated Recommendations
         print("4. Generating integrated recommendations...")
         recommendations = self._generate_recommendations(
             correlation_quality,
             percentile_rankings_corr,
-            clustering_comparison,
+            selected_features_clustering,  # Use clustering results from selected features
             feature_analyses,
             redundancy_analyses,
             max_features
         )
         
-        # 5. Compile Final Results
+        # 6. Compile Final Results
         final_results = {
             'analysis_metadata': {
                 'timestamp': datetime.now().isoformat(),
@@ -172,15 +206,15 @@ class FeatureSelectionPipeline:
                 'max_features_constraint': max_features,
                 'analysis_components': [
                     'correlation_quality',
-                    'clustering_quality', 
-                    'feature_redundancy'
+                    'feature_selection',
+                    'selected_features_clustering'
                 ]
             },
             'correlation_quality_analysis': {
                 'percentile_quality_metrics': correlation_quality,
                 'percentile_rankings': percentile_rankings_corr
             },
-            'clustering_analysis': clustering_comparison,
+            'clustering_analysis': selected_features_clustering,
             'feature_analysis': feature_analyses,
             'redundancy_analysis': redundancy_analyses,
             'recommendations': recommendations
@@ -193,7 +227,7 @@ class FeatureSelectionPipeline:
         self,
         correlation_quality: Dict[str, Dict[str, float]],
         percentile_rankings_corr: List[Tuple[str, float]],
-        clustering_comparison: Dict[str, Any],
+        selected_features_clustering: Dict[str, Dict[str, Any]],
         feature_analyses: Dict[str, Dict[str, Any]],
         redundancy_analyses: Dict[str, Dict[str, Any]],
         max_features: Optional[int]
@@ -202,13 +236,35 @@ class FeatureSelectionPipeline:
         
         # Best percentile recommendations
         best_percentile_corr = percentile_rankings_corr[0][0] if percentile_rankings_corr else None
-        best_percentile_clustering = clustering_comparison.get('best_percentile')
+        # Find best percentile based on selected features clustering
+        best_percentile_clustering = None
+        if selected_features_clustering:
+            best_clustering_score = 0
+            for percentile, clustering_data in selected_features_clustering.items():
+                if 'analysis' in clustering_data:
+                    analysis = clustering_data['analysis']
+                    optimal_k = analysis.get('optimal_k')
+                    if optimal_k and optimal_k in analysis.get('clustering_results', {}):
+                        silhouette = analysis['clustering_results'][optimal_k]['silhouette_score']
+                        if silhouette > best_clustering_score:
+                            best_clustering_score = silhouette
+                            best_percentile_clustering = percentile
         
         # Consensus percentile (appears in top 3 of both analyses)
         top_3_corr = {p[0] for p in percentile_rankings_corr[:3]}
-        top_3_clustering = {
-            p[0] for p in clustering_comparison.get('ranked_percentiles', [])[:3]
-        }
+        
+        # Get top 3 from selected features clustering
+        clustering_rankings = []
+        for percentile, clustering_data in selected_features_clustering.items():
+            if 'analysis' in clustering_data:
+                analysis = clustering_data['analysis']
+                optimal_k = analysis.get('optimal_k')
+                if optimal_k and optimal_k in analysis.get('clustering_results', {}):
+                    silhouette = analysis['clustering_results'][optimal_k]['silhouette_score']
+                    clustering_rankings.append((percentile, silhouette))
+        
+        clustering_rankings.sort(key=lambda x: x[1], reverse=True)
+        top_3_clustering = {p[0] for p in clustering_rankings[:3]}
         consensus_percentiles = list(top_3_corr.intersection(top_3_clustering))
         
         # Feature recommendations for best percentiles
@@ -245,11 +301,20 @@ class FeatureSelectionPipeline:
             # Correlation quality score
             corr_score = next((score for name, score in percentile_rankings_corr if name == percentile), 0)
             
-            # Clustering quality score
-            clustering_score = clustering_comparison.get('percentile_scores', {}).get(percentile, 0)
+            # Clustering quality score from selected features clustering
+            clustering_score = 0
+            if percentile in selected_features_clustering:
+                clustering_data = selected_features_clustering[percentile]
+                if 'analysis' in clustering_data:
+                    analysis = clustering_data['analysis']
+                    optimal_k = analysis.get('optimal_k')
+                    if optimal_k and optimal_k in analysis.get('clustering_results', {}):
+                        # Normalize silhouette score (0-1) to similar scale as correlation score
+                        silhouette = analysis['clustering_results'][optimal_k]['silhouette_score']
+                        clustering_score = max(0, silhouette) * 2  # Scale to 0-2 range
             
-            # Combined score (double weight clustering)
-            combined_score = (corr_score + (2 * clustering_score)) / 3
+            # Combined score (equal weight correlation and clustering)
+            combined_score = (corr_score + clustering_score) / 2
             percentile_scores[percentile] = {
                 'correlation_score': corr_score,
                 'clustering_score': clustering_score,
@@ -379,7 +444,60 @@ class FeatureSelectionPipeline:
             report.append("")
         
         # Clustering quality explanation
-        if 'percentile_analyses' in clustering_analysis and best_percentile in clustering_analysis['percentile_analyses']:
+        # Check if we have clustering results for the best percentile
+        clustering_analysis = results['clustering_analysis']
+        selected_clustering = clustering_analysis.get(best_percentile)
+        
+        if selected_clustering and 'analysis' in selected_clustering:
+            report.append("DEBUG: WE SELECTED selected_clustering and 'analysis' in selected_clustering")
+            # Use selected features clustering metrics
+            selected_analysis = selected_clustering['analysis']
+            optimal_k = selected_analysis.get('optimal_k', 'N/A')
+            
+            if optimal_k != 'N/A' and optimal_k in selected_analysis.get('clustering_results', {}):
+                #Get the cluster quality results
+                cluster_results = selected_analysis['clustering_results'][optimal_k]
+                silhouette = cluster_results['silhouette_score']
+                #Cluster quality reporting
+                report.append(f"🎯 Clustering Quality Metrics (based on selected features):")
+                report.append(f"   • Optimal Clusters: {optimal_k}")
+                report.append(f"   • Silhouette Score: {silhouette:.4f}")
+                if silhouette > 0.5:
+                    report.append(f"     (Excellent cluster separation - riders form distinct groups)")
+                elif silhouette > 0.3:
+                    report.append(f"     (Good cluster separation - clear rider types emerge)")
+                else:
+                    report.append(f"     (Moderate cluster separation - some rider differentiation)")
+                #Cluster size balance reporting
+                cluster_sizes = cluster_results['cluster_sizes']
+                report.append(f"   • Cluster Sizes: {cluster_sizes}")
+                size_balance = cluster_results['size_balance']
+                if size_balance < 0.5:
+                    report.append(f"     (Well-balanced cluster sizes)")
+                else:
+                    report.append(f"     (Some cluster size imbalance)")
+                # Add cluster characteristics with feature importance
+                report.append("DEBUG: Checking for cluster characteristics")
+                if 'cluster_characteristics' in selected_analysis:
+                    report.append(f"DEBUG: selected_clustering exists: {len(selected_analysis['cluster_characteristics'])} cluster characteristics found")
+                    for cluster_id, cluster_chars in selected_analysis['cluster_characteristics'].items():
+                        report.append(f"\n Cluster {int(cluster_id) + 1} Characteristics:")
+                        #sort the top features by the absolute value of their mean correlation (descending order, highest to lowest)
+                        top_features = sorted(
+                            cluster_chars['top_features'], 
+                            key=lambda x: abs(x['mean_correlation']), 
+                            reverse=True
+                        )[:4]
+                        for i, feature_data in enumerate(top_features, 1):
+                            feature_name = feature_data['feature']
+                            mean_corr = feature_data['mean_correlation']
+                            importance = abs(mean_corr)
+                            report.append(f"     {i}. {feature_name:<28} {mean_corr:+.3f} (imp: {importance:.3f})")
+                            
+                
+        elif 'percentile_analyses' in clustering_analysis and best_percentile in clustering_analysis['percentile_analyses']:
+            report.append("DEBUG: WE SELECTED 'percentile_analyes' in clustering_analysis and best_percentile in clusterign_analysis['percentile_analyses']")
+            # Fall back to all-features clustering if selected features clustering not available
             cluster_data = clustering_analysis['percentile_analyses'][best_percentile]
             optimal_k = cluster_data.get('optimal_k', 'N/A')
             
@@ -387,7 +505,7 @@ class FeatureSelectionPipeline:
                 cluster_results = cluster_data['clustering_results'][optimal_k]
                 silhouette = cluster_results['silhouette_score']
                 
-                report.append(f"🎯 Clustering Quality Metrics:")
+                report.append(f"🎯 Clustering Quality Metrics (all features):")
                 report.append(f"   • Optimal Clusters: {optimal_k}")
                 report.append(f"   • Silhouette Score: {silhouette:.4f}")
                 if silhouette > 0.5:
@@ -407,14 +525,20 @@ class FeatureSelectionPipeline:
                     report.append(f"     (Some cluster size imbalance)")
                 
                 # Add cluster characteristics with feature importance
-                if 'cluster_characteristics' in clustering_analysis:
-                    cluster_chars = clustering_analysis['cluster_characteristics'].get(best_percentile)
-                    if cluster_chars and 'cluster_characteristics' in cluster_chars:
+                # Check if we have clustering results for this percentile
+                report.append("DEBUG: Checking for cluster characteristics")
+                report.append(f"DEBUG: selected_clustering exists: {selected_clustering is not None}")
+                if selected_clustering and 'analysis' in selected_clustering:
+                    # Use the selected features clustering results
+                    selected_analysis = selected_clustering['analysis']
+                    report.append(f"DEBUG: Keys in selected_analysis: {list(selected_analysis.keys())}")
+                    if 'cluster_characteristics' in selected_analysis:
+                        cluster_chars = selected_analysis['cluster_characteristics']
                         report.append("")
-                        report.append(f"🏷️  CLUSTER PROFILES:")
+                        report.append(f"🏷️  CLUSTER PROFILES (based on {selected_clustering['num_features']} selected features):")
                         report.append("-" * 20)
                         
-                        clusters_data = cluster_chars['cluster_characteristics']
+                        clusters_data = cluster_chars
                         
                         # Sort cluster IDs to ensure consistent ordering
                         sorted_cluster_items = sorted(
@@ -446,12 +570,15 @@ class FeatureSelectionPipeline:
                                 # Format the correlation value with sign
                                 corr_sign = "+" if mean_corr >= 0 else ""
                                 report.append(f"     {i}. {display_name:<28} {corr_sign}{mean_corr:.3f} (imp: {importance:.3f})")
-                    else:
-                        # No cluster characteristics available for display
-                        pass
+                else:
+                    # No cluster characteristics available for display
+                    report.append("")
+                    report.append("🏷️  CLUSTER PROFILES: Not available (clustering analysis may have failed)")
+                    report.append("")
                 
                 report.append("")
-        
+        else:
+            report.append("DEBUG: We did not select either clustering analysis options, we need another way to identify the clustering feature importances")
         # Comparison with other percentiles
         report.append("COMPARISON WITH OTHER PERCENTILES:")
         report.append("-" * 35)
@@ -554,23 +681,30 @@ class FeatureSelectionPipeline:
         report.append("4. EXPECTED OUTCOMES WITH SELECTED FEATURES")
         report.append("=" * 45)
         
-        if best_percentile in clustering_analysis.get('percentile_analyses', {}):
-            cluster_data = clustering_analysis['percentile_analyses'][best_percentile]
-            optimal_k = cluster_data.get('optimal_k', 'N/A')
+        # Use clustering results for expected outcomes if available  
+        if selected_clustering and 'analysis' in selected_clustering:
+            # Use selected features clustering results
+            selected_analysis = selected_clustering['analysis']
+            optimal_k = selected_analysis.get('optimal_k', 'N/A')
             
             report.append(f"🎯 Rider Classification:")
             report.append(f"   • Expected {optimal_k} distinct rider types")
             report.append(f"   • Using {best_percentile} (top {best_percentile.split('_')[-1]}% of race finishers)")
             report.append(f"   • With {summary['feature_count']} optimized features")
             
-            if optimal_k != 'N/A':
-                silhouette = cluster_data['clustering_results'][optimal_k]['silhouette_score']
+            if optimal_k != 'N/A' and optimal_k in selected_analysis.get('clustering_results', {}):
+                silhouette = selected_analysis['clustering_results'][optimal_k]['silhouette_score']
                 if silhouette > 0.5:
                     report.append(f"   • High confidence in rider type separation")
                 elif silhouette > 0.3:
                     report.append(f"   • Moderate confidence in rider type separation")
                 else:
                     report.append(f"   • Lower confidence - rider types may overlap")
+        else:
+            report.append(f"🎯 Rider Classification:")
+            report.append(f"   • Using {best_percentile} (top {best_percentile.split('_')[-1]}% of race finishers)")
+            report.append(f"   • With {summary['feature_count']} optimized features")
+            report.append(f"   • Clustering analysis not available")
         
         report.append("")
         

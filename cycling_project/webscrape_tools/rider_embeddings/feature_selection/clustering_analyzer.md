@@ -17,10 +17,17 @@ ClusteringQualityAnalyzer(random_state: int = 42)
 prepare_correlation_matrix(
     correlation_results: List[Dict[str, Any]], 
     percentile: str,
-    min_features: int = 5
+    min_features: int = 5,
+    selected_features: Optional[List[str]] = None
 ) -> Tuple[np.ndarray, List[int], List[str]]
 ```
 Convert correlation results to a matrix suitable for clustering.
+
+**Arguments:**
+- `correlation_results`: List of correlation results
+- `percentile`: Percentile to analyze
+- `min_features`: Minimum number of valid features required per rider
+- `selected_features`: If provided, only use these features for clustering
 
 **Returns:** Tuple of (correlation_matrix, rider_result_ids, feature_names)
 
@@ -30,7 +37,8 @@ analyze_clustering_quality(
     correlation_results: List[Dict[str, Any]], 
     percentile: str,
     k_range: List[int] = None,
-    scale_features: bool = True
+    scale_features: bool = True,
+    selected_features: Optional[List[str]] = None
 ) -> Dict[str, Any]
 ```
 Analyze clustering quality for a specific percentile.
@@ -40,6 +48,7 @@ Analyze clustering quality for a specific percentile.
 - `percentile`: Percentile to analyze (e.g., 'race_features_100')
 - `k_range`: Range of k values to test (default: [2,3,4,5,6,7,8])
 - `scale_features`: Whether to standardize features before clustering
+- `selected_features`: If provided, only use these features for clustering
 
 **Returns:**
 Dictionary containing:
@@ -75,10 +84,19 @@ Compare clustering quality across multiple percentiles.
 get_cluster_characteristics(
     correlation_results: List[Dict[str, Any]], 
     percentile: str,
-    k: int = None
+    k: int = None,
+    selected_features: Optional[List[str]] = None,
+    precomputed_analysis: Optional[Dict[str, Any]] = None
 ) -> Dict[str, Any]
 ```
 Analyze characteristics of clusters for optimal interpretation.
+
+**Arguments:**
+- `correlation_results`: List of correlation results
+- `percentile`: Percentile to analyze
+- `k`: Number of clusters (if None, uses optimal k)
+- `selected_features`: If provided, only use these features for clustering
+- `precomputed_analysis`: If provided, use this analysis instead of computing new one
 
 **Returns:**
 Dictionary with detailed cluster analysis including:

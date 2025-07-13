@@ -7,11 +7,12 @@ This module provides utilities to:
 3. Generate meta-reports combining results from all race types
 """
 import json
-from typing import Dict, List, Any, Optional
+from typing import Dict, List, Any, Optional, Tuple
 from datetime import datetime
 from pathlib import Path
 import pandas as pd
 from tqdm import tqdm
+import logging
 
 from .feature_selection import FeatureSelectionPipeline
 from .data_generation import CorrelationDataGenerator, ParquetStorage, CorrelationDataLoader
@@ -233,14 +234,22 @@ class RaceTypeCorrelationAdapter:
                 best_percentile = rec.get('recommended_percentile', 'N/A')
                 feature_count = rec.get('feature_count', 0)
                 
-                # Get clustering info
-                clustering = results.get('clustering_analysis', {})
-                percentile_analysis = clustering.get('percentile_analyses', {}).get(best_percentile, {})
-                optimal_k = percentile_analysis.get('optimal_k', 'N/A')
+                # Get clustering info from the new structure
+                clustering_analysis = results.get('clustering_analysis', {})
+                selected_clustering = clustering_analysis.get(best_percentile)
                 
-                silhouette = 'N/A'
-                if optimal_k != 'N/A' and optimal_k in percentile_analysis.get('clustering_results', {}):
-                    silhouette = f"{percentile_analysis['clustering_results'][optimal_k]['silhouette_score']:.3f}"
+                if selected_clustering and 'analysis' in selected_clustering:
+                    # Use selected features clustering
+                    selected_analysis = selected_clustering['analysis']
+                    optimal_k = selected_analysis.get('optimal_k', 'N/A')
+                    
+                    silhouette = 'N/A'
+                    if optimal_k != 'N/A' and optimal_k in selected_analysis.get('clustering_results', {}):
+                        silhouette = f"{selected_analysis['clustering_results'][optimal_k]['silhouette_score']:.3f}"
+                else:
+                    # No clustering data available
+                    optimal_k = 'N/A'
+                    silhouette = 'N/A'
                 
                 rider_count = results.get('analysis_metadata', {}).get('total_rider_results', 0)
                 
@@ -322,20 +331,26 @@ class RaceTypeCorrelationAdapter:
         
         clustering_summary = []
         for race_type, results in all_results.items():
-            if 'error' not in results and 'clustering_analysis' in results:
+            if 'error' not in results:
                 best_percentile = results['recommendations']['summary'].get('recommended_percentile')
                 if best_percentile:
-                    clustering_data = results['clustering_analysis']['percentile_analyses'].get(best_percentile, {})
-                    optimal_k = clustering_data.get('optimal_k', 'N/A')
+                    # Use clustering analysis (which now contains selected features clustering)
+                    clustering_analysis = results.get('clustering_analysis', {})
+                    selected_clustering = clustering_analysis.get(best_percentile)
                     
-                    if optimal_k != 'N/A' and optimal_k in clustering_data.get('clustering_results', {}):
-                        cluster_results = clustering_data['clustering_results'][optimal_k]
-                        clustering_summary.append({
-                            'race_type': race_type,
-                            'k': optimal_k,
-                            'silhouette': cluster_results['silhouette_score'],
-                            'sizes': cluster_results['cluster_sizes']
-                        })
+                    if selected_clustering and 'analysis' in selected_clustering:
+                        # Use selected features clustering
+                        selected_analysis = selected_clustering['analysis']
+                        optimal_k = selected_analysis.get('optimal_k', 'N/A')
+                        
+                        if optimal_k != 'N/A' and optimal_k in selected_analysis.get('clustering_results', {}):
+                            cluster_results = selected_analysis['clustering_results'][optimal_k]
+                            clustering_summary.append({
+                                'race_type': race_type,
+                                'k': optimal_k,
+                                'silhouette': cluster_results['silhouette_score'],
+                                'sizes': cluster_results['cluster_sizes']
+                            })
         
         if clustering_summary:
             # Sort by silhouette score
@@ -461,6 +476,161 @@ class RaceTypeDataGenerator(CorrelationDataGenerator):
         
         # Setup logging
         self._setup_logging()
+    
+    def _get_sample_rider_results_optimized(self, sample_size: int) -> List[Tuple[int, str]]:
+        """
+        Get sample rider results using optimized two-step approach.
+        
+        This is the same optimization used in enhanced parallel generator.
+        """
+        import sqlite3
+        import time
+        
+        with sqlite3.connect(self.db_path) as conn:
+            cursor = conn.cursor()
+            
+            # Step 1: Find eligible riders with sufficient race history
+            self.logger.info("  Using optimized sampling: Finding eligible riders...")
+            step1_start = time.time()
+            
+            eligible_riders_query = """
+            SELECT rider_id, COUNT(*) as race_count
+            FROM rider_results rr
+            JOIN competitions c ON rr.competition_id = c.id  
+            WHERE c.date <= '2025-01-01'
+            GROUP BY rider_id
+            HAVING COUNT(*) >= ?
+            ORDER BY RANDOM()
+            LIMIT ?
+            """
+            
+            # Sample more riders than needed to ensure we get enough results
+            oversample_factor = max(3, int(sample_size / 50))
+            max_riders = sample_size * oversample_factor
+            
+            cursor.execute(eligible_riders_query, (self.min_races, max_riders))
+            eligible_riders = cursor.fetchall()
+            
+            step1_time = time.time() - step1_start
+            self.logger.info(f"  Found {len(eligible_riders)} eligible riders in {step1_time:.2f}s")
+            
+            if not eligible_riders:
+                self.logger.error("No eligible riders found")
+                return []
+            
+            # Step 2: Get random results from eligible riders using window functions
+            self.logger.info("  Sampling results from eligible riders...")
+            step2_start = time.time()
+            
+            # Extract rider IDs
+            rider_ids = [rider[0] for rider in eligible_riders]
+            
+            # Create placeholders for IN clause
+            placeholders = ','.join(['?'] * len(rider_ids))
+            
+            # Use window functions to efficiently compute historical race counts
+            window_query = f"""
+            WITH ordered_results AS (
+                SELECT 
+                    rr.id as rider_result_id,
+                    c.date as competition_date,
+                    rr.rider_id,
+                    ROW_NUMBER() OVER (
+                        PARTITION BY rr.rider_id 
+                        ORDER BY c.date
+                    ) - 1 as prior_race_count
+                FROM rider_results rr
+                JOIN competitions c ON rr.competition_id = c.id
+                WHERE rr.rider_id IN ({placeholders})
+                AND c.date <= '2025-01-01'
+                ORDER BY rr.rider_id, c.date
+            )
+            SELECT rider_result_id, competition_date
+            FROM ordered_results
+            WHERE prior_race_count >= ?
+            ORDER BY RANDOM()
+            LIMIT ?
+            """
+            
+            # Execute with rider IDs + min_races + sample_size parameters
+            params = rider_ids + [self.min_races, sample_size]
+            cursor.execute(window_query, params)
+            sample_results = cursor.fetchall()
+            
+            step2_time = time.time() - step2_start
+            self.logger.info(f"  Sampled {len(sample_results)} results in {step2_time:.2f}s")
+            
+            return sample_results
+    
+    def generate_sample(
+        self, 
+        sample_size: int = 1000,
+        feature_tables: List[str] = None,
+        output_name: str = "sample"
+    ):
+        """
+        Generate correlations for a sample of rider results using optimized sampling.
+        
+        Args:
+            sample_size: Number of rider results to sample
+            feature_tables: List of feature tables to analyze
+            output_name: Name for output file
+        """
+        if feature_tables is None:
+            feature_tables = ['race_features_80', 'race_features_100']
+        
+        self.logger.info(f"Generating sample correlation data for {sample_size} rider results")
+        
+        # Use optimized sampling method
+        sample_results = self._get_sample_rider_results_optimized(sample_size)
+        
+        if not sample_results:
+            self.logger.error("Failed to get sample rider results")
+            return
+        
+        # Generate correlations
+        all_data = []
+        successful_count = 0
+        
+        for rr_id, competition_date in tqdm(sample_results, desc="Processing sample"):
+            try:
+                result = self.calculator.calculate_feature_relationships(
+                    rr_id, 
+                    competition_date,
+                    feature_tables
+                )
+                
+                if result['feature_correlations']:
+                    flat_data = self._flatten_correlation_result(result)
+                    all_data.extend(flat_data)
+                    successful_count += 1
+                    
+            except Exception as e:
+                self.logger.warning(f"Error processing rider {rr_id}: {e}")
+        
+        self.logger.info(f"Successfully processed {successful_count}/{len(sample_results)} rider results")
+        
+        # Save data
+        if all_data:
+            df = pd.DataFrame(all_data)
+            output_file = self.output_dir / f"{output_name}_correlations.parquet"
+            df.to_parquet(output_file, compression='snappy')
+            
+            # Save metadata
+            metadata = {
+                'type': 'race_type_sample',
+                'sample_size': sample_size,
+                'successful_riders': successful_count,
+                'total_records': len(df),
+                'feature_tables': feature_tables,
+                'generation_date': datetime.now().isoformat()
+            }
+            
+            metadata_file = self.output_dir / f"{output_name}_metadata.json"
+            with open(metadata_file, 'w') as f:
+                json.dump(metadata, f, indent=2)
+            
+            self.logger.info(f"Saved sample data with {len(df)} records to {output_file}")
     
     def _flatten_correlation_result(self, result: Dict[str, Any]) -> List[Dict[str, Any]]:
         """
