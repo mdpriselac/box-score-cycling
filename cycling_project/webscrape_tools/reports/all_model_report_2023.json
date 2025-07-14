@@ -1,0 +1,593 @@
+{
+  "metadata": {
+    "race_type": "all",
+    "test_year": 2023,
+    "report_date": "2025-07-14T12:56:45.247088",
+    "model_type": "embedding_performance_model"
+  },
+  "dataset_info": {
+    "training": {
+      "n_rider_results": 64617,
+      "n_competitions": 5510,
+      "n_riders": 1372,
+      "years": [
+        2012,
+        2013,
+        2014,
+        2015,
+        2016,
+        2017,
+        2018,
+        2019,
+        2020,
+        2021,
+        2022
+      ],
+      "target_stats": {
+        "mean": 22.831793490877015,
+        "std": 81.06808520171833,
+        "min": 0.0,
+        "max": 1300.0,
+        "zero_rate": 0.6404970828110249
+      }
+    },
+    "test": {
+      "n_rider_results": 6069,
+      "n_competitions": 540,
+      "n_riders": 621,
+      "years": [
+        2023
+      ],
+      "target_stats": {
+        "mean": 25.71774592189817,
+        "std": 84.70052728081852,
+        "min": 0.0,
+        "max": 1300.0,
+        "zero_rate": 0.6053715603888614
+      }
+    }
+  },
+  "model_performance": {
+    "rmse_overall": 71.92713257323477,
+    "mae_overall": 30.886950234686584,
+    "rmse_nonzero": 107.47894487746865,
+    "mae_nonzero": 61.11571875382231,
+    "r2_nonzero": 0.25976736927972344,
+    "auc_classification": 0.8748814384895041,
+    "zero_accuracy": 0.7912341407151096,
+    "threshold": 0.5
+  },
+  "model_details": {
+    "n_features": 28,
+    "n_embedding_features": 6,
+    "n_database_features": 17,
+    "classifier_iterations": 555,
+    "regressor_iterations": 95
+  },
+  "feature_importance": {
+    "classifier": {
+      "top_embedding_features": [
+        {
+          "feature": "corr_largest_group_size",
+          "importance": 35614.600721120834
+        },
+        {
+          "feature": "corr_winning_time",
+          "importance": 14103.85191988945
+        },
+        {
+          "feature": "corr_included_finishers",
+          "importance": 7795.181738376617
+        },
+        {
+          "feature": "corr_clumpiness_score",
+          "importance": 7760.791372060776
+        },
+        {
+          "feature": "corr_abandon_ratio",
+          "importance": 7328.746618032455
+        },
+        {
+          "feature": "n_races",
+          "importance": 2248.601762533188
+        }
+      ],
+      "top_race_features": [
+        {
+          "feature": "included_finishers",
+          "importance": 127090.51305317879
+        },
+        {
+          "feature": "winning_time",
+          "importance": 81580.86937737465
+        },
+        {
+          "feature": "largest_group_size",
+          "importance": 31240.054419755936
+        },
+        {
+          "feature": "clumpiness_score",
+          "importance": 14491.898974657059
+        },
+        {
+          "feature": "abandon_ratio",
+          "importance": 6120.467015504837
+        }
+      ],
+      "top_database_features": [
+        {
+          "feature": "prior_stage_points_proportional",
+          "importance": 20569.492604732513
+        },
+        {
+          "feature": "tour_level_encoded",
+          "importance": 20188.372077465057
+        },
+        {
+          "feature": "prior_one_day_points_proportional",
+          "importance": 16772.464448690414
+        },
+        {
+          "feature": "prior_gc_points_proportional",
+          "importance": 14421.677246570587
+        },
+        {
+          "feature": "rider_age",
+          "importance": 12196.34115433693
+        },
+        {
+          "feature": "total_prior_points_proportional",
+          "importance": 10639.038469076157
+        },
+        {
+          "feature": "prior_wt_points_proportional",
+          "importance": 10260.82263803482
+        },
+        {
+          "feature": "prior_pro_races",
+          "importance": 7676.677017211914
+        },
+        {
+          "feature": "prior_d1_points_proportional",
+          "importance": 7478.7392246723175
+        },
+        {
+          "feature": "prior_stage_races",
+          "importance": 7452.252163887024
+        },
+        {
+          "feature": "prior_pro_points_proportional",
+          "importance": 6658.748314619064
+        },
+        {
+          "feature": "prior_one_day_races",
+          "importance": 6184.681524753571
+        },
+        {
+          "feature": "prior_d1_races",
+          "importance": 6143.797661781311
+        },
+        {
+          "feature": "prior_wt_proportion",
+          "importance": 5946.954770088196
+        },
+        {
+          "feature": "prior_wt_races",
+          "importance": 4373.226510763168
+        },
+        {
+          "feature": "prior_gc_races",
+          "importance": 3881.62890458107
+        },
+        {
+          "feature": "total_prior_races",
+          "importance": 3601.47412443161
+        }
+      ],
+      "all_features": [
+        {
+          "feature": "included_finishers",
+          "importance": 127090.51305317879,
+          "feature_type": "race"
+        },
+        {
+          "feature": "winning_time",
+          "importance": 81580.86937737465,
+          "feature_type": "race"
+        },
+        {
+          "feature": "corr_largest_group_size",
+          "importance": 35614.600721120834,
+          "feature_type": "embedding"
+        },
+        {
+          "feature": "largest_group_size",
+          "importance": 31240.054419755936,
+          "feature_type": "race"
+        },
+        {
+          "feature": "prior_stage_points_proportional",
+          "importance": 20569.492604732513,
+          "feature_type": "database"
+        },
+        {
+          "feature": "tour_level_encoded",
+          "importance": 20188.372077465057,
+          "feature_type": "database"
+        },
+        {
+          "feature": "prior_one_day_points_proportional",
+          "importance": 16772.464448690414,
+          "feature_type": "database"
+        },
+        {
+          "feature": "clumpiness_score",
+          "importance": 14491.898974657059,
+          "feature_type": "race"
+        },
+        {
+          "feature": "prior_gc_points_proportional",
+          "importance": 14421.677246570587,
+          "feature_type": "database"
+        },
+        {
+          "feature": "corr_winning_time",
+          "importance": 14103.85191988945,
+          "feature_type": "embedding"
+        },
+        {
+          "feature": "rider_age",
+          "importance": 12196.34115433693,
+          "feature_type": "database"
+        },
+        {
+          "feature": "total_prior_points_proportional",
+          "importance": 10639.038469076157,
+          "feature_type": "database"
+        },
+        {
+          "feature": "prior_wt_points_proportional",
+          "importance": 10260.82263803482,
+          "feature_type": "database"
+        },
+        {
+          "feature": "corr_included_finishers",
+          "importance": 7795.181738376617,
+          "feature_type": "embedding"
+        },
+        {
+          "feature": "corr_clumpiness_score",
+          "importance": 7760.791372060776,
+          "feature_type": "embedding"
+        },
+        {
+          "feature": "prior_pro_races",
+          "importance": 7676.677017211914,
+          "feature_type": "database"
+        },
+        {
+          "feature": "prior_d1_points_proportional",
+          "importance": 7478.7392246723175,
+          "feature_type": "database"
+        },
+        {
+          "feature": "prior_stage_races",
+          "importance": 7452.252163887024,
+          "feature_type": "database"
+        },
+        {
+          "feature": "corr_abandon_ratio",
+          "importance": 7328.746618032455,
+          "feature_type": "embedding"
+        },
+        {
+          "feature": "prior_pro_points_proportional",
+          "importance": 6658.748314619064,
+          "feature_type": "database"
+        },
+        {
+          "feature": "prior_one_day_races",
+          "importance": 6184.681524753571,
+          "feature_type": "database"
+        },
+        {
+          "feature": "prior_d1_races",
+          "importance": 6143.797661781311,
+          "feature_type": "database"
+        },
+        {
+          "feature": "abandon_ratio",
+          "importance": 6120.467015504837,
+          "feature_type": "race"
+        },
+        {
+          "feature": "prior_wt_proportion",
+          "importance": 5946.954770088196,
+          "feature_type": "database"
+        },
+        {
+          "feature": "prior_wt_races",
+          "importance": 4373.226510763168,
+          "feature_type": "database"
+        },
+        {
+          "feature": "prior_gc_races",
+          "importance": 3881.62890458107,
+          "feature_type": "database"
+        },
+        {
+          "feature": "total_prior_races",
+          "importance": 3601.47412443161,
+          "feature_type": "database"
+        },
+        {
+          "feature": "n_races",
+          "importance": 2248.601762533188,
+          "feature_type": "embedding"
+        }
+      ]
+    },
+    "regressor": {
+      "top_embedding_features": [
+        {
+          "feature": "corr_largest_group_size",
+          "importance": 125945447.49609375
+        },
+        {
+          "feature": "corr_included_finishers",
+          "importance": 71079015.69921875
+        },
+        {
+          "feature": "corr_clumpiness_score",
+          "importance": 55371856.30078125
+        },
+        {
+          "feature": "corr_abandon_ratio",
+          "importance": 51100498.60546875
+        },
+        {
+          "feature": "corr_winning_time",
+          "importance": 49464745.90234375
+        },
+        {
+          "feature": "n_races",
+          "importance": 8410255.4140625
+        }
+      ],
+      "top_race_features": [
+        {
+          "feature": "winning_time",
+          "importance": 204071605.09375
+        },
+        {
+          "feature": "included_finishers",
+          "importance": 93033920.4140625
+        },
+        {
+          "feature": "clumpiness_score",
+          "importance": 90932118.81640625
+        },
+        {
+          "feature": "largest_group_size",
+          "importance": 55444261.59375
+        },
+        {
+          "feature": "abandon_ratio",
+          "importance": 53725202.1015625
+        }
+      ],
+      "top_database_features": [
+        {
+          "feature": "prior_wt_points_proportional",
+          "importance": 274452276.3125
+        },
+        {
+          "feature": "prior_stage_points_proportional",
+          "importance": 89462102.78515625
+        },
+        {
+          "feature": "rider_age",
+          "importance": 79285504.10546875
+        },
+        {
+          "feature": "total_prior_points_proportional",
+          "importance": 72036305.109375
+        },
+        {
+          "feature": "prior_one_day_points_proportional",
+          "importance": 68213459.21484375
+        },
+        {
+          "feature": "tour_level_encoded",
+          "importance": 65947242.8984375
+        },
+        {
+          "feature": "prior_one_day_races",
+          "importance": 51704719.88671875
+        },
+        {
+          "feature": "prior_d1_points_proportional",
+          "importance": 51269092.9921875
+        },
+        {
+          "feature": "prior_gc_points_proportional",
+          "importance": 50801802.11328125
+        },
+        {
+          "feature": "prior_pro_races",
+          "importance": 50342333.203125
+        },
+        {
+          "feature": "prior_wt_races",
+          "importance": 45089963.08984375
+        },
+        {
+          "feature": "prior_stage_races",
+          "importance": 40258287.30078125
+        },
+        {
+          "feature": "prior_d1_races",
+          "importance": 39327316.32421875
+        },
+        {
+          "feature": "prior_pro_points_proportional",
+          "importance": 39261372.6015625
+        },
+        {
+          "feature": "prior_gc_races",
+          "importance": 38790730.390625
+        },
+        {
+          "feature": "prior_wt_proportion",
+          "importance": 38713348.296875
+        },
+        {
+          "feature": "total_prior_races",
+          "importance": 36366574.21484375
+        }
+      ],
+      "all_features": [
+        {
+          "feature": "prior_wt_points_proportional",
+          "importance": 274452276.3125,
+          "feature_type": "database"
+        },
+        {
+          "feature": "winning_time",
+          "importance": 204071605.09375,
+          "feature_type": "race"
+        },
+        {
+          "feature": "corr_largest_group_size",
+          "importance": 125945447.49609375,
+          "feature_type": "embedding"
+        },
+        {
+          "feature": "included_finishers",
+          "importance": 93033920.4140625,
+          "feature_type": "race"
+        },
+        {
+          "feature": "clumpiness_score",
+          "importance": 90932118.81640625,
+          "feature_type": "race"
+        },
+        {
+          "feature": "prior_stage_points_proportional",
+          "importance": 89462102.78515625,
+          "feature_type": "database"
+        },
+        {
+          "feature": "rider_age",
+          "importance": 79285504.10546875,
+          "feature_type": "database"
+        },
+        {
+          "feature": "total_prior_points_proportional",
+          "importance": 72036305.109375,
+          "feature_type": "database"
+        },
+        {
+          "feature": "corr_included_finishers",
+          "importance": 71079015.69921875,
+          "feature_type": "embedding"
+        },
+        {
+          "feature": "prior_one_day_points_proportional",
+          "importance": 68213459.21484375,
+          "feature_type": "database"
+        },
+        {
+          "feature": "tour_level_encoded",
+          "importance": 65947242.8984375,
+          "feature_type": "database"
+        },
+        {
+          "feature": "largest_group_size",
+          "importance": 55444261.59375,
+          "feature_type": "race"
+        },
+        {
+          "feature": "corr_clumpiness_score",
+          "importance": 55371856.30078125,
+          "feature_type": "embedding"
+        },
+        {
+          "feature": "abandon_ratio",
+          "importance": 53725202.1015625,
+          "feature_type": "race"
+        },
+        {
+          "feature": "prior_one_day_races",
+          "importance": 51704719.88671875,
+          "feature_type": "database"
+        },
+        {
+          "feature": "prior_d1_points_proportional",
+          "importance": 51269092.9921875,
+          "feature_type": "database"
+        },
+        {
+          "feature": "corr_abandon_ratio",
+          "importance": 51100498.60546875,
+          "feature_type": "embedding"
+        },
+        {
+          "feature": "prior_gc_points_proportional",
+          "importance": 50801802.11328125,
+          "feature_type": "database"
+        },
+        {
+          "feature": "prior_pro_races",
+          "importance": 50342333.203125,
+          "feature_type": "database"
+        },
+        {
+          "feature": "corr_winning_time",
+          "importance": 49464745.90234375,
+          "feature_type": "embedding"
+        },
+        {
+          "feature": "prior_wt_races",
+          "importance": 45089963.08984375,
+          "feature_type": "database"
+        },
+        {
+          "feature": "prior_stage_races",
+          "importance": 40258287.30078125,
+          "feature_type": "database"
+        },
+        {
+          "feature": "prior_d1_races",
+          "importance": 39327316.32421875,
+          "feature_type": "database"
+        },
+        {
+          "feature": "prior_pro_points_proportional",
+          "importance": 39261372.6015625,
+          "feature_type": "database"
+        },
+        {
+          "feature": "prior_gc_races",
+          "importance": 38790730.390625,
+          "feature_type": "database"
+        },
+        {
+          "feature": "prior_wt_proportion",
+          "importance": 38713348.296875,
+          "feature_type": "database"
+        },
+        {
+          "feature": "total_prior_races",
+          "importance": 36366574.21484375,
+          "feature_type": "database"
+        },
+        {
+          "feature": "n_races",
+          "importance": 8410255.4140625,
+          "feature_type": "embedding"
+        }
+      ]
+    }
+  }
+}

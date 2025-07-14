@@ -2,6 +2,7 @@ import multiprocessing as mp
 import sqlite3
 import pandas as pd
 import numpy as np
+import threading
 from typing import List, Dict, Any, Optional, Tuple
 from pathlib import Path
 from datetime import datetime
@@ -604,7 +605,9 @@ class EnhancedParallelCorrelationGenerator(ParallelCorrelationGenerator):
         resume: bool = True,
         calculator_type: str = 'race_type',
         calculator_config: Dict[str, Any] = None,
-        checkpoint_interval: int = 10000
+        checkpoint_interval: int = 10000,
+        parallel_race_types: bool = False,
+        max_concurrent_race_types: int = 2
     ) -> None:
         """
         Generate correlations for all eligible riders using enhanced parallel processing.
@@ -622,6 +625,8 @@ class EnhancedParallelCorrelationGenerator(ParallelCorrelationGenerator):
             calculator_type: Type of calculator ('race_type' or 'standard')
             calculator_config: Configuration for the correlation calculator
             checkpoint_interval: Number of rider results to process before saving checkpoint
+            parallel_race_types: Whether to process race types in parallel
+            max_concurrent_race_types: Maximum race types to process simultaneously
         """
         if feature_tables is None:
             feature_tables = self._get_all_feature_tables()
@@ -696,70 +701,26 @@ class EnhancedParallelCorrelationGenerator(ParallelCorrelationGenerator):
             checkpoint['total_results'] = sum(len(results) for results in all_eligible_results.values())
             self.logger.info(f"Found {checkpoint['total_results']} total eligible rider results across all race types")
             
-            # Process each race type's results
-            for race_type, eligible_results in all_eligible_results.items():
-                if not eligible_results:
-                    continue
-                    
-                self.logger.info(f"\nProcessing {race_type}: {len(eligible_results)} eligible results")
-                
-                # Skip if we've already processed this race type
-                if checkpoint.get('completed_race_types', {}).get(race_type, False):
-                    self.logger.info(f"  Skipping {race_type} (already completed)")
-                    continue
-                
-                # Process in chunks
-                chunk_size = min(checkpoint_interval, 5000)
-                race_type_processed = checkpoint.get('race_type_progress', {}).get(race_type, 0)
-                
-                # Calculate total chunks for this race type
-                total_chunks = (len(eligible_results) + chunk_size - 1) // chunk_size
-                
-                # Skip already processed results for this race type
-                if race_type_processed > 0:
-                    eligible_results = eligible_results[race_type_processed:]
-                    self.logger.info(f"  Resuming from result {race_type_processed}")
-                
-                for chunk_index, chunk_start in enumerate(range(0, len(eligible_results), chunk_size)):
-                    chunk_end = min(chunk_start + chunk_size, len(eligible_results))
-                    chunk_results = eligible_results[chunk_start:chunk_end]
-                    
-                    # Calculate actual chunk number (accounting for resumed processing)
-                    actual_chunk_number = (race_type_processed // chunk_size) + chunk_index + 1
-                    
-                    self.logger.info(f"  Processing chunk {actual_chunk_number}/{total_chunks}: results {race_type_processed + chunk_start + 1} to {race_type_processed + chunk_end}")
-                    
-                    # Process this chunk
-                    self._process_chunk_enhanced(
-                        chunk_results,
-                        feature_tables,
-                        calculator_config,
-                        batch_number=checkpoint.get('batch_number', 0),
-                        progress_info=f"{race_type} chunk {actual_chunk_number}/{total_chunks}"
-                    )
-                    
-                    # Update checkpoint
-                    checkpoint['batch_number'] = checkpoint.get('batch_number', 0) + 1
-                    checkpoint['last_processed_race_type'] = race_type
-                    
-                    if 'race_type_progress' not in checkpoint:
-                        checkpoint['race_type_progress'] = {}
-                    checkpoint['race_type_progress'][race_type] = race_type_processed + chunk_end
-                    
-                    # Save checkpoint
-                    with open(checkpoint_file, 'w') as f:
-                        json.dump(checkpoint, f, indent=2)
-                
-                # Mark race type as completed
-                if 'completed_race_types' not in checkpoint:
-                    checkpoint['completed_race_types'] = {}
-                checkpoint['completed_race_types'][race_type] = True
-                checkpoint['race_type_progress'][race_type] = 0  # Reset for next run
-                
-                with open(checkpoint_file, 'w') as f:
-                    json.dump(checkpoint, f, indent=2)
-                    
-                self.logger.info(f"  Completed {race_type}")
+            # Process race types (either in parallel or sequentially)
+            if parallel_race_types:
+                self._process_race_types_parallel(
+                    all_eligible_results, 
+                    calculator_config, 
+                    feature_tables,
+                    checkpoint_interval,
+                    checkpoint,
+                    checkpoint_file,
+                    max_concurrent_race_types
+                )
+            else:
+                self._process_race_types_sequential(
+                    all_eligible_results,
+                    calculator_config,
+                    feature_tables,
+                    checkpoint_interval,
+                    checkpoint,
+                    checkpoint_file
+                )
             
             total_processed = checkpoint['total_results']
             
@@ -787,7 +748,8 @@ class EnhancedParallelCorrelationGenerator(ParallelCorrelationGenerator):
         feature_tables: List[str],
         calculator_config: Dict[str, Any],
         batch_number: int,
-        progress_info: str = None
+        progress_info: str = None,
+        race_type_suffix: str = None
     ) -> None:
         """
         Process a chunk of rider results using enhanced parallel processing.
@@ -876,7 +838,8 @@ class EnhancedParallelCorrelationGenerator(ParallelCorrelationGenerator):
             self._save_results_in_batches(
                 all_results,
                 {'batch_number': batch_number * 1000},  # Offset batch numbers
-                feature_tables
+                feature_tables,
+                race_type_suffix=race_type_suffix
             )
             
             successful_results = [r for r in all_results if r.get('feature_correlations')]
@@ -1136,3 +1099,343 @@ class EnhancedParallelCorrelationGenerator(ParallelCorrelationGenerator):
             self.logger.info(f"  Step 1b complete: Sampled {len(sample_results)} results in {step2_time:.2f}s")
             
             return sample_results
+    
+    def _process_race_types_parallel(
+        self,
+        all_eligible_results: Dict[str, List[Tuple[int, str]]],
+        calculator_config: Dict[str, Any],
+        feature_tables: List[str],
+        checkpoint_interval: int,
+        checkpoint: Dict[str, Any],
+        checkpoint_file: Path,
+        max_concurrent_race_types: int
+    ) -> None:
+        """
+        Process race types in parallel with safe file handling.
+        
+        Args:
+            all_eligible_results: Eligible results for each race type
+            calculator_config: Calculator configuration
+            feature_tables: Feature tables to analyze
+            checkpoint_interval: Checkpoint interval
+            checkpoint: Checkpoint data
+            checkpoint_file: Checkpoint file path
+            max_concurrent_race_types: Max concurrent race types
+        """
+        from concurrent.futures import ThreadPoolExecutor, as_completed
+        
+        # Filter out completed or empty race types
+        pending_race_types = {
+            race_type: results 
+            for race_type, results in all_eligible_results.items()
+            if results and not checkpoint.get('completed_race_types', {}).get(race_type, False)
+        }
+        
+        if not pending_race_types:
+            self.logger.info("All race types already completed")
+            return
+        
+        self.logger.info(f"Processing {len(pending_race_types)} race types in parallel")
+        self.logger.info(f"Max concurrent race types: {max_concurrent_race_types}")
+        
+        # Create thread lock for checkpoint updates
+        checkpoint_lock = threading.Lock()
+        
+        # Split race types into batches for parallel processing
+        race_types = list(pending_race_types.keys())
+        race_type_batches = [
+            race_types[i:i+max_concurrent_race_types]
+            for i in range(0, len(race_types), max_concurrent_race_types)
+        ]
+        
+        for batch_idx, race_type_batch in enumerate(race_type_batches):
+            self.logger.info(f"\nProcessing batch {batch_idx + 1}/{len(race_type_batches)}: {race_type_batch}")
+            
+            with ThreadPoolExecutor(max_workers=len(race_type_batch)) as executor:
+                # Submit race types in this batch
+                future_to_race_type = {}
+                for race_type in race_type_batch:
+                    future = executor.submit(
+                        self._process_single_race_type_safe,
+                        race_type,
+                        pending_race_types[race_type],
+                        calculator_config,
+                        feature_tables,
+                        checkpoint_interval,
+                        checkpoint,
+                        checkpoint_file,
+                        checkpoint_lock
+                    )
+                    future_to_race_type[future] = race_type
+                
+                # Wait for all race types in batch to complete
+                for future in as_completed(future_to_race_type):
+                    race_type = future_to_race_type[future]
+                    try:
+                        future.result()
+                        self.logger.info(f"  ✓ Completed {race_type}")
+                    except Exception as e:
+                        self.logger.error(f"  ✗ Failed {race_type}: {e}")
+                        import traceback
+                        traceback.print_exc()
+            
+            self.logger.info(f"Batch {batch_idx + 1} complete")
+    
+    def _process_race_types_sequential(
+        self,
+        all_eligible_results: Dict[str, List[Tuple[int, str]]],
+        calculator_config: Dict[str, Any],
+        feature_tables: List[str],
+        checkpoint_interval: int,
+        checkpoint: Dict[str, Any],
+        checkpoint_file: Path
+    ) -> None:
+        """
+        Process race types sequentially (original behavior).
+        
+        Args:
+            all_eligible_results: Eligible results for each race type
+            calculator_config: Calculator configuration
+            feature_tables: Feature tables to analyze
+            checkpoint_interval: Checkpoint interval
+            checkpoint: Checkpoint data
+            checkpoint_file: Checkpoint file path
+        """
+        # Original sequential processing logic
+        for race_type, eligible_results in all_eligible_results.items():
+            if not eligible_results:
+                continue
+                
+            self.logger.info(f"\nProcessing {race_type}: {len(eligible_results)} eligible results")
+            
+            # Skip if we've already processed this race type
+            if checkpoint.get('completed_race_types', {}).get(race_type, False):
+                self.logger.info(f"  Skipping {race_type} (already completed)")
+                continue
+            
+            # Process in chunks
+            chunk_size = min(checkpoint_interval, 5000)
+            race_type_processed = checkpoint.get('race_type_progress', {}).get(race_type, 0)
+            
+            # Calculate total chunks for this race type
+            total_chunks = (len(eligible_results) + chunk_size - 1) // chunk_size
+            
+            # Skip already processed results for this race type
+            if race_type_processed > 0:
+                eligible_results = eligible_results[race_type_processed:]
+                self.logger.info(f"  Resuming from result {race_type_processed}")
+            
+            for chunk_index, chunk_start in enumerate(range(0, len(eligible_results), chunk_size)):
+                chunk_end = min(chunk_start + chunk_size, len(eligible_results))
+                chunk_results = eligible_results[chunk_start:chunk_end]
+                
+                # Calculate actual chunk number (accounting for resumed processing)
+                actual_chunk_number = (race_type_processed // chunk_size) + chunk_index + 1
+                
+                self.logger.info(f"  Processing chunk {actual_chunk_number}/{total_chunks}: results {race_type_processed + chunk_start + 1} to {race_type_processed + chunk_end}")
+                
+                # Process this chunk
+                self._process_chunk_enhanced(
+                    chunk_results,
+                    feature_tables,
+                    calculator_config,
+                    batch_number=checkpoint.get('batch_number', 0),
+                    progress_info=f"{race_type} chunk {actual_chunk_number}/{total_chunks}"
+                )
+                
+                # Update checkpoint
+                checkpoint['batch_number'] = checkpoint.get('batch_number', 0) + 1
+                checkpoint['last_processed_race_type'] = race_type
+                
+                if 'race_type_progress' not in checkpoint:
+                    checkpoint['race_type_progress'] = {}
+                checkpoint['race_type_progress'][race_type] = race_type_processed + chunk_end
+                
+                # Save checkpoint
+                with open(checkpoint_file, 'w') as f:
+                    json.dump(checkpoint, f, indent=2)
+            
+            # Mark race type as completed
+            if 'completed_race_types' not in checkpoint:
+                checkpoint['completed_race_types'] = {}
+            checkpoint['completed_race_types'][race_type] = True
+            checkpoint['race_type_progress'][race_type] = 0  # Reset for next run
+            
+            with open(checkpoint_file, 'w') as f:
+                json.dump(checkpoint, f, indent=2)
+                
+            self.logger.info(f"  Completed {race_type}")
+    
+    def _process_single_race_type_safe(
+        self,
+        race_type: str,
+        eligible_results: List[Tuple[int, str]],
+        calculator_config: Dict[str, Any],
+        feature_tables: List[str],
+        checkpoint_interval: int,
+        checkpoint: Dict[str, Any],
+        checkpoint_file: Path,
+        checkpoint_lock: threading.Lock
+    ) -> None:
+        """
+        Process a single race type with thread-safe checkpoint handling.
+        
+        Args:
+            race_type: Race type to process
+            eligible_results: Eligible results for this race type
+            calculator_config: Calculator configuration
+            feature_tables: Feature tables to analyze
+            checkpoint_interval: Checkpoint interval
+            checkpoint: Shared checkpoint data
+            checkpoint_file: Checkpoint file path
+            checkpoint_lock: Thread lock for checkpoint updates
+        """
+        self.logger.info(f"  {race_type}: Starting with {len(eligible_results)} eligible results")
+        
+        # Get race type specific progress
+        with checkpoint_lock:
+            race_type_processed = checkpoint.get('race_type_progress', {}).get(race_type, 0)
+        
+        # Process in chunks
+        chunk_size = min(checkpoint_interval, 5000)
+        total_chunks = (len(eligible_results) + chunk_size - 1) // chunk_size
+        
+        # Skip already processed results
+        if race_type_processed > 0:
+            eligible_results = eligible_results[race_type_processed:]
+            self.logger.info(f"  {race_type}: Resuming from result {race_type_processed}")
+        
+        for chunk_index, chunk_start in enumerate(range(0, len(eligible_results), chunk_size)):
+            chunk_end = min(chunk_start + chunk_size, len(eligible_results))
+            chunk_results = eligible_results[chunk_start:chunk_end]
+            
+            # Calculate actual chunk number
+            actual_chunk_number = (race_type_processed // chunk_size) + chunk_index + 1
+            
+            self.logger.info(f"  {race_type}: Processing chunk {actual_chunk_number}/{total_chunks}")
+            
+            # Get safe batch number for this race type
+            with checkpoint_lock:
+                # Use race type specific batch numbering to avoid conflicts
+                race_type_batch_base = checkpoint.get('race_type_batch_counters', {}).get(race_type, 0)
+                batch_number = race_type_batch_base + chunk_index
+                
+                # Update race type batch counter
+                if 'race_type_batch_counters' not in checkpoint:
+                    checkpoint['race_type_batch_counters'] = {}
+                checkpoint['race_type_batch_counters'][race_type] = race_type_batch_base + chunk_index + 1
+            
+            # Process this chunk with race type specific batch number
+            self._process_chunk_enhanced(
+                chunk_results,
+                feature_tables,
+                calculator_config,
+                batch_number=batch_number,
+                progress_info=f"{race_type} chunk {actual_chunk_number}/{total_chunks}",
+                race_type_suffix=race_type  # Add race type to avoid file conflicts
+            )
+            
+            # Thread-safe checkpoint update
+            with checkpoint_lock:
+                if 'race_type_progress' not in checkpoint:
+                    checkpoint['race_type_progress'] = {}
+                checkpoint['race_type_progress'][race_type] = race_type_processed + chunk_end
+                checkpoint['last_processed_race_type'] = race_type
+                
+                # Save checkpoint
+                with open(checkpoint_file, 'w') as f:
+                    json.dump(checkpoint, f, indent=2)
+        
+        # Mark race type as completed
+        with checkpoint_lock:
+            if 'completed_race_types' not in checkpoint:
+                checkpoint['completed_race_types'] = {}
+            checkpoint['completed_race_types'][race_type] = True
+            
+            # Reset progress for next run
+            if 'race_type_progress' not in checkpoint:
+                checkpoint['race_type_progress'] = {}
+            checkpoint['race_type_progress'][race_type] = 0
+            
+            # Save final checkpoint
+            with open(checkpoint_file, 'w') as f:
+                json.dump(checkpoint, f, indent=2)
+        
+        self.logger.info(f"  {race_type}: Completed successfully")
+    
+    def _save_results_in_batches(
+        self, 
+        all_results: List[Dict[str, Any]], 
+        checkpoint: Dict[str, Any],
+        feature_tables: List[str],
+        race_type_suffix: str = None
+    ) -> None:
+        """
+        Save results to parquet files in batches with optional race type suffix.
+        
+        Args:
+            all_results: Results to save
+            checkpoint: Checkpoint data
+            feature_tables: Feature tables used
+            race_type_suffix: Optional race type suffix for file naming
+        """
+        if race_type_suffix:
+            self.logger.info(f"Saving {race_type_suffix} results to parquet files...")
+        else:
+            self.logger.info("Saving results to parquet files...")
+        
+        batch_data = []
+        results_processed = 0
+        
+        for result in all_results:
+            # Convert to flat structure for parquet
+            flat_result = self._flatten_correlation_result(result)
+            batch_data.extend(flat_result)
+            results_processed += 1
+            
+            # Update checkpoint
+            checkpoint['last_processed_id'] = result['rider_result_id']
+            checkpoint['processed_count'] = results_processed
+            
+            # Save batch if it's large enough
+            if len(batch_data) >= self.batch_size * len(feature_tables):
+                self._save_batch_with_suffix(batch_data, checkpoint['batch_number'], race_type_suffix)
+                checkpoint['batch_number'] += 1
+                batch_data = []
+                # Note: Don't save checkpoint here for race type processing - handled by caller
+        
+        # Save final batch
+        if batch_data:
+            self._save_batch_with_suffix(batch_data, checkpoint['batch_number'], race_type_suffix)
+            checkpoint['batch_number'] += 1
+    
+    def _save_batch_with_suffix(
+        self, 
+        batch_data: List[Dict[str, Any]], 
+        batch_number: int,
+        race_type_suffix: str = None
+    ) -> None:
+        """
+        Save a batch of data with optional race type suffix for filename.
+        
+        Args:
+            batch_data: Data to save
+            batch_number: Batch number
+            race_type_suffix: Optional race type suffix
+        """
+        if not batch_data:
+            return
+        
+        import pandas as pd
+        df = pd.DataFrame(batch_data)
+        
+        # Create filename with race type suffix
+        if race_type_suffix:
+            filename = f"race_type_correlations_{race_type_suffix}_batch_{batch_number:04d}.parquet"
+        else:
+            filename = f"race_type_correlations_batch_{batch_number:04d}.parquet"
+        
+        output_file = self.output_dir / filename
+        df.to_parquet(output_file, compression='snappy')
+        
+        self.logger.info(f"Saved batch {batch_number} with {len(df)} records to {filename}")

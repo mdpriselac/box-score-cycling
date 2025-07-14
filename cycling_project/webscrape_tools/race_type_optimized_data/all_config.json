@@ -1,0 +1,13 @@
+{
+  "race_type": "all",
+  "percentile": "race_features_90",
+  "features": [
+    "abandon_ratio",
+    "largest_group_size",
+    "winning_time",
+    "included_finishers",
+    "clumpiness_score"
+  ],
+  "n_riders": 80351,
+  "export_date": "2025-07-13T18:38:14.362199"
+}

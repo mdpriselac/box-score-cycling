@@ -1,0 +1,18 @@
+{
+  "race_type": "one_day",
+  "percentile": "race_features_90",
+  "features": [
+    "shannon_entropy_normalized",
+    "riders_in_groups",
+    "total_groups",
+    "largest_group_size",
+    "winning_time",
+    "skewness_normalized",
+    "clumpiness_score",
+    "abandon_ratio",
+    "shannon_entropy_absolute",
+    "20th_percentile_gap"
+  ],
+  "n_riders": 63971,
+  "export_date": "2025-07-13T18:38:11.030544"
+}

@@ -10,8 +10,4 @@ We're using uv to run python and manage our environment. Use the `uv run` functi
 
 # Rules for Creating Code
 
-Whenever you create a module or python file that is not just just for testing but to house code that will be imported elsewhere you must also create a markdown file with the exact same name as the python file followed.by the .md suffix instead of the .py suffix. The guide should be a succinct summary of the classes and functinos in the file with the exact names and argument formats for any methods or inputs to functions. Someone should be able to read the markdown file alone and be able to use the classes and functions in their code without committing any errors in their code.
-
-Whenever you are importing code from a file, make sure you check the corresponding markdown file before writing any code so that you know exactly the right class names, methods and functions as well as the inputs for those files.
-
-You must follow this python-markdown pairing for all code you write.
+Create simple, modular code. Do not over engineer. Check fo resources in a module or folder that have already been completed to see if they can be reused in an efficient way.
