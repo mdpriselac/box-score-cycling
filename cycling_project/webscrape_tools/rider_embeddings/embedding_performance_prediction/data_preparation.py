@@ -10,16 +10,21 @@ from datetime import datetime
 class EmbeddingDataPreparation:
     """Prepares data for training embedding-based prediction models."""
     
-    def __init__(self, db_path: str, embedding_base_path: str = "race_type_optimized_data"):
+    def __init__(self, db_path: str, embedding_base_path: str = "race_type_optimized_data", 
+                 use_full_embeddings: bool = False, full_embeddings_path: str = "race_type_full_embeddings"):
         """
         Initialize the data preparation class.
         
         Args:
             db_path: Path to the cycling database
             embedding_base_path: Path to the folder containing optimized embedding parquet files
+            use_full_embeddings: Whether to use full embeddings instead of optimized
+            full_embeddings_path: Path to the folder containing full embedding parquet files
         """
         self.db_path = db_path
         self.embedding_base_path = Path(embedding_base_path)
+        self.full_embeddings_path = Path(full_embeddings_path)
+        self.use_full_embeddings = use_full_embeddings
         self.race_types = ['gc', 'stage', 'one_day', 'stage_one_day', 'all']
         
         # Columns to exclude from rider_results
@@ -35,25 +40,78 @@ class EmbeddingDataPreparation:
             'wt': 2
         }
     
-    def load_embeddings(self, race_type: str) -> Tuple[pd.DataFrame, Dict]:
-        """Load embeddings for a specific race type and return embeddings with config."""
-        file_path = self.embedding_base_path / f"{race_type}_optimized.parquet"
-        config_path = self.embedding_base_path / f"{race_type}_config.json"
+    def load_embeddings(self, race_type: str, percentile: Optional[str] = None) -> Tuple[pd.DataFrame, Dict]:
+        """
+        Load embeddings for a specific race type and return embeddings with config.
         
-        if not file_path.exists():
-            raise FileNotFoundError(f"Embedding file not found: {file_path}")
+        Args:
+            race_type: Race type to load
+            percentile: For full embeddings, which percentile to use (e.g., 'race_features_90')
+                       For optimized embeddings, this is ignored (uses config file)
         
-        embeddings = pd.read_parquet(file_path)
-        
-        # Load configuration to get percentile info
-        config = {}
-        if config_path.exists():
-            with open(config_path, 'r') as f:
-                config = json.load(f)
-        
-        print(f"Loaded {len(embeddings)} embeddings for {race_type}")
-        if 'percentile' in config:
-            print(f"Using race_features_{config['percentile']} for {race_type}")
+        Returns:
+            Tuple of (embeddings DataFrame, config dict)
+        """
+        if self.use_full_embeddings:
+            # Load full embeddings
+            if percentile is None:
+                raise ValueError("percentile must be specified when using full embeddings")
+            
+            file_path = self.full_embeddings_path / race_type / f"{percentile}_full.parquet"
+            config_path = self.full_embeddings_path / race_type / f"{race_type}_config.json"
+            
+            if not file_path.exists():
+                raise FileNotFoundError(f"Full embedding file not found: {file_path}")
+            
+            embeddings = pd.read_parquet(file_path)
+            
+            # For full embeddings, we need to get all feature columns (not metadata)
+            feature_cols = [col for col in embeddings.columns 
+                          if col not in ['rider_result_id', 'n_races', 'calculation_date']]
+            
+            # Rename correlation columns to avoid conflict with race feature columns
+            # Add 'corr_' prefix to distinguish embedding correlations from race features
+            rename_mapping = {col: f'corr_{col}' for col in feature_cols}
+            embeddings = embeddings.rename(columns=rename_mapping)
+            
+            # Update feature list with new names
+            feature_cols = [f'corr_{col}' for col in feature_cols]
+            
+            # Create config matching optimized format
+            config = {
+                'percentile': percentile.replace('race_features_', ''),
+                'features': feature_cols,
+                'data_type': 'full_embeddings'
+            }
+            
+            # Load additional config if exists
+            if config_path.exists():
+                with open(config_path, 'r') as f:
+                    full_config = json.load(f)
+                    config.update(full_config)
+            
+            print(f"Loaded {len(embeddings)} FULL embeddings for {race_type} - {percentile}")
+            print(f"Using ALL {len(feature_cols)} features")
+            
+        else:
+            # Load optimized embeddings (original behavior)
+            file_path = self.embedding_base_path / f"{race_type}_optimized.parquet"
+            config_path = self.embedding_base_path / f"{race_type}_config.json"
+            
+            if not file_path.exists():
+                raise FileNotFoundError(f"Optimized embedding file not found: {file_path}")
+            
+            embeddings = pd.read_parquet(file_path)
+            
+            # Load configuration to get percentile info
+            config = {}
+            if config_path.exists():
+                with open(config_path, 'r') as f:
+                    config = json.load(f)
+            
+            print(f"Loaded {len(embeddings)} OPTIMIZED embeddings for {race_type}")
+            if 'percentile' in config:
+                print(f"Using {config['percentile']} with {len(config.get('features', []))} selected features")
         
         return embeddings, config
     
@@ -195,7 +253,15 @@ class EmbeddingDataPreparation:
         feature_cols_df = self.prepare_features(combined)
         
         # Combine embedding columns with prepared features
-        embedding_cols = [col for col in embeddings.columns if col.startswith('corr_') or col == 'n_races']
+        if self.use_full_embeddings:
+            # For full embeddings, all non-metadata columns are embedding features
+            embedding_cols = [col for col in embeddings.columns 
+                            if col not in ['rider_result_id', 'n_races', 'calculation_date']]
+            # Also include n_races as it's an important feature
+            embedding_cols.append('n_races')
+        else:
+            # For optimized embeddings, use corr_ prefix
+            embedding_cols = [col for col in embeddings.columns if col.startswith('corr_') or col == 'n_races']
         
         # Add race feature columns if they exist
         race_feature_cols = []
@@ -215,7 +281,8 @@ class EmbeddingDataPreparation:
         self, 
         race_type: str,
         min_year: Optional[int] = None,
-        max_year: Optional[int] = None
+        max_year: Optional[int] = None,
+        percentile: Optional[str] = None
     ) -> pd.DataFrame:
         """
         Prepare complete dataset for a specific race type.
@@ -224,19 +291,25 @@ class EmbeddingDataPreparation:
             race_type: One of ['gc', 'stage', 'one_day', 'stage_one_day', 'all']
             min_year: Minimum year to include (inclusive)
             max_year: Maximum year to include (inclusive)
+            percentile: For full embeddings, which percentile to use (e.g., 'race_features_90')
             
         Returns:
             DataFrame ready for model training
         """
         # Load embeddings and config
-        embeddings, config = self.load_embeddings(race_type)
+        embeddings, config = self.load_embeddings(race_type, percentile=percentile)
         
         # Load race features if config contains percentile and feature information
         race_features = None
         if 'percentile' in config and 'features' in config:
-            percentile = config['percentile']
-            feature_list = config['features']
-            race_features = self.load_race_features(percentile, feature_list)
+            percentile_table = config['percentile']
+            if self.use_full_embeddings:
+                # For full embeddings, remove 'corr_' prefix to get original feature names
+                feature_list = [fname.replace('corr_', '') for fname in config['features']]
+            else:
+                # For optimized embeddings, use features as-is
+                feature_list = config['features']
+            race_features = self.load_race_features(percentile_table, feature_list)
         
         # Load rider results with competition info
         rider_results = self.load_rider_results_with_competition_info()

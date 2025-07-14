@@ -10,7 +10,7 @@ from tabulate import tabulate
 class ModelReporter:
     """Generate comprehensive reports for embedding-based prediction models."""
     
-    def __init__(self, output_dir: str = "reports"):
+    def __init__(self, output_dir: str = "embedding_model_performance_reports"):
         """
         Initialize the model reporter.
         
@@ -81,6 +81,9 @@ class ModelReporter:
             with open(filepath, 'w') as f:
                 json.dump(report, f, indent=2)
             print(f"Report saved to: {filepath}")
+            
+            # Generate text summary
+            self._generate_text_summary(report, filepath.with_suffix('.txt'))
         
         return report
     
@@ -220,6 +223,85 @@ class ModelReporter:
             print(f"  {feature_type} {row['feature']}: {row['importance']:.2f}")
         
         print(f"\n{'='*60}\n")
+    
+    def _generate_text_summary(self, report: Dict, filepath: Path):
+        """Generate a text summary of the model report."""
+        race_type = report['metadata']['race_type']
+        test_year = report['metadata']['test_year']
+        
+        # Determine if this is using full embeddings
+        n_embedding_features = report['model_details']['n_embedding_features']
+        is_full_embeddings = n_embedding_features > 15  # Heuristic: full embeddings have ~37 features
+        
+        with open(filepath, 'w') as f:
+            f.write('='*80 + '\n')
+            if is_full_embeddings:
+                f.write(f'🎯 {race_type.upper()} MODEL WITH FULL EMBEDDINGS\n')
+            else:
+                f.write(f'🎯 {race_type.upper()} MODEL WITH OPTIMIZED EMBEDDINGS\n')
+            f.write('='*80 + '\n\n')
+            
+            # Model performance
+            f.write('📊 MODEL PERFORMANCE:\n')
+            perf = report['model_performance']
+            f.write(f'  Classification AUC:    {perf["auc_classification"]:.4f}\n')
+            f.write(f'  Overall RMSE:          {perf["rmse_overall"]:.2f} UCI points\n')
+            f.write(f'  Non-zero RMSE:         {perf["rmse_nonzero"]:.2f} UCI points\n')
+            f.write(f'  Non-zero R²:           {perf["r2_nonzero"]:.4f}\n')
+            f.write(f'  Zero prediction acc:   {perf["zero_accuracy"]:.1%}\n\n')
+            
+            # Feature breakdown
+            f.write('🔧 FEATURE BREAKDOWN:\n')
+            details = report['model_details']
+            n_race_features = len([f for f in report["feature_importance"]["classifier"]["top_race_features"] 
+                                 if f["importance"] > 0])
+            f.write(f'  Total features:        {details["n_features"]}\n')
+            f.write(f'  📊 Embedding features:  {details["n_embedding_features"]} (rider correlations)\n')
+            f.write(f'  🏁 Race features:        {n_race_features} (actual race characteristics)\n')
+            f.write(f'  📋 Database features:    {details["n_database_features"]} (rider history)\n\n')
+            
+            # Top 15 features
+            f.write('🏆 TOP 15 FEATURES (Classifier):\n')
+            for i, feature in enumerate(report['feature_importance']['classifier']['all_features'][:15], 1):
+                name = feature['feature']
+                importance = feature['importance']
+                ftype = feature['feature_type']
+                icon = {'database': '📋', 'race': '🏁', 'embedding': '📊'}[ftype]
+                f.write(f'  {i:2d}. {icon} {name:35s} {importance:8.1f}\n')
+            f.write('\n')
+            
+            # Embedding features analysis
+            embedding_in_top15 = [f for f in report['feature_importance']['classifier']['all_features'][:15]
+                                 if f['feature_type'] == 'embedding']
+            f.write('🔍 EMBEDDING FEATURES IN TOP 15:\n')
+            f.write(f'  Count: {len(embedding_in_top15)}/15 ({len(embedding_in_top15)/15:.1%})\n')
+            for i, feature in enumerate(embedding_in_top15, 1):
+                corr_name = feature['feature'].replace('corr_', '')
+                f.write(f'    {i}. {feature["feature"]:35s} → Rider correlation with {corr_name}\n')
+            f.write('\n')
+            
+            # Files generated
+            f.write('💾 FILES GENERATED:\n')
+            f.write(f'  📄 JSON Report:     reports/{race_type}_model_report_{test_year}.json\n')
+            f.write(f'  📄 Text Summary:    reports/{race_type}_model_report_{test_year}.txt\n')
+            
+            # Model filename depends on embedding type
+            if is_full_embeddings:
+                f.write(f'  🤖 Trained Model:   models/{race_type}_model_{test_year}_full_*\n')
+            else:
+                f.write(f'  🤖 Trained Model:   models/{race_type}_model_{test_year}\n')
+            
+            f.write(f'  📈 Feature CSVs:    reports/{race_type}_feature_importance_*.csv\n\n')
+            
+            # Dataset stats
+            f.write('📈 DATASET STATISTICS:\n')
+            train_info = report['dataset_info']['training']
+            test_info = report['dataset_info']['test']
+            f.write(f'  Training: {train_info["n_rider_results"]} samples, {train_info["n_competitions"]} competitions\n')
+            f.write(f'  Testing:  {test_info["n_rider_results"]} samples, {test_info["n_competitions"]} competitions\n')
+            f.write(f'  Years:    {min(train_info["years"])}-{max(train_info["years"])} → {test_info["years"][0]}\n')
+        
+        print(f"Text summary saved to: {filepath}")
     
     def export_feature_importance_csv(self, model, filename: Optional[str] = None):
         """Export feature importance to CSV files."""

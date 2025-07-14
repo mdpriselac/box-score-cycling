@@ -3,9 +3,14 @@
 Train embedding-based performance prediction models.
 
 Usage:
+    # Using optimized embeddings (default)
     python train_embedding_models.py --year 2023
     python train_embedding_models.py --year 2023 --race-type gc
     python train_embedding_models.py --year 2023 --save-models
+    
+    # Using full embeddings with percentile
+    python train_embedding_models.py --year 2023 --use-full-embeddings --percentile race_features_90
+    python train_embedding_models.py --year 2023 --race-type gc --use-full-embeddings --percentile race_features_90
 """
 
 import argparse
@@ -29,7 +34,8 @@ def train_single_race_type(
     prep: EmbeddingDataPreparation,
     reporter: ModelReporter,
     save_model: bool = False,
-    model_dir: str = "models"
+    model_dir: str = "models",
+    percentile: Optional[str] = None
 ) -> Dict:
     """
     Train model for a single race type.
@@ -41,6 +47,7 @@ def train_single_race_type(
         reporter: Model reporter instance
         save_model: Whether to save the trained model
         model_dir: Directory to save models
+        percentile: For full embeddings, which percentile to use
         
     Returns:
         Dictionary with training results
@@ -52,7 +59,12 @@ def train_single_race_type(
     try:
         # Prepare data
         print(f"\nPreparing data for {race_type}...")
-        full_data = prep.prepare_race_type_data(race_type)
+        if prep.use_full_embeddings:
+            print(f"Using FULL embeddings with percentile: {percentile}")
+        else:
+            print("Using OPTIMIZED embeddings")
+        
+        full_data = prep.prepare_race_type_data(race_type, percentile=percentile)
         
         # Split by year
         train_df, test_df = prep.split_by_year(full_data, test_year)
@@ -103,7 +115,11 @@ def train_single_race_type(
         
         # Save model if requested
         if save_model:
-            model_path = Path(model_dir) / f"{race_type}_model_{test_year}"
+            if prep.use_full_embeddings:
+                model_name = f"{race_type}_model_{test_year}_full_{percentile.replace('race_features_', '')}"
+            else:
+                model_name = f"{race_type}_model_{test_year}"
+            model_path = Path(model_dir) / model_name
             model_path.parent.mkdir(parents=True, exist_ok=True)
             model.save(str(model_path))
             print(f"✅ Model saved to: {model_path}")
@@ -172,6 +188,22 @@ def main():
         default="reports",
         help="Directory to save reports"
     )
+    parser.add_argument(
+        "--use-full-embeddings",
+        action="store_true",
+        help="Use full embeddings instead of optimized embeddings"
+    )
+    parser.add_argument(
+        "--percentile",
+        type=str,
+        help="For full embeddings, which percentile to use (e.g., race_features_90)"
+    )
+    parser.add_argument(
+        "--full-embeddings-path",
+        type=str,
+        default="race_type_full_embeddings",
+        help="Path to full embeddings data folder"
+    )
     
     args = parser.parse_args()
     
@@ -181,21 +213,35 @@ def main():
         print(f"❌ Invalid year: {args.year}. Must be between 2010 and {current_year}")
         sys.exit(1)
     
+    # Validate full embeddings arguments
+    if args.use_full_embeddings and not args.percentile:
+        print("❌ When using --use-full-embeddings, you must specify --percentile (e.g., race_features_90)")
+        sys.exit(1)
+    
     # Check if database exists
     if not Path(args.db_path).exists():
         print(f"❌ Database not found: {args.db_path}")
         sys.exit(1)
     
     # Check if embedding path exists
-    if not Path(args.embedding_path).exists():
-        print(f"❌ Embedding data folder not found: {args.embedding_path}")
-        sys.exit(1)
+    if args.use_full_embeddings:
+        embedding_path = Path(args.full_embeddings_path)
+        if not embedding_path.exists():
+            print(f"❌ Full embeddings data folder not found: {args.full_embeddings_path}")
+            sys.exit(1)
+    else:
+        embedding_path = Path(args.embedding_path)
+        if not embedding_path.exists():
+            print(f"❌ Optimized embeddings data folder not found: {args.embedding_path}")
+            sys.exit(1)
     
     # Initialize components
     print("Initializing data preparation and reporting components...")
     prep = EmbeddingDataPreparation(
         db_path=args.db_path,
-        embedding_base_path=args.embedding_path
+        embedding_base_path=args.embedding_path,
+        use_full_embeddings=args.use_full_embeddings,
+        full_embeddings_path=args.full_embeddings_path
     )
     reporter = ModelReporter(output_dir=args.report_dir)
     
@@ -208,7 +254,11 @@ def main():
     print(f"\nTraining models for year {args.year}")
     print(f"Race types: {', '.join(race_types)}")
     print(f"Database: {args.db_path}")
-    print(f"Embeddings: {args.embedding_path}")
+    if args.use_full_embeddings:
+        print(f"Embeddings: {args.full_embeddings_path} (FULL)")
+        print(f"Percentile: {args.percentile}")
+    else:
+        print(f"Embeddings: {args.embedding_path} (OPTIMIZED)")
     
     # Train models
     results = {}
@@ -219,7 +269,8 @@ def main():
             prep=prep,
             reporter=reporter,
             save_model=args.save_models,
-            model_dir=args.model_dir
+            model_dir=args.model_dir,
+            percentile=args.percentile
         )
         results[race_type] = result
     

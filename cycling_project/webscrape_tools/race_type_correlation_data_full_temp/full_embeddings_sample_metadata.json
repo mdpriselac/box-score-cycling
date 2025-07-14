@@ -1,0 +1,28 @@
+{
+  "type": "enhanced_parallel_sample",
+  "sample_size": 1000,
+  "successful_riders": 1000,
+  "total_records": 1205016,
+  "feature_tables": [
+    "race_features_30",
+    "race_features_40",
+    "race_features_50",
+    "race_features_60",
+    "race_features_70",
+    "race_features_80",
+    "race_features_90",
+    "race_features_100"
+  ],
+  "generation_date": "2025-07-14T13:59:46.960062",
+  "timing": {
+    "sample_time": 2.633417844772339,
+    "preload_time": 4.224231958389282,
+    "processing_time": 60.68300986289978,
+    "total_time": 67.5406596660614
+  },
+  "performance": {
+    "n_workers": 4,
+    "preload_enabled": true,
+    "riders_per_second": 16.47907712981418
+  }
+}
