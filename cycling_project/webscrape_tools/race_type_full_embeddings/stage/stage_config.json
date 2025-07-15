@@ -3,47 +3,47 @@
   "data_type": "full_embeddings",
   "percentiles": {
     "race_features_30": {
-      "n_riders": 760,
+      "n_riders": 77284,
       "n_features": 37,
       "file": "race_features_30_full.parquet"
     },
     "race_features_40": {
-      "n_riders": 802,
+      "n_riders": 81301,
       "n_features": 37,
       "file": "race_features_40_full.parquet"
     },
     "race_features_50": {
-      "n_riders": 808,
+      "n_riders": 81663,
       "n_features": 37,
       "file": "race_features_50_full.parquet"
     },
     "race_features_60": {
-      "n_riders": 808,
+      "n_riders": 81717,
       "n_features": 37,
       "file": "race_features_60_full.parquet"
     },
     "race_features_70": {
-      "n_riders": 808,
+      "n_riders": 81717,
       "n_features": 37,
       "file": "race_features_70_full.parquet"
     },
     "race_features_80": {
-      "n_riders": 808,
+      "n_riders": 81725,
       "n_features": 37,
       "file": "race_features_80_full.parquet"
     },
     "race_features_90": {
-      "n_riders": 808,
+      "n_riders": 81725,
       "n_features": 37,
       "file": "race_features_90_full.parquet"
     },
     "race_features_100": {
-      "n_riders": 808,
+      "n_riders": 81725,
       "n_features": 36,
       "file": "race_features_100_full.parquet"
     }
   },
-  "total_riders": 801,
-  "export_date": "2025-07-14T13:59:47.631157",
+  "total_riders": 81107,
+  "export_date": "2025-07-14T18:59:14.482096",
   "description": "Full rider embeddings with ALL features (no optimization applied)"
 }

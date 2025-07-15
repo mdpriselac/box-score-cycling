@@ -1,0 +1,49 @@
+================================================================================
+🎯 ONE_DAY MODEL WITH OPTIMIZED EMBEDDINGS
+================================================================================
+
+📊 MODEL PERFORMANCE:
+  Classification AUC:    0.7611
+  Overall RMSE:          98.01 UCI points
+  Non-zero RMSE:         112.24 UCI points
+  Non-zero R²:           0.3006
+  Zero prediction acc:   70.1%
+
+🔧 FEATURE BREAKDOWN:
+  Total features:        38
+  📊 Embedding features:  11 (rider correlations)
+  🏁 Race features:        10 (actual race characteristics)
+  📋 Database features:    17 (rider history)
+
+🏆 TOP 15 FEATURES (Classifier):
+   1. 🏁 riders_in_groups                     22322.0
+   2. 📋 prior_one_day_points_proportional     7446.0
+   3. 📋 tour_level_encoded                    3920.9
+   4. 📋 total_prior_points_proportional       3521.7
+   5. 📋 rider_age                             2580.0
+   6. 🏁 abandon_ratio                         2146.1
+   7. 🏁 winning_time                          2057.8
+   8. 📊 corr_riders_in_groups                 1881.0
+   9. 📋 prior_pro_races                       1845.5
+  10. 🏁 largest_group_size                    1824.9
+  11. 🏁 20th_percentile_gap                   1786.5
+  12. 📋 prior_wt_points_proportional          1732.1
+  13. 🏁 total_groups                          1725.6
+  14. 📊 corr_winning_time                     1639.4
+  15. 📋 prior_stage_points_proportional       1625.1
+
+🔍 EMBEDDING FEATURES IN TOP 15:
+  Count: 2/15 (13.3%)
+    1. corr_riders_in_groups               → Rider correlation with riders_in_groups
+    2. corr_winning_time                   → Rider correlation with winning_time
+
+💾 FILES GENERATED:
+  📄 JSON Report:     reports/one_day_model_report_2023.json
+  📄 Text Summary:    reports/one_day_model_report_2023.txt
+  🤖 Trained Model:   models/one_day_model_2023
+  📈 Feature CSVs:    reports/one_day_feature_importance_*.csv
+
+📈 DATASET STATISTICS:
+  Training: 16705 samples, 1055 competitions
+  Testing:  2052 samples, 110 competitions
+  Years:    2011-2022 → 2023

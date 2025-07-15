@@ -1,0 +1,50 @@
+================================================================================
+🎯 GC MODEL WITH OPTIMIZED EMBEDDINGS
+================================================================================
+
+📊 MODEL PERFORMANCE:
+  Classification AUC:    0.8436
+  Overall RMSE:          92.04 UCI points
+  Non-zero RMSE:         115.39 UCI points
+  Non-zero R²:           0.3418
+  Zero prediction acc:   75.9%
+
+🔧 FEATURE BREAKDOWN:
+  Total features:        32
+  📊 Embedding features:  8 (rider correlations)
+  🏁 Race features:        7 (actual race characteristics)
+  📋 Database features:    17 (rider history)
+
+🏆 TOP 15 FEATURES (Classifier):
+   1. 📋 prior_gc_points_proportional         21498.5
+   2. 🏁 total_finishers                      17603.6
+   3. 📊 corr_total_race_duration             11307.0
+   4. 📋 prior_pro_races                       4887.8
+   5. 📋 tour_level_encoded                    4860.4
+   6. 📊 corr_total_finishers                  4555.8
+   7. 🏁 total_race_duration                   4531.4
+   8. 📋 rider_age                             3445.1
+   9. 📋 prior_stage_points_proportional       3133.4
+  10. 📊 corr_kurtosis_absolute                2465.3
+  11. 📋 prior_wt_points_proportional          2346.2
+  12. 📋 prior_wt_proportion                   2200.1
+  13. 📋 prior_one_day_points_proportional     2029.3
+  14. 🏁 kurtosis_absolute                     1917.7
+  15. 📋 prior_d1_races                        1878.8
+
+🔍 EMBEDDING FEATURES IN TOP 15:
+  Count: 3/15 (20.0%)
+    1. corr_total_race_duration            → Rider correlation with total_race_duration
+    2. corr_total_finishers                → Rider correlation with total_finishers
+    3. corr_kurtosis_absolute              → Rider correlation with kurtosis_absolute
+
+💾 FILES GENERATED:
+  📄 JSON Report:     reports/gc_model_report_2023.json
+  📄 Text Summary:    reports/gc_model_report_2023.txt
+  🤖 Trained Model:   models/gc_model_2023
+  📈 Feature CSVs:    reports/gc_feature_importance_*.csv
+
+📈 DATASET STATISTICS:
+  Training: 17220 samples, 740 competitions
+  Testing:  1470 samples, 64 competitions
+  Years:    2011-2022 → 2023

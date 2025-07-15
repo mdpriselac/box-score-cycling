@@ -66,7 +66,7 @@ class EmbeddingPerformanceModel:
         }
         
         # Classification threshold
-        self.classification_threshold = 0.5
+        self.classification_threshold = 0.2
     
     def _prepare_features(self, df: pd.DataFrame) -> Tuple[np.ndarray, List[str]]:
         """

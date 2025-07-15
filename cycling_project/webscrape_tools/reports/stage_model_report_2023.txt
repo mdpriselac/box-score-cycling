@@ -1,0 +1,50 @@
+================================================================================
+🎯 STAGE MODEL WITH FULL EMBEDDINGS
+================================================================================
+
+📊 MODEL PERFORMANCE:
+  Classification AUC:    0.8110
+  Overall RMSE:          25.03 UCI points
+  Non-zero RMSE:         33.83 UCI points
+  Non-zero R²:           0.1588
+  Zero prediction acc:   64.8%
+
+🔧 FEATURE BREAKDOWN:
+  Total features:        92
+  📊 Embedding features:  38 (rider correlations)
+  🏁 Race features:        9 (actual race characteristics)
+  📋 Database features:    36 (rider history)
+
+🏆 TOP 15 FEATURES (Classifier):
+   1. 📋 prior_stage_points_proportional      30332.0
+   2. 🏁 total_finishers                       9461.2
+   3. 📋 tour_level_encoded                    6913.9
+   4. 🏁 largest_group_size                    4408.6
+   5. 📊 n_races                               4220.2
+   6. 📋 35th_percentile_gap                   3369.6
+   7. 📋 rider_age                             2984.0
+   8. 📊 corr_45th_percentile_gap              1662.5
+   9. 📊 corr_50th_percentile_gap              1643.5
+  10. 📋 40th_percentile_gap                   1267.2
+  11. 📋 total_prior_races                     1214.1
+  12. 📋 total_prior_points_proportional       1134.4
+  13. 🏁 biggest_group_metric                  1129.0
+  14. 📋 prior_gc_points_proportional          1118.3
+  15. 📋 avg_group_size                        1115.8
+
+🔍 EMBEDDING FEATURES IN TOP 15:
+  Count: 3/15 (20.0%)
+    1. n_races                             → Rider correlation with n_races
+    2. corr_45th_percentile_gap            → Rider correlation with 45th_percentile_gap
+    3. corr_50th_percentile_gap            → Rider correlation with 50th_percentile_gap
+
+💾 FILES GENERATED:
+  📄 JSON Report:     reports/stage_model_report_2023.json
+  📄 Text Summary:    reports/stage_model_report_2023.txt
+  🤖 Trained Model:   models/stage_model_2023_full_*
+  📈 Feature CSVs:    reports/stage_feature_importance_*.csv
+
+📈 DATASET STATISTICS:
+  Training: 34965 samples, 3842 competitions
+  Testing:  3082 samples, 370 competitions
+  Years:    2011-2022 → 2023
