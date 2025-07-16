@@ -232,9 +232,16 @@ class EmbeddingInteractionPerformanceModel:
         """Load interaction features from parquet files."""
         interaction_data = pd.DataFrame({'rider_result_id': rider_result_ids})
         
+        # Determine base path based on current working directory
+        import os
+        if os.path.basename(os.getcwd()) == 'webscrape_tools':
+            interaction_base_path = "interaction_embeddings_db_optimized"
+        else:
+            interaction_base_path = "../../interaction_embeddings_db_optimized"
+        
         if self.feature_config['interaction_percentile'] == 'all':
             # Use phase2 matrix interactions
-            base_path = Path("../../interaction_embeddings_db_optimized/phase2")
+            base_path = Path(interaction_base_path) / "phase2"
             matrix_file = base_path / self.race_type / "matrix_interactions.parquet"
             
             if matrix_file.exists():
@@ -258,7 +265,7 @@ class EmbeddingInteractionPerformanceModel:
                     self.feature_groups['interaction_features'].extend(feature_cols)
         else:
             # Use phase1 individual percentile data
-            base_path = Path("../../interaction_embeddings_db_optimized/phase1")
+            base_path = Path(interaction_base_path) / "phase1"
             
             for interaction_type in self.feature_config['interaction_types']:
                 if interaction_type == 'dot_product':

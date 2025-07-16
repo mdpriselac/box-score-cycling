@@ -20,9 +20,14 @@ def test_default_model():
     print("-" * 80)
     
     # Initialize model for stage races as a test
+    import os
+    db_path = os.path.abspath('../../database/database/cycling_races.db')
+    print(f"Database path: {db_path}")
+    print(f"Database exists: {os.path.exists(db_path)}")
+    
     model = EmbeddingInteractionPerformanceModel(
         race_type='stage',
-        db_path='../../database/database/cycling_races.db'
+        db_path=db_path
     )
     
     print("Model initialized with default configuration:")
@@ -124,9 +129,12 @@ def test_custom_config():
         'interaction_percentile': 'all'  # Use phase2 matrix interactions
     }
     
+    import os
+    db_path = os.path.abspath('../../database/database/cycling_races.db')
+    
     model = EmbeddingInteractionPerformanceModel(
         race_type='one_day',
-        db_path='../../database/database/cycling_races.db',
+        db_path=db_path,
         feature_config=custom_config
     )
     
