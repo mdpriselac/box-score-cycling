@@ -62,7 +62,7 @@ OPTIMIZATION_CONFIG = {
     'n_workers': 4,
     'batch_size': 100,
     'sample_mode': True,
-    'sample_size': 1000,
+    'sample_size': 10000,
     'chunk_size': 100,
     'preload_all_data': True,
     'enable_logging': True

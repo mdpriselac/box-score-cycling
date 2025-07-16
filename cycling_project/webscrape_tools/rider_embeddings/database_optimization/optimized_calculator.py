@@ -71,7 +71,7 @@ class OptimizedInteractionCalculator:
             'gc': calculator_config.get('min_races_gc', 10),
             'stage': calculator_config.get('min_races_stage', 25),
             'one_day': calculator_config.get('min_races_one_day', 15),
-            'stage_one_day': calculator_config.get('min_races_one_day', 15),
+            'stage_one_day': calculator_config.get('min_races_stage_one_day', 15),  # Fixed key name
             'all': calculator_config.get('min_races_all', 35)
         }
         

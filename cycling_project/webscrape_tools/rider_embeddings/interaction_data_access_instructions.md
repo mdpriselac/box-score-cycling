@@ -7,7 +7,7 @@ This guide provides instructions for accessing and using the interaction-based r
 ## Data Location
 
 ```
-webscrape_tools/interaction_embeddings/
+webscrape_tools/interaction_embeddings_db_optimized/
 ├── phase1/                    # Individual percentile interactions
 │   ├── gc/
 │   │   ├── dot_products.parquet
@@ -37,7 +37,7 @@ import sqlite3
 
 # Load the matrix interactions for a specific race type
 race_type = 'stage'  # Options: gc, stage, one_day, stage_one_day, all
-df = pd.read_parquet(f'interaction_embeddings/phase2/{race_type}/matrix_interactions.parquet')
+df = pd.read_parquet(f'interaction_embeddings_db_optimized/phase2/{race_type}/matrix_interactions.parquet')
 
 print(f"Shape: {df.shape}")
 print(f"Columns: {df.columns.tolist()[:10]}...")  # First 10 columns
@@ -99,7 +99,7 @@ y_top10 = (model_data['final_gc_rank'] <= 10).astype(int)
 
 ```python
 # Example: Load dot products for stage races
-dots = pd.read_parquet('interaction_embeddings/phase1/stage/dot_products.parquet')
+dots = pd.read_parquet('interaction_embeddings_db_optimized/phase1/stage/dot_products.parquet')
 print(dots.head())
 #    rider_result_id    percentile     value
 # 0           123456  race_features_60  1234.5
@@ -113,7 +113,7 @@ print(dots.head())
 
 ```python
 # Example: Load Hadamard products for stage races
-hadamard = pd.read_parquet('interaction_embeddings/phase1/stage/hadamard_products.parquet')
+hadamard = pd.read_parquet('interaction_embeddings_db_optimized/phase1/stage/hadamard_products.parquet')
 print(hadamard.head())
 #    rider_result_id    percentile              feature    value
 # 0           123456  race_features_60  proportion_in_groups  0.45
@@ -124,13 +124,14 @@ print(hadamard.head())
 
 #### Matrix Interactions
 - **Columns**: `rider_result_id`, `dot_product`, `cosine_similarity`, `hadamard_0` through `hadamard_295`
-- **Description**: Consolidated interactions across all percentiles
+- **Description**: Consolidated interactions across all percentiles (8 percentiles × 37 features = 296 hadamard values)
 - **Use Case**: Direct input for machine learning models
+- **Feature count**: 299 total features (1 dot + 1 cosine + 296 hadamard + 1 rider_result_id)
 
 ```python
 # Phase 2 structure
-matrix = pd.read_parquet('interaction_embeddings/phase2/all/matrix_interactions.parquet')
-print(f"Shape: {matrix.shape}")  # (996, 299)
+matrix = pd.read_parquet('interaction_embeddings_db_optimized/phase2/all/matrix_interactions.parquet')
+print(f"Shape: {matrix.shape}")  # Example: (446, 299) for 'all' race type
 print(matrix.columns[:10])       # First 10 columns
 ```
 
@@ -173,7 +174,7 @@ from sklearn.metrics import mean_squared_error, r2_score
 
 # 1. Load interaction data
 race_type = 'stage'
-df = pd.read_parquet(f'interaction_embeddings/phase2/{race_type}/matrix_interactions.parquet')
+df = pd.read_parquet(f'interaction_embeddings_db_optimized/phase2/{race_type}/matrix_interactions.parquet')
 
 # 2. Get database connection
 conn = sqlite3.connect('database/database/cycling_races.db')
@@ -231,22 +232,27 @@ print(feature_importance.head(10))
 
 ## Data Quality Notes
 
-### Coverage by Race Type
-- **stage**: 969 riders, most reliable data
-- **all**: 999 riders, good general coverage
-- **stage_one_day**: 999 riders, comprehensive road racing
-- **one_day**: 850 riders, fewer samples
-- **gc**: 950 riders, specialized for GC predictions
+### Coverage by Race Type (10K Sample Results)
+- **stage_one_day**: 9,682 riders (77.8%), comprehensive road racing
+- **stage**: 771 riders (6.3%), stage race specialists
+- **one_day**: 554 riders (3.4%), classics specialists
+- **all**: 446 riders (3.2%), very experienced riders
+- **gc**: 34 riders (0.2%), elite GC contenders - very selective!
 
 ### Missing Data Patterns
 - Some riders lack sufficient historical data for certain race types
-- GC and one_day races have higher minimum race requirements
+- Current minimum race requirements (40th percentile):
+  - GC: 11 races (very selective - only 34 qualified)
+  - Stage: 69 races  
+  - One-day: 18 races
+  - Stage_one_day: 82 races
+  - All: 91 races
 - Check `extraction_metadata.json` for detailed warnings
 
 ### Value Ranges
-- **Dot products**: Wide range (-47M to 84M), consider normalization
-- **Cosine similarity**: Bounded [-1, 1], interpretable as correlation
-- **Hadamard products**: Feature-dependent ranges, may need scaling
+- **Dot products**: Wide range (varies by race type), consider normalization
+- **Cosine similarity**: Bounded [-1, 1], interpretable as correlation strength
+- **Hadamard products**: Feature-dependent ranges (37 features × 8 percentiles = 296 values), may need scaling
 
 ## Performance Tips
 
@@ -255,13 +261,20 @@ print(feature_importance.head(10))
 3. **Time-based splits** are crucial for realistic evaluation
 4. **Feature scaling** may improve model performance
 5. **Consider ensemble methods** to handle the high-dimensional feature space
+6. **Start with stage_one_day** for most riders (9,682 samples in 10K dataset)
+7. **GC predictions** will have limited samples but highly specialized riders
 
 ## Troubleshooting
 
 ### Common Issues
 
 **Q: Why do some race types have fewer samples?**
-A: The system requires minimum historical races per type (GC: 20, Stage: 144, One-day: 34, etc.)
+A: The system requires minimum historical races per type based on 40th percentile:
+   - GC: 11 races (very selective, only elite riders qualify)
+   - Stage: 69 races
+   - One-day: 18 races  
+   - Stage_one_day: 82 races
+   - All: 91 races
 
 **Q: What does rider_result_id represent?**
 A: It's the unique identifier from the `rider_results` table, linking to a specific rider's performance in a specific competition.
