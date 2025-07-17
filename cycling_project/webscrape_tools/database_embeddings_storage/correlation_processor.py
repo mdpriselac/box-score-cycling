@@ -10,12 +10,83 @@ import logging
 from typing import Dict, List, Tuple, Optional
 from datetime import datetime
 import psutil
+from concurrent.futures import ThreadPoolExecutor, as_completed
+import threading
+import queue
+import time
 
 from config import ProcessingConfig
 from threshold_calculator import ThresholdCalculator
 from race_features_loader import RaceFeaturesLoader
 from checkpoint_manager import CheckpointManager
 from memory_manager import MemoryManager
+from cpu_monitor import CPUMonitor
+
+class DatabaseConnectionPool:
+    """Thread-safe database connection pool for SQLite"""
+    
+    def __init__(self, db_path: str, pool_size: int = 4, timeout_seconds: int = 30):
+        self.db_path = db_path
+        self.pool_size = pool_size
+        self.timeout_seconds = timeout_seconds
+        self.connections = queue.Queue(maxsize=pool_size)
+        self.lock = threading.Lock()
+        
+        # Pre-create connections
+        for _ in range(pool_size):
+            conn = self._create_connection()
+            self.connections.put(conn)
+    
+    def _create_connection(self):
+        """Create a properly configured SQLite connection"""
+        conn = sqlite3.connect(self.db_path, check_same_thread=False)
+        conn.row_factory = sqlite3.Row
+        
+        # Configure for thread safety and performance
+        conn.execute(f"PRAGMA busy_timeout = {self.timeout_seconds * 1000}")
+        conn.execute("PRAGMA synchronous = NORMAL")
+        conn.execute("PRAGMA journal_mode = WAL")
+        conn.execute("PRAGMA cache_size = -64000")  # 64MB cache per connection
+        
+        return conn
+    
+    def get_connection(self, timeout=None):
+        """Get a connection from the pool"""
+        if timeout is None:
+            timeout = self.timeout_seconds
+            
+        try:
+            conn = self.connections.get(timeout=timeout)
+            # Test the connection
+            conn.execute("SELECT 1").fetchone()
+            return conn
+        except queue.Empty:
+            raise Exception(f"Could not get database connection within {timeout} seconds")
+        except sqlite3.Error:
+            # Connection is stale, create a new one
+            conn = self._create_connection()
+            return conn
+    
+    def return_connection(self, conn):
+        """Return a connection to the pool"""
+        try:
+            if conn and not self.connections.full():
+                self.connections.put(conn, block=False)
+            elif conn:
+                # Pool is full, close this connection
+                conn.close()
+        except queue.Full:
+            # Pool is full, close the connection
+            conn.close()
+    
+    def close_all(self):
+        """Close all connections in the pool"""
+        while not self.connections.empty():
+            try:
+                conn = self.connections.get(block=False)
+                conn.close()
+            except queue.Empty:
+                break
 
 class CorrelationProcessor:
     def __init__(self, db_path: str, config: ProcessingConfig):
@@ -24,6 +95,7 @@ class CorrelationProcessor:
         self.threshold_calculator = ThresholdCalculator(db_path, config)
         self.features_loader = RaceFeaturesLoader(db_path, config)
         self.checkpoint_manager = CheckpointManager(db_path, config)
+        self.db_pool = None  # Initialize when parallel processing starts
         
     def run(self, resume: bool = True):
         """Main entry point for processing"""
@@ -85,6 +157,11 @@ class CorrelationProcessor:
         # Final checkpoint
         self.checkpoint_manager.finalize()
         
+        # Cleanup connection pool
+        if self.db_pool:
+            self.db_pool.close_all()
+            self.db_pool = None
+        
         total_time = datetime.now() - start_time
         logging.info(f"Processing completed in {total_time}")
     
@@ -107,7 +184,7 @@ class CorrelationProcessor:
             yield competitions[i:i + self.config.COMPETITION_BATCH_SIZE]
     
     def _process_competition_batch(self, competitions: List[Dict]) -> List[Dict]:
-        """Process a batch of competitions"""
+        """Process a batch of competitions with parallel rider processing"""
         results = []
         comp_ids = [c['competition_id'] for c in competitions]
         
@@ -115,6 +192,112 @@ class CorrelationProcessor:
         eligible_results = self._get_eligible_rider_results(comp_ids)
         
         logging.info(f"Processing {len(eligible_results)} eligible rider results in batch")
+        
+        # Check if parallel processing is enabled
+        if not self.config.THREAD_SAFETY_ENABLED or self.config.NUM_WORKERS == 1:
+            # Fall back to sequential processing
+            return self._process_competition_batch_sequential(competitions)
+        
+        # Initialize connection pool for this batch
+        if self.db_pool is None:
+            self.db_pool = DatabaseConnectionPool(
+                self.db_path, 
+                pool_size=self.config.NUM_WORKERS,
+                timeout_seconds=self.config.DB_TIMEOUT_SECONDS
+            )
+        
+        # Create worker tasks
+        tasks = []
+        for rr in eligible_results:
+            race_type = rr['race_type']
+            correlation_types = self.config.RACE_TYPE_CORRELATIONS[race_type]
+            
+            for corr_type in correlation_types:
+                tasks.append({
+                    'rider_result': rr,
+                    'correlation_type': corr_type,
+                    'task_id': f"{rr['rider_result_id']}_{corr_type}"
+                })
+        
+        logging.debug(f"Created {len(tasks)} parallel tasks for {len(eligible_results)} riders")
+        
+        # Process tasks in parallel with CPU monitoring
+        failed_tasks = []
+        successful_tasks = 0
+        cpu_monitor = CPUMonitor(interval_seconds=0.5)
+        
+        # Start CPU monitoring if we have a significant number of tasks
+        if len(tasks) >= 10:
+            cpu_monitor.start_monitoring()
+        
+        with ThreadPoolExecutor(max_workers=self.config.NUM_WORKERS) as executor:
+            # Submit all tasks
+            future_to_task = {}
+            for task in tasks:
+                future = executor.submit(
+                    self._calculate_rider_correlation_parallel,
+                    task['rider_result'],
+                    task['correlation_type'],
+                    task['task_id']
+                )
+                future_to_task[future] = task
+            
+            # Collect results as they complete
+            for future in as_completed(future_to_task):
+                task = future_to_task[future]
+                try:
+                    correlation_result, race_count = future.result()
+                    successful_tasks += 1
+                    
+                    if correlation_result is not None:
+                        result_dict = {
+                            'rider_result_id': task['rider_result']['rider_result_id'],
+                            'competition_id': task['rider_result']['competition_id'],
+                            'rider_id': task['rider_result']['rider_id'],
+                            'correlation_type': task['correlation_type'],
+                            'race_count': race_count  # Keep for backward compatibility
+                        }
+                        # Add all the correlation result data
+                        result_dict.update(correlation_result)
+                        results.append(result_dict)
+                        
+                except Exception as e:
+                    failed_tasks.append({
+                        'task_id': task['task_id'],
+                        'error': str(e),
+                        'rider_result_id': task['rider_result']['rider_result_id']
+                    })
+                    logging.error(f"Error processing task {task['task_id']}: {e}")
+        
+        # Stop CPU monitoring and get results
+        if len(tasks) >= 10:
+            cpu_summary = cpu_monitor.get_summary()
+            if cpu_summary and not cpu_summary.get('error'):
+                if cpu_summary['parallel_processing_detected']:
+                    logging.info(f"✅ Parallel processing verified: {cpu_summary['max_cores_active']} cores active, {cpu_summary['avg_cpu_overall']:.1f}% avg CPU")
+                else:
+                    logging.warning(f"⚠️ Parallel processing not detected: {cpu_summary['max_cores_active']} cores, {cpu_summary['avg_cpu_overall']:.1f}% CPU")
+        
+        # Log processing summary
+        if failed_tasks:
+            logging.warning(f"Failed to process {len(failed_tasks)} tasks out of {len(tasks)}")
+            # Log first few failed tasks for debugging
+            for failed_task in failed_tasks[:5]:
+                logging.warning(f"Failed task: {failed_task}")
+        
+        logging.debug(f"Successfully processed {successful_tasks}/{len(tasks)} tasks")
+        
+        return results
+    
+    def _process_competition_batch_sequential(self, competitions: List[Dict]) -> List[Dict]:
+        """Sequential processing fallback (original implementation)"""
+        results = []
+        comp_ids = [c['competition_id'] for c in competitions]
+        
+        # Get eligible rider results
+        eligible_results = self._get_eligible_rider_results(comp_ids)
+        
+        logging.info(f"Processing {len(eligible_results)} eligible rider results in batch (sequential)")
         
         # Use a single connection for all rider history queries in this batch
         with sqlite3.connect(self.db_path) as conn:
@@ -210,6 +393,46 @@ class CorrelationProcessor:
         
         return correlation_result, len(history)
     
+    def _calculate_rider_correlation_parallel(self, rider_result: Dict, corr_type: str, task_id: str) -> Tuple[Optional[Dict], int]:
+        """Thread-safe version of rider correlation calculation using connection pool"""
+        
+        # Get connection from pool
+        conn = None
+        try:
+            conn = self.db_pool.get_connection()
+            if conn is None:
+                raise Exception("Failed to get database connection from pool")
+            
+            # Get rider history (thread-safe)
+            history = self._get_rider_history(
+                rider_result['rider_id'],
+                rider_result['competition_date'],
+                rider_result['race_type'],
+                corr_type,
+                conn
+            )
+            
+            # Check minimum requirements
+            min_required = self._get_min_required_races(rider_result['race_type'], corr_type)
+            
+            if len(history) < min_required:
+                return None, len(history)
+            
+            # Calculate correlation matrix (thread-safe - uses read-only cache)
+            correlation_result = self._calculate_correlation_matrix(history)
+            
+            if correlation_result is None:
+                return None, len(history)
+            
+            return correlation_result, len(history)
+            
+        except Exception as e:
+            raise Exception(f"Database error in task {task_id}: {str(e)}")
+        finally:
+            # Always return connection to pool
+            if conn and self.db_pool:
+                self.db_pool.return_connection(conn)
+    
     def _get_rider_history(self, rider_id: int, before_date: str, 
                           race_type: str, corr_type: str, conn) -> List[Dict]:
         """Get rider's history before a specific date"""
@@ -282,7 +505,7 @@ class CorrelationProcessor:
                     ).astype(int)
             else:
                 missing_competitions.append(comp_id)
-                logging.info(f"Missing race features for competition {comp_id}")
+                logging.debug(f"Missing race features for competition {comp_id}")
                 # Create matrix with all NaN for missing competition
                 nan_matrix = np.full((len(self.config.PERCENTILES), self.config.NUM_FEATURES), np.nan)
                 feature_matrices.append(nan_matrix)
@@ -463,7 +686,14 @@ class CorrelationProcessor:
             ))
             conn.commit()
         
+        # Calculate parallel processing throughput
+        estimated_tasks = stats[1] if stats else 0  # Use correlations as proxy for tasks
+        throughput = estimated_tasks / processing_time if processing_time > 0 else 0
+        
         logging.info(
             f"Batch {batch_idx}: Processed {len(comp_batch)} competitions "
             f"in {processing_time:.1f}s, Memory: {memory_stats['used_gb']:.1f}GB"
         )
+        
+        if self.config.THREAD_SAFETY_ENABLED and self.config.NUM_WORKERS > 1:
+            logging.info(f"Parallel processing throughput: {throughput:.1f} tasks/second using {self.config.NUM_WORKERS} workers")

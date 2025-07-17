@@ -45,6 +45,11 @@ class ProcessingConfig:
     NUM_WORKERS: int = 4  # M1 Pro efficiency cores
     CHUNK_SIZE: int = 10000  # SQLite read chunk
     
+    # Thread safety settings
+    THREAD_SAFETY_ENABLED: bool = True
+    MAX_THREADS_PER_BATCH: int = 4
+    DB_TIMEOUT_SECONDS: int = 30
+    
     # Feature dimensions
     PERCENTILES: List[int] = None
     NUM_FEATURES: int = 37
