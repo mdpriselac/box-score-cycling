@@ -38,7 +38,7 @@ class ProcessingConfig:
     CACHE_SIZE_MB: int = 500
     
     # Checkpoint settings
-    CHECKPOINT_FREQUENCY: int = 10  # competitions
+    CHECKPOINT_FREQUENCY: int = 5  # competitions
     CHECKPOINT_NAME: str = "rider_correlation_v1"
     
     # Performance settings for M1
