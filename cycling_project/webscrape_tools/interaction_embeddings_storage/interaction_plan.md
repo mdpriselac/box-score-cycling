@@ -29,6 +29,8 @@ We want to create three different measures of interaction between rider performa
 
 We want to create these three interaction features for each race_feature_N table and race_feature_N x rider performance correlation table we have.
 
-The storage system in the database should parallel the correlation storage system.
+The storage system in the database for interaction terms should parallel the correlation storage system.
 
 We want to do two things here. First, we want to design the storage system. Second, we want to design an efficient way to create and store the interaction values. We're running on an Apple M1Pro with 16gb memory to utilize so make sure that we can do things as efficiently as possible. 
+
+In addition to the infrastructure we create for migrating the full interaction data sets, I'd like some infrastructure to create the interaction terms on subsets of race_features/correlation. We'll likely do some fine tuning down the road to figure out optimal feature combinations and we'll want to be able to create tailored interaction feature data.
