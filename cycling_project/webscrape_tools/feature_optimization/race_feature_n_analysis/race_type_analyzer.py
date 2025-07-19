@@ -242,49 +242,114 @@ class RaceTypeAnalyzer:
         return tiers
     
     def _recommend_n_levels(self, results):
-        """Recommend optimal N levels"""
-        n_scores = {n: [] for n in self.n_levels}
+        """Recommend optimal N levels with nuanced interpretation"""
+        
+        # Collect detailed scores for each N level
+        n_detailed_scores = {n: {'peak_features': [], 'strong_features': [], 'all_scores': []} 
+                            for n in self.n_levels}
+        
+        elite_features = []  # Features that strongly prefer lower N
+        inclusive_features = []  # Features that prefer higher N
+        stable_features = []  # Features that work well across N levels
+        
+        feature_count = len([k for k in results.keys() if k not in ['feature_groups', 'n_recommendations', 'metadata']])
         
         for feature, feature_results in results.items():
             if feature not in ['feature_groups', 'n_recommendations', 'metadata']:
-                if 'distinctiveness' in feature_results and 'optimal_range' in feature_results['distinctiveness']:
-                    optimal_range = feature_results['distinctiveness']['optimal_range']
-                    for n in optimal_range:
-                        if n in n_scores:
-                            n_scores[n].append(1)
+                if 'distinctiveness' in feature_results:
+                    combined_scores = feature_results['distinctiveness'].get('combined_scores', {})
+                    optimal_n = feature_results['distinctiveness'].get('optimal_n')
+                    
+                    if combined_scores:
+                        # Find peak and analyze score distribution
+                        max_score = max(combined_scores.values())
+                        min_score = min(combined_scores.values())
+                        score_range = max_score - min_score
+                        
+                        # Categorize feature behavior
+                        if optimal_n and optimal_n <= 40 and score_range > 0.05:
+                            elite_features.append(feature)
+                        elif optimal_n and optimal_n >= 80 and score_range > 0.05:
+                            inclusive_features.append(feature)
+                        elif score_range <= 0.05:  # Very stable across N
+                            stable_features.append(feature)
+                        
+                        # Record detailed scores
+                        for n, score in combined_scores.items():
+                            n_detailed_scores[n]['all_scores'].append(score)
+                            
+                            # Count as "peak" if within 5% of max score
+                            if score >= 0.95 * max_score:
+                                n_detailed_scores[n]['peak_features'].append(feature)
+                            
+                            # Count as "strong" if within 15% of max score
+                            elif score >= 0.85 * max_score:
+                                n_detailed_scores[n]['strong_features'].append(feature)
         
-        n_importance = {}
-        feature_count = len([k for k in results.keys() if k not in ['feature_groups', 'n_recommendations', 'metadata']])
+        # Calculate summary statistics
+        n_analysis = {}
+        for n in self.n_levels:
+            scores = n_detailed_scores[n]['all_scores']
+            if scores:
+                n_analysis[n] = {
+                    'peak_count': len(n_detailed_scores[n]['peak_features']),
+                    'strong_count': len(n_detailed_scores[n]['strong_features']),
+                    'mean_score': np.mean(scores),
+                    'score_consistency': 1 - (np.std(scores) / np.mean(scores)) if np.mean(scores) > 0 else 0,
+                    'peak_features': n_detailed_scores[n]['peak_features'][:5],  # Top 5 for reporting
+                    'strong_features': n_detailed_scores[n]['strong_features'][:5]
+                }
+            else:
+                n_analysis[n] = {
+                    'peak_count': 0, 'strong_count': 0, 'mean_score': 0, 
+                    'score_consistency': 0, 'peak_features': [], 'strong_features': []
+                }
         
-        for n, scores in n_scores.items():
-            n_importance[n] = len(scores) / feature_count if feature_count > 0 else 0
-        
-        sorted_n = sorted(n_importance.items(), key=lambda x: x[1], reverse=True)
-        
+        # Create nuanced recommendations
         recommendations = {
-            'minimal_set': [],
-            'balanced_set': [],
-            'comprehensive_set': self.n_levels
+            'analysis_type_recommendations': {
+                'elite_competition_analysis': {
+                    'recommended_n': [30, 40],
+                    'reasoning': f'Best for analyzing competitive dynamics among top performers. {len(elite_features)} features show strong preference for elite focus.',
+                    'key_features': elite_features[:5]
+                },
+                'balanced_field_analysis': {
+                    'recommended_n': [50, 60, 70],
+                    'reasoning': 'Good compromise between competitive signal and field representation.',
+                    'key_features': stable_features[:5]
+                },
+                'inclusive_field_analysis': {
+                    'recommended_n': [80, 90, 100],
+                    'reasoning': f'Best for understanding full field dynamics. {len(inclusive_features)} features perform optimally with broader inclusion.',
+                    'key_features': inclusive_features[:5]
+                },
+                'comparative_analysis': {
+                    'recommended_n': [30, 60, 90],
+                    'reasoning': 'Strategic sampling across competitive levels for comparative studies.'
+                }
+            },
+            
+            'statistical_recommendations': {
+                'highest_peak_performance': sorted(n_analysis.keys(), key=lambda n: n_analysis[n]['peak_count'], reverse=True)[:3],
+                'most_consistent_performance': sorted(n_analysis.keys(), key=lambda n: n_analysis[n]['score_consistency'], reverse=True)[:3],
+                'highest_average_scores': sorted(n_analysis.keys(), key=lambda n: n_analysis[n]['mean_score'], reverse=True)[:3]
+            },
+            
+            'feature_behavior_summary': {
+                'elite_preferring_features': len(elite_features),
+                'inclusive_preferring_features': len(inclusive_features),
+                'stable_across_n_features': len(stable_features),
+                'total_features_analyzed': feature_count
+            },
+            
+            'traditional_sets': {
+                'minimal_set': [30, 50, 80],  # Strategic sampling
+                'balanced_set': [30, 40, 60, 80, 90],  # More comprehensive
+                'comprehensive_set': self.n_levels
+            },
+            
+            'n_level_analysis': n_analysis
         }
-        
-        # Build recommendations
-        cumulative_importance = 0
-        for n, importance in sorted_n:
-            recommendations['minimal_set'].append(n)
-            cumulative_importance += importance
-            if cumulative_importance >= 0.6:
-                break
-        
-        cumulative_importance = 0
-        for n, importance in sorted_n:
-            if n not in recommendations['balanced_set']:
-                recommendations['balanced_set'].append(n)
-            cumulative_importance += importance
-            if cumulative_importance >= 0.85:
-                break
-        
-        recommendations['minimal_set'].sort()
-        recommendations['balanced_set'].sort()
         
         return recommendations
     
@@ -412,11 +477,40 @@ class RaceTypeAnalyzer:
         
         # N-level recommendations
         if 'n_recommendations' in results:
-            report.append("\n## Recommended N Levels")
             n_recs = results['n_recommendations']
-            report.append(f"- Minimal Set (60% coverage): {n_recs.get('minimal_set', [])}")
-            report.append(f"- Balanced Set (85% coverage): {n_recs.get('balanced_set', [])}")
-            report.append(f"- Comprehensive Set: {n_recs.get('comprehensive_set', [])}")
+            
+            report.append("\n## N-Level Recommendations by Analysis Type")
+            
+            if 'analysis_type_recommendations' in n_recs:
+                for analysis_type, rec in n_recs['analysis_type_recommendations'].items():
+                    analysis_name = analysis_type.replace('_', ' ').title()
+                    report.append(f"\n### {analysis_name}")
+                    report.append(f"**Recommended N levels**: {rec['recommended_n']}")
+                    report.append(f"**Reasoning**: {rec['reasoning']}")
+                    if rec.get('key_features'):
+                        report.append(f"**Key features**: {', '.join(rec['key_features'])}")
+            
+            if 'feature_behavior_summary' in n_recs:
+                summary = n_recs['feature_behavior_summary']
+                report.append(f"\n## Feature Behavior Summary")
+                report.append(f"- **Elite-preferring features**: {summary['elite_preferring_features']}")
+                report.append(f"- **Inclusive-preferring features**: {summary['inclusive_preferring_features']}")
+                report.append(f"- **Stable across N features**: {summary['stable_across_n_features']}")
+                report.append(f"- **Total features analyzed**: {summary['total_features_analyzed']}")
+            
+            if 'traditional_sets' in n_recs:
+                trad = n_recs['traditional_sets']
+                report.append(f"\n## Traditional N-Level Sets")
+                report.append(f"- **Minimal Set**: {trad.get('minimal_set', [])} (strategic sampling)")
+                report.append(f"- **Balanced Set**: {trad.get('balanced_set', [])} (comprehensive coverage)")
+                report.append(f"- **Comprehensive Set**: All N levels")
+            
+            if 'statistical_recommendations' in n_recs:
+                stats_recs = n_recs['statistical_recommendations']
+                report.append(f"\n## Statistical Performance Rankings")
+                report.append(f"- **Best peak performance**: {stats_recs.get('highest_peak_performance', [])}")
+                report.append(f"- **Most consistent**: {stats_recs.get('most_consistent_performance', [])}")
+                report.append(f"- **Highest average scores**: {stats_recs.get('highest_average_scores', [])}")
         
         # Quality tiers
         if 'feature_groups' in results and 'quality_tiers' in results['feature_groups']:

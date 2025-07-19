@@ -201,23 +201,121 @@ tiers = {
 - **Issues**: May be noisy, redundant, or only useful in specific contexts
 - **Use Case**: Consider for exclusion or use only with careful context
 
+## N-Level Recommendation System
+
+The analysis provides sophisticated recommendations for choosing optimal N levels based on your research goals and feature behavior patterns.
+
+### Understanding the Recommendation Categories
+
+#### Analysis Type Recommendations
+
+**Code Location**: `race_type_analyzer.py:309-330`
+
+The system provides N-level recommendations tailored to different analytical objectives:
+
+##### Elite Competition Analysis
+- **Recommended N**: [30, 40]
+- **Purpose**: Focus on competitive dynamics among top performers
+- **When to Use**: Studying tactics, selection pressure, performance gaps in professional racing
+- **Key Features**: Features that show strong preference for elite focus (peak at low N with >5% score range)
+
+##### Balanced Field Analysis  
+- **Recommended N**: [50, 60, 70]
+- **Purpose**: Compromise between competitive signal and field representation
+- **When to Use**: General race characterization, comparing events with different competitive depths
+- **Key Features**: Features that are stable across N levels (score range ≤5%)
+
+##### Inclusive Field Analysis
+- **Recommended N**: [80, 90, 100] 
+- **Purpose**: Understanding full field dynamics including recreational participants
+- **When to Use**: Mass participation events, understanding dropout patterns, field effects
+- **Key Features**: Features that perform optimally with broader inclusion (peak at high N)
+
+##### Comparative Analysis
+- **Recommended N**: [30, 60, 90]
+- **Purpose**: Strategic sampling across competitive levels
+- **When to Use**: Multi-level studies, understanding how competitive depth affects race characteristics
+
+#### Statistical Performance Rankings
+
+**Code Location**: `race_type_analyzer.py:332-336`
+
+##### Best Peak Performance
+- **Definition**: N levels where the most features achieve their highest scores
+- **Interpretation**: These N levels maximize feature information content
+- **Use Case**: When you need maximum discriminative power
+
+##### Most Consistent Performance  
+- **Definition**: N levels with lowest coefficient of variation across features
+- **Calculation**: `1 - (std_scores / mean_scores)` for each N level
+- **Use Case**: When you need reliable, stable measurements
+
+##### Highest Average Scores
+- **Definition**: N levels with highest mean feature scores across all features
+- **Use Case**: General-purpose analysis when you want overall strong performance
+
+### Feature Behavior Classification
+
+**Code Location**: `race_type_analyzer.py:269-275`
+
+#### Elite-Preferring Features
+- **Criteria**: Optimal N ≤ 40 AND score range > 5%
+- **Meaning**: These features lose information when including lower-tier riders
+- **Examples**: `abandon_ratio`, `selection_metric`, `clumpiness_score`
+- **Interpretation**: Elite competitive dynamics are fundamentally different
+
+#### Inclusive-Preferring Features  
+- **Criteria**: Optimal N ≥ 80 AND score range > 5%
+- **Meaning**: These features gain information from broader field inclusion
+- **Examples**: Percentile gap features, time distribution metrics
+- **Interpretation**: Full field effects matter for these characteristics
+
+#### Stable Across N Features
+- **Criteria**: Score range ≤ 5% across all N levels
+- **Meaning**: Robust measurements regardless of competitive level analyzed
+- **Interpretation**: Fundamental race characteristics that scale consistently
+
+### Traditional Sets (Backward Compatibility)
+
+For users familiar with the original simple recommendations:
+
+- **Minimal Set**: [30, 50, 80] - Strategic sampling across competitive levels
+- **Balanced Set**: [30, 40, 60, 80, 90] - Comprehensive coverage with key transition points
+- **Comprehensive Set**: All N levels [30, 40, 50, 60, 70, 80, 90, 100]
+
 ## Practical Usage Guidelines
 
-### For Race Analysis
-1. **Start with Tier 1 features** for your primary analysis
-2. **Check behavior category** to understand how N-level affects the feature
-3. **For Threshold features**, analyze separately above and below the threshold
-4. **For Bimodal features**, consider clustering or segmentation approaches
+### For Research Design
+
+#### If you're studying...
+- **Professional racing tactics** → Use Elite Competition Analysis ([30, 40])
+- **General race characteristics** → Use Balanced Field Analysis ([50, 60, 70])  
+- **Mass participation events** → Use Inclusive Field Analysis ([80, 90, 100])
+- **Multi-level comparisons** → Use Comparative Analysis ([30, 60, 90])
+
+#### If your features are...
+- **Elite-preferring** → Focus on N ≤ 40 for maximum signal
+- **Inclusive-preferring** → Include N ≥ 80 for complete picture
+- **Stable across N** → Any N level works, choose based on sample size needs
 
 ### For Feature Selection
-1. **Prioritize Stable + High Quality** features for consistent results
-2. **Use Dilution features** when focusing on elite performance
-3. **Apply Concentration features** for broad field characterization
-4. **Avoid Complex features** unless you have specific domain knowledge
+1. **Check the Feature Behavior Summary** to understand your feature portfolio
+2. **Prioritize Stable features** for consistent cross-study comparisons
+3. **Use Elite-preferring features** for competitive analysis
+4. **Include Inclusive-preferring features** for field effect studies
 
 ### For N-Level Selection
-1. **Consult the N recommendations** in the analysis output
-2. **For Threshold features**, choose N levels that respect the thresholds
-3. **For comparison studies**, use N levels where your key features are Stable
+1. **Start with Analysis Type Recommendations** based on your research question
+2. **Check Statistical Performance Rankings** for data quality considerations
+3. **Consider feature behavior** - don't use Elite-preferring features at high N levels
+4. **For longitudinal studies**, use N levels where your key features are Stable
 
-This framework ensures that race feature analysis is both scientifically rigorous and practically applicable across different competitive contexts.
+### Interpreting Your Results
+
+#### When you see:
+- **High elite-preferring count**: Competitive dynamics dominate your race characteristics
+- **High inclusive-preferring count**: Field effects and mass participation patterns are important  
+- **High stable count**: Your features are robust measurement tools
+- **Balanced distribution**: Your feature set captures multiple aspects of race dynamics
+
+This sophisticated framework ensures that N-level selection is guided by both statistical rigor and practical analytical needs, moving beyond simple "one-size-fits-all" recommendations to research-question-specific guidance.
