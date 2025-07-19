@@ -168,13 +168,45 @@ class CorrelationProcessor:
     def _get_competitions_to_process(self, start_competition_id: int) -> List[Dict]:
         """Get list of competitions to process"""
         with sqlite3.connect(self.db_path) as conn:
-            query = """
-            SELECT DISTINCT c.id as competition_id, c.date as competition_date, c.competition_type
-            FROM competitions c
-            WHERE c.id > ?
-            ORDER BY c.date, c.id
-            """
-            results = conn.execute(query, [start_competition_id]).fetchall()
+            if start_competition_id == 0:
+                # Fresh start - get all competitions in chronological order
+                query = """
+                SELECT DISTINCT c.id as competition_id, c.date as competition_date, c.competition_type
+                FROM competitions c
+                ORDER BY c.date, c.id
+                """
+                results = conn.execute(query).fetchall()
+            else:
+                # Resume - need to continue chronologically from where we left off
+                # First, get the date of the last processed competition
+                last_processed = conn.execute("""
+                    SELECT c.date 
+                    FROM competitions c
+                    WHERE c.id IN (SELECT DISTINCT competition_id FROM rider_correlations_blob)
+                    ORDER BY c.date DESC
+                    LIMIT 1
+                """).fetchone()
+                
+                if not last_processed:
+                    # No competitions processed yet, start from beginning
+                    query = """
+                    SELECT DISTINCT c.id as competition_id, c.date as competition_date, c.competition_type
+                    FROM competitions c
+                    ORDER BY c.date, c.id
+                    """
+                    results = conn.execute(query).fetchall()
+                else:
+                    last_processed_date = last_processed[0]
+                    
+                    # Get all unprocessed competitions after the last processed date
+                    query = """
+                    SELECT DISTINCT c.id as competition_id, c.date as competition_date, c.competition_type
+                    FROM competitions c
+                    WHERE c.id NOT IN (SELECT DISTINCT competition_id FROM rider_correlations_blob)
+                    AND c.date >= ?
+                    ORDER BY c.date, c.id
+                    """
+                    results = conn.execute(query, [last_processed_date]).fetchall()
             
         return [{'competition_id': r[0], 'competition_date': r[1], 'race_type': r[2]} for r in results]
     
