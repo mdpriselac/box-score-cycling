@@ -39,9 +39,15 @@ class BlobCorrelationDataLoader:
         
         # Load blob data from database
         blob_query = """
-        SELECT rider_result_id, competition_id, rider_id, correlation_matrix, race_count
-        FROM rider_correlations_blob 
-        WHERE correlation_type = ?
+        SELECT 
+            rcb.rider_result_id, 
+            rr.competition_id, 
+            rr.rider_id, 
+            rcb.correlation_matrix, 
+            rcb.race_count
+        FROM rider_correlations_blob rcb
+        JOIN rider_results rr ON rcb.rider_result_id = rr.id
+        WHERE rcb.correlation_type = ?
         """
         
         print("Loading blob data from database...")

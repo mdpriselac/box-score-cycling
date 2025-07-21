@@ -12,6 +12,7 @@ from .statistics_calculator import CorrelationStatisticsCalculator
 from .pattern_classifier import CorrelationPatternClassifier
 from .quality_scorer import CorrelationQualityScorer
 from .report_generator import CorrelationReportGenerator
+from .correlation_feature_analyzer import CorrelationFeatureAnalyzer
 from . import config
 
 
@@ -261,10 +262,46 @@ class OptimizedCorrelationAnalyzer:
         print(f"Filtered to {len(filtered_data):,} correlation values for {competition_type} races")
         
         # Run analysis on filtered data
-        # (Implementation similar to main analyze method)
-        # ... 
+        if len(filtered_data) == 0:
+            print(f"No data found for {competition_type} races with {correlation_type} correlations")
+            return {
+                'correlation_type': f"{correlation_type}_{competition_type}",
+                'error': 'No data found',
+                'timestamp': pd.Timestamp.now().isoformat()
+            }
         
-        return {}  # Placeholder
+        # Calculate statistics for filtered data
+        stats_df = self._calculate_all_statistics_optimized(filtered_data)
+        
+        # Analyze patterns
+        patterns, trend_results = self._analyze_patterns(stats_df)
+        
+        # Calculate quality scores and assign tiers
+        quality_scores, tiers = self._calculate_quality_scores(patterns, stats_df)
+        
+        # Analyze data availability
+        data_availability = self._analyze_data_availability(stats_df)
+        
+        # Generate report
+        report_generator = CorrelationReportGenerator(output_dir or config.DEFAULT_OUTPUT_DIR)
+        report = report_generator.generate_summary(
+            correlation_type=f"{correlation_type}_{competition_type}",
+            patterns=patterns,
+            quality_scores=quality_scores,
+            tiers=tiers,
+            stats_df=stats_df,
+            data_availability=data_availability,
+            percentiles=self.percentiles
+        )
+        
+        # Save report and create visualizations
+        report_generator.save_report(report, format='json')
+        report_generator.save_report(report, format='markdown')
+        report_generator.create_visualizations(report)
+        
+        print(f"Analysis complete. Results saved to {report_generator.output_dir}")
+        
+        return report
     
     def close(self):
         """Close database connection"""
@@ -282,7 +319,8 @@ class OptimizedCorrelationAnalyzer:
 # Convenience function for quick analysis
 def analyze_correlations_optimized(correlation_type: str = 'same_type', 
                                  db_path: str = None,
-                                 output_dir: str = None) -> Dict:
+                                 output_dir: str = None,
+                                 use_new_analyzer: bool = True) -> Dict:
     """
     Quick function to run optimized correlation analysis.
     
@@ -290,9 +328,16 @@ def analyze_correlations_optimized(correlation_type: str = 'same_type',
         correlation_type: Type of correlation to analyze
         db_path: Path to database
         output_dir: Output directory
+        use_new_analyzer: Whether to use the new aligned analyzer
         
     Returns:
         Analysis report dictionary
     """
-    with OptimizedCorrelationAnalyzer(db_path) as analyzer:
-        return analyzer.analyze(correlation_type, output_dir)
+    if use_new_analyzer:
+        # Use the new analyzer aligned with race feature N approach
+        with CorrelationFeatureAnalyzer(db_path) as analyzer:
+            return analyzer.analyze_single_correlation_type(correlation_type)
+    else:
+        # Use the original analyzer for backward compatibility
+        with OptimizedCorrelationAnalyzer(db_path) as analyzer:
+            return analyzer.analyze(correlation_type, output_dir)
