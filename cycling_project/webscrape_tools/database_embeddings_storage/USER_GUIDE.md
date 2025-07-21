@@ -15,25 +15,6 @@ This system calculates and stores correlation matrices between rider performance
 
 ### Main Tables
 
-#### `rider_correlations_denorm`
-The primary table for accessing correlation data. One row per correlation value.
-
-```sql
-CREATE TABLE rider_correlations_denorm (
-    rider_result_id INTEGER NOT NULL,      -- Links to rider_results table
-    competition_id INTEGER NOT NULL,       -- Competition this correlation applies to
-    rider_id INTEGER NOT NULL,             -- Rider ID
-    correlation_type TEXT NOT NULL,        -- 'all_races', 'same_type', 'stage_one_days'
-    percentile INTEGER NOT NULL,           -- 30, 40, 50, 60, 70, 80, 90, 100
-    feature_idx INTEGER NOT NULL,          -- 0-36 (index into RACE_FEATURES array)
-    feature_name TEXT NOT NULL,            -- e.g., 'abandon_ratio', 'winning_time'
-    correlation_value REAL,                -- NULL if percentile unavailable
-    race_count INTEGER NOT NULL,           -- Number of races with features used
-    
-    PRIMARY KEY (rider_result_id, correlation_type, percentile, feature_idx)
-);
-```
-
 #### `correlation_data_quality`
 Tracks data completeness for each correlation calculation.
 
@@ -52,7 +33,7 @@ CREATE TABLE correlation_data_quality (
 ```
 
 #### `rider_correlations_blob`
-Backup storage with compressed numpy arrays for analysis.
+Primary storage with compressed numpy arrays containing the full correlation matrices.
 
 ```sql
 CREATE TABLE rider_correlations_blob (
@@ -64,6 +45,11 @@ CREATE TABLE rider_correlations_blob (
     UNIQUE(rider_result_id, correlation_type)
 );
 ```
+
+The correlation matrix is stored as a compressed numpy array with dimensions 8x37:
+- 8 rows: one for each percentile (30, 40, 50, 60, 70, 80, 90, 100)
+- 37 columns: one for each race feature
+- Values are correlation coefficients between -1 and 1, or NaN if data unavailable
 
 ## Correlation Types
 
@@ -111,40 +97,49 @@ The system tracks correlations against these race features:
 
 ## How to Use This Data
 
-### 1. Basic Query: Get All Correlations for a Rider
+### 1. Basic Query: Get Correlation Data Quality for a Rider
 
 ```sql
 SELECT 
-    rd.correlation_type,
-    rd.percentile,
-    rd.feature_name,
-    rd.correlation_value,
-    rd.race_count,
-    dq.data_completeness
-FROM rider_correlations_denorm rd
+    rb.correlation_type,
+    rb.race_count,
+    dq.data_completeness,
+    dq.percentile_availability
+FROM rider_correlations_blob rb
 JOIN correlation_data_quality dq 
-    ON rd.rider_result_id = dq.rider_result_id 
-    AND rd.correlation_type = dq.correlation_type
-WHERE rd.rider_id = ?
-ORDER BY rd.correlation_type, rd.percentile, rd.feature_idx;
+    ON rb.rider_result_id = dq.rider_result_id 
+    AND rb.correlation_type = dq.correlation_type
+WHERE rb.rider_id = ?
+ORDER BY rb.correlation_type;
 ```
 
-### 2. Get Correlations for a Specific Feature
+Note: To access the actual correlation values, you'll need to load and decompress the BLOB data using Python/numpy.
 
-```sql
-SELECT 
-    rd.rider_id,
-    rd.correlation_type,
-    rd.percentile,
-    rd.correlation_value,
-    dq.data_completeness
-FROM rider_correlations_denorm rd
-JOIN correlation_data_quality dq 
-    ON rd.rider_result_id = dq.rider_result_id 
-    AND rd.correlation_type = dq.correlation_type
-WHERE rd.feature_name = 'abandon_ratio'
-    AND rd.correlation_value IS NOT NULL
-ORDER BY ABS(rd.correlation_value) DESC;
+### 2. Load Correlation Matrix in Python
+
+```python
+import sqlite3
+import numpy as np
+import gzip
+
+# Load correlation matrix for a specific rider result
+conn = sqlite3.connect('cycling_races.db')
+cursor = conn.execute("""
+    SELECT correlation_matrix 
+    FROM rider_correlations_blob 
+    WHERE rider_result_id = ? AND correlation_type = ?
+""", [rider_result_id, 'all_races'])
+
+result = cursor.fetchone()
+if result:
+    # Decompress and reshape the matrix
+    compressed_data = result[0]
+    matrix_bytes = gzip.decompress(compressed_data)
+    correlation_matrix = np.frombuffer(matrix_bytes).reshape(8, 37)
+    
+    # Access specific correlations
+    # e.g., 50th percentile (index 2) vs abandon_ratio (index 2)
+    correlation_value = correlation_matrix[2, 2]
 ```
 
 ### 3. Check Data Quality for a Competition
@@ -167,17 +162,17 @@ ORDER BY dq.data_completeness DESC;
 
 ```sql
 SELECT 
-    rd.rider_id,
-    rd.correlation_type,
+    rb.rider_id,
+    rb.correlation_type,
     dq.data_completeness,
     dq.races_with_features
-FROM rider_correlations_denorm rd
+FROM rider_correlations_blob rb
 JOIN correlation_data_quality dq 
-    ON rd.rider_result_id = dq.rider_result_id 
-    AND rd.correlation_type = dq.correlation_type
+    ON rb.rider_result_id = dq.rider_result_id 
+    AND rb.correlation_type = dq.correlation_type
 WHERE dq.data_completeness >= 0.9  -- 90% or more races have features
     AND dq.races_with_features >= 20  -- At least 20 races with features
-GROUP BY rd.rider_id, rd.correlation_type;
+GROUP BY rb.rider_id, rb.correlation_type;
 ```
 
 ## Understanding Missing Data
@@ -188,9 +183,9 @@ The `percentile_availability` field in `correlation_data_quality` is a JSON arra
 - `[0,0,1,1,1,1,1,1]` = 30% and 40% percentiles missing (not enough riders)
 - `[0,0,0,1,1,1,1,1]` = 30%, 40%, 50% percentiles missing
 
-### NULL Values in Correlations
-- `correlation_value` is NULL when that percentile wasn't available for any race in the rider's history
-- This preserves the structure while indicating missing data
+### NaN Values in Correlations
+- In the correlation matrix, NaN values indicate when that percentile wasn't available for any race in the rider's history
+- This preserves the matrix structure while indicating missing data
 
 ### Data Completeness
 - `data_completeness` = `races_with_features` / `total_races`
@@ -200,30 +195,44 @@ The `percentile_availability` field in `correlation_data_quality` is a JSON arra
 ## Performance Considerations
 
 ### Indexes
-The system includes optimized indexes for common access patterns:
-- `idx_lookup`: (competition_id, rider_id, correlation_type)
-- `idx_rider_comp_type`: (rider_id, competition_id, correlation_type)  
-- `idx_competition_access`: (competition_id, correlation_type)
-- `idx_feature_name`: (feature_name, correlation_type)
+The blob table has indexes on its primary key fields for efficient access.
 
 ### Storage Size
-- Denormalized table: ~2-3GB for full dataset
-- Each rider result with 3 correlation types = 888 rows (8 percentiles × 37 features × 3 types)
-- BLOB backup: ~500MB compressed
+- BLOB table: ~500MB compressed for full dataset
+- Each rider result stores 3 compressed matrices (one per correlation type)
+- Significant space savings compared to denormalized storage
 
 ## Common Use Cases
 
 ### 1. Machine Learning Features
-```sql
--- Get correlation features for a specific rider result
-SELECT 
-    feature_name,
-    correlation_value
-FROM rider_correlations_denorm
-WHERE rider_result_id = ?
-    AND correlation_type = 'all_races'
-    AND percentile = 50  -- Use 50th percentile features
-    AND correlation_value IS NOT NULL;
+```python
+# Get correlation features for a specific rider result
+import sqlite3
+import numpy as np
+import gzip
+
+conn = sqlite3.connect('cycling_races.db')
+
+# Load the correlation matrix
+cursor = conn.execute("""
+    SELECT rb.correlation_matrix, dq.percentile_availability
+    FROM rider_correlations_blob rb
+    JOIN correlation_data_quality dq ON rb.rider_result_id = dq.rider_result_id 
+        AND rb.correlation_type = dq.correlation_type
+    WHERE rb.rider_result_id = ? AND rb.correlation_type = 'all_races'
+""", [rider_result_id])
+
+result = cursor.fetchone()
+if result:
+    # Decompress matrix
+    matrix = np.frombuffer(gzip.decompress(result[0])).reshape(8, 37)
+    percentile_availability = json.loads(result[1])
+    
+    # Get 50th percentile features (index 2) if available
+    if percentile_availability[2] == 1:
+        features = matrix[2, :]  # 50th percentile row
+        # Filter out NaN values
+        valid_features = [(i, v) for i, v in enumerate(features) if not np.isnan(v)]
 ```
 
 ### 2. Data Quality Analysis
@@ -239,19 +248,11 @@ GROUP BY correlation_type;
 ```
 
 ### 3. Feature Importance Analysis
-```sql
--- Find features with strongest correlations across all riders
-SELECT 
-    feature_name,
-    correlation_type,
-    percentile,
-    AVG(ABS(correlation_value)) as avg_abs_correlation,
-    COUNT(*) as sample_size
-FROM rider_correlations_denorm
-WHERE correlation_value IS NOT NULL
-GROUP BY feature_name, correlation_type, percentile
-HAVING sample_size >= 100
-ORDER BY avg_abs_correlation DESC;
+```python
+# Analyze feature importance across all riders
+# This requires loading and processing multiple correlation matrices
+# Consider using a batch processing approach or specialized analysis script
+# for large-scale feature importance analysis
 ```
 
 ## Running the System
@@ -271,7 +272,7 @@ uv run python main.py
 The system automatically resumes from the last checkpoint. To start fresh:
 ```bash
 # Clear existing data
-uv run sqlite3 ../database/database/cycling_races.db "DELETE FROM rider_correlations_denorm; DELETE FROM correlation_data_quality; DELETE FROM processing_checkpoint;"
+uv run sqlite3 ../database/database/cycling_races.db "DELETE FROM rider_correlations_blob; DELETE FROM correlation_data_quality; DELETE FROM processing_checkpoint;"
 
 # Run processing  
 uv run python main.py
@@ -298,8 +299,9 @@ sqlite3 ../database/database/cycling_races.db "SELECT * FROM processing_log ORDE
 
 ### Common Issues
 - **Out of memory**: Reduce `COMPETITION_BATCH_SIZE` in config.py
-- **Slow performance**: Check if indexes were created properly
+- **Slow performance**: Check database connections and batch size
 - **Missing correlations**: Check `correlation_data_quality` for data availability
+- **BLOB decompression errors**: Ensure gzip is properly imported and data isn't corrupted
 
 ### Log Files
 Processing logs are saved as `correlation_processing_YYYYMMDD_HHMMSS.log` and contain detailed information about missing competitions and processing progress.

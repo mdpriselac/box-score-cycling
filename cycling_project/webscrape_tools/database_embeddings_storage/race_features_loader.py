@@ -25,8 +25,16 @@ class RaceFeaturesLoader:
         percentile_data = {}
         
         for percentile in self.config.PERCENTILES:
+            # Add quotes around column names that start with numbers
+            quoted_features = []
+            for feature in self.config.RACE_FEATURES:
+                if feature[0].isdigit():
+                    quoted_features.append(f'"{feature}"')
+                else:
+                    quoted_features.append(feature)
+            
             query = f"""
-                SELECT competition_id, {', '.join(self.config.RACE_FEATURES)}
+                SELECT competition_id, {', '.join(quoted_features)}
                 FROM race_features_{percentile}
             """
             

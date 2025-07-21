@@ -57,7 +57,7 @@ class ProcessingMonitor:
                     COUNT(DISTINCT competition_id) as processed_comps,
                     (SELECT COUNT(*) FROM competitions) as total_comps,
                     COUNT(*) as total_correlations
-                FROM rider_correlations_denorm
+                FROM rider_correlations_blob
             """).fetchone()
         
         # Display stats
@@ -114,7 +114,7 @@ class ProcessingMonitor:
                     COUNT(DISTINCT competition_id) as unique_competitions,
                     COUNT(*) as total_values,
                     AVG(race_count) as avg_race_count
-                FROM rider_correlations_denorm
+                FROM rider_correlations_blob
                 GROUP BY correlation_type
             """).fetchall()
             

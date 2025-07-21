@@ -46,6 +46,7 @@ class DatabaseConnectionPool:
         conn.execute(f"PRAGMA busy_timeout = {self.timeout_seconds * 1000}")
         conn.execute("PRAGMA synchronous = NORMAL")
         conn.execute("PRAGMA journal_mode = WAL")
+        conn.execute("PRAGMA wal_autocheckpoint = 500")  # Checkpoint every 500 pages instead of 1000
         conn.execute("PRAGMA cache_size = -64000")  # 64MB cache per connection
         
         return conn
@@ -148,6 +149,11 @@ class CorrelationProcessor:
                 self.checkpoint_manager.save_checkpoint(
                     comp_batch[-1]['competition_id']
                 )
+                
+                # Force WAL checkpoint to prevent WAL file growth
+                with sqlite3.connect(self.db_path) as conn:
+                    conn.execute("PRAGMA wal_checkpoint(TRUNCATE)")
+                    logging.info("WAL checkpoint completed")
             
             # Check memory usage and optimize if needed
             if MemoryManager.check_memory_pressure():
@@ -156,6 +162,12 @@ class CorrelationProcessor:
         
         # Final checkpoint
         self.checkpoint_manager.finalize()
+        
+        # Final WAL checkpoint to ensure all data is written to main database
+        with sqlite3.connect(self.db_path) as conn:
+            result = conn.execute("PRAGMA wal_checkpoint(TRUNCATE)").fetchone()
+            if result:
+                logging.info(f"Final WAL checkpoint: {result[0]} busy, {result[1]} pages, {result[2]} pages written")
         
         # Cleanup connection pool
         if self.db_pool:
@@ -597,10 +609,10 @@ class CorrelationProcessor:
             # Optimize for writes
             conn.execute("PRAGMA synchronous = NORMAL")
             conn.execute("PRAGMA journal_mode = WAL")
+            conn.execute("PRAGMA wal_autocheckpoint = 500")  # More frequent checkpoints
             conn.execute("PRAGMA cache_size = -2000000")
             
-            # Prepare denormalized records
-            denorm_records = []
+            # Prepare records for blob and quality tables only
             blob_records = []
             quality_records = []
             
@@ -634,34 +646,6 @@ class CorrelationProcessor:
                     json.dumps(percentile_availability),
                     races_with_features / total_races if total_races > 0 else 0.0
                 ))
-                
-                # Create denormalized records
-                for p_idx, percentile in enumerate(self.config.PERCENTILES):
-                    for f_idx in range(self.config.NUM_FEATURES):
-                        correlation_value = matrix[p_idx, f_idx]
-                        # Use None for NaN values in database
-                        if np.isnan(correlation_value):
-                            correlation_value = None
-                        
-                        denorm_records.append((
-                            r['rider_result_id'],
-                            r['competition_id'],
-                            r['rider_id'],
-                            r['correlation_type'],
-                            percentile,
-                            f_idx,
-                            self.config.RACE_FEATURES[f_idx],  # feature_name
-                            correlation_value,
-                            races_with_features  # Updated to use races_with_features
-                        ))
-            
-            # Batch insert denormalized data
-            conn.executemany("""
-                INSERT OR REPLACE INTO rider_correlations_denorm 
-                (rider_result_id, competition_id, rider_id, correlation_type,
-                 percentile, feature_idx, feature_name, correlation_value, race_count)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """, denorm_records)
             
             # Batch insert blob backup
             conn.executemany("""
@@ -681,7 +665,7 @@ class CorrelationProcessor:
             
             conn.commit()
             
-            logging.info(f"Wrote {len(results)} correlation matrices ({len(denorm_records)} values) with data quality tracking")
+            logging.info(f"Wrote {len(results)} correlation matrices with data quality tracking")
     
     def _log_progress(self, batch_idx: int, comp_batch: List[Dict], 
                      batch_start: datetime):
@@ -698,7 +682,7 @@ class CorrelationProcessor:
                 SELECT 
                     COUNT(DISTINCT rider_id) as riders,
                     COUNT(*) as correlations
-                FROM rider_correlations_denorm
+                FROM rider_correlations_blob
                 WHERE competition_id IN ({placeholders})
             """, comp_ids).fetchone()
             

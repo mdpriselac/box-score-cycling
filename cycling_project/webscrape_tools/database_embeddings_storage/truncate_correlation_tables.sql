@@ -6,7 +6,6 @@ PRAGMA synchronous = OFF;
 PRAGMA journal_mode = MEMORY;
 
 -- Clear all data from tables (equivalent to TRUNCATE)
-DELETE FROM rider_correlations_denorm;
 DELETE FROM rider_correlations_blob;
 DELETE FROM correlation_data_quality;
 DELETE FROM race_history_thresholds;

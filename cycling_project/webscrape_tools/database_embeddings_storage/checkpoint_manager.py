@@ -23,7 +23,7 @@ class CheckpointManager:
                     COUNT(DISTINCT rider_id) as riders_processed,
                     COUNT(DISTINCT competition_id) as competitions_processed,
                     COUNT(*) as correlations_calculated
-                FROM rider_correlations_denorm
+                FROM rider_correlations_blob
             """).fetchone()
             
             conn.execute("""
@@ -83,7 +83,7 @@ class CheckpointManager:
             
             # Get processed competitions
             processed = conn.execute("""
-                SELECT COUNT(DISTINCT competition_id) FROM rider_correlations_denorm
+                SELECT COUNT(DISTINCT competition_id) FROM rider_correlations_blob
             """).fetchone()[0]
             
             # Get latest checkpoint
@@ -122,7 +122,7 @@ class CheckpointManager:
             
             # Check that we have some correlations for earlier competitions
             correlations_count = conn.execute("""
-                SELECT COUNT(*) FROM rider_correlations_denorm
+                SELECT COUNT(*) FROM rider_correlations_blob
                 WHERE competition_id <= ?
             """, [competition_id]).fetchone()[0]
             

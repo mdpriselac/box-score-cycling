@@ -1,31 +1,6 @@
 -- Database schema for rider correlation storage system
 -- Based on migrating_embedding_system_to_db.md specifications
 
--- Option A: Denormalized correlation storage (RECOMMENDED)
--- One row per correlation value for fast access
-CREATE TABLE IF NOT EXISTS rider_correlations_denorm (
-    rider_result_id INTEGER NOT NULL,
-    competition_id INTEGER NOT NULL,
-    rider_id INTEGER NOT NULL,
-    correlation_type TEXT NOT NULL, -- 'all_races', 'same_type', 'stage_one_days'
-    percentile INTEGER NOT NULL, -- 30, 40, 50, 60, 70, 80, 90, 100
-    feature_idx INTEGER NOT NULL, -- 0-36
-    feature_name TEXT NOT NULL, -- e.g., 'abandon_ratio', 'winning_time'
-    correlation_value REAL,
-    race_count INTEGER NOT NULL,
-    
-    PRIMARY KEY (rider_result_id, correlation_type, percentile, feature_idx),
-    FOREIGN KEY (rider_result_id) REFERENCES rider_results(id),
-    FOREIGN KEY (competition_id) REFERENCES competitions(id),
-    FOREIGN KEY (rider_id) REFERENCES riders(id)
-);
-
--- Indexes for fast access patterns
-CREATE INDEX IF NOT EXISTS idx_lookup ON rider_correlations_denorm (competition_id, rider_id, correlation_type);
-CREATE INDEX IF NOT EXISTS idx_rider_comp_type ON rider_correlations_denorm (rider_id, competition_id, correlation_type);
-CREATE INDEX IF NOT EXISTS idx_competition_access ON rider_correlations_denorm (competition_id, correlation_type);
-CREATE INDEX IF NOT EXISTS idx_feature_name ON rider_correlations_denorm (feature_name, correlation_type);
-
 -- Data quality tracking table
 CREATE TABLE IF NOT EXISTS correlation_data_quality (
     rider_result_id INTEGER NOT NULL,

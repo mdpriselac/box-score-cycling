@@ -38,8 +38,8 @@ N_QUALITY_TIERS = 3
 
 # Feature lists (from database schema)
 # NOTE: The order here MUST match the order used when creating the correlation matrices
-# in database_embeddings_storage. The quotes around percentile gap features are removed
-# here since we're using them as Python identifiers, not SQL column names.
+# in database_embeddings_storage. The percentile gap features are listed without quotes
+# since they're used as Python identifiers when working with correlation matrices.
 RACE_FEATURES = [
     # Basic Race Statistics
     'total_finishers', 'included_finishers', 'abandon_ratio',
@@ -54,10 +54,10 @@ RACE_FEATURES = [
     'shannon_entropy_absolute', 'shannon_entropy_normalized',
     
     # Time Gap Analysis
-    '"5th_percentile_gap"', '"10th_percentile_gap"', '"15th_percentile_gap"',
-    '"20th_percentile_gap"', '"25th_percentile_gap"', '"30th_percentile_gap"',
-    '"35th_percentile_gap"', '"40th_percentile_gap"', '"45th_percentile_gap"',
-    '"50th_percentile_gap"',
+    '5th_percentile_gap', '10th_percentile_gap', '15th_percentile_gap',
+    '20th_percentile_gap', '25th_percentile_gap', '30th_percentile_gap',
+    '35th_percentile_gap', '40th_percentile_gap', '45th_percentile_gap',
+    '50th_percentile_gap',
     
     # Group Dynamics
     'total_groups', 'riders_in_groups', 'proportion_in_groups',
