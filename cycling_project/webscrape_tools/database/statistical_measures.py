@@ -148,12 +148,16 @@ def calculate_skewness(values: List[float], normalize_by: float = None) -> float
         normalize_by: Optional value to normalize by
         
     Returns:
-        Skewness value
+        Skewness value (or 0 if no variance)
     """
     values = np.array(values)
     
     if normalize_by is not None and normalize_by != 0:
         values = values / normalize_by
+    
+    # Return 0 if there's no variance (all values are identical)
+    if np.var(values) == 0:
+        return 0.0
     
     return float(stats.skew(values))
 

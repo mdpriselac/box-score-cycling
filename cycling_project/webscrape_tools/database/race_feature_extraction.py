@@ -76,11 +76,11 @@ def trim_race_results_by_percentile(
         conn.close()
         raise ValueError(f"No winning time found for competition {competition_id}")
     
-    # Get all results for the competition
+    # Get all results for the competition (only non-NULL time_gaps)
     results_query = """
     SELECT place, time_gap
     FROM rider_results
-    WHERE competition_id = ?
+    WHERE competition_id = ? AND time_gap IS NOT NULL
     ORDER BY place
     """
     results_df = pd.read_sql_query(results_query, conn, params=(competition_id,))
@@ -97,7 +97,7 @@ def trim_race_results_by_percentile(
     time_gaps = []
     
     for _, row in trimmed_results.iterrows():
-        gap = row['time_gap'] if row['time_gap'] is not None else 0
+        gap = row['time_gap']  # Now guaranteed to be non-NULL
         finishing_time = winning_time + gap
         finishing_times.append(finishing_time)
         time_gaps.append(gap)
@@ -228,7 +228,7 @@ def extract_race_features(
         competition_id, percentile, db_path
     )
     
-    if len(finishing_times) < 30:
+    if len(finishing_times) < 10:
         raise ValueError(f"Too few finishers ({len(finishing_times)}) after trimming to {percentile:.0%}")
     
     # Get competition metadata
@@ -281,7 +281,7 @@ def extract_race_features(
 def extract_features_for_percentile_range(
     competition_id: int,
     db_path: str,
-    start_percentile: float = 0.25,
+    start_percentile: float = 0.1,
     end_percentile: float = 1.0,
     step: float = 0.05
 ) -> pd.DataFrame:
@@ -291,7 +291,7 @@ def extract_features_for_percentile_range(
     Args:
         competition_id: The ID of the competition
         db_path: Path to the SQLite database
-        start_percentile: Starting percentile (default 0.25 for top 25%)
+        start_percentile: Starting percentile (default 0.1 for top 10%)
         end_percentile: Ending percentile (default 1.0 for full field)
         step: Step size between percentiles (default 0.05)
         

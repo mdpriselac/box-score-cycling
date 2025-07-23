@@ -41,9 +41,9 @@ def print_progress_bar(current, total, start_time, prefix='Progress', length=50)
 def build_percentile_tables(
     db_path: str = DB_PATH,
     years: list = None,
-    start_percentile: int = 30,
+    start_percentile: int = 10,
     end_percentile: int = 100,
-    step: int = 10,
+    step: int = 5,
     n_threads: int = 8,
     rebuild: bool = False
 ):
@@ -53,7 +53,7 @@ def build_percentile_tables(
     Args:
         db_path: Path to SQLite database
         years: List of years to process (None = all available)
-        start_percentile: Starting percentile (30 = top 30%)
+        start_percentile: Starting percentile (10 = top 10%)
         end_percentile: Ending percentile (100 = full field)
         step: Step between percentiles
         n_threads: Number of parallel threads
@@ -116,7 +116,7 @@ def build_percentile_tables(
             comp_ids = get_competition_ids(
                 db_path,
                 year=year,
-                min_finishers=30  # Minimum for reliable statistics
+                min_finishers=40  # Minimum for reliable statistics
             )
             
             if not comp_ids:
@@ -224,13 +224,13 @@ if __name__ == "__main__":
     print("🏁 RACE FEATURE PERCENTILE TABLE BUILDER")
     print("=" * 60)
     print("This will create separate tables for each percentile cutoff:")
+    print("   🎯 race_features_5 (top 5%)")
+    print("   🎯 race_features_10 (top 10%)")
+    print("   🎯 race_features_15 (top 15%)")
+    print("   🎯 race_features_20 (top 20%)")
+    print("   🎯 race_features_25 (top 25%)")
     print("   🎯 race_features_30 (top 30%)")
-    print("   🎯 race_features_40 (top 40%)")
-    print("   🎯 race_features_50 (top 50%)")
-    print("   🎯 race_features_60 (top 60%)")
-    print("   🎯 race_features_70 (top 70%)")
-    print("   🎯 race_features_80 (top 80%)")
-    print("   🎯 race_features_90 (top 90%)")
+    print("   🎯 ... and so on every 5% up to ...")
     print("   🎯 race_features_100 (full field)")
     print("=" * 60)
     

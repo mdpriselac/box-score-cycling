@@ -22,7 +22,7 @@ def get_competition_ids(
     year: Optional[int] = None,
     category: Optional[str] = None,
     competition_type: Optional[str] = None,
-    min_finishers: int = 30
+    min_finishers: int = 40
 ) -> List[int]:
     """
     Get competition IDs based on filtering criteria.
@@ -122,6 +122,8 @@ def create_feature_table(db_path: str, table_name: str = "race_features"):
         skewness_normalized REAL,
         kurtosis_absolute REAL,
         kurtosis_normalized REAL,
+        kurtosis_absolute_imputed REAL,
+        kurtosis_normalized_imputed REAL,
         gini_coefficient REAL,
         shannon_entropy_absolute REAL,
         shannon_entropy_normalized REAL,
