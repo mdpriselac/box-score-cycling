@@ -1,0 +1,230 @@
+[
+  {
+    "cluster_id":0,
+    "n_races":257,
+    "avg_finishers":146.8988326848,
+    "categories":{
+      "wt":191,
+      "d1":49,
+      "pro":17
+    },
+    "years":"2010-2024",
+    "avg_kurtosis_breakdown_point":0.0389105058,
+    "avg_nth_percentile_gap_5_slope":1.3505598535,
+    "avg_nth_percentile_gap_5_volatility":9.205084504,
+    "avg_nth_percentile_gap_5_monotonicity":0.615304799,
+    "avg_nth_percentile_gap_25_slope":9.0720591096,
+    "avg_nth_percentile_gap_25_volatility":62.9372990509,
+    "avg_nth_percentile_gap_25_monotonicity":0.602075227,
+    "avg_variance_breakdown_point":0.0389105058,
+    "sample_races":[
+      {
+        "competition_name":"Stage: 05",
+        "race_name":"Tirreno-Adriatico",
+        "race_year":2024
+      },
+      {
+        "competition_name":"Stage: 08",
+        "race_name":"Giro d'Italia",
+        "race_year":2024
+      },
+      {
+        "competition_name":"Stage: 15",
+        "race_name":"Giro d'Italia",
+        "race_year":2024
+      },
+      {
+        "competition_name":"Stage: 19",
+        "race_name":"Giro d'Italia",
+        "race_year":2024
+      },
+      {
+        "competition_name":"Stage: 20",
+        "race_name":"Giro d'Italia",
+        "race_year":2024
+      }
+    ]
+  },
+  {
+    "cluster_id":1,
+    "n_races":2733,
+    "avg_finishers":129.8715697036,
+    "categories":{
+      "d1":1140,
+      "pro":853,
+      "wt":740
+    },
+    "years":"2010-2024",
+    "avg_kurtosis_breakdown_point":58.0168313209,
+    "avg_nth_percentile_gap_5_slope":0.0,
+    "avg_nth_percentile_gap_5_volatility":0.0,
+    "avg_nth_percentile_gap_5_monotonicity":0.0,
+    "avg_nth_percentile_gap_25_slope":0.0718651665,
+    "avg_nth_percentile_gap_25_volatility":0.8133902685,
+    "avg_nth_percentile_gap_25_monotonicity":0.0279546286,
+    "avg_variance_breakdown_point":10.6366630077,
+    "sample_races":[
+      {
+        "competition_name":"Stage: 02",
+        "race_name":"Tirreno-Adriatico",
+        "race_year":2024
+      },
+      {
+        "competition_name":"Stage: 03",
+        "race_name":"Tirreno-Adriatico",
+        "race_year":2024
+      },
+      {
+        "competition_name":"Stage: 04",
+        "race_name":"Tirreno-Adriatico",
+        "race_year":2024
+      },
+      {
+        "competition_name":"Stage: 07",
+        "race_name":"Tirreno-Adriatico",
+        "race_year":2024
+      },
+      {
+        "competition_name":"Stage: 03",
+        "race_name":"Tour de Pologne",
+        "race_year":2024
+      }
+    ]
+  },
+  {
+    "cluster_id":2,
+    "n_races":1442,
+    "avg_finishers":126.3092926491,
+    "categories":{
+      "d1":617,
+      "wt":423,
+      "pro":402
+    },
+    "years":"2010-2024",
+    "avg_kurtosis_breakdown_point":0.0,
+    "avg_nth_percentile_gap_5_slope":0.1451324549,
+    "avg_nth_percentile_gap_5_volatility":1.1833098108,
+    "avg_nth_percentile_gap_5_monotonicity":0.2481738326,
+    "avg_nth_percentile_gap_25_slope":0.5625049851,
+    "avg_nth_percentile_gap_25_volatility":5.2320052028,
+    "avg_nth_percentile_gap_25_monotonicity":0.2528994122,
+    "avg_variance_breakdown_point":0.0,
+    "sample_races":[
+      {
+        "competition_name":"Stage: 01",
+        "race_name":"Tour de Pologne",
+        "race_year":2024
+      },
+      {
+        "competition_name":"Stage: 01",
+        "race_name":"Giro d'Italia",
+        "race_year":2024
+      },
+      {
+        "competition_name":"Stage: 05",
+        "race_name":"Giro d'Italia",
+        "race_year":2024
+      },
+      {
+        "competition_name":"Stage: 06",
+        "race_name":"Giro d'Italia",
+        "race_year":2024
+      },
+      {
+        "competition_name":"Stage: 06",
+        "race_name":"Vuelta a Espa\u00f1a",
+        "race_year":2024
+      }
+    ]
+  },
+  {
+    "cluster_id":3,
+    "n_races":6,
+    "avg_finishers":161.3333333333,
+    "categories":{
+      "wt":6
+    },
+    "years":"2010-2020",
+    "avg_kurtosis_breakdown_point":0.0,
+    "avg_nth_percentile_gap_5_slope":10.9484485294,
+    "avg_nth_percentile_gap_5_volatility":80.8030406264,
+    "avg_nth_percentile_gap_5_monotonicity":0.5888888889,
+    "avg_nth_percentile_gap_25_slope":0.0038602941,
+    "avg_nth_percentile_gap_25_volatility":0.2182633476,
+    "avg_nth_percentile_gap_25_monotonicity":0.0111111111,
+    "avg_variance_breakdown_point":0.0,
+    "sample_races":[
+      {
+        "competition_name":"Stage: 08",
+        "race_name":"Giro d'Italia",
+        "race_year":2020
+      },
+      {
+        "competition_name":"Stage: 06",
+        "race_name":"Tour de Suisse",
+        "race_year":2013
+      },
+      {
+        "competition_name":"Stage: 12",
+        "race_name":"Tour de France",
+        "race_year":2012
+      },
+      {
+        "competition_name":"Stage: 15",
+        "race_name":"Tour de France",
+        "race_year":2012
+      },
+      {
+        "competition_name":"Stage: 05",
+        "race_name":"Tour de Suisse",
+        "race_year":2012
+      }
+    ]
+  },
+  {
+    "cluster_id":4,
+    "n_races":875,
+    "avg_finishers":131.6057142857,
+    "categories":{
+      "wt":357,
+      "d1":311,
+      "pro":207
+    },
+    "years":"2010-2024",
+    "avg_kurtosis_breakdown_point":0.16,
+    "avg_nth_percentile_gap_5_slope":0.4238443866,
+    "avg_nth_percentile_gap_5_volatility":2.0775561209,
+    "avg_nth_percentile_gap_5_monotonicity":0.6649142857,
+    "avg_nth_percentile_gap_25_slope":3.2256307563,
+    "avg_nth_percentile_gap_25_volatility":20.5862537049,
+    "avg_nth_percentile_gap_25_monotonicity":0.7852952381,
+    "avg_variance_breakdown_point":0.1142857143,
+    "sample_races":[
+      {
+        "competition_name":"Stage: 06",
+        "race_name":"Tirreno-Adriatico",
+        "race_year":2024
+      },
+      {
+        "competition_name":"Stage: 02",
+        "race_name":"Giro d'Italia",
+        "race_year":2024
+      },
+      {
+        "competition_name":"Stage: 10",
+        "race_name":"Giro d'Italia",
+        "race_year":2024
+      },
+      {
+        "competition_name":"Stage: 12",
+        "race_name":"Giro d'Italia",
+        "race_year":2024
+      },
+      {
+        "competition_name":"Stage: 16",
+        "race_name":"Giro d'Italia",
+        "race_year":2024
+      }
+    ]
+  }
+]

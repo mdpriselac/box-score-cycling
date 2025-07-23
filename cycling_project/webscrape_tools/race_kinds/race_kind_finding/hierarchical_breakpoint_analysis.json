@@ -1,0 +1,200 @@
+{
+  "method": "hierarchical",
+  "kurtosis_breakdown_analysis": {
+    "cluster_0": {
+      "total_races": 257,
+      "no_breakdown_count": 256,
+      "no_breakdown_pct": 99.61089494163424,
+      "breakdown_points": {
+        "10": 1
+      },
+      "mean_breakdown_point": 10.0,
+      "most_common_breakdown": 0
+    },
+    "cluster_1": {
+      "total_races": 2733,
+      "no_breakdown_count": 0,
+      "no_breakdown_pct": 0.0,
+      "breakdown_points": {
+        "85": 239,
+        "90": 229,
+        "80": 187,
+        "60": 178,
+        "75": 173,
+        "50": 151,
+        "65": 143,
+        "55": 143,
+        "70": 139,
+        "95": 136,
+        "40": 135,
+        "30": 134,
+        "45": 132,
+        "20": 127,
+        "35": 118,
+        "15": 114,
+        "10": 107,
+        "25": 106,
+        "100": 42
+      },
+      "mean_breakdown_point": 58.01683132089279,
+      "most_common_breakdown": 85
+    },
+    "cluster_2": {
+      "total_races": 1442,
+      "no_breakdown_count": 1442,
+      "no_breakdown_pct": 100.0,
+      "breakdown_points": {},
+      "mean_breakdown_point": 0,
+      "most_common_breakdown": 0
+    },
+    "cluster_3": {
+      "total_races": 6,
+      "no_breakdown_count": 6,
+      "no_breakdown_pct": 100.0,
+      "breakdown_points": {},
+      "mean_breakdown_point": 0,
+      "most_common_breakdown": 0
+    },
+    "cluster_4": {
+      "total_races": 875,
+      "no_breakdown_count": 866,
+      "no_breakdown_pct": 98.97142857142858,
+      "breakdown_points": {
+        "20": 4,
+        "10": 3,
+        "15": 2
+      },
+      "mean_breakdown_point": 15.555555555555555,
+      "most_common_breakdown": 0
+    }
+  },
+  "variance_breakdown_analysis": {
+    "cluster_0": {
+      "total_races": 257,
+      "no_breakdown_count": 256,
+      "no_breakdown_pct": 99.61089494163424,
+      "breakdown_points": {
+        "10": 1
+      },
+      "mean_breakdown_point": 10.0,
+      "most_common_breakdown": 0
+    },
+    "cluster_1": {
+      "total_races": 2733,
+      "no_breakdown_count": 0,
+      "no_breakdown_pct": 0.0,
+      "breakdown_points": {
+        "10": 2404,
+        "15": 311,
+        "20": 17,
+        "25": 1
+      },
+      "mean_breakdown_point": 10.636663007683865,
+      "most_common_breakdown": 10
+    },
+    "cluster_2": {
+      "total_races": 1442,
+      "no_breakdown_count": 1442,
+      "no_breakdown_pct": 100.0,
+      "breakdown_points": {},
+      "mean_breakdown_point": 0,
+      "most_common_breakdown": 0
+    },
+    "cluster_3": {
+      "total_races": 6,
+      "no_breakdown_count": 6,
+      "no_breakdown_pct": 100.0,
+      "breakdown_points": {},
+      "mean_breakdown_point": 0,
+      "most_common_breakdown": 0
+    },
+    "cluster_4": {
+      "total_races": 875,
+      "no_breakdown_count": 866,
+      "no_breakdown_pct": 98.97142857142858,
+      "breakdown_points": {
+        "10": 7,
+        "15": 2
+      },
+      "mean_breakdown_point": 11.11111111111111,
+      "most_common_breakdown": 0
+    }
+  },
+  "combined_breakdown_analysis": {
+    "cluster_0": {
+      "total_races": 257,
+      "pattern_counts": {
+        "both_break": 1,
+        "only_kurtosis_breaks": 0,
+        "only_variance_breaks": 0,
+        "neither_breaks": 256
+      },
+      "pattern_percentages": {
+        "both_break": 0.38910505836575876,
+        "only_kurtosis_breaks": 0.0,
+        "only_variance_breaks": 0.0,
+        "neither_breaks": 99.61089494163424
+      }
+    },
+    "cluster_1": {
+      "total_races": 2733,
+      "pattern_counts": {
+        "both_break": 2733,
+        "only_kurtosis_breaks": 0,
+        "only_variance_breaks": 0,
+        "neither_breaks": 0
+      },
+      "pattern_percentages": {
+        "both_break": 100.0,
+        "only_kurtosis_breaks": 0.0,
+        "only_variance_breaks": 0.0,
+        "neither_breaks": 0.0
+      }
+    },
+    "cluster_2": {
+      "total_races": 1442,
+      "pattern_counts": {
+        "both_break": 0,
+        "only_kurtosis_breaks": 0,
+        "only_variance_breaks": 0,
+        "neither_breaks": 1442
+      },
+      "pattern_percentages": {
+        "both_break": 0.0,
+        "only_kurtosis_breaks": 0.0,
+        "only_variance_breaks": 0.0,
+        "neither_breaks": 100.0
+      }
+    },
+    "cluster_3": {
+      "total_races": 6,
+      "pattern_counts": {
+        "both_break": 0,
+        "only_kurtosis_breaks": 0,
+        "only_variance_breaks": 0,
+        "neither_breaks": 6
+      },
+      "pattern_percentages": {
+        "both_break": 0.0,
+        "only_kurtosis_breaks": 0.0,
+        "only_variance_breaks": 0.0,
+        "neither_breaks": 100.0
+      }
+    },
+    "cluster_4": {
+      "total_races": 875,
+      "pattern_counts": {
+        "both_break": 9,
+        "only_kurtosis_breaks": 0,
+        "only_variance_breaks": 0,
+        "neither_breaks": 866
+      },
+      "pattern_percentages": {
+        "both_break": 1.0285714285714285,
+        "only_kurtosis_breaks": 0.0,
+        "only_variance_breaks": 0.0,
+        "neither_breaks": 98.97142857142858
+      }
+    }
+  }
+}

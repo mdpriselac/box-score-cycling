@@ -54,7 +54,7 @@ def get_stage_competition_data(db_path: str) -> pd.DataFrame:
     FROM race_feature_gradients rfg
     JOIN race_features_100 rf100 ON rfg.competition_id = rf100.competition_id
     WHERE rfg.competition_type = 'stage'
-    AND rf100.winning_time > 90  -- More than 90 minutes (filters out TTs)
+    AND rf100.winning_time > 5400  -- More than 90 minutes (filters out TTs)
     AND rfg.variance_normalized_values IS NOT NULL  -- Has gradient data
     ORDER BY rfg.total_finishers DESC
     """
