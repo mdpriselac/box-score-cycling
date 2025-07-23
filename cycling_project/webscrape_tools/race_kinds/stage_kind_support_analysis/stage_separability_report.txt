@@ -1,0 +1,105 @@
+================================================================================
+STAGE RACE GRADIENT FEATURE SEPARABILITY ANALYSIS
+================================================================================
+Generated: 2025-07-23 11:23:16
+
+DATASET SUMMARY
+----------------------------------------
+Total stage competitions analyzed: 5935
+Filter criteria: competition_type='stage' AND winning_time > 90 minutes
+Average finishers per race: 130.6
+Finisher range: 41-207
+Race categories: d1, wt, pro
+
+KEY FINDINGS
+----------------------------------------
+Features analyzed: 15
+Features with separability potential: 15
+Average separability score: 1.3226
+Best performing feature: variance_normalized (score: 2.5384)
+
+NATURAL FEATURE QUALITY TIERS
+----------------------------------------
+Breakpoint method: gap_based
+Breakpoints found: ['1.836', '1.333', '1.048']
+
+Good: 5 features
+Fair: 5 features
+Excellent: 4 features
+Very Good: 1 features
+
+FEATURES BY TIER
+----------------------------------------
+Tier      | Rank | Feature Name                    | Score   | Completeness
+--------------------------------------------------------------------------------
+Excellent |    1 | variance_normalized            |  2.5384 |      100.0%
+Excellent |    2 | kurtosis_breakdown_point       |  2.4570 |      100.0%
+Excellent |    3 | nth_percentile_gap_5           |  2.3202 |      100.0%
+Excellent |    4 | nth_percentile_gap_25          |  1.8361 |      100.0%
+Very Good |    5 | nth_percentile_gap_50          |  1.3329 |      100.0%
+Good      |    6 | variance_absolute              |  1.2955 |      100.0%
+Good      |    7 | variance_breakdown_point       |  1.2642 |      100.0%
+Good      |    8 | kurtosis_absolute              |  1.2529 |      100.0%
+Good      |    9 | kurtosis_normalized            |  1.2529 |      100.0%
+Good      |   10 | biggest_group_metric           |  1.0479 |      100.0%
+Fair      |   11 | skewness_normalized            |  0.7503 |      100.0%
+Fair      |   12 | skewness_absolute              |  0.7503 |      100.0%
+Fair      |   13 | gini_coefficient               |  0.6980 |      100.0%
+Fair      |   14 | clumpiness_score               |  0.5792 |      100.0%
+Fair      |   15 | selection_metric               |  0.4633 |      100.0%
+
+DETAILED FEATURE ANALYSIS
+----------------------------------------
+
+VARIANCE_NORMALIZED
+~~~~~~~~~~~~~~~~~~~
+Competitions with data: 5935/5935 (100.0%)
+Combined separability score: 2.5384
+  Slope - Range: 2.80e-04, CV: 1.564, Std: 1.06e-05
+  Volatility - Range: 1.85e-02, CV: 5.906, Std: 2.89e-04
+  Monotonicity - Range: 2.000, Std: 0.410, Distinct: 67
+
+KURTOSIS_BREAKDOWN_POINT
+~~~~~~~~~~~~~~~~~~~~~~~~
+Competitions with data: 5935/5935 (100.0%)
+Combined separability score: 2.4570
+  No breakdown: 3171 races (53.4%)
+  Breakdown points: 19 distinct values
+  Entropy: 2.457, Std: 33.9
+
+NTH_PERCENTILE_GAP_5
+~~~~~~~~~~~~~~~~~~~~
+Competitions with data: 5935/5935 (100.0%)
+Combined separability score: 2.3202
+  Slope - Range: 1.40e+01, CV: 2.970, Std: 5.76e-01
+  Volatility - Range: 9.68e+01, CV: 3.272, Std: 3.88e+00
+  Monotonicity - Range: 1.067, Std: 0.355, Distinct: 18
+
+NTH_PERCENTILE_GAP_25
+~~~~~~~~~~~~~~~~~~~~~
+Competitions with data: 5935/5935 (100.0%)
+Combined separability score: 1.8361
+  Slope - Range: 3.38e+01, CV: 2.317, Std: 2.53e+00
+  Volatility - Range: 2.44e+02, CV: 2.446, Std: 1.86e+01
+  Monotonicity - Range: 1.067, Std: 0.374, Distinct: 19
+
+NTH_PERCENTILE_GAP_50
+~~~~~~~~~~~~~~~~~~~~~
+Competitions with data: 5935/5935 (100.0%)
+Combined separability score: 1.3329
+  Slope - Range: 5.25e+01, CV: 1.640, Std: 5.12e+00
+  Volatility - Range: 6.49e+02, CV: 1.732, Std: 3.65e+01
+  Monotonicity - Range: 1.067, Std: 0.378, Distinct: 19
+
+RECOMMENDATIONS FOR RACE KIND CLASSIFICATION
+--------------------------------------------------
+1. Primary features for classification: variance_normalized, kurtosis_breakdown_point, nth_percentile_gap_5
+2. Features with excellent data coverage: variance_normalized, kurtosis_breakdown_point, nth_percentile_gap_5, nth_percentile_gap_25, nth_percentile_gap_50
+3. Strong separability potential detected - proceed with clustering analysis
+
+NEXT STEPS
+----------------------------------------
+1. Perform clustering analysis on top-ranked features
+2. Validate clusters against known race characteristics
+3. Develop machine learning classifier using selected features
+4. Test classification accuracy on held-out data
