@@ -1,0 +1,109 @@
+==========================================================================================
+COMPARATIVE ANALYSIS: BREAKDOWN vs NO-BREAKDOWN STAGES
+==========================================================================================
+Generated: 2025-07-27 21:44:31
+
+DATASET SUMMARY
+----------------------------------------
+Total competitions analyzed: 5298
+  With breakdowns: 2743 (51.8%)
+  Without breakdowns: 2555 (48.2%)
+
+OVERALL EFFECTIVENESS COMPARISON
+----------------------------------------
+Average top-10 separability scores:
+  Breakdown races: 9.0442
+  No-breakdown races: 16.5530
+  Ratio (breakdown/no-breakdown): 0.55
+
+TOP 15 UNIVERSAL FEATURE-PERCENTILE COMBINATIONS
+----------------------------------------
+Rank | Feature                         | %ile | Breakdown | No-Break | Total   | Difference
+----------------------------------------------------------------------------------------------------
+   1 | kurtosis_normalized            |   95 |    9.1699 |  11.9592 | 21.1290 |    -2.7893
+   2 | kurtosis_absolute              |   95 |    9.1565 |  11.9592 | 21.1157 |    -2.8026
+   3 | kurtosis_normalized            |   90 |    8.4920 |  11.5226 | 20.0146 |    -3.0306
+   4 | kurtosis_absolute              |   90 |    8.4687 |  11.5226 | 19.9913 |    -3.0539
+   5 | kurtosis_normalized            |  100 |    9.4891 |  10.1037 | 19.5927 |    -0.6146
+   6 | kurtosis_absolute              |  100 |    9.4891 |  10.1037 | 19.5927 |    -0.6146
+
+TOP BREAKDOWN-SPECIFIC FEATURES
+----------------------------------------
+  "30th_percentile_gap"          at  30% (score: 15.9916)
+  "20th_percentile_gap"          at  45% (score: 14.5014)
+  "15th_percentile_gap"          at  60% (score: 12.5890)
+  variance_absolute              at  15% (score: 11.8752)
+  "10th_percentile_gap"          at  90% (score: 11.6862)
+  variance_normalized            at  15% (score: 9.7905)
+  variance_absolute              at 100% (score: 9.5351)
+  variance_normalized            at 100% (score: 9.5350)
+  skewness_normalized            at 100% (score: 9.3585)
+  skewness_absolute              at 100% (score: 9.3585)
+
+TOP NO-BREAKDOWN-SPECIFIC FEATURES
+----------------------------------------
+  skewness_normalized            at  50% (score: 26.5127)
+  skewness_absolute              at  50% (score: 26.4727)
+  skewness_normalized            at  55% (score: 22.6988)
+  skewness_absolute              at  55% (score: 22.6755)
+  skewness_normalized            at  45% (score: 14.9658)
+  skewness_absolute              at  45% (score: 14.9291)
+  skewness_normalized            at  60% (score: 13.7272)
+  skewness_absolute              at  60% (score: 13.7172)
+  skewness_normalized            at  65% (score: 12.4470)
+  skewness_absolute              at  65% (score: 12.4370)
+
+PERCENTILE PREFERENCES BY GROUP
+----------------------------------------
+Best percentiles for breakdown races:
+   30%: 12.1965
+   45%: 11.4514
+   15%: 10.8328
+   60%: 10.4951
+  100%: 9.1601
+
+Best percentiles for no-breakdown races:
+   50%: 18.1539
+   55%: 16.3024
+   45%: 12.3236
+   95%: 11.9592
+   60%: 11.8990
+
+FEATURE CATEGORIZATION
+----------------------------------------
+
+Breakdown Specialists (16 features):
+  "30th_percentile_gap"          (breakdown: 24.900, no-breakdown: 0.000)
+  "20th_percentile_gap"          (breakdown: 14.501, no-breakdown: 0.000)
+  "15th_percentile_gap"          (breakdown: 21.533, no-breakdown: 0.000)
+  variance_absolute              (breakdown: 39.158, no-breakdown: 0.000)
+  "10th_percentile_gap"          (breakdown: 11.686, no-breakdown: 0.000)
+
+Universal Strong Features (0 features):
+
+Percentile Sensitive Features (13 features):
+  skewness_normalized            (range: 17.570, best at 50%)
+  skewness_absolute              (range: 17.546, best at 50%)
+  kurtosis_normalized            (range: 11.469, best at 95%)
+  kurtosis_absolute              (range: 11.438, best at 95%)
+  "30th_percentile_gap"          (range: 7.083, best at 30%)
+
+STRATEGIC RECOMMENDATIONS
+----------------------------------------
+1. UNIFIED MODEL APPROACH:
+   Use universal features: 
+
+2. SEPARATE MODEL APPROACH:
+   First classify breakdown vs no-breakdown using breakdown-point detection
+   For breakdown races, emphasize: "30th_percentile_gap", "20th_percentile_gap", "15th_percentile_gap"
+   For no-breakdown races, emphasize: skewness_normalized, skewness_absolute, kurtosis_normalized
+
+3. FEATURE ENGINEERING:
+   - Breakdown point itself is a strong discriminator
+   - Consider percentile-specific feature combinations
+   - Gap-based features show strong separability across both groups
+
+4. PRACTICAL IMPLEMENTATION:
+   - Primary percentiles to analyze: 15, 30, 45, 50, 55
+   - Universal features provide good baseline performance
+   - Specialized features can improve within-group discrimination
