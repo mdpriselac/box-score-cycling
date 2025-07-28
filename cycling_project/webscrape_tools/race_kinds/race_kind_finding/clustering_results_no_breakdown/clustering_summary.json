@@ -1,0 +1,92 @@
+{
+  "subset": "no_breakdown",
+  "feature_names": [
+    "kurtosis_absolute_slope",
+    "kurtosis_absolute_volatility",
+    "kurtosis_absolute_monotonicity",
+    "kurtosis_absolute_directional_changes",
+    "kurtosis_normalized_slope",
+    "kurtosis_normalized_volatility",
+    "kurtosis_normalized_monotonicity",
+    "kurtosis_normalized_directional_changes",
+    "nth_percentile_gap_5_slope",
+    "nth_percentile_gap_5_volatility",
+    "nth_percentile_gap_5_monotonicity",
+    "nth_percentile_gap_5_directional_changes",
+    "nth_percentile_gap_25_slope",
+    "nth_percentile_gap_25_volatility",
+    "nth_percentile_gap_25_monotonicity",
+    "nth_percentile_gap_25_directional_changes",
+    "variance_absolute_slope",
+    "variance_absolute_volatility",
+    "variance_absolute_monotonicity",
+    "variance_absolute_directional_changes",
+    "skewness_normalized_slope",
+    "skewness_normalized_volatility",
+    "skewness_normalized_monotonicity",
+    "skewness_normalized_directional_changes",
+    "skewness_absolute_slope",
+    "skewness_absolute_volatility",
+    "skewness_absolute_monotonicity",
+    "skewness_absolute_directional_changes",
+    "variance_normalized_slope",
+    "variance_normalized_volatility",
+    "variance_normalized_monotonicity",
+    "variance_normalized_directional_changes",
+    "biggest_group_metric_slope",
+    "biggest_group_metric_volatility",
+    "biggest_group_metric_monotonicity",
+    "biggest_group_metric_directional_changes",
+    "nth_percentile_gap_50_slope",
+    "nth_percentile_gap_50_volatility",
+    "nth_percentile_gap_50_monotonicity",
+    "nth_percentile_gap_50_directional_changes",
+    "gini_coefficient_slope",
+    "gini_coefficient_volatility",
+    "gini_coefficient_monotonicity",
+    "gini_coefficient_directional_changes",
+    "clumpiness_score_slope",
+    "clumpiness_score_volatility",
+    "clumpiness_score_monotonicity",
+    "clumpiness_score_directional_changes",
+    "selection_metric_slope",
+    "selection_metric_volatility",
+    "selection_metric_monotonicity",
+    "selection_metric_directional_changes"
+  ],
+  "n_races": 2555,
+  "n_features": 52,
+  "features_from_analysis": [
+    "kurtosis_absolute",
+    "kurtosis_normalized",
+    "nth_percentile_gap_5",
+    "nth_percentile_gap_25",
+    "variance_absolute",
+    "skewness_normalized",
+    "skewness_absolute",
+    "variance_normalized",
+    "biggest_group_metric",
+    "nth_percentile_gap_50",
+    "gini_coefficient",
+    "clumpiness_score",
+    "selection_metric"
+  ],
+  "clustering_results": {
+    "kmeans": {
+      "n_clusters": 3,
+      "cluster_sizes": {
+        "2": 1363,
+        "0": 720,
+        "1": 472
+      }
+    },
+    "hierarchical": {
+      "n_clusters": 3,
+      "cluster_sizes": {
+        "0": 1018,
+        "1": 793,
+        "2": 744
+      }
+    }
+  }
+}

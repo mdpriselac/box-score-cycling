@@ -1,7 +1,7 @@
 """
-Unsupervised clustering module for race kind classification.
+Unsupervised clustering module for race kind classification - WITH BREAKDOWN subset.
 Implements multiple clustering algorithms to identify distinct race kinds
-based on gradient features from finishing time distributions.
+for stages WITH breakdowns, using features identified from separability analysis.
 """
 
 import sqlite3
@@ -13,12 +13,20 @@ from sklearn.decomposition import PCA
 from sklearn.metrics import silhouette_score, calinski_harabasz_score, davies_bouldin_score
 import json
 from typing import Dict, List, Tuple, Optional
+from pathlib import Path
+import os
 import warnings
 warnings.filterwarnings('ignore')
 
+try:
+    from dotenv import load_dotenv
+    HAS_DOTENV = True
+except ImportError:
+    HAS_DOTENV = False
 
-class RaceKindClustering:
-    """Main class for unsupervised clustering of race kinds."""
+
+class RaceKindClusteringWithBreakdown:
+    """Main class for unsupervised clustering of race kinds - with breakdown subset."""
     
     def __init__(self, db_path: str = None):
         """Initialize with database connection."""
@@ -30,132 +38,153 @@ class RaceKindClustering:
         self.features = None
         self.scaler = StandardScaler()
         self.clusters = {}
+        self.feature_names = []
+        self.subset_name = "with_breakdown"
     
     def find_database(self):
         """Find the SQLite database file"""
-        from pathlib import Path
-        import os
-        
-        try:
-            print("Trying to load database from environment variable...")
-            from dotenv import load_dotenv
-            print('running load_dotenv()')
+        if HAS_DOTENV:
             load_dotenv()
-            print('loaded dotenv')
             db_path = os.getenv('DB_PATH')
-            print(f"Using database path: {db_path}")
             if db_path and os.path.exists(db_path):
                 return db_path
-        except ImportError as e:
-            print(f"Error loading dotenv: {e}")
+        
+        # Go up to find db
+        db_path = Path(__file__).parent.parent.parent / "database" / "database" / "cycling_races.db"
+        if db_path.exists():
+            return str(db_path)
         
         raise FileNotFoundError("Database not found")
+    
+    def load_features_from_analysis(self):
+        """Load the features that showed separability potential from the analysis."""
+        analysis_path = Path(__file__).parent.parent / "stage_kind_support_analysis" / "stage_with_breakdown_analysis.json"
+        
+        with open(analysis_path, 'r') as f:
+            analysis = json.load(f)
+        
+        # Get all features that showed separability potential (score > 0)
+        feature_ranking = analysis['comparative_analysis']['feature_ranking']
+        selected_features = []
+        
+        for feature_info in feature_ranking:
+            if feature_info['score'] > 0:
+                selected_features.append(feature_info['feature'])
+        
+        print(f"Loaded {len(selected_features)} features with separability potential from analysis")
+        return selected_features
         
     def load_stage_race_data(self, min_finishers: int = 40) -> pd.DataFrame:
-        """Load stage race data with gradient features."""
-        query = """
+        """Load stage race data with gradient features - WITH BREAKDOWN subset."""
+        # First get the feature list
+        feature_list = self.load_features_from_analysis()
+        
+        # Build the SELECT clause dynamically based on features
+        select_columns = [
+            "rfg.competition_id",
+            "rfg.competition_name", 
+            "rfg.race_name",
+            "rfg.race_category",
+            "rfg.race_year",
+            "rfg.total_finishers",
+            "COALESCE(rfg.kurtosis_null_percentile, 0) as kurtosis_breakdown_point",
+            "COALESCE(rfg.variance_zero_percentile, 0) as variance_breakdown_point",
+            "rf100.winning_time"
+        ]
+        
+        # Add gradient feature columns dynamically
+        gradient_columns = []
+        for feature in feature_list:
+            # Handle breakdown features specially - they're already in select_columns
+            if feature in ['kurtosis_breakdown_point', 'variance_breakdown_point']:
+                continue
+            else:
+                # Add gradient components
+                gradient_columns.append(f"rfg.{feature}_slope")
+                gradient_columns.append(f"rfg.{feature}_volatility")
+                gradient_columns.append(f"rfg.{feature}_monotonicity")
+                gradient_columns.append(f"rfg.{feature}_directional_changes")
+        
+        select_columns.extend(gradient_columns)
+        
+        query = f"""
         SELECT 
-            rfg.competition_id,
-            rfg.competition_name,
-            rfg.race_name,
-            rfg.race_category,
-            rfg.race_year,
-            rfg.total_finishers,
-            COALESCE(rfg.kurtosis_null_percentile, 0) as kurtosis_breakdown_point,
-            COALESCE(rfg.variance_zero_percentile, 0) as variance_breakdown_point,
-            rfg.nth_percentile_gap_5_slope,
-            rfg.nth_percentile_gap_5_volatility,
-            rfg.nth_percentile_gap_5_monotonicity,
-            rfg.nth_percentile_gap_25_slope,
-            rfg.nth_percentile_gap_25_volatility,
-            rfg.nth_percentile_gap_25_monotonicity,
-            rfg.nth_percentile_gap_50_slope,
-            rfg.nth_percentile_gap_50_volatility,
-            rfg.nth_percentile_gap_50_monotonicity,
-            rfg.variance_absolute_slope,
-            rfg.variance_absolute_volatility,
-            rfg.variance_normalized_slope,
-            rfg.variance_normalized_volatility,
-            rfg.kurtosis_absolute_slope,
-            rfg.kurtosis_absolute_volatility,
-            rfg.kurtosis_normalized_slope,
-            rfg.kurtosis_normalized_volatility,
-            rfg.gini_coefficient_slope,
-            rfg.gini_coefficient_volatility,
-            rfg.clumpiness_score_slope,
-            rfg.clumpiness_score_volatility,
-            rfg.selection_metric_slope,
-            rfg.selection_metric_volatility,
-            rfg.biggest_group_metric_slope,
-            rfg.biggest_group_metric_volatility,
-            rfg.skewness_absolute_slope,
-            rfg.skewness_absolute_volatility,
-            rfg.skewness_normalized_slope,
-            rfg.skewness_normalized_volatility,
-            rf100.winning_time
+            {', '.join(select_columns)}
         FROM race_feature_gradients rfg
         JOIN race_features_100 rf100 ON rfg.competition_id = rf100.competition_id
         WHERE rfg.competition_type = 'stage'
         AND rf100.winning_time > 5400  -- More than 90 minutes (filters out TTs)
+        AND rf100.winning_time < 28800  -- Less than 8 hours (filters out outliers)
         AND rfg.total_finishers >= ?
+        AND rfg.variance_normalized_values IS NOT NULL  -- Has gradient data
+        AND (COALESCE(rfg.kurtosis_null_percentile, 0) > 0  -- Has kurtosis breakdown
+             OR COALESCE(rfg.variance_zero_percentile, 0) > 0)  -- OR has variance breakdown
+        ORDER BY rfg.total_finishers DESC
         """
         
         self.data = pd.read_sql_query(query, self.conn, params=(min_finishers,))
-        print(f"Loaded {len(self.data)} stage races with gradient features")
+        print(f"Loaded {len(self.data)} stage races with breakdowns (min_finishers={min_finishers})")
+        
+        # Store feature list for later use
+        self.available_features = feature_list
+        
         return self.data
     
-    def select_top_features(self, feature_scores: Dict[str, float], n_features: int = 8) -> List[str]:
-        """Select top N features based on separability scores."""
-        # Based on the analysis report
-        feature_ranking = {
-            'kurtosis_breakdown_point': 2.6184,
-            'nth_percentile_gap_5_slope': 2.4599,
-            'nth_percentile_gap_5_volatility': 2.4599,
-            'nth_percentile_gap_5_monotonicity': 2.4599,
-            'nth_percentile_gap_25_slope': 1.7974,
-            'nth_percentile_gap_25_volatility': 1.7974,
-            'nth_percentile_gap_25_monotonicity': 1.7974,
-            'variance_breakdown_point': 1.2936,
-            'nth_percentile_gap_50_slope': 1.2680,
-            'nth_percentile_gap_50_volatility': 1.2680,
-            'nth_percentile_gap_50_monotonicity': 1.2680,
-            'variance_absolute_slope': 1.2115,
-            'variance_absolute_volatility': 1.2115,
-            'kurtosis_absolute_slope': 1.1735,
-            'kurtosis_absolute_volatility': 1.1735,
-            'kurtosis_normalized_slope': 1.1735,
-            'kurtosis_normalized_volatility': 1.1735,
-            'variance_normalized_slope': 1.1266,
-            'variance_normalized_volatility': 1.1266,
-            'biggest_group_metric_slope': 0.9870,
-            'biggest_group_metric_volatility': 0.9870
-        }
+    def prepare_features(self, use_top_n: Optional[int] = None) -> np.ndarray:
+        """Prepare features for clustering based on separability analysis."""
+        if self.data is None:
+            raise ValueError("Load data first using load_stage_race_data()")
         
-        # Get available features from data
-        available_features = [f for f in feature_ranking.keys() if f in self.data.columns]
+        # Get gradient feature columns from data
+        feature_columns = []
         
-        # Sort by score and select top N
-        sorted_features = sorted(available_features, key=lambda x: feature_ranking.get(x, 0), reverse=True)
-        selected = sorted_features[:n_features]
+        # Include breakdown features if they're in the selected features
+        if 'kurtosis_breakdown_point' in self.available_features:
+            feature_columns.append('kurtosis_breakdown_point')
+        if 'variance_breakdown_point' in self.available_features:
+            feature_columns.append('variance_breakdown_point')
         
-        print(f"Selected top {n_features} features: {selected}")
-        return selected
-    
-    def prepare_features(self, feature_list: Optional[List[str]] = None) -> np.ndarray:
-        """Prepare and scale features for clustering."""
-        if feature_list is None:
-            feature_list = self.select_top_features({}, n_features=8)
+        # Add gradient feature columns
+        for col in self.data.columns:
+            if col.endswith('_slope') or col.endswith('_volatility') or col.endswith('_monotonicity') or col.endswith('_directional_changes'):
+                if not pd.isna(self.data[col]).all():  # Skip if all NaN
+                    feature_columns.append(col)
         
-        self.feature_names = feature_list
-        feature_data = self.data[feature_list].copy()
+        # If use_top_n specified, limit to top N features by score
+        if use_top_n is not None:
+            # Load analysis to get feature ranking
+            analysis_path = Path(__file__).parent.parent / "stage_kind_support_analysis" / "stage_with_breakdown_analysis.json"
+            with open(analysis_path, 'r') as f:
+                analysis = json.load(f)
+            
+            # Get top N features
+            top_feature_columns = []
+            for i, feature_info in enumerate(analysis['comparative_analysis']['feature_ranking']):
+                if i < use_top_n:
+                    feature_name = feature_info['feature']
+                    
+                    # Handle breakdown features
+                    if feature_name in ['kurtosis_breakdown_point', 'variance_breakdown_point']:
+                        if feature_name in feature_columns:
+                            top_feature_columns.append(feature_name)
+                    else:
+                        # Add all related columns (slope, volatility, monotonicity, directional_changes)
+                        for suffix in ['_slope', '_volatility', '_monotonicity', '_directional_changes']:
+                            col_name = f"{feature_name}{suffix}"
+                            if col_name in feature_columns:
+                                top_feature_columns.append(col_name)
+            
+            feature_columns = top_feature_columns
         
-        # Handle missing values
-        feature_data = feature_data.fillna(feature_data.median())
+        print(f"Using {len(feature_columns)} feature columns for clustering")
+        self.feature_names = feature_columns
         
-        # Scale features
+        # Extract features and handle missing values
+        feature_data = self.data[feature_columns].fillna(0)
+        
+        # Standardize features
         self.features = self.scaler.fit_transform(feature_data)
         
-        print(f"Prepared {self.features.shape[1]} features for {self.features.shape[0]} races")
         return self.features
     
     def kmeans_clustering(self, n_clusters_range: range = range(3, 8)) -> Dict:
@@ -187,7 +216,6 @@ class RaceKindClustering:
             results['davies_bouldin_scores'].append(davies_bouldin)
             results['n_clusters'].append(n_clusters)
             
-            # Track best model by silhouette score
             if silhouette > results['best_silhouette']:
                 results['best_silhouette'] = silhouette
                 results['best_n_clusters'] = n_clusters
@@ -297,52 +325,66 @@ class RaceKindClustering:
                 'cluster_id': cluster_id,
                 'n_races': len(cluster_races),
                 'avg_finishers': cluster_races['total_finishers'].mean(),
+                'avg_winning_time': cluster_races['winning_time'].mean() / 3600,  # Convert to hours
                 'categories': cluster_races['race_category'].value_counts().to_dict(),
-                'years': f"{cluster_races['race_year'].min()}-{cluster_races['race_year'].max()}"
+                'top_competitions': cluster_races['competition_name'].value_counts().head(5).to_dict(),
+                'year_range': f"{cluster_races['race_year'].min()}-{cluster_races['race_year'].max()}"
             }
             
-            # Add feature averages
-            for feature in self.feature_names:
-                profile[f'avg_{feature}'] = cluster_races[feature].mean()
+            # Add breakdown statistics
+            profile['avg_kurtosis_breakdown'] = cluster_races['kurtosis_breakdown_point'].mean()
+            profile['avg_variance_breakdown'] = cluster_races['variance_breakdown_point'].mean()
+            profile['pct_with_kurtosis_breakdown'] = (cluster_races['kurtosis_breakdown_point'] > 0).mean() * 100
+            profile['pct_with_variance_breakdown'] = (cluster_races['variance_breakdown_point'] > 0).mean() * 100
             
-            # Sample races
-            sample_races = cluster_races.nsmallest(5, 'competition_id')[
-                ['competition_name', 'race_name', 'race_year']
-            ].to_dict('records')
-            profile['sample_races'] = sample_races
+            # Add feature statistics
+            for feature in self.feature_names:
+                if feature in cluster_data.columns:
+                    profile[f"{feature}_mean"] = cluster_races[feature].mean()
+                    profile[f"{feature}_std"] = cluster_races[feature].std()
             
             profiles.append(profile)
         
         return pd.DataFrame(profiles)
     
-    def save_results(self, output_dir: str = 'race_kinds/race_kind_finding'):
-        """Save clustering results and profiles."""
-        results = {
+    def save_results(self, output_dir: str = None):
+        """Save clustering results to files."""
+        if output_dir is None:
+            output_dir = Path(__file__).parent / f'clustering_results_{self.subset_name}'
+        
+        output_dir = Path(output_dir)
+        output_dir.mkdir(exist_ok=True)
+        
+        # Save metadata
+        metadata = {
+            'subset': self.subset_name,
             'feature_names': self.feature_names,
             'n_races': len(self.data),
+            'n_features': len(self.feature_names),
+            'features_from_analysis': self.available_features,
             'clustering_results': {}
         }
         
-        # Save cluster assignments
+        # Save cluster assignments and profiles for each method
         for method, labels in self.clusters.items():
+            # Save cluster assignments
             cluster_data = self.data[['competition_id', 'competition_name', 'race_name']].copy()
             cluster_data['cluster'] = labels
+            cluster_data.to_csv(output_dir / f'{method}_clusters.csv', index=False)
             
-            # Save to CSV
-            cluster_data.to_csv(f'{output_dir}/{method}_clusters.csv', index=False)
-            
-            # Get profiles
+            # Get and save profiles
             profiles = self.get_cluster_profiles(method)
-            profiles.to_json(f'{output_dir}/{method}_profiles.json', orient='records', indent=2)
+            profiles.to_json(output_dir / f'{method}_profiles.json', orient='records', indent=2)
             
-            results['clustering_results'][method] = {
+            # Add to metadata
+            metadata['clustering_results'][method] = {
                 'n_clusters': len(set(labels)) - (1 if -1 in labels else 0),
                 'cluster_sizes': pd.Series(labels).value_counts().to_dict()
             }
         
-        # Save summary
-        with open(f'{output_dir}/clustering_summary.json', 'w') as f:
-            json.dump(results, f, indent=2)
+        # Save metadata
+        with open(output_dir / 'clustering_summary.json', 'w') as f:
+            json.dump(metadata, f, indent=2)
         
         print(f"Results saved to {output_dir}/")
     
@@ -352,27 +394,27 @@ class RaceKindClustering:
 
 
 def main():
-    """Run the clustering pipeline."""
-    # Initialize clustering (will auto-find database)
-    clustering = RaceKindClustering()
+    """Run the clustering pipeline for with-breakdown races."""
+    # Initialize clustering
+    clustering = RaceKindClusteringWithBreakdown()
     
     # Load data
     clustering.load_stage_race_data(min_finishers=40)
     
-    # Prepare features (top 5)
+    # Prepare features (use all features with separability potential)
     clustering.prepare_features()
     
     # Run clustering algorithms
-    print("\n--- Running K-means clustering ---")
+    print("\n--- Running K-means clustering (WITH BREAKDOWN) ---")
     kmeans_results = clustering.kmeans_clustering(range(3, 8))
     
-    print("\n--- Running DBSCAN clustering ---")
+    print("\n--- Running DBSCAN clustering (WITH BREAKDOWN) ---")
     dbscan_results = clustering.dbscan_clustering(
         eps_range=np.arange(0.5, 2.0, 0.1),
         min_samples_range=range(10, 30, 5)
     )
     
-    print("\n--- Running Hierarchical clustering ---")
+    print("\n--- Running Hierarchical clustering (WITH BREAKDOWN) ---")
     hierarchical_results = clustering.hierarchical_clustering(range(3, 8))
     
     # Save results
@@ -381,7 +423,7 @@ def main():
     # Close connection
     clustering.close()
     
-    print("\nClustering complete!")
+    print("\nClustering complete for WITH BREAKDOWN subset!")
 
 
 if __name__ == "__main__":

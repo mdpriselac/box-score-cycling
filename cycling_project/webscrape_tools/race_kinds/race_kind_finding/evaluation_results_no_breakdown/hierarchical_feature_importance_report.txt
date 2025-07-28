@@ -1,0 +1,652 @@
+FEATURE IMPORTANCE ANALYSIS SUMMARY
+==================================================
+
+CLUSTER 0
+--------------------
+
+Critical Importance (2 features):
+  • nth_percentile_gap_25_monotonicity
+    Score: 3.193
+    substantially lower than population average (-72.5%), substantially lower than other clusters (-81.4%) - highly significant
+
+  • nth_percentile_gap_50_monotonicity
+    Score: 3.134
+    substantially lower than population average (-57.9%), substantially lower than other clusters (-69.6%) - highly significant
+
+
+High Importance (1 features):
+  • clumpiness_score_volatility
+    Score: 2.382
+    moderately higher than population average (+44.4%), dramatically higher than other clusters (+104.6%) - highly significant
+
+
+Moderate Importance (49 features):
+  • skewness_absolute_volatility
+    Score: 2.268
+    substantially higher than population average (+73.8%), extremely higher than other clusters (+239.8%) - highly significant
+
+  • skewness_normalized_volatility
+    Score: 2.268
+    substantially higher than population average (+73.8%), extremely higher than other clusters (+239.8%) - highly significant
+
+  • variance_absolute_monotonicity
+    Score: 2.256
+    substantially lower than population average (-56.4%), substantially lower than other clusters (-68.3%) - highly significant
+
+  • variance_normalized_monotonicity
+    Score: 2.256
+    substantially lower than population average (-56.4%), substantially lower than other clusters (-68.3%) - highly significant
+
+  • variance_absolute_directional_changes
+    Score: 2.005
+    substantially higher than population average (+77.5%), extremely higher than other clusters (+264.8%) - highly significant
+
+  • variance_normalized_directional_changes
+    Score: 2.005
+    substantially higher than population average (+77.5%), extremely higher than other clusters (+264.8%) - highly significant
+
+  • gini_coefficient_volatility
+    Score: 1.977
+    moderately higher than population average (+47.7%), dramatically higher than other clusters (+115.8%) - highly significant
+
+  • nth_percentile_gap_50_slope
+    Score: 1.943
+    substantially lower than population average (-64.6%), substantially lower than other clusters (-75.2%) - highly significant
+
+  • skewness_absolute_slope
+    Score: 1.870
+    dramatically higher than population average (+140.2%), extremely higher than other clusters (+3266.1%) - highly significant
+
+  • skewness_normalized_slope
+    Score: 1.870
+    dramatically higher than population average (+140.2%), extremely higher than other clusters (+3266.1%) - highly significant
+
+  • biggest_group_metric_directional_changes
+    Score: 1.779
+    moderately lower than population average (-40.2%), substantially lower than other clusters (-52.8%) - highly significant
+
+  • selection_metric_directional_changes
+    Score: 1.690
+    moderately lower than population average (-40.3%), substantially lower than other clusters (-52.8%) - highly significant
+
+  • kurtosis_absolute_volatility
+    Score: 1.663
+    substantially higher than population average (+92.3%), extremely higher than other clusters (+395.1%) - highly significant
+
+  • kurtosis_normalized_volatility
+    Score: 1.663
+    substantially higher than population average (+92.3%), extremely higher than other clusters (+395.1%) - highly significant
+
+  • variance_normalized_slope
+    Score: 1.487
+    substantially lower than population average (-53.0%), substantially lower than other clusters (-65.2%) - highly significant
+
+  • nth_percentile_gap_5_monotonicity
+    Score: 1.459
+    moderately lower than population average (-40.3%), substantially lower than other clusters (-52.9%) - highly significant
+
+  • variance_absolute_slope
+    Score: 1.456
+    substantially lower than population average (-56.3%), substantially lower than other clusters (-68.2%) - highly significant
+
+  • nth_percentile_gap_25_slope
+    Score: 1.451
+    substantially lower than population average (-75.1%), substantially lower than other clusters (-83.4%) - highly significant
+
+  • gini_coefficient_slope
+    Score: 1.395
+    dramatically higher than population average (+102.7%), extremely higher than other clusters (+533.1%) - highly significant
+
+  • biggest_group_metric_slope
+    Score: 1.336
+    dramatically higher than population average (+111.0%), dramatically higher than other clusters (+106.4%) - highly significant
+
+  • nth_percentile_gap_50_volatility
+    Score: 1.165
+    moderately lower than population average (-45.5%), substantially lower than other clusters (-58.1%) - highly significant
+
+  • skewness_normalized_monotonicity
+    Score: 1.163
+    moderately lower than population average (-33.1%), substantially lower than other clusters (-70.3%) - highly significant
+
+  • skewness_absolute_monotonicity
+    Score: 1.163
+    moderately lower than population average (-33.1%), substantially lower than other clusters (-70.3%) - highly significant
+
+  • kurtosis_absolute_directional_changes
+    Score: 1.135
+    slightly lower than population average (-18.7%), moderately lower than other clusters (-27.7%) - highly significant
+
+  • kurtosis_normalized_directional_changes
+    Score: 1.135
+    slightly lower than population average (-18.7%), moderately lower than other clusters (-27.7%) - highly significant
+
+  • selection_metric_volatility
+    Score: 1.008
+    moderately higher than population average (+30.4%), substantially higher than other clusters (+63.2%) - highly significant
+
+  • kurtosis_absolute_monotonicity
+    Score: 0.903
+    extremely higher than population average (+727.3%), extremely higher than other clusters (+316.7%) - highly significant
+
+  • kurtosis_normalized_monotonicity
+    Score: 0.903
+    extremely higher than population average (+729.0%), extremely higher than other clusters (+316.5%) - highly significant
+
+  • clumpiness_score_monotonicity
+    Score: 0.861
+    dramatically lower than population average (-146.7%), extremely lower than other clusters (-8643.6%) - highly significant
+
+  • nth_percentile_gap_25_volatility
+    Score: 0.828
+    moderately lower than population average (-48.7%), substantially lower than other clusters (-61.2%) - highly significant
+
+  • variance_absolute_volatility
+    Score: 0.826
+    moderately lower than population average (-33.6%), moderately lower than other clusters (-45.7%) - highly significant
+
+  • gini_coefficient_directional_changes
+    Score: 0.796
+    slightly lower than population average (-16.1%), slightly lower than other clusters (-24.2%) - highly significant
+
+  • clumpiness_score_directional_changes
+    Score: 0.779
+    slightly lower than population average (-12.0%), slightly lower than other clusters (-18.5%) - highly significant
+
+  • selection_metric_monotonicity
+    Score: 0.776
+    slightly lower than population average (-20.8%), moderately lower than other clusters (-30.3%) - highly significant
+
+  • variance_normalized_volatility
+    Score: 0.738
+    moderately lower than population average (-27.9%), moderately lower than other clusters (-39.1%) - highly significant
+
+  • biggest_group_metric_monotonicity
+    Score: 0.678
+    moderately lower than population average (-37.9%), substantially lower than other clusters (-50.4%) - highly significant
+
+  • skewness_normalized_directional_changes
+    Score: 0.630
+    slightly lower than population average (-10.8%), slightly lower than other clusters (-16.7%) - highly significant
+
+  • skewness_absolute_directional_changes
+    Score: 0.630
+    slightly lower than population average (-10.8%), slightly lower than other clusters (-16.7%) - highly significant
+
+  • clumpiness_score_slope
+    Score: 0.509
+    moderately higher than population average (+25.7%), substantially higher than other clusters (+51.6%) - highly significant
+
+  • gini_coefficient_monotonicity
+    Score: 0.384
+    moderately lower than population average (-31.2%), substantially lower than other clusters (-65.4%) - highly significant
+
+  • nth_percentile_gap_5_slope
+    Score: 0.150
+    slightly lower than population average (-19.4%), moderately lower than other clusters (-28.6%) - highly significant
+
+  • selection_metric_slope
+    Score: 0.085
+    marginally lower than population average (-2.9%), marginally lower than other clusters (-4.7%) - marginally significant
+
+  • kurtosis_normalized_slope
+    Score: 0.021
+    slightly higher than population average (+18.5%), moderately higher than other clusters (+27.4%) - not significant
+
+  • kurtosis_absolute_slope
+    Score: 0.021
+    slightly higher than population average (+18.5%), moderately higher than other clusters (+27.4%) - not significant
+
+  • nth_percentile_gap_5_volatility
+    Score: 0.020
+    marginally lower than population average (-3.5%), marginally lower than other clusters (-5.8%) - not significant
+
+  • biggest_group_metric_volatility
+    Score: 0.005
+    marginally higher than population average (+0.2%), marginally higher than other clusters (+0.4%) - not significant
+
+  • nth_percentile_gap_5_directional_changes
+    Score: 0.000
+    marginally lower than population average (+0.0%), marginally lower than other clusters (+0.0%) - not significant
+
+  • nth_percentile_gap_25_directional_changes
+    Score: 0.000
+    marginally lower than population average (+0.0%), marginally lower than other clusters (+0.0%) - not significant
+
+  • nth_percentile_gap_50_directional_changes
+    Score: 0.000
+    marginally lower than population average (+0.0%), marginally lower than other clusters (+0.0%) - not significant
+
+
+CLUSTER 1
+--------------------
+
+Critical Importance (2 features):
+  • nth_percentile_gap_50_slope
+    Score: 3.229
+    dramatically higher than population average (+108.0%), extremely higher than other clusters (+304.6%) - highly significant
+
+  • nth_percentile_gap_25_slope
+    Score: 2.498
+    dramatically higher than population average (+141.6%), extremely higher than other clusters (+566.1%) - highly significant
+
+
+High Importance (1 features):
+  • variance_normalized_slope
+    Score: 2.330
+    substantially higher than population average (+89.3%), extremely higher than other clusters (+216.7%) - highly significant
+
+
+Moderate Importance (49 features):
+  • variance_absolute_slope
+    Score: 2.329
+    substantially higher than population average (+98.3%), extremely higher than other clusters (+255.6%) - highly significant
+
+  • nth_percentile_gap_25_monotonicity
+    Score: 2.295
+    substantially higher than population average (+64.8%), dramatically higher than other clusters (+132.7%) - highly significant
+
+  • nth_percentile_gap_50_volatility
+    Score: 2.194
+    substantially higher than population average (+91.7%), extremely higher than other clusters (+226.6%) - highly significant
+
+  • skewness_absolute_slope
+    Score: 1.939
+    dramatically lower than population average (-147.1%), dramatically lower than other clusters (-128.3%) - highly significant
+
+  • skewness_normalized_slope
+    Score: 1.939
+    dramatically lower than population average (-147.1%), dramatically lower than other clusters (-128.3%) - highly significant
+
+  • biggest_group_metric_directional_changes
+    Score: 1.885
+    moderately higher than population average (+48.3%), substantially higher than other clusters (+89.5%) - highly significant
+
+  • gini_coefficient_slope
+    Score: 1.810
+    dramatically lower than population average (-132.2%), dramatically lower than other clusters (-120.2%) - highly significant
+
+  • nth_percentile_gap_25_volatility
+    Score: 1.753
+    dramatically higher than population average (+111.9%), extremely higher than other clusters (+326.8%) - highly significant
+
+  • skewness_absolute_volatility
+    Score: 1.498
+    substantially lower than population average (-53.2%), substantially lower than other clusters (-62.3%) - highly significant
+
+  • skewness_normalized_volatility
+    Score: 1.498
+    substantially lower than population average (-53.2%), substantially lower than other clusters (-62.3%) - highly significant
+
+  • nth_percentile_gap_50_monotonicity
+    Score: 1.488
+    moderately higher than population average (+35.3%), substantially higher than other clusters (+61.0%) - highly significant
+
+  • nth_percentile_gap_5_monotonicity
+    Score: 1.484
+    moderately higher than population average (+45.2%), substantially higher than other clusters (+82.2%) - highly significant
+
+  • variance_absolute_volatility
+    Score: 1.350
+    substantially higher than population average (+63.3%), dramatically higher than other clusters (+128.4%) - highly significant
+
+  • gini_coefficient_monotonicity
+    Score: 1.345
+    dramatically lower than population average (-110.2%), extremely lower than other clusters (-317.2%) - highly significant
+
+  • clumpiness_score_volatility
+    Score: 1.344
+    moderately lower than population average (-28.6%), moderately lower than other clusters (-36.7%) - highly significant
+
+  • kurtosis_absolute_volatility
+    Score: 1.231
+    substantially lower than population average (-68.9%), substantially lower than other clusters (-76.2%) - highly significant
+
+  • kurtosis_normalized_volatility
+    Score: 1.231
+    substantially lower than population average (-68.9%), substantially lower than other clusters (-76.2%) - highly significant
+
+  • variance_normalized_volatility
+    Score: 1.227
+    substantially higher than population average (+51.9%), substantially higher than other clusters (+98.3%) - highly significant
+
+  • gini_coefficient_volatility
+    Score: 1.185
+    moderately lower than population average (-31.8%), moderately lower than other clusters (-40.4%) - highly significant
+
+  • clumpiness_score_monotonicity
+    Score: 1.134
+    extremely higher than population average (+202.5%), dramatically higher than other clusters (+153.6%) - highly significant
+
+  • biggest_group_metric_monotonicity
+    Score: 1.095
+    substantially higher than population average (+61.7%), dramatically higher than other clusters (+123.9%) - highly significant
+
+  • variance_absolute_monotonicity
+    Score: 1.003
+    moderately higher than population average (+28.6%), moderately higher than other clusters (+47.7%) - highly significant
+
+  • variance_normalized_monotonicity
+    Score: 1.003
+    moderately higher than population average (+28.6%), moderately higher than other clusters (+47.7%) - highly significant
+
+  • selection_metric_directional_changes
+    Score: 0.796
+    slightly higher than population average (+21.6%), moderately higher than other clusters (+34.6%) - highly significant
+
+  • nth_percentile_gap_5_slope
+    Score: 0.746
+    substantially higher than population average (+64.7%), dramatically higher than other clusters (+132.5%) - highly significant
+
+  • selection_metric_monotonicity
+    Score: 0.695
+    slightly lower than population average (-20.7%), moderately lower than other clusters (-27.5%) - highly significant
+
+  • clumpiness_score_slope
+    Score: 0.641
+    moderately higher than population average (+33.9%), substantially higher than other clusters (+58.0%) - highly significant
+
+  • skewness_normalized_directional_changes
+    Score: 0.637
+    slightly lower than population average (-11.5%), slightly lower than other clusters (-15.8%) - highly significant
+
+  • skewness_absolute_directional_changes
+    Score: 0.637
+    slightly lower than population average (-11.5%), slightly lower than other clusters (-15.8%) - highly significant
+
+  • skewness_normalized_monotonicity
+    Score: 0.634
+    slightly lower than population average (-19.6%), moderately lower than other clusters (-31.2%) - highly significant
+
+  • skewness_absolute_monotonicity
+    Score: 0.634
+    slightly lower than population average (-19.6%), moderately lower than other clusters (-31.2%) - highly significant
+
+  • variance_absolute_directional_changes
+    Score: 0.609
+    moderately lower than population average (-28.7%), moderately lower than other clusters (-36.9%) - highly significant
+
+  • variance_normalized_directional_changes
+    Score: 0.609
+    moderately lower than population average (-28.7%), moderately lower than other clusters (-36.9%) - highly significant
+
+  • biggest_group_metric_slope
+    Score: 0.552
+    moderately lower than population average (-49.4%), substantially lower than other clusters (-92.0%) - highly significant
+
+  • nth_percentile_gap_5_volatility
+    Score: 0.518
+    moderately higher than population average (+47.4%), substantially higher than other clusters (+87.3%) - highly significant
+
+  • selection_metric_volatility
+    Score: 0.498
+    slightly lower than population average (-14.9%), slightly lower than other clusters (-20.2%) - highly significant
+
+  • kurtosis_absolute_directional_changes
+    Score: 0.186
+    marginally lower than population average (-4.7%), marginally lower than other clusters (-6.7%) - highly significant
+
+  • kurtosis_normalized_directional_changes
+    Score: 0.186
+    marginally lower than population average (-4.7%), marginally lower than other clusters (-6.7%) - highly significant
+
+  • biggest_group_metric_volatility
+    Score: 0.168
+    marginally lower than population average (-5.0%), marginally lower than other clusters (-7.1%) - highly significant
+
+  • gini_coefficient_directional_changes
+    Score: 0.115
+    marginally lower than population average (-4.1%), marginally lower than other clusters (-5.9%) - significant
+
+  • kurtosis_normalized_slope
+    Score: 0.035
+    moderately lower than population average (-26.8%), moderately lower than other clusters (-44.1%) - not significant
+
+  • kurtosis_absolute_slope
+    Score: 0.035
+    moderately lower than population average (-26.8%), moderately lower than other clusters (-44.1%) - not significant
+
+  • kurtosis_normalized_monotonicity
+    Score: 0.033
+    substantially higher than population average (+54.2%), dramatically higher than other clusters (+104.0%) - not significant
+
+  • kurtosis_absolute_monotonicity
+    Score: 0.032
+    substantially higher than population average (+53.8%), dramatically higher than other clusters (+102.9%) - not significant
+
+  • clumpiness_score_directional_changes
+    Score: 0.032
+    marginally higher than population average (+1.0%), marginally higher than other clusters (+1.4%) - not significant
+
+  • selection_metric_slope
+    Score: 0.007
+    marginally lower than population average (-0.3%), marginally lower than other clusters (-0.4%) - not significant
+
+  • nth_percentile_gap_5_directional_changes
+    Score: 0.000
+    marginally lower than population average (+0.0%), marginally lower than other clusters (+0.0%) - not significant
+
+  • nth_percentile_gap_25_directional_changes
+    Score: 0.000
+    marginally lower than population average (+0.0%), marginally lower than other clusters (+0.0%) - not significant
+
+  • nth_percentile_gap_50_directional_changes
+    Score: 0.000
+    marginally lower than population average (+0.0%), marginally lower than other clusters (+0.0%) - not significant
+
+
+CLUSTER 2
+--------------------
+
+Critical Importance (3 features):
+  • skewness_normalized_monotonicity
+    Score: 2.256
+    substantially higher than population average (+66.1%), substantially higher than other clusters (+73.4%) - highly significant
+
+  • skewness_absolute_monotonicity
+    Score: 2.256
+    substantially higher than population average (+66.1%), substantially higher than other clusters (+73.4%) - highly significant
+
+  • gini_coefficient_monotonicity
+    Score: 1.961
+    dramatically higher than population average (+160.2%), dramatically higher than other clusters (+136.3%) - highly significant
+
+
+High Importance (1 features):
+  • selection_metric_monotonicity
+    Score: 1.792
+    substantially higher than population average (+50.5%), substantially higher than other clusters (+89.8%) - highly significant
+
+
+Moderate Importance (48 features):
+  • kurtosis_absolute_directional_changes
+    Score: 1.768
+    moderately higher than population average (+30.7%), moderately higher than other clusters (+49.5%) - highly significant
+
+  • kurtosis_normalized_directional_changes
+    Score: 1.768
+    moderately higher than population average (+30.7%), moderately higher than other clusters (+49.5%) - highly significant
+
+  • nth_percentile_gap_50_monotonicity
+    Score: 1.753
+    moderately higher than population average (+41.5%), substantially higher than other clusters (+70.7%) - highly significant
+
+  • variance_absolute_directional_changes
+    Score: 1.749
+    substantially lower than population average (-75.4%), substantially lower than other clusters (-81.3%) - highly significant
+
+  • variance_normalized_directional_changes
+    Score: 1.749
+    substantially lower than population average (-75.4%), substantially lower than other clusters (-81.3%) - highly significant
+
+  • variance_absolute_monotonicity
+    Score: 1.700
+    moderately higher than population average (+46.7%), substantially higher than other clusters (+81.5%) - highly significant
+
+  • variance_normalized_monotonicity
+    Score: 1.700
+    moderately higher than population average (+46.7%), substantially higher than other clusters (+81.5%) - highly significant
+
+  • skewness_normalized_directional_changes
+    Score: 1.514
+    moderately higher than population average (+27.0%), moderately higher than other clusters (+42.8%) - highly significant
+
+  • skewness_absolute_directional_changes
+    Score: 1.514
+    moderately higher than population average (+27.0%), moderately higher than other clusters (+42.8%) - highly significant
+
+  • clumpiness_score_volatility
+    Score: 1.415
+    moderately lower than population average (-30.3%), moderately lower than other clusters (-38.0%) - highly significant
+
+  • clumpiness_score_slope
+    Score: 1.385
+    substantially lower than population average (-71.3%), substantially lower than other clusters (-77.8%) - highly significant
+
+  • kurtosis_normalized_monotonicity
+    Score: 1.273
+    extremely lower than population average (-1055.2%), extremely lower than other clusters (-279.0%) - highly significant
+
+  • kurtosis_absolute_monotonicity
+    Score: 1.273
+    extremely lower than population average (-1052.5%), extremely lower than other clusters (-278.9%) - highly significant
+
+  • skewness_absolute_volatility
+    Score: 1.207
+    moderately lower than population average (-44.2%), substantially lower than other clusters (-52.8%) - highly significant
+
+  • skewness_normalized_volatility
+    Score: 1.207
+    moderately lower than population average (-44.2%), substantially lower than other clusters (-52.8%) - highly significant
+
+  • gini_coefficient_directional_changes
+    Score: 1.203
+    moderately higher than population average (+26.5%), moderately higher than other clusters (+41.9%) - highly significant
+
+  • selection_metric_directional_changes
+    Score: 1.179
+    moderately higher than population average (+32.1%), substantially higher than other clusters (+52.2%) - highly significant
+
+  • gini_coefficient_volatility
+    Score: 1.155
+    moderately lower than population average (-31.3%), moderately lower than other clusters (-39.1%) - highly significant
+
+  • biggest_group_metric_slope
+    Score: 1.101
+    substantially lower than population average (-99.3%), extremely lower than other clusters (-236.7%) - highly significant
+
+  • nth_percentile_gap_25_monotonicity
+    Score: 0.964
+    moderately higher than population average (+30.1%), moderately higher than other clusters (+48.4%) - highly significant
+
+  • clumpiness_score_directional_changes
+    Score: 0.937
+    slightly higher than population average (+15.4%), slightly higher than other clusters (+23.1%) - highly significant
+
+  • kurtosis_absolute_volatility
+    Score: 0.917
+    substantially lower than population average (-52.9%), substantially lower than other clusters (-61.3%) - highly significant
+
+  • kurtosis_normalized_volatility
+    Score: 0.917
+    substantially lower than population average (-52.9%), substantially lower than other clusters (-61.3%) - highly significant
+
+  • selection_metric_volatility
+    Score: 0.856
+    moderately lower than population average (-25.7%), moderately lower than other clusters (-32.8%) - highly significant
+
+  • nth_percentile_gap_25_volatility
+    Score: 0.845
+    substantially lower than population average (-52.6%), substantially lower than other clusters (-61.0%) - highly significant
+
+  • nth_percentile_gap_50_volatility
+    Score: 0.824
+    moderately lower than population average (-35.5%), moderately lower than other clusters (-43.7%) - highly significant
+
+  • nth_percentile_gap_25_slope
+    Score: 0.818
+    moderately lower than population average (-48.2%), substantially lower than other clusters (-56.8%) - highly significant
+
+  • nth_percentile_gap_50_slope
+    Score: 0.677
+    moderately lower than population average (-26.7%), moderately lower than other clusters (-33.9%) - highly significant
+
+  • variance_absolute_slope
+    Score: 0.623
+    moderately lower than population average (-27.7%), moderately lower than other clusters (-35.1%) - highly significant
+
+  • variance_normalized_slope
+    Score: 0.553
+    slightly lower than population average (-22.7%), moderately lower than other clusters (-29.3%) - highly significant
+
+  • nth_percentile_gap_5_volatility
+    Score: 0.509
+    moderately lower than population average (-45.6%), substantially lower than other clusters (-54.2%) - highly significant
+
+  • nth_percentile_gap_5_slope
+    Score: 0.501
+    moderately lower than population average (-42.4%), substantially lower than other clusters (-51.0%) - highly significant
+
+  • variance_absolute_volatility
+    Score: 0.475
+    slightly lower than population average (-21.5%), moderately lower than other clusters (-27.8%) - highly significant
+
+  • skewness_absolute_slope
+    Score: 0.425
+    moderately lower than population average (-35.1%), moderately lower than other clusters (-43.2%) - highly significant
+
+  • skewness_normalized_slope
+    Score: 0.425
+    moderately lower than population average (-35.1%), moderately lower than other clusters (-43.2%) - highly significant
+
+  • variance_normalized_volatility
+    Score: 0.408
+    slightly lower than population average (-17.2%), slightly lower than other clusters (-22.7%) - highly significant
+
+  • biggest_group_metric_volatility
+    Score: 0.163
+    marginally higher than population average (+5.0%), marginally higher than other clusters (+7.3%) - highly significant
+
+  • biggest_group_metric_monotonicity
+    Score: 0.140
+    slightly lower than population average (-13.9%), slightly lower than other clusters (-18.5%) - significant
+
+  • nth_percentile_gap_5_monotonicity
+    Score: 0.139
+    marginally higher than population average (+7.0%), slightly higher than other clusters (+10.2%) - significant
+
+  • selection_metric_slope
+    Score: 0.138
+    marginally higher than population average (+4.2%), marginally higher than other clusters (+6.0%) - significant
+
+  • biggest_group_metric_directional_changes
+    Score: 0.071
+    marginally higher than population average (+3.5%), marginally higher than other clusters (+5.0%) - not significant
+
+  • clumpiness_score_monotonicity
+    Score: 0.044
+    slightly lower than population average (-15.0%), slightly lower than other clusters (-22.6%) - not significant
+
+  • kurtosis_absolute_slope
+    Score: 0.004
+    marginally higher than population average (+3.2%), marginally higher than other clusters (+4.5%) - not significant
+
+  • kurtosis_normalized_slope
+    Score: 0.004
+    marginally higher than population average (+3.2%), marginally higher than other clusters (+4.5%) - not significant
+
+  • gini_coefficient_slope
+    Score: 0.003
+    marginally higher than population average (+0.4%), marginally higher than other clusters (+0.6%) - not significant
+
+  • nth_percentile_gap_5_directional_changes
+    Score: 0.000
+    marginally lower than population average (+0.0%), marginally lower than other clusters (+0.0%) - not significant
+
+  • nth_percentile_gap_25_directional_changes
+    Score: 0.000
+    marginally lower than population average (+0.0%), marginally lower than other clusters (+0.0%) - not significant
+
+  • nth_percentile_gap_50_directional_changes
+    Score: 0.000
+    marginally lower than population average (+0.0%), marginally lower than other clusters (+0.0%) - not significant

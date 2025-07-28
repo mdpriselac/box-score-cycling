@@ -1,0 +1,109 @@
+================================================================================
+STAGE RACE GRADIENT FEATURE SEPARABILITY ANALYSIS - NO BREAKDOWN SUBSET
+================================================================================
+Generated: 2025-07-25 12:05:19
+
+DATASET SUMMARY
+----------------------------------------
+Total stage competitions analyzed: 2555
+Filter criteria: competition_type='stage' AND 90 minutes < winning_time < 8 hours
+                 AND kurtosis_breakdown_point = 0 AND variance_breakdown_point = 0
+Average finishers per race: 130.1
+Finisher range: 41-207
+Race categories: wt, d1, pro
+
+KEY FINDINGS - STAGES WITHOUT BREAKDOWNS
+----------------------------------------
+Features analyzed: 13
+Features with separability potential: 13
+Average separability score: 1.2214
+Best performing feature: kurtosis_absolute (score: 2.8410)
+
+NATURAL FEATURE QUALITY TIERS - NO BREAKDOWN RACES
+----------------------------------------
+Breakpoint method: gap_based
+Breakpoints found: ['1.653', '1.214', '0.967']
+
+Good: 1 features
+Excellent: 3 features
+Fair: 8 features
+Very Good: 1 features
+
+FEATURES BY TIER
+----------------------------------------
+Tier      | Rank | Feature Name                    | Score   | Completeness
+--------------------------------------------------------------------------------
+Excellent |    1 | kurtosis_absolute              |  2.8410 |      100.0%
+Excellent |    2 | kurtosis_normalized            |  2.8410 |      100.0%
+Excellent |    3 | nth_percentile_gap_5           |  1.6528 |      100.0%
+Very Good |    4 | nth_percentile_gap_25          |  1.2140 |      100.0%
+Good      |    5 | variance_absolute              |  0.9667 |      100.0%
+Fair      |    6 | skewness_normalized            |  0.9118 |      100.0%
+Fair      |    7 | skewness_absolute              |  0.9118 |      100.0%
+Fair      |    8 | variance_normalized            |  0.9117 |      100.0%
+Fair      |    9 | biggest_group_metric           |  0.8621 |      100.0%
+Fair      |   10 | nth_percentile_gap_50          |  0.8391 |      100.0%
+Fair      |   11 | gini_coefficient               |  0.8219 |      100.0%
+Fair      |   12 | clumpiness_score               |  0.6019 |      100.0%
+Fair      |   13 | selection_metric               |  0.5019 |      100.0%
+
+DETAILED FEATURE ANALYSIS - TOP 5 FEATURES
+----------------------------------------
+
+KURTOSIS_ABSOLUTE
+~~~~~~~~~~~~~~~~~
+Competitions with data: 2555/2555 (100.0%)
+Combined separability score: 2.8410
+  Slope - Range: 1.77e+00, CV: 10.507, Std: 1.12e-01
+  Volatility - Range: 3.72e+01, CV: 1.472, Std: 3.69e+00
+  Monotonicity - Range: 1.750, Std: 0.322, Distinct: 45
+  Directional Changes - Range: 13, CV: 0.442, Std: 2.34
+
+KURTOSIS_NORMALIZED
+~~~~~~~~~~~~~~~~~~~
+Competitions with data: 2555/2555 (100.0%)
+Combined separability score: 2.8410
+  Slope - Range: 1.77e+00, CV: 10.507, Std: 1.12e-01
+  Volatility - Range: 3.72e+01, CV: 1.472, Std: 3.69e+00
+  Monotonicity - Range: 1.750, Std: 0.322, Distinct: 45
+  Directional Changes - Range: 13, CV: 0.442, Std: 2.34
+
+NTH_PERCENTILE_GAP_5
+~~~~~~~~~~~~~~~~~~~~
+Competitions with data: 2555/2555 (100.0%)
+Combined separability score: 1.6528
+  Slope - Range: 1.40e+01, CV: 2.128, Std: 8.21e-01
+  Volatility - Range: 9.68e+01, CV: 2.258, Std: 5.60e+00
+  Monotonicity - Range: 1.067, Std: 0.329, Distinct: 17
+  Directional Changes - Range: 0, CV: 0.000, Std: 0.00
+
+NTH_PERCENTILE_GAP_25
+~~~~~~~~~~~~~~~~~~~~~
+Competitions with data: 2555/2555 (100.0%)
+Combined separability score: 1.2140
+  Slope - Range: 3.38e+01, CV: 1.498, Std: 3.44e+00
+  Volatility - Range: 2.44e+02, CV: 1.584, Std: 2.52e+01
+  Monotonicity - Range: 1.067, Std: 0.360, Distinct: 18
+  Directional Changes - Range: 0, CV: 0.000, Std: 0.00
+
+VARIANCE_ABSOLUTE
+~~~~~~~~~~~~~~~~~
+Competitions with data: 2555/2555 (100.0%)
+Combined separability score: 0.9667
+  Slope - Range: 2.70e+04, CV: 1.108, Std: 2.34e+03
+  Volatility - Range: 2.31e+05, CV: 1.119, Std: 1.16e+04
+  Monotonicity - Range: 2.000, Std: 0.477, Distinct: 41
+  Directional Changes - Range: 6, CV: 1.131, Std: 0.92
+
+RECOMMENDATIONS FOR CLASSIFYING NO-BREAKDOWN STAGES
+--------------------------------------------------
+1. Primary features for classification: kurtosis_absolute, kurtosis_normalized, nth_percentile_gap_5
+2. Features with excellent data coverage: kurtosis_absolute, kurtosis_normalized, nth_percentile_gap_5, nth_percentile_gap_25, variance_absolute
+3. Strong separability potential detected - different patterns exist even without breakdowns
+
+KEY INSIGHTS FOR NO-BREAKDOWN RACES
+----------------------------------------
+1. These races maintain consistent statistical properties throughout
+2. Separability may rely more on gradient patterns than statistical anomalies
+3. Consider these as potentially 'normal' or 'standard' race profiles
+4. Classification within this subset may require finer-grained features

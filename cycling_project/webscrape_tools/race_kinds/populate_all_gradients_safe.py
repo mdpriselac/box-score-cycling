@@ -171,6 +171,7 @@ def calculate_gradients_for_competition(competition_id: int, db_path: str) -> Di
                 result[f'{gradient_name}_slope'] = gradient.slope
                 result[f'{gradient_name}_volatility'] = gradient.volatility
                 result[f'{gradient_name}_monotonicity'] = gradient.monotonicity
+                result[f'{gradient_name}_directional_changes'] = gradient.directional_changes
                 
                 # Only add imputed_flags for kurtosis features
                 if hasattr(gradient, 'imputed_flags') and 'kurtosis' in gradient_name:
@@ -199,6 +200,7 @@ def calculate_gradients_for_competition(competition_id: int, db_path: str) -> Di
                     result[f'{gradient_name}_slope'] = gradient.slope
                     result[f'{gradient_name}_volatility'] = gradient.volatility
                     result[f'{gradient_name}_monotonicity'] = gradient.monotonicity
+                    result[f'{gradient_name}_directional_changes'] = gradient.directional_changes
         
         # Find data quality indicators - counting DOWN from 100
         variance_zero_at = None

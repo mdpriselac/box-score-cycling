@@ -1,0 +1,116 @@
+================================================================================
+STAGE RACE GRADIENT FEATURE SEPARABILITY ANALYSIS - WITH BREAKDOWN SUBSET
+================================================================================
+Generated: 2025-07-25 12:05:27
+
+DATASET SUMMARY
+----------------------------------------
+Total stage competitions analyzed: 2743
+Filter criteria: competition_type='stage' AND 90 minutes < winning_time < 8 hours
+                 AND (kurtosis_breakdown_point > 0 OR variance_breakdown_point > 0)
+Average finishers per race: 129.8
+Finisher range: 41-207
+Race categories: d1, pro, wt
+
+BREAKDOWN STATISTICS
+----------------------------------------
+Races with kurtosis breakdown: 2743 (100.0%)
+Races with variance breakdown: 2743 (100.0%)
+Races with both breakdowns: 2743 (100.0%)
+
+KEY FINDINGS - STAGES WITH BREAKDOWNS
+----------------------------------------
+Features analyzed: 15
+Features with separability potential: 14
+Average separability score: 2.5940
+Best performing feature: nth_percentile_gap_50 (score: 12.3151)
+
+NATURAL FEATURE QUALITY TIERS - BREAKDOWN RACES
+----------------------------------------
+Breakpoint method: gap_based
+Breakpoints found: ['10.623', '3.252', '1.898']
+
+Excellent: 2 features
+Good: 1 features
+Fair: 10 features
+Very Good: 1 features
+
+FEATURES BY TIER
+----------------------------------------
+Tier      | Rank | Feature Name                    | Score   | Completeness
+--------------------------------------------------------------------------------
+Excellent |    1 | nth_percentile_gap_50          | 12.3151 |      100.0%
+Excellent |    2 | nth_percentile_gap_25          | 10.6234 |      100.0%
+Very Good |    3 | kurtosis_breakdown_point       |  3.2520 |      100.0%
+Good      |    4 | variance_absolute              |  1.8984 |      100.0%
+Fair      |    5 | variance_normalized            |  1.8412 |      100.0%
+Fair      |    6 | biggest_group_metric           |  1.5340 |      100.0%
+Fair      |    7 | kurtosis_normalized            |  0.8555 |      100.0%
+Fair      |    8 | kurtosis_absolute              |  0.8555 |      100.0%
+Fair      |    9 | selection_metric               |  0.6705 |      100.0%
+Fair      |   10 | variance_breakdown_point       |  0.5701 |      100.0%
+Fair      |   11 | clumpiness_score               |  0.5387 |      100.0%
+Fair      |   12 | skewness_normalized            |  0.5058 |      100.0%
+Fair      |   13 | skewness_absolute              |  0.5058 |      100.0%
+Fair      |   14 | gini_coefficient               |  0.3504 |      100.0%
+
+DETAILED FEATURE ANALYSIS - TOP 5 FEATURES
+----------------------------------------
+
+NTH_PERCENTILE_GAP_50
+~~~~~~~~~~~~~~~~~~~~~
+Competitions with data: 2743/2743 (100.0%)
+Combined separability score: 12.3151
+  Slope - Range: 3.08e+01, CV: 3.124, Std: 2.35e+00
+  Volatility - Range: 3.69e+02, CV: 3.035, Std: 2.54e+01
+  Monotonicity - Range: 1.000, Std: 0.170, Distinct: 16
+  Directional Changes - Range: 2, CV: 52.364, Std: 0.04
+
+NTH_PERCENTILE_GAP_25
+~~~~~~~~~~~~~~~~~~~~~
+Competitions with data: 2743/2743 (100.0%)
+Combined separability score: 10.6234
+  Slope - Range: 9.50e+00, CV: 5.154, Std: 4.52e-01
+  Volatility - Range: 1.47e+02, CV: 5.731, Std: 6.41e+00
+  Monotonicity - Range: 0.800, Std: 0.094, Distinct: 13
+  Directional Changes - Range: 1, CV: 37.020, Std: 0.03
+
+KURTOSIS_BREAKDOWN_POINT
+~~~~~~~~~~~~~~~~~~~~~~~~
+Competitions with data: 2743/2743 (100.0%)
+Combined separability score: 3.2520
+  Breakdown points: 19 distinct values
+  Mean breakdown: 57.9, Median: 60.0
+  Breakdown range: 10-100
+  Entropy: 3.252, Std: 26.0
+
+VARIANCE_ABSOLUTE
+~~~~~~~~~~~~~~~~~
+Competitions with data: 2743/2743 (100.0%)
+Combined separability score: 1.8984
+  Slope - Range: 1.32e+04, CV: 2.419, Std: 1.04e+03
+  Volatility - Range: 1.32e+05, CV: 1.773, Std: 7.33e+03
+  Monotonicity - Range: 1.722, Std: 0.287, Distinct: 51
+  Directional Changes - Range: 5, CV: 3.081, Std: 0.61
+
+VARIANCE_NORMALIZED
+~~~~~~~~~~~~~~~~~~~
+Competitions with data: 2743/2743 (100.0%)
+Combined separability score: 1.8412
+  Slope - Range: 8.49e-05, CV: 2.295, Std: 4.79e-06
+  Volatility - Range: 6.14e-04, CV: 1.716, Std: 3.64e-05
+  Monotonicity - Range: 1.722, Std: 0.287, Distinct: 51
+  Directional Changes - Range: 5, CV: 3.081, Std: 0.61
+
+RECOMMENDATIONS FOR CLASSIFYING BREAKDOWN STAGES
+--------------------------------------------------
+1. Primary features for classification: nth_percentile_gap_50, nth_percentile_gap_25, kurtosis_breakdown_point
+2. Breakdown features showing strong discriminatory power: kurtosis_breakdown_point
+3. Strong separability potential - breakdown races show distinct patterns
+
+KEY INSIGHTS FOR BREAKDOWN RACES
+----------------------------------------
+1. Breakdown location (percentile) provides key discriminatory information
+2. These races exhibit statistical anomalies at specific competition points
+3. Consider breakdown patterns as indicators of race dynamics or terrain changes
+4. Combination of breakdown features with gradients may reveal race subtypes

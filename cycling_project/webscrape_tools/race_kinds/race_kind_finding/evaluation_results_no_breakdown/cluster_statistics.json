@@ -1,0 +1,98 @@
+[
+  {
+    "cluster_id":0,
+    "n_races":720,
+    "percentage":28.1800391389,
+    "avg_finishers":127.5236111111,
+    "std_finishers":32.4553742753,
+    "avg_winning_time_hours":4.0177939815,
+    "std_winning_time_hours":0.822543741,
+    "year_range":"2010-2024",
+    "categories":{
+      "d1":347,
+      "wt":204,
+      "pro":169
+    },
+    "top_competitions":{
+      "Stage: 01":152,
+      "Stage: 02":142,
+      "Stage: 03":122
+    },
+    "kurtosis_absolute_slope_mean":-0.013041092,
+    "kurtosis_absolute_slope_std":0.2022681332,
+    "kurtosis_absolute_volatility_mean":6.1768740542,
+    "kurtosis_absolute_volatility_std":5.1575827907,
+    "kurtosis_absolute_directional_changes_mean":3.8152777778,
+    "kurtosis_absolute_directional_changes_std":1.9819884174,
+    "nth_percentile_gap_5_slope_mean":0.1913216912,
+    "nth_percentile_gap_5_slope_std":0.5349921532,
+    "nth_percentile_gap_25_slope_mean":0.2019560866,
+    "nth_percentile_gap_25_slope_std":0.6062254499,
+    "nth_percentile_gap_5_directional_changes_mean":0.0,
+    "nth_percentile_gap_5_directional_changes_std":0.0
+  },
+  {
+    "cluster_id":1,
+    "n_races":472,
+    "percentage":18.4735812133,
+    "avg_finishers":141.2521186441,
+    "std_finishers":28.7573122938,
+    "avg_winning_time_hours":4.4085793315,
+    "std_winning_time_hours":0.8197103131,
+    "year_range":"2010-2024",
+    "categories":{
+      "wt":312,
+      "d1":102,
+      "pro":58
+    },
+    "top_competitions":{
+      "Stage: 04":52,
+      "Stage: 03":49,
+      "Stage: 06":33
+    },
+    "kurtosis_absolute_slope_mean":-0.0002661473,
+    "kurtosis_absolute_slope_std":0.0530535249,
+    "kurtosis_absolute_volatility_mean":0.8385811259,
+    "kurtosis_absolute_volatility_std":0.8986804989,
+    "kurtosis_absolute_directional_changes_mean":3.936440678,
+    "kurtosis_absolute_directional_changes_std":1.7702982466,
+    "nth_percentile_gap_5_slope_mean":0.9556838547,
+    "nth_percentile_gap_5_slope_std":1.5044923485,
+    "nth_percentile_gap_25_slope_mean":7.1699647931,
+    "nth_percentile_gap_25_slope_std":4.9921062903,
+    "nth_percentile_gap_5_directional_changes_mean":0.0,
+    "nth_percentile_gap_5_directional_changes_std":0.0
+  },
+  {
+    "cluster_id":2,
+    "n_races":1363,
+    "percentage":53.3463796477,
+    "avg_finishers":127.6199559795,
+    "std_finishers":30.7620436785,
+    "avg_winning_time_hours":4.1697146817,
+    "std_winning_time_hours":0.7765066744,
+    "year_range":"2010-2024",
+    "categories":{
+      "d1":517,
+      "wt":450,
+      "pro":396
+    },
+    "top_competitions":{
+      "Stage: 03":273,
+      "Stage: 04":256,
+      "Stage: 02":222
+    },
+    "kurtosis_absolute_slope_mean":-0.0130709633,
+    "kurtosis_absolute_slope_std":0.0328513233,
+    "kurtosis_absolute_volatility_mean":1.1421676274,
+    "kurtosis_absolute_volatility_std":1.1048711015,
+    "kurtosis_absolute_directional_changes_mean":6.5370506236,
+    "kurtosis_absolute_directional_changes_std":1.940161926,
+    "nth_percentile_gap_5_slope_mean":0.2909655496,
+    "nth_percentile_gap_5_slope_std":0.434140446,
+    "nth_percentile_gap_25_slope_mean":1.7209879679,
+    "nth_percentile_gap_25_slope_std":1.6026675816,
+    "nth_percentile_gap_5_directional_changes_mean":0.0,
+    "nth_percentile_gap_5_directional_changes_std":0.0
+  }
+]

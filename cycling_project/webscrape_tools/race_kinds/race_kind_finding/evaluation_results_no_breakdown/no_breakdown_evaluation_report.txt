@@ -1,0 +1,69 @@
+================================================================================
+CLUSTERING EVALUATION REPORT - NO BREAKDOWN SUBSET
+================================================================================
+Generated: 2025-07-25 12:06:37
+
+DATASET SUMMARY
+----------------------------------------
+Total races analyzed: 2555
+Features used: 52
+Subset: Stages WITHOUT breakdowns
+Filter: 90 minutes < winning_time < 8 hours, min_finishers >= 40
+
+CLUSTERING METHODS EVALUATED
+----------------------------------------
+KMEANS: 3 clusters
+HIERARCHICAL: 3 clusters
+
+CLUSTERING QUALITY METRICS
+----------------------------------------
+KMEANS Stability:
+  Mean stability: 0.709 ± 0.228
+  Range: 0.386 - 0.980
+
+HIERARCHICAL Stability:
+  Mean stability: 0.420 ± 0.117
+  Range: 0.168 - 0.688
+
+DETAILED CLUSTER ANALYSIS (K-MEANS)
+----------------------------------------
+CLUSTER 0
+~~~~~~~~~~~~~~~~~~~~
+  Size: 720 races (28.2%)
+  Finishers: 127.5 ± 32.5
+  Winning time: 4.02 ± 0.82 hours
+  Years: 2010-2024
+  Categories: d1: 347, wt: 204, pro: 169
+  Top competitions: Stage: 01: 152, Stage: 02: 142, Stage: 03: 122
+
+CLUSTER 1
+~~~~~~~~~~~~~~~~~~~~
+  Size: 472 races (18.5%)
+  Finishers: 141.3 ± 28.8
+  Winning time: 4.41 ± 0.82 hours
+  Years: 2010-2024
+  Categories: wt: 312, d1: 102, pro: 58
+  Top competitions: Stage: 04: 52, Stage: 03: 49, Stage: 06: 33
+
+CLUSTER 2
+~~~~~~~~~~~~~~~~~~~~
+  Size: 1363 races (53.3%)
+  Finishers: 127.6 ± 30.8
+  Winning time: 4.17 ± 0.78 hours
+  Years: 2010-2024
+  Categories: d1: 517, wt: 450, pro: 396
+  Top competitions: Stage: 03: 273, Stage: 04: 256, Stage: 02: 222
+
+KEY INSIGHTS
+----------------------------------------
+1. No-breakdown races show natural clustering patterns despite statistical consistency
+2. Clusters may represent different race dynamics or terrain characteristics
+3. Feature gradients provide sufficient discriminatory power for classification
+4. Winning time and race category show some correlation with clusters
+
+RECOMMENDATIONS
+----------------------------------------
+1. Use K-means with 3 clusters for practical race kind classification
+2. Consider hierarchical clustering for more granular analysis
+3. Validate clusters against external race characteristics
+4. Investigate what drives the clustering patterns (terrain, tactics, etc.)

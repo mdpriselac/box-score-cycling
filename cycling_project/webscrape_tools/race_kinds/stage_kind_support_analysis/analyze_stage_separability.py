@@ -163,6 +163,7 @@ def analyze_gradient_feature_category(df: pd.DataFrame, feature_prefix: str) -> 
     slope_col = f"{feature_prefix}_slope"
     volatility_col = f"{feature_prefix}_volatility"
     monotonicity_col = f"{feature_prefix}_monotonicity"
+    directional_changes_col = f"{feature_prefix}_directional_changes"
     values_col = f"{feature_prefix}_values"
     
     results = {
@@ -172,6 +173,7 @@ def analyze_gradient_feature_category(df: pd.DataFrame, feature_prefix: str) -> 
         'slope_analysis': {},
         'volatility_analysis': {},
         'monotonicity_analysis': {},
+        'directional_changes_analysis': {},
         'values_analysis': {},
         'combined_separability_score': 0,
         'quality_indicators': {}
@@ -181,9 +183,10 @@ def analyze_gradient_feature_category(df: pd.DataFrame, feature_prefix: str) -> 
     slope_available = slope_col in df.columns and not df[slope_col].isna().all()
     volatility_available = volatility_col in df.columns and not df[volatility_col].isna().all()
     monotonicity_available = monotonicity_col in df.columns and not df[monotonicity_col].isna().all()
+    directional_changes_available = directional_changes_col in df.columns and not df[directional_changes_col].isna().all()
     values_available = values_col in df.columns and not df[values_col].isna().all()
     
-    if not any([slope_available, volatility_available, monotonicity_available, values_available]):
+    if not any([slope_available, volatility_available, monotonicity_available, directional_changes_available, values_available]):
         return results
     
     results['competitions_with_data'] = len(df[df[slope_col].notna()]) if slope_available else 0
@@ -202,6 +205,11 @@ def analyze_gradient_feature_category(df: pd.DataFrame, feature_prefix: str) -> 
     if monotonicity_available:
         monotonicity_values = df[monotonicity_col].dropna().tolist()
         results['monotonicity_analysis'] = calculate_separability_metrics(monotonicity_values)
+    
+    # Analyze directional changes
+    if directional_changes_available:
+        directional_changes_values = df[directional_changes_col].dropna().tolist()
+        results['directional_changes_analysis'] = calculate_separability_metrics(directional_changes_values)
     
     # Analyze values arrays (gradient evolution patterns)
     if values_available:
@@ -240,6 +248,9 @@ def analyze_gradient_feature_category(df: pd.DataFrame, feature_prefix: str) -> 
     if monotonicity_available and results['monotonicity_analysis'].get('std', 0) > 0:
         score_components.append(results['monotonicity_analysis']['std'])
     
+    if directional_changes_available and results['directional_changes_analysis'].get('cv', 0) > 0:
+        score_components.append(results['directional_changes_analysis']['cv'])
+    
     if values_available and results['values_analysis'].get('gradient_ranges', {}).get('cv', 0) > 0:
         score_components.append(results['values_analysis']['gradient_ranges']['cv'])
     
@@ -251,8 +262,9 @@ def analyze_gradient_feature_category(df: pd.DataFrame, feature_prefix: str) -> 
         'has_slope_data': slope_available,
         'has_volatility_data': volatility_available,
         'has_monotonicity_data': monotonicity_available,
+        'has_directional_changes_data': directional_changes_available,
         'has_values_data': values_available,
-        'feature_coverage': sum([slope_available, volatility_available, monotonicity_available, values_available]) / 4
+        'feature_coverage': sum([slope_available, volatility_available, monotonicity_available, directional_changes_available, values_available]) / 5
     }
     
     return results
@@ -530,6 +542,11 @@ def generate_text_report(df: pd.DataFrame, all_results: Dict[str, Dict],
             if results['monotonicity_analysis']:
                 mono = results['monotonicity_analysis']
                 report.append(f"  Monotonicity - Range: {mono.get('range', 0):.3f}, Std: {mono.get('std', 0):.3f}, Distinct: {mono.get('distinct_values', 0)}")
+            
+            # Directional changes analysis
+            if results['directional_changes_analysis']:
+                dc = results['directional_changes_analysis']
+                report.append(f"  Directional Changes - Range: {dc.get('range', 0):.0f}, CV: {dc.get('cv', 0):.3f}, Std: {dc.get('std', 0):.2f}")
         
         elif 'breakdown_analysis' in results:
             # Quality indicator analysis

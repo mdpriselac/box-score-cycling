@@ -20,6 +20,7 @@ class GradientMetrics:
     slope: float
     volatility: float
     monotonicity: float
+    directional_changes: int
     imputed_flags: Optional[List[bool]] = None
 
 
@@ -69,15 +70,25 @@ class GradientCalculator:
                 monotonicity = (increasing - decreasing) / total_steps
             else:
                 monotonicity = 0
+            
+            # Directional changes (zig-zag indicator)
+            directional_changes = 0
+            if len(steps) > 1:
+                for i in range(1, len(steps)):
+                    # Check if sign changes between consecutive steps
+                    if (steps[i-1] > 0 and steps[i] < 0) or (steps[i-1] < 0 and steps[i] > 0):
+                        directional_changes += 1
         else:
             volatility = 0
             monotonicity = 0
+            directional_changes = 0
         
         return GradientMetrics(
             values=valid_values.tolist(),
             slope=slope,
             volatility=volatility,
-            monotonicity=monotonicity
+            monotonicity=monotonicity,
+            directional_changes=directional_changes
         )
     
     def impute_missing_values(self, values: List[Optional[float]], 
@@ -377,7 +388,8 @@ class GradientCalculator:
                     'variance_normalized_values': json.dumps(g.values),
                     'variance_normalized_slope': g.slope,
                     'variance_normalized_volatility': g.volatility,
-                    'variance_normalized_monotonicity': g.monotonicity
+                    'variance_normalized_monotonicity': g.monotonicity,
+                    'variance_normalized_directional_changes': g.directional_changes
                 })
             
             return result

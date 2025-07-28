@@ -27,22 +27,26 @@ CREATE TABLE IF NOT EXISTS race_feature_gradients (
     variance_absolute_slope REAL,  -- Overall slope from 100 to lowest valid
     variance_absolute_volatility REAL,  -- Standard deviation of step changes
     variance_absolute_monotonicity REAL,  -- Degree of monotonic behavior (-1 to 1)
+    variance_absolute_directional_changes INTEGER,  -- Count of directional changes in gradient
     
     variance_normalized_values TEXT,
     variance_normalized_slope REAL,
     variance_normalized_volatility REAL,
     variance_normalized_monotonicity REAL,
+    variance_normalized_directional_changes INTEGER,
     
     -- Skewness gradients
     skewness_absolute_values TEXT,
     skewness_absolute_slope REAL,
     skewness_absolute_volatility REAL,
     skewness_absolute_monotonicity REAL,
+    skewness_absolute_directional_changes INTEGER,
     
     skewness_normalized_values TEXT,
     skewness_normalized_slope REAL,
     skewness_normalized_volatility REAL,
     skewness_normalized_monotonicity REAL,
+    skewness_normalized_directional_changes INTEGER,
     
     -- Kurtosis gradients (with imputation flags)
     kurtosis_absolute_values TEXT,
@@ -50,50 +54,59 @@ CREATE TABLE IF NOT EXISTS race_feature_gradients (
     kurtosis_absolute_slope REAL,
     kurtosis_absolute_volatility REAL,
     kurtosis_absolute_monotonicity REAL,
+    kurtosis_absolute_directional_changes INTEGER,
     
     kurtosis_normalized_values TEXT,
     kurtosis_normalized_imputed_flags TEXT,
     kurtosis_normalized_slope REAL,
     kurtosis_normalized_volatility REAL,
     kurtosis_normalized_monotonicity REAL,
+    kurtosis_normalized_directional_changes INTEGER,
     
     -- Other statistical features
     gini_coefficient_values TEXT,
     gini_coefficient_slope REAL,
     gini_coefficient_volatility REAL,
     gini_coefficient_monotonicity REAL,
+    gini_coefficient_directional_changes INTEGER,
     
     -- Engineered metrics gradients
     clumpiness_score_values TEXT,
     clumpiness_score_slope REAL,
     clumpiness_score_volatility REAL,
     clumpiness_score_monotonicity REAL,
+    clumpiness_score_directional_changes INTEGER,
     
     selection_metric_values TEXT,
     selection_metric_slope REAL,
     selection_metric_volatility REAL,
     selection_metric_monotonicity REAL,
+    selection_metric_directional_changes INTEGER,
     
     biggest_group_metric_values TEXT,
     biggest_group_metric_slope REAL,
     biggest_group_metric_volatility REAL,
     biggest_group_metric_monotonicity REAL,
+    biggest_group_metric_directional_changes INTEGER,
     
     -- Nth percentile gap gradients (only valid above 20th percentile)
     nth_percentile_gap_5_values TEXT,
     nth_percentile_gap_5_slope REAL,
     nth_percentile_gap_5_volatility REAL,
     nth_percentile_gap_5_monotonicity REAL,
+    nth_percentile_gap_5_directional_changes INTEGER,
     
     nth_percentile_gap_25_values TEXT,
     nth_percentile_gap_25_slope REAL,
     nth_percentile_gap_25_volatility REAL,
     nth_percentile_gap_25_monotonicity REAL,
+    nth_percentile_gap_25_directional_changes INTEGER,
     
     nth_percentile_gap_50_values TEXT,
     nth_percentile_gap_50_slope REAL,
     nth_percentile_gap_50_volatility REAL,
     nth_percentile_gap_50_monotonicity REAL,
+    nth_percentile_gap_50_directional_changes INTEGER,
     
     -- Competition metadata (denormalized for convenience)
     competition_name TEXT,
