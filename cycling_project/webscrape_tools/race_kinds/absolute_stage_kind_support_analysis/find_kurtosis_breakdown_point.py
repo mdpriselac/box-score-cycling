@@ -60,7 +60,7 @@ def find_kurtosis_breakdown_for_competition(conn: sqlite3.Connection,
     Find the percentile at which kurtosis breaks down (becomes NULL) for a competition.
     Returns the percentile value or None if no breakdown occurs.
     """
-    
+    null_percentiles = []
     for percentile in percentile_tables:
         table_name = f"race_features_{percentile}"
         
@@ -76,10 +76,13 @@ def find_kurtosis_breakdown_for_competition(conn: sqlite3.Connection,
         
         if result and result[0] is None:
             # Found the breakdown point
-            return percentile
+            null_percentiles.append(percentile)
     
-    return None  # No breakdown found
-
+    #if len(null_percentiles) > 0:
+    if len(null_percentiles) > 0:
+        return max(null_percentiles)  # Return the highest percentile with breakdown
+    else:
+        return None
 
 def get_all_breakdown_points(conn: sqlite3.Connection) -> Dict[int, Optional[int]]:
     """

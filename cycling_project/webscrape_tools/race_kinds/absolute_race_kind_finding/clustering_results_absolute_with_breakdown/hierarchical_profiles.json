@@ -1,0 +1,129 @@
+[
+  {
+    "cluster_id":0,
+    "n_races":1760,
+    "avg_finishers":130.2920454545,
+    "avg_winning_time":3.7606344697,
+    "avg_breakdown_point":74.4886363636,
+    "breakdown_distribution":{
+      "85":239,
+      "90":229,
+      "80":187,
+      "60":178,
+      "75":173,
+      "50":151,
+      "65":143,
+      "55":143,
+      "70":139,
+      "95":136,
+      "100":42
+    },
+    "categories":{
+      "d1":741,
+      "pro":562,
+      "wt":457
+    },
+    "top_competitions":{
+      "Stage: 01":443,
+      "Stage: 02":383,
+      "Stage: 03":241,
+      "Stage: 04":207,
+      "Stage: 05":188
+    },
+    "year_range":"2010-2024",
+    "f_30th_percentile_gap_p30_mean":0.0,
+    "f_30th_percentile_gap_p30_std":0.0,
+    "f_20th_percentile_gap_p45_mean":0.0,
+    "f_20th_percentile_gap_p45_std":0.0,
+    "f_15th_percentile_gap_p60_mean":0.0,
+    "f_15th_percentile_gap_p60_std":0.0
+  },
+  {
+    "cluster_id":1,
+    "n_races":2,
+    "avg_finishers":117.0,
+    "avg_winning_time":4.1055555556,
+    "avg_breakdown_point":10.0,
+    "breakdown_distribution":{
+      "10":2
+    },
+    "categories":{
+      "pro":1,
+      "wt":1
+    },
+    "top_competitions":{
+      "Stage: 04":2
+    },
+    "year_range":"2010-2015",
+    "f_30th_percentile_gap_p30_mean":2.65,
+    "f_30th_percentile_gap_p30_std":0.4949747468,
+    "f_20th_percentile_gap_p45_mean":4.3,
+    "f_20th_percentile_gap_p45_std":0.4242640687,
+    "f_15th_percentile_gap_p60_mean":5.125,
+    "f_15th_percentile_gap_p60_std":0.8838834765
+  },
+  {
+    "cluster_id":2,
+    "n_races":976,
+    "avg_finishers":129.0307377049,
+    "avg_winning_time":3.9377120332,
+    "avg_breakdown_point":28.2172131148,
+    "breakdown_distribution":{
+      "40":135,
+      "30":134,
+      "45":132,
+      "20":131,
+      "35":118,
+      "15":116,
+      "25":106,
+      "10":104
+    },
+    "categories":{
+      "d1":405,
+      "pro":288,
+      "wt":283
+    },
+    "top_competitions":{
+      "Stage: 01":172,
+      "Stage: 02":168,
+      "Stage: 03":166,
+      "Stage: 04":159,
+      "Stage: 05":120
+    },
+    "year_range":"2010-2024",
+    "f_30th_percentile_gap_p30_mean":0.0006147541,
+    "f_30th_percentile_gap_p30_std":0.019205532,
+    "f_20th_percentile_gap_p45_mean":0.0,
+    "f_20th_percentile_gap_p45_std":0.0,
+    "f_15th_percentile_gap_p60_mean":0.0,
+    "f_15th_percentile_gap_p60_std":0.0
+  },
+  {
+    "cluster_id":3,
+    "n_races":5,
+    "avg_finishers":129.2,
+    "avg_winning_time":4.3762777778,
+    "avg_breakdown_point":10.0,
+    "breakdown_distribution":{
+      "10":5
+    },
+    "categories":{
+      "pro":3,
+      "d1":2
+    },
+    "top_competitions":{
+      "Stage: 03":1,
+      "Stage: 02":1,
+      "Stage: 08":1,
+      "Stage: 05":1,
+      "Stage: 07":1
+    },
+    "year_range":"2012-2024",
+    "f_30th_percentile_gap_p30_mean":0.08,
+    "f_30th_percentile_gap_p30_std":0.1788854382,
+    "f_20th_percentile_gap_p45_mean":0.56,
+    "f_20th_percentile_gap_p45_std":0.5366563146,
+    "f_15th_percentile_gap_p60_mean":1.2,
+    "f_15th_percentile_gap_p60_std":0.3741657387
+  }
+]

@@ -1,0 +1,48 @@
+{
+  "subset": "absolute_with_breakdown",
+  "feature_names": [
+    "f_30th_percentile_gap_p30",
+    "f_20th_percentile_gap_p45",
+    "f_15th_percentile_gap_p60",
+    "kurtosis_breakdown_point"
+  ],
+  "n_races": 2743,
+  "n_features": 4,
+  "feature_combinations": [
+    {
+      "feature": "\"30th_percentile_gap\"",
+      "percentile": 30,
+      "score": 15.991622894002925
+    },
+    {
+      "feature": "\"20th_percentile_gap\"",
+      "percentile": 45,
+      "score": 14.501432579366067
+    },
+    {
+      "feature": "\"15th_percentile_gap\"",
+      "percentile": 60,
+      "score": 12.588970524567168
+    }
+  ],
+  "clustering_results": {
+    "kmeans": {
+      "n_clusters": 4,
+      "cluster_sizes": {
+        "2": 1466,
+        "0": 1271,
+        "3": 4,
+        "1": 2
+      }
+    },
+    "hierarchical": {
+      "n_clusters": 4,
+      "cluster_sizes": {
+        "0": 1760,
+        "2": 976,
+        "3": 5,
+        "1": 2
+      }
+    }
+  }
+}

@@ -1,0 +1,205 @@
+FEATURE IMPORTANCE ANALYSIS SUMMARY
+==================================================
+
+CLUSTER 0
+--------------------
+
+Critical Importance (3 features):
+  • f_skewness_absolute_p55
+    Score: 2.912
+    extremely lower than population average (-5661.1%), extremely lower than other clusters (-967.1%) - highly significant
+
+  • f_skewness_normalized_p55
+    Score: 2.912
+    extremely lower than population average (-5661.1%), extremely lower than other clusters (-967.1%) - highly significant
+
+  • f_skewness_normalized_p50
+    Score: 2.595
+    extremely lower than population average (-6452.1%), extremely lower than other clusters (-1367.4%) - highly significant
+
+
+High Importance (2 features):
+  • f_skewness_absolute_p50
+    Score: 2.595
+    extremely lower than population average (-6452.1%), extremely lower than other clusters (-1367.4%) - highly significant
+
+  • f_skewness_absolute_p45
+    Score: 2.265
+    extremely lower than population average (-2024.9%), extremely lower than other clusters (-2369.4%) - highly significant
+
+
+Moderate Importance (2 features):
+  • f_skewness_normalized_p45
+    Score: 2.265
+    extremely lower than population average (-2024.9%), extremely lower than other clusters (-2369.4%) - highly significant
+
+  • f_skewness_absolute_p60
+    Score: 1.010
+    extremely lower than population average (-872.4%), extremely lower than other clusters (-521.1%) - highly significant
+
+
+Low Importance (3 features):
+  • f_skewness_normalized_p60
+    Score: 1.010
+    extremely lower than population average (-872.4%), extremely lower than other clusters (-521.1%) - highly significant
+
+  • f_skewness_normalized_p65
+    Score: 0.093
+    dramatically lower than population average (-103.5%), dramatically lower than other clusters (-103.2%) - not significant
+
+  • f_skewness_absolute_p65
+    Score: 0.093
+    dramatically lower than population average (-103.5%), dramatically lower than other clusters (-103.2%) - not significant
+
+
+CLUSTER 1
+--------------------
+
+Critical Importance (3 features):
+  • f_skewness_absolute_p65
+    Score: 7.413
+    extremely lower than population average (-3473.8%), extremely lower than other clusters (-1120.7%) - highly significant
+
+  • f_skewness_normalized_p65
+    Score: 7.413
+    extremely lower than population average (-3473.8%), extremely lower than other clusters (-1120.7%) - highly significant
+
+  • f_skewness_normalized_p60
+    Score: 7.020
+    extremely lower than population average (-4419.2%), extremely lower than other clusters (-1198.3%) - highly significant
+
+
+High Importance (2 features):
+  • f_skewness_absolute_p60
+    Score: 7.020
+    extremely lower than population average (-4419.2%), extremely lower than other clusters (-1198.3%) - highly significant
+
+  • f_skewness_normalized_p55
+    Score: 6.140
+    extremely lower than population average (-10933.0%), extremely lower than other clusters (-1412.3%) - highly significant
+
+
+Moderate Importance (2 features):
+  • f_skewness_absolute_p55
+    Score: 6.140
+    extremely lower than population average (-10933.0%), extremely lower than other clusters (-1412.3%) - highly significant
+
+  • f_skewness_absolute_p50
+    Score: 5.444
+    extremely lower than population average (-12675.4%), extremely lower than other clusters (-1823.7%) - highly significant
+
+
+Low Importance (3 features):
+  • f_skewness_normalized_p50
+    Score: 5.444
+    extremely lower than population average (-12675.4%), extremely lower than other clusters (-1823.7%) - highly significant
+
+  • f_skewness_absolute_p45
+    Score: 4.841
+    extremely lower than population average (-4116.1%), extremely lower than other clusters (-2535.0%) - highly significant
+
+  • f_skewness_normalized_p45
+    Score: 4.841
+    extremely lower than population average (-4116.1%), extremely lower than other clusters (-2535.0%) - highly significant
+
+
+CLUSTER 2
+--------------------
+
+Critical Importance (3 features):
+  • f_skewness_absolute_p45
+    Score: 2.443
+    extremely higher than population average (+724.0%), dramatically higher than other clusters (+119.4%) - highly significant
+
+  • f_skewness_normalized_p45
+    Score: 2.443
+    extremely higher than population average (+724.0%), dramatically higher than other clusters (+119.4%) - highly significant
+
+  • f_skewness_absolute_p50
+    Score: 1.930
+    extremely higher than population average (+1729.2%), dramatically higher than other clusters (+121.6%) - highly significant
+
+
+High Importance (2 features):
+  • f_skewness_normalized_p50
+    Score: 1.930
+    extremely higher than population average (+1729.2%), dramatically higher than other clusters (+121.6%) - highly significant
+
+  • f_skewness_absolute_p55
+    Score: 1.526
+    extremely higher than population average (+1134.3%), dramatically higher than other clusters (+125.8%) - highly significant
+
+
+Moderate Importance (2 features):
+  • f_skewness_normalized_p55
+    Score: 1.526
+    extremely higher than population average (+1134.3%), dramatically higher than other clusters (+125.8%) - highly significant
+
+  • f_skewness_absolute_p60
+    Score: 1.218
+    extremely higher than population average (+344.6%), dramatically higher than other clusters (+132.1%) - highly significant
+
+
+Low Importance (3 features):
+  • f_skewness_normalized_p60
+    Score: 1.218
+    extremely higher than population average (+344.6%), dramatically higher than other clusters (+132.1%) - highly significant
+
+  • f_skewness_absolute_p65
+    Score: 1.030
+    extremely higher than population average (+225.5%), dramatically higher than other clusters (+137.3%) - highly significant
+
+  • f_skewness_normalized_p65
+    Score: 1.030
+    extremely higher than population average (+225.5%), dramatically higher than other clusters (+137.3%) - highly significant
+
+
+CLUSTER 3
+--------------------
+
+Critical Importance (3 features):
+  • f_skewness_normalized_p45
+    Score: 3.418
+    extremely lower than population average (-3995.9%), extremely lower than other clusters (-6806.6%) - highly significant
+
+  • f_skewness_absolute_p45
+    Score: 3.418
+    extremely lower than population average (-3995.9%), extremely lower than other clusters (-6806.6%) - highly significant
+
+  • f_skewness_normalized_p55
+    Score: 2.503
+    extremely higher than population average (+6547.2%), extremely higher than other clusters (+4155.3%) - highly significant
+
+
+High Importance (2 features):
+  • f_skewness_absolute_p55
+    Score: 2.503
+    extremely higher than population average (+6547.2%), extremely higher than other clusters (+4155.3%) - highly significant
+
+  • f_skewness_normalized_p60
+    Score: 1.901
+    extremely higher than population average (+1843.0%), extremely higher than other clusters (+7457.4%) - highly significant
+
+
+Moderate Importance (2 features):
+  • f_skewness_absolute_p60
+    Score: 1.901
+    extremely higher than population average (+1843.0%), extremely higher than other clusters (+7457.4%) - highly significant
+
+  • f_skewness_normalized_p65
+    Score: 1.474
+    extremely higher than population average (+1088.8%), extremely higher than other clusters (+2018.8%) - highly significant
+
+
+Low Importance (3 features):
+  • f_skewness_absolute_p65
+    Score: 1.474
+    extremely higher than population average (+1088.8%), extremely higher than other clusters (+2018.8%) - highly significant
+
+  • f_skewness_normalized_p50
+    Score: 0.199
+    extremely lower than population average (-1335.1%), extremely lower than other clusters (-3007.3%) - not significant
+
+  • f_skewness_absolute_p50
+    Score: 0.199
+    extremely lower than population average (-1335.1%), extremely lower than other clusters (-3007.3%) - not significant

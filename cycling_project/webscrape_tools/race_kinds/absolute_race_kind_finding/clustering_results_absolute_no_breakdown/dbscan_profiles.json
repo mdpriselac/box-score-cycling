@@ -1,0 +1,80 @@
+[
+  {
+    "cluster_id":0,
+    "n_races":2181,
+    "avg_finishers":131.1279229711,
+    "avg_winning_time":4.1906322278,
+    "categories":{
+      "wt":871,
+      "d1":777,
+      "pro":533
+    },
+    "top_competitions":{
+      "Stage: 03":376,
+      "Stage: 04":352,
+      "Stage: 02":310,
+      "Stage: 05":252,
+      "Stage: 01":198
+    },
+    "year_range":"2010-2024",
+    "skewness_normalized_p50_mean":0.1943435098,
+    "skewness_normalized_p50_std":1.2004792685,
+    "skewness_absolute_p50_mean":0.1943435098,
+    "skewness_absolute_p50_std":1.2004792685,
+    "skewness_normalized_p55_mean":0.1242928834,
+    "skewness_normalized_p55_std":1.2153912952,
+    "skewness_absolute_p55_mean":0.1242928834,
+    "skewness_absolute_p55_std":1.2153912952,
+    "skewness_normalized_p45_mean":0.2652924464,
+    "skewness_normalized_p45_std":1.1907349856,
+    "skewness_absolute_p45_mean":0.2652924464,
+    "skewness_absolute_p45_std":1.1907349856,
+    "skewness_normalized_p60_mean":0.0517110833,
+    "skewness_normalized_p60_std":1.2367701066,
+    "skewness_absolute_p60_mean":0.0517110833,
+    "skewness_absolute_p60_std":1.2367701066,
+    "skewness_normalized_p65_mean":-0.0096606971,
+    "skewness_normalized_p65_std":1.2666655105,
+    "skewness_absolute_p65_mean":-0.0096606971,
+    "skewness_absolute_p65_std":1.2666655105
+  },
+  {
+    "cluster_id":1,
+    "n_races":10,
+    "avg_finishers":106.3,
+    "avg_winning_time":3.8956666667,
+    "categories":{
+      "d1":8,
+      "wt":1,
+      "pro":1
+    },
+    "top_competitions":{
+      "Stage: 02":3,
+      "Stage: 05":3,
+      "Stage: 01":2,
+      "Stage: 03":1,
+      "Stage: 04":1
+    },
+    "year_range":"2012-2024",
+    "skewness_normalized_p50_mean":-6.716387054,
+    "skewness_normalized_p50_std":0.1854738173,
+    "skewness_absolute_p50_mean":-6.7163870541,
+    "skewness_absolute_p50_std":0.1854738173,
+    "skewness_normalized_p55_mean":-7.0497697205,
+    "skewness_normalized_p55_std":0.2034985912,
+    "skewness_absolute_p55_mean":-7.0497697205,
+    "skewness_absolute_p55_std":0.2034985912,
+    "skewness_normalized_p45_mean":-6.3116792357,
+    "skewness_normalized_p45_std":0.1720866254,
+    "skewness_absolute_p45_mean":-6.3116792357,
+    "skewness_absolute_p45_std":0.1720866254,
+    "skewness_normalized_p60_mean":-7.3887230692,
+    "skewness_normalized_p60_std":0.2087748486,
+    "skewness_absolute_p60_mean":-7.3887230692,
+    "skewness_absolute_p60_std":0.2087748486,
+    "skewness_normalized_p65_mean":-7.7027267484,
+    "skewness_normalized_p65_std":0.2086957256,
+    "skewness_absolute_p65_mean":-7.7027267484,
+    "skewness_absolute_p65_std":0.2086957256
+  }
+]

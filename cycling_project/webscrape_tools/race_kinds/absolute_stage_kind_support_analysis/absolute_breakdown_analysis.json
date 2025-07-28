@@ -1,16 +1,31 @@
 {
   "analysis_metadata": {
-    "generated_date": "2025-07-27T21:44:05.321961",
+    "generated_date": "2025-07-28T06:30:04.463902",
     "total_competitions": 2743,
     "filter_criteria": "stage competitions with 90 min < winning_time <= 8 hours AND kurtosis breakdown",
     "features_analyzed": 39,
     "percentiles_analyzed": 19
   },
   "breakdown_distribution": {
-    "10": 2412,
-    "15": 313,
-    "20": 17,
-    "25": 1
+    "75": 173,
+    "45": 132,
+    "40": 135,
+    "15": 116,
+    "95": 136,
+    "50": 151,
+    "10": 111,
+    "85": 239,
+    "65": 143,
+    "55": 143,
+    "60": 178,
+    "70": 139,
+    "90": 229,
+    "20": 131,
+    "80": 187,
+    "35": 118,
+    "30": 134,
+    "100": 42,
+    "25": 106
   },
   "feature_results": {
     "total_finishers": [
@@ -22471,8 +22486,8 @@
     ],
     "tier_summary": {
       "Fair": 574,
-      "Excellent": 2,
       "Good": 1,
+      "Excellent": 2,
       "Very Good": 1
     },
     "method_used": "gap_based"

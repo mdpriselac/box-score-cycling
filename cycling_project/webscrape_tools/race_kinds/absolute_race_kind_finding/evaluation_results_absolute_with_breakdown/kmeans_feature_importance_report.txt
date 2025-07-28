@@ -1,0 +1,91 @@
+FEATURE IMPORTANCE ANALYSIS SUMMARY
+==================================================
+
+CLUSTER 0
+--------------------
+
+Critical Importance (2 features):
+  • kurtosis_breakdown_point
+    Score: 3.755
+    moderately lower than population average (-41.6%), substantially lower than other clusters (-57.0%) - highly significant
+
+  • f_15th_percentile_gap_p60
+    Score: 0.060
+    substantially lower than population average (-89.4%), substantially lower than other clusters (-94.0%) - not significant
+
+
+High Importance (2 features):
+  • f_20th_percentile_gap_p45
+    Score: 0.058
+    substantially lower than population average (-100.0%), substantially lower than other clusters (-100.0%) - not significant
+
+  • f_30th_percentile_gap_p30
+    Score: 0.040
+    substantially lower than population average (-79.4%), substantially lower than other clusters (-87.8%) - not significant
+
+
+CLUSTER 1
+--------------------
+
+Critical Importance (4 features):
+  • f_30th_percentile_gap_p30
+    Score: 1.217
+    extremely higher than population average (+115280.2%), extremely higher than other clusters (+726265.0%) - not significant
+
+  • f_20th_percentile_gap_p45
+    Score: 1.135
+    extremely higher than population average (+103364.0%), extremely higher than other clusters (+420839.3%) - marginally significant
+
+  • f_15th_percentile_gap_p60
+    Score: 0.907
+    extremely higher than population average (+86410.0%), extremely higher than other clusters (+234027.1%) - not significant
+
+  • kurtosis_breakdown_point
+    Score: 0.054
+    substantially lower than population average (-82.7%), substantially lower than other clusters (-82.7%) - highly significant
+
+
+CLUSTER 2
+--------------------
+
+Critical Importance (2 features):
+  • kurtosis_breakdown_point
+    Score: 3.646
+    moderately higher than population average (+36.4%), dramatically higher than other clusters (+134.2%) - highly significant
+
+  • f_15th_percentile_gap_p60
+    Score: 0.074
+    substantially lower than population average (-100.0%), substantially lower than other clusters (-100.0%) - marginally significant
+
+
+High Importance (2 features):
+  • f_20th_percentile_gap_p45
+    Score: 0.063
+    substantially lower than population average (-100.0%), substantially lower than other clusters (-100.0%) - not significant
+
+  • f_30th_percentile_gap_p30
+    Score: 0.056
+    substantially lower than population average (-100.0%), substantially lower than other clusters (-100.0%) - not significant
+
+
+CLUSTER 3
+--------------------
+
+Critical Importance (2 features):
+  • f_15th_percentile_gap_p60
+    Score: 0.320
+    extremely higher than population average (+21844.0%), extremely higher than other clusters (+32123.5%) - significant
+
+  • f_20th_percentile_gap_p45
+    Score: 0.190
+    extremely higher than population average (+16743.0%), extremely higher than other clusters (+22194.2%) - not significant
+
+
+High Importance (2 features):
+  • kurtosis_breakdown_point
+    Score: 0.108
+    substantially lower than population average (-82.7%), substantially lower than other clusters (-82.7%) - highly significant
+
+  • f_30th_percentile_gap_p30
+    Score: 0.040
+    extremely higher than population average (+4254.0%), extremely higher than other clusters (+4542.4%) - not significant

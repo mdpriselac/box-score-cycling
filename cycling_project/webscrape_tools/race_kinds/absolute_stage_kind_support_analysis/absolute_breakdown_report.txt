@@ -1,7 +1,7 @@
 ================================================================================
 ABSOLUTE FEATURE ANALYSIS - STAGES WITH KURTOSIS BREAKDOWNS
 ================================================================================
-Generated: 2025-07-27 21:44:05
+Generated: 2025-07-28 06:30:04
 
 DATASET SUMMARY
 ----------------------------------------
@@ -11,10 +11,25 @@ Filter criteria: stage competitions with 90 min < winning_time <= 8 hours
 
 KURTOSIS BREAKDOWN DISTRIBUTION
 ----------------------------------------
-  At  10%: 2412 competitions ( 87.9%)
-  At  15%:  313 competitions ( 11.4%)
-  At  20%:   17 competitions (  0.6%)
-  At  25%:    1 competitions (  0.0%)
+  At  10%:  111 competitions (  4.0%)
+  At  15%:  116 competitions (  4.2%)
+  At  20%:  131 competitions (  4.8%)
+  At  25%:  106 competitions (  3.9%)
+  At  30%:  134 competitions (  4.9%)
+  At  35%:  118 competitions (  4.3%)
+  At  40%:  135 competitions (  4.9%)
+  At  45%:  132 competitions (  4.8%)
+  At  50%:  151 competitions (  5.5%)
+  At  55%:  143 competitions (  5.2%)
+  At  60%:  178 competitions (  6.5%)
+  At  65%:  143 competitions (  5.2%)
+  At  70%:  139 competitions (  5.1%)
+  At  75%:  173 competitions (  6.3%)
+  At  80%:  187 competitions (  6.8%)
+  At  85%:  239 competitions (  8.7%)
+  At  90%:  229 competitions (  8.3%)
+  At  95%:  136 competitions (  5.0%)
+  At 100%:   42 competitions (  1.5%)
 
 NATURAL QUALITY TIERS FOR FEATURE-PERCENTILE COMBINATIONS
 ------------------------------------------------------------
@@ -701,7 +716,7 @@ gini_coefficient               |       100 |  9.1849 |      100.0%
 RECOMMENDATIONS FOR CLASSIFYING BREAKDOWN STAGES
 --------------------------------------------------
 1. Focus on percentiles: 30, 45, 15
-2. Primary features: "15th_percentile_gap", "30th_percentile_gap", kurtosis_normalized, variance_normalized, variance_absolute
+2. Primary features: kurtosis_absolute, "15th_percentile_gap", "10th_percentile_gap", variance_normalized, kurtosis_normalized
 3. Consider using different features at different percentiles for optimal results
 4. Features related to distribution shape (kurtosis, skewness) show high separability
 

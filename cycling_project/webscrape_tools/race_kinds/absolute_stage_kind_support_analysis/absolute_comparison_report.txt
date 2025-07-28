@@ -1,7 +1,7 @@
 ==========================================================================================
 COMPARATIVE ANALYSIS: BREAKDOWN vs NO-BREAKDOWN STAGES
 ==========================================================================================
-Generated: 2025-07-27 21:44:31
+Generated: 2025-07-28 06:30:32
 
 DATASET SUMMARY
 ----------------------------------------
@@ -24,8 +24,8 @@ Rank | Feature                         | %ile | Breakdown | No-Break | Total   |
    2 | kurtosis_absolute              |   95 |    9.1565 |  11.9592 | 21.1157 |    -2.8026
    3 | kurtosis_normalized            |   90 |    8.4920 |  11.5226 | 20.0146 |    -3.0306
    4 | kurtosis_absolute              |   90 |    8.4687 |  11.5226 | 19.9913 |    -3.0539
-   5 | kurtosis_normalized            |  100 |    9.4891 |  10.1037 | 19.5927 |    -0.6146
-   6 | kurtosis_absolute              |  100 |    9.4891 |  10.1037 | 19.5927 |    -0.6146
+   5 | kurtosis_absolute              |  100 |    9.4891 |  10.1037 | 19.5927 |    -0.6146
+   6 | kurtosis_normalized            |  100 |    9.4891 |  10.1037 | 19.5927 |    -0.6146
 
 TOP BREAKDOWN-SPECIFIC FEATURES
 ----------------------------------------

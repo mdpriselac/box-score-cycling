@@ -1,6 +1,6 @@
 {
   "analysis_metadata": {
-    "generated_date": "2025-07-27T21:44:31.920249",
+    "generated_date": "2025-07-28T06:30:32.013761",
     "breakdown_competitions": 2743,
     "no_breakdown_competitions": 2555
   },
@@ -95,7 +95,7 @@
         "both_groups": true
       },
       {
-        "feature": "kurtosis_normalized",
+        "feature": "kurtosis_absolute",
         "percentile": 100,
         "breakdown_score": 9.489091373902927,
         "no_breakdown_score": 10.10365451527802,
@@ -106,7 +106,7 @@
         "both_groups": true
       },
       {
-        "feature": "kurtosis_absolute",
+        "feature": "kurtosis_normalized",
         "percentile": 100,
         "breakdown_score": 9.489091373902927,
         "no_breakdown_score": 10.10365451527802,
@@ -921,17 +921,6 @@
       },
       {
         "feature": "winning_time",
-        "percentile": 35,
-        "breakdown_score": 8.401282851935862,
-        "no_breakdown_score": 0,
-        "score_difference": 8.401282851935862,
-        "total_score": 8.401282851935862,
-        "breakdown_only": true,
-        "no_breakdown_only": false,
-        "both_groups": false
-      },
-      {
-        "feature": "winning_time",
         "percentile": 25,
         "breakdown_score": 8.401282851935862,
         "no_breakdown_score": 0,
@@ -943,7 +932,84 @@
       },
       {
         "feature": "winning_time",
+        "percentile": 45,
+        "breakdown_score": 8.401282851935862,
+        "no_breakdown_score": 0,
+        "score_difference": 8.401282851935862,
+        "total_score": 8.401282851935862,
+        "breakdown_only": true,
+        "no_breakdown_only": false,
+        "both_groups": false
+      },
+      {
+        "feature": "winning_time",
+        "percentile": 30,
+        "breakdown_score": 8.401282851935862,
+        "no_breakdown_score": 0,
+        "score_difference": 8.401282851935862,
+        "total_score": 8.401282851935862,
+        "breakdown_only": true,
+        "no_breakdown_only": false,
+        "both_groups": false
+      },
+      {
+        "feature": "winning_time",
         "percentile": 75,
+        "breakdown_score": 8.401282851935862,
+        "no_breakdown_score": 0,
+        "score_difference": 8.401282851935862,
+        "total_score": 8.401282851935862,
+        "breakdown_only": true,
+        "no_breakdown_only": false,
+        "both_groups": false
+      },
+      {
+        "feature": "winning_time",
+        "percentile": 35,
+        "breakdown_score": 8.401282851935862,
+        "no_breakdown_score": 0,
+        "score_difference": 8.401282851935862,
+        "total_score": 8.401282851935862,
+        "breakdown_only": true,
+        "no_breakdown_only": false,
+        "both_groups": false
+      },
+      {
+        "feature": "winning_time",
+        "percentile": 70,
+        "breakdown_score": 8.401282851935862,
+        "no_breakdown_score": 0,
+        "score_difference": 8.401282851935862,
+        "total_score": 8.401282851935862,
+        "breakdown_only": true,
+        "no_breakdown_only": false,
+        "both_groups": false
+      },
+      {
+        "feature": "winning_time",
+        "percentile": 60,
+        "breakdown_score": 8.401282851935862,
+        "no_breakdown_score": 0,
+        "score_difference": 8.401282851935862,
+        "total_score": 8.401282851935862,
+        "breakdown_only": true,
+        "no_breakdown_only": false,
+        "both_groups": false
+      },
+      {
+        "feature": "winning_time",
+        "percentile": 65,
+        "breakdown_score": 8.401282851935862,
+        "no_breakdown_score": 0,
+        "score_difference": 8.401282851935862,
+        "total_score": 8.401282851935862,
+        "breakdown_only": true,
+        "no_breakdown_only": false,
+        "both_groups": false
+      },
+      {
+        "feature": "winning_time",
+        "percentile": 50,
         "breakdown_score": 8.401282851935862,
         "no_breakdown_score": 0,
         "score_difference": 8.401282851935862,
@@ -966,72 +1032,6 @@
       {
         "feature": "winning_time",
         "percentile": 55,
-        "breakdown_score": 8.401282851935862,
-        "no_breakdown_score": 0,
-        "score_difference": 8.401282851935862,
-        "total_score": 8.401282851935862,
-        "breakdown_only": true,
-        "no_breakdown_only": false,
-        "both_groups": false
-      },
-      {
-        "feature": "winning_time",
-        "percentile": 65,
-        "breakdown_score": 8.401282851935862,
-        "no_breakdown_score": 0,
-        "score_difference": 8.401282851935862,
-        "total_score": 8.401282851935862,
-        "breakdown_only": true,
-        "no_breakdown_only": false,
-        "both_groups": false
-      },
-      {
-        "feature": "winning_time",
-        "percentile": 70,
-        "breakdown_score": 8.401282851935862,
-        "no_breakdown_score": 0,
-        "score_difference": 8.401282851935862,
-        "total_score": 8.401282851935862,
-        "breakdown_only": true,
-        "no_breakdown_only": false,
-        "both_groups": false
-      },
-      {
-        "feature": "winning_time",
-        "percentile": 30,
-        "breakdown_score": 8.401282851935862,
-        "no_breakdown_score": 0,
-        "score_difference": 8.401282851935862,
-        "total_score": 8.401282851935862,
-        "breakdown_only": true,
-        "no_breakdown_only": false,
-        "both_groups": false
-      },
-      {
-        "feature": "winning_time",
-        "percentile": 50,
-        "breakdown_score": 8.401282851935862,
-        "no_breakdown_score": 0,
-        "score_difference": 8.401282851935862,
-        "total_score": 8.401282851935862,
-        "breakdown_only": true,
-        "no_breakdown_only": false,
-        "both_groups": false
-      },
-      {
-        "feature": "winning_time",
-        "percentile": 45,
-        "breakdown_score": 8.401282851935862,
-        "no_breakdown_score": 0,
-        "score_difference": 8.401282851935862,
-        "total_score": 8.401282851935862,
-        "breakdown_only": true,
-        "no_breakdown_only": false,
-        "both_groups": false
-      },
-      {
-        "feature": "winning_time",
-        "percentile": 60,
         "breakdown_score": 8.401282851935862,
         "no_breakdown_score": 0,
         "score_difference": 8.401282851935862,
@@ -1407,17 +1407,6 @@
       },
       {
         "feature": "winning_time",
-        "percentile": 35,
-        "breakdown_score": 8.401282851935862,
-        "no_breakdown_score": 0,
-        "score_difference": 8.401282851935862,
-        "total_score": 8.401282851935862,
-        "breakdown_only": true,
-        "no_breakdown_only": false,
-        "both_groups": false
-      },
-      {
-        "feature": "winning_time",
         "percentile": 25,
         "breakdown_score": 8.401282851935862,
         "no_breakdown_score": 0,
@@ -1429,7 +1418,84 @@
       },
       {
         "feature": "winning_time",
+        "percentile": 45,
+        "breakdown_score": 8.401282851935862,
+        "no_breakdown_score": 0,
+        "score_difference": 8.401282851935862,
+        "total_score": 8.401282851935862,
+        "breakdown_only": true,
+        "no_breakdown_only": false,
+        "both_groups": false
+      },
+      {
+        "feature": "winning_time",
+        "percentile": 30,
+        "breakdown_score": 8.401282851935862,
+        "no_breakdown_score": 0,
+        "score_difference": 8.401282851935862,
+        "total_score": 8.401282851935862,
+        "breakdown_only": true,
+        "no_breakdown_only": false,
+        "both_groups": false
+      },
+      {
+        "feature": "winning_time",
         "percentile": 75,
+        "breakdown_score": 8.401282851935862,
+        "no_breakdown_score": 0,
+        "score_difference": 8.401282851935862,
+        "total_score": 8.401282851935862,
+        "breakdown_only": true,
+        "no_breakdown_only": false,
+        "both_groups": false
+      },
+      {
+        "feature": "winning_time",
+        "percentile": 35,
+        "breakdown_score": 8.401282851935862,
+        "no_breakdown_score": 0,
+        "score_difference": 8.401282851935862,
+        "total_score": 8.401282851935862,
+        "breakdown_only": true,
+        "no_breakdown_only": false,
+        "both_groups": false
+      },
+      {
+        "feature": "winning_time",
+        "percentile": 70,
+        "breakdown_score": 8.401282851935862,
+        "no_breakdown_score": 0,
+        "score_difference": 8.401282851935862,
+        "total_score": 8.401282851935862,
+        "breakdown_only": true,
+        "no_breakdown_only": false,
+        "both_groups": false
+      },
+      {
+        "feature": "winning_time",
+        "percentile": 60,
+        "breakdown_score": 8.401282851935862,
+        "no_breakdown_score": 0,
+        "score_difference": 8.401282851935862,
+        "total_score": 8.401282851935862,
+        "breakdown_only": true,
+        "no_breakdown_only": false,
+        "both_groups": false
+      },
+      {
+        "feature": "winning_time",
+        "percentile": 65,
+        "breakdown_score": 8.401282851935862,
+        "no_breakdown_score": 0,
+        "score_difference": 8.401282851935862,
+        "total_score": 8.401282851935862,
+        "breakdown_only": true,
+        "no_breakdown_only": false,
+        "both_groups": false
+      },
+      {
+        "feature": "winning_time",
+        "percentile": 50,
         "breakdown_score": 8.401282851935862,
         "no_breakdown_score": 0,
         "score_difference": 8.401282851935862,
@@ -1452,72 +1518,6 @@
       {
         "feature": "winning_time",
         "percentile": 55,
-        "breakdown_score": 8.401282851935862,
-        "no_breakdown_score": 0,
-        "score_difference": 8.401282851935862,
-        "total_score": 8.401282851935862,
-        "breakdown_only": true,
-        "no_breakdown_only": false,
-        "both_groups": false
-      },
-      {
-        "feature": "winning_time",
-        "percentile": 65,
-        "breakdown_score": 8.401282851935862,
-        "no_breakdown_score": 0,
-        "score_difference": 8.401282851935862,
-        "total_score": 8.401282851935862,
-        "breakdown_only": true,
-        "no_breakdown_only": false,
-        "both_groups": false
-      },
-      {
-        "feature": "winning_time",
-        "percentile": 70,
-        "breakdown_score": 8.401282851935862,
-        "no_breakdown_score": 0,
-        "score_difference": 8.401282851935862,
-        "total_score": 8.401282851935862,
-        "breakdown_only": true,
-        "no_breakdown_only": false,
-        "both_groups": false
-      },
-      {
-        "feature": "winning_time",
-        "percentile": 30,
-        "breakdown_score": 8.401282851935862,
-        "no_breakdown_score": 0,
-        "score_difference": 8.401282851935862,
-        "total_score": 8.401282851935862,
-        "breakdown_only": true,
-        "no_breakdown_only": false,
-        "both_groups": false
-      },
-      {
-        "feature": "winning_time",
-        "percentile": 50,
-        "breakdown_score": 8.401282851935862,
-        "no_breakdown_score": 0,
-        "score_difference": 8.401282851935862,
-        "total_score": 8.401282851935862,
-        "breakdown_only": true,
-        "no_breakdown_only": false,
-        "both_groups": false
-      },
-      {
-        "feature": "winning_time",
-        "percentile": 45,
-        "breakdown_score": 8.401282851935862,
-        "no_breakdown_score": 0,
-        "score_difference": 8.401282851935862,
-        "total_score": 8.401282851935862,
-        "breakdown_only": true,
-        "no_breakdown_only": false,
-        "both_groups": false
-      },
-      {
-        "feature": "winning_time",
-        "percentile": 60,
         "breakdown_score": 8.401282851935862,
         "no_breakdown_score": 0,
         "score_difference": 8.401282851935862,
@@ -2059,7 +2059,7 @@
         "both_groups": true
       },
       {
-        "feature": "kurtosis_normalized",
+        "feature": "kurtosis_absolute",
         "percentile": 100,
         "breakdown_score": 9.489091373902927,
         "no_breakdown_score": 10.10365451527802,
@@ -2070,7 +2070,7 @@
         "both_groups": true
       },
       {
-        "feature": "kurtosis_absolute",
+        "feature": "kurtosis_normalized",
         "percentile": 100,
         "breakdown_score": 9.489091373902927,
         "no_breakdown_score": 10.10365451527802,
@@ -2447,17 +2447,6 @@
       },
       {
         "feature": "winning_time",
-        "percentile": 35,
-        "breakdown_score": 8.401282851935862,
-        "no_breakdown_score": 0,
-        "score_difference": 8.401282851935862,
-        "total_score": 8.401282851935862,
-        "breakdown_only": true,
-        "no_breakdown_only": false,
-        "both_groups": false
-      },
-      {
-        "feature": "winning_time",
         "percentile": 25,
         "breakdown_score": 8.401282851935862,
         "no_breakdown_score": 0,
@@ -2469,7 +2458,84 @@
       },
       {
         "feature": "winning_time",
+        "percentile": 45,
+        "breakdown_score": 8.401282851935862,
+        "no_breakdown_score": 0,
+        "score_difference": 8.401282851935862,
+        "total_score": 8.401282851935862,
+        "breakdown_only": true,
+        "no_breakdown_only": false,
+        "both_groups": false
+      },
+      {
+        "feature": "winning_time",
+        "percentile": 30,
+        "breakdown_score": 8.401282851935862,
+        "no_breakdown_score": 0,
+        "score_difference": 8.401282851935862,
+        "total_score": 8.401282851935862,
+        "breakdown_only": true,
+        "no_breakdown_only": false,
+        "both_groups": false
+      },
+      {
+        "feature": "winning_time",
         "percentile": 75,
+        "breakdown_score": 8.401282851935862,
+        "no_breakdown_score": 0,
+        "score_difference": 8.401282851935862,
+        "total_score": 8.401282851935862,
+        "breakdown_only": true,
+        "no_breakdown_only": false,
+        "both_groups": false
+      },
+      {
+        "feature": "winning_time",
+        "percentile": 35,
+        "breakdown_score": 8.401282851935862,
+        "no_breakdown_score": 0,
+        "score_difference": 8.401282851935862,
+        "total_score": 8.401282851935862,
+        "breakdown_only": true,
+        "no_breakdown_only": false,
+        "both_groups": false
+      },
+      {
+        "feature": "winning_time",
+        "percentile": 70,
+        "breakdown_score": 8.401282851935862,
+        "no_breakdown_score": 0,
+        "score_difference": 8.401282851935862,
+        "total_score": 8.401282851935862,
+        "breakdown_only": true,
+        "no_breakdown_only": false,
+        "both_groups": false
+      },
+      {
+        "feature": "winning_time",
+        "percentile": 60,
+        "breakdown_score": 8.401282851935862,
+        "no_breakdown_score": 0,
+        "score_difference": 8.401282851935862,
+        "total_score": 8.401282851935862,
+        "breakdown_only": true,
+        "no_breakdown_only": false,
+        "both_groups": false
+      },
+      {
+        "feature": "winning_time",
+        "percentile": 65,
+        "breakdown_score": 8.401282851935862,
+        "no_breakdown_score": 0,
+        "score_difference": 8.401282851935862,
+        "total_score": 8.401282851935862,
+        "breakdown_only": true,
+        "no_breakdown_only": false,
+        "both_groups": false
+      },
+      {
+        "feature": "winning_time",
+        "percentile": 50,
         "breakdown_score": 8.401282851935862,
         "no_breakdown_score": 0,
         "score_difference": 8.401282851935862,
@@ -2492,72 +2558,6 @@
       {
         "feature": "winning_time",
         "percentile": 55,
-        "breakdown_score": 8.401282851935862,
-        "no_breakdown_score": 0,
-        "score_difference": 8.401282851935862,
-        "total_score": 8.401282851935862,
-        "breakdown_only": true,
-        "no_breakdown_only": false,
-        "both_groups": false
-      },
-      {
-        "feature": "winning_time",
-        "percentile": 65,
-        "breakdown_score": 8.401282851935862,
-        "no_breakdown_score": 0,
-        "score_difference": 8.401282851935862,
-        "total_score": 8.401282851935862,
-        "breakdown_only": true,
-        "no_breakdown_only": false,
-        "both_groups": false
-      },
-      {
-        "feature": "winning_time",
-        "percentile": 70,
-        "breakdown_score": 8.401282851935862,
-        "no_breakdown_score": 0,
-        "score_difference": 8.401282851935862,
-        "total_score": 8.401282851935862,
-        "breakdown_only": true,
-        "no_breakdown_only": false,
-        "both_groups": false
-      },
-      {
-        "feature": "winning_time",
-        "percentile": 30,
-        "breakdown_score": 8.401282851935862,
-        "no_breakdown_score": 0,
-        "score_difference": 8.401282851935862,
-        "total_score": 8.401282851935862,
-        "breakdown_only": true,
-        "no_breakdown_only": false,
-        "both_groups": false
-      },
-      {
-        "feature": "winning_time",
-        "percentile": 50,
-        "breakdown_score": 8.401282851935862,
-        "no_breakdown_score": 0,
-        "score_difference": 8.401282851935862,
-        "total_score": 8.401282851935862,
-        "breakdown_only": true,
-        "no_breakdown_only": false,
-        "both_groups": false
-      },
-      {
-        "feature": "winning_time",
-        "percentile": 45,
-        "breakdown_score": 8.401282851935862,
-        "no_breakdown_score": 0,
-        "score_difference": 8.401282851935862,
-        "total_score": 8.401282851935862,
-        "breakdown_only": true,
-        "no_breakdown_only": false,
-        "both_groups": false
-      },
-      {
-        "feature": "winning_time",
-        "percentile": 60,
         "breakdown_score": 8.401282851935862,
         "no_breakdown_score": 0,
         "score_difference": 8.401282851935862,
@@ -2657,7 +2657,7 @@
         "both_groups": true
       },
       {
-        "feature": "kurtosis_normalized",
+        "feature": "kurtosis_absolute",
         "percentile": 100,
         "breakdown_score": 9.489091373902927,
         "no_breakdown_score": 10.10365451527802,
@@ -2668,7 +2668,7 @@
         "both_groups": true
       },
       {
-        "feature": "kurtosis_absolute",
+        "feature": "kurtosis_normalized",
         "percentile": 100,
         "breakdown_score": 9.489091373902927,
         "no_breakdown_score": 10.10365451527802,
@@ -3478,7 +3478,7 @@
         "feature": "winning_time",
         "breakdown_score": 92.41411137129448,
         "no_breakdown_score": 0,
-        "best_percentile": 35,
+        "best_percentile": 25,
         "best_score": 8.401282851935862
       }
     ],

@@ -1,0 +1,40 @@
+{
+  "kmeans": {
+    "silhouette_score": 0.7053105814749522,
+    "calinski_harabasz_score": 1834.5629972467548,
+    "davies_bouldin_score": 0.9766469722740782,
+    "n_clusters": 3,
+    "n_noise": 0,
+    "stability": {
+      "method": "kmeans",
+      "n_bootstrap": 10,
+      "mean_stability": 0.9179789067997055,
+      "std_stability": 0.08143595674027074,
+      "min_stability": 0.7546302719443092,
+      "max_stability": 0.9949479094822465
+    }
+  },
+  "dbscan": {
+    "silhouette_score": 0.5028354208945184,
+    "calinski_harabasz_score": 186.1518792918165,
+    "davies_bouldin_score": 1.9336989028644285,
+    "n_clusters": 2,
+    "n_noise": 364,
+    "stability": null
+  },
+  "hierarchical": {
+    "silhouette_score": 0.6095429015923014,
+    "calinski_harabasz_score": 1436.191417078053,
+    "davies_bouldin_score": 1.1556702643902546,
+    "n_clusters": 4,
+    "n_noise": 0,
+    "stability": {
+      "method": "hierarchical",
+      "n_bootstrap": 10,
+      "mean_stability": 0.5471692652785146,
+      "std_stability": 0.23575235767930636,
+      "min_stability": 0.25566301059407326,
+      "max_stability": 0.8424619715710839
+    }
+  }
+}
