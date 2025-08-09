@@ -1,0 +1,95 @@
+====================================================================================================
+COMPREHENSIVE ALIGNED ANALYSIS SUMMARY
+====================================================================================================
+
+This report summarizes the two-stage analysis across all populations and K-values:
+1. Cross-reference alignment quality (how well master clusters align)
+2. Post-alignment feature consistency (how similar aligned clusters are)
+
+POPULATION: WITH_BREAKDOWN
+============================================================
+
+K=3:
+  Alignment Quality: 0.7863
+  Feature Consistency: 0.9125
+  Classification: ROBUST
+
+K=4:
+  Alignment Quality: 0.7697
+  Feature Consistency: 0.8591
+  Classification: ROBUST
+
+K=5:
+  Alignment Quality: 0.8098
+  Feature Consistency: 0.8276
+  Classification: ROBUST
+
+K=6:
+  Alignment Quality: 0.7961
+  Feature Consistency: 0.7653
+  Classification: ROBUST
+
+K=7:
+  Alignment Quality: 0.7980
+  Feature Consistency: 0.8125
+  Classification: ROBUST
+
+K=8:
+  Alignment Quality: 0.7849
+  Feature Consistency: 0.8414
+  Classification: ROBUST
+
+
+POPULATION: NO_BREAKDOWN
+============================================================
+
+K=3:
+  Alignment Quality: 0.9788
+  Feature Consistency: 0.9867
+  Classification: ROBUST
+
+K=4:
+  Alignment Quality: 0.9693
+  Feature Consistency: 0.9000
+  Classification: ROBUST
+
+K=5:
+  Alignment Quality: 0.9512
+  Feature Consistency: 0.8643
+  Classification: ROBUST
+
+K=6:
+  Alignment Quality: 0.9578
+  Feature Consistency: 0.8545
+  Classification: ROBUST
+
+K=7:
+  Alignment Quality: 0.9640
+  Feature Consistency: 0.9173
+  Classification: ROBUST
+
+K=8:
+  Alignment Quality: 0.9619
+  Feature Consistency: 0.8659
+  Classification: ROBUST
+
+
+OVERALL FINDINGS AND RECOMMENDATIONS
+============================================================
+
+Average Alignment Quality: 0.8773
+Average Feature Consistency: 0.8673
+
+CONCLUSION: ROBUST RACE TYPE SYSTEM
+- Race types are fundamental characteristics that appear consistently
+- Classification system is reliable across inclusion levels
+- Features represent universal race characteristics
+
+RECOMMENDATIONS:
+
+Best Performing Configurations:
+  no_breakdown K=3: Combined=0.983 (Align=0.979, Consist=0.987)
+  no_breakdown K=7: Combined=0.941 (Align=0.964, Consist=0.917)
+  no_breakdown K=4: Combined=0.935 (Align=0.969, Consist=0.900)
+  no_breakdown K=8: Combined=0.914 (Align=0.962, Consist=0.866)
+  no_breakdown K=5: Combined=0.908 (Align=0.951, Consist=0.864)

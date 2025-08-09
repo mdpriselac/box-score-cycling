@@ -1,0 +1,36 @@
+ABSOLUTE RACE KIND CLUSTERING - QUALITY EVALUATION REPORT
+============================================================
+
+EXECUTIVE SUMMARY
+--------------------
+Populations Analyzed: with_breakdown, no_breakdown
+Total Percentiles: 19
+
+CLUSTERING QUALITY BY POPULATION
+-----------------------------------
+With Breakdown:
+  Average Silhouette Score: 0.349
+  Quality Category: Moderate
+
+No Breakdown:
+  Average Silhouette Score: 0.215
+  Quality Category: Poor
+
+OPTIMAL K CONSENSUS
+--------------------
+With Breakdown:
+  Mean Consensus Score: 0.702
+  High Consensus Percentiles: 4
+
+No Breakdown:
+  Mean Consensus Score: 0.807
+  High Consensus Percentiles: 8
+
+RECOMMENDATIONS
+---------------
+1. Moderate clustering quality for with breakdown population (avg silhouette: 0.349) - consider alternative clustering approaches
+
+2. Consider revisiting feature selection for no breakdown population - clustering quality is poor (avg silhouette: 0.215)
+
+3. Low feature overlap between populations (0.20) - populations may have fundamentally different clustering characteristics
+

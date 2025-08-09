@@ -39,3 +39,18 @@ Have a look at those and design a similar system with similar reporting for the 
 The features we want to use for our purposes here include all the features in the race_feature_N tables except: id, competition_id, percentile_analyzed, extraction_date, competition_name, competition_type, race_id, race-name, race_category, race_year, race_date. Those are more information about races rather than features for predictions.
 
 Remember as you design the sql database code that columns that start with a number need to be quoted.
+
+# Pruning and Combining
+
+In earlier iterations of this project one of the consistent things we saw was that feature selection ended up picking the same stat, both normalized and absolute, across all the different inclusion percentages.
+
+I'd like to carry out this kind finding project in the following stages:
+
+- First, I'd liike to focus on each inclusion percentage. Within each inclusion percentage we want to come up with a set of features. The rules for selecting features are as follows: first, start with the highest rated feature from the absolute_stage_kind_support_analysis reports; second, for any stat that has both normalized and absolute, only include one of them, the higher performer; third, get rid of all other features that are correlated with an already included feature at over 90%.
+
+- Second, Now that we have our features, we want to create the kinds for that inclusion percentage based on those features. For each kind we want the feature importances and also which competitions are included in which kinds. When we're running our kind finding algoriths, we want to have our K means clustering algorithm consider 3-8 cluster counts. Let's also get evaluation metrics for each cluster count.
+
+- Third, we now have comprehensive data on kind creation across all our inclusion percentages. For each inclusion percentage we now have: a list of the features used for kind creation, at least k-means based clusters for a range of 3-8 clusters, the competition membership for each cluster, the feature importance for each cluster, the evaluation metrics for each cluster collection. Let's do an initial bit of reporting at this point:
+    - what are the features, if any, that appear in all inclusion percentages?
+    - For each inclusion percentage, what is the best cluster count by the evaluation metrics? how many other cluster counts are within 10% performance by evaluation metrics of the top cluster count?
+    - For each cluster count let's get a comparison between how similar the clusters are across the inclusion percentages when measured by the feature importances for each cluster. To do that we'll probably want a single 'cluster embedding' for all clusters that simply has all features on it as positions and their feature importance as the value. So each cluster for each inclusion percentage will have a a cluster embedding. From there we need to see how well the clusters match for each inclusion percentage. To do that we need to find, we need to correlate clusters. So, for example, if we're looking at the 3 cluster count, we need to have each inclusion cluster be assigned to master-cluster 0, master-cluster 1, or master-cluster 2. Each cluster must be put into one of the master-cluster and no cluster can bet put into more than one master-cluster. We don't need to worry about implementing this yet beyond creating the cluster embeddings for each cluster size and inclusion percentage. Once we have this data we can worry about developing and implementing a master-cluster assigning approach.

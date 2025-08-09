@@ -1,0 +1,167 @@
+====================================================================================================
+ALIGNED MASTER CLUSTER ANALYSIS REPORT
+Population: no_breakdown | K-Value: 7
+====================================================================================================
+
+STAGE 1: CROSS-REFERENCE ALIGNMENT QUALITY
+--------------------------------------------------
+Average Alignment Score: 0.9640
+Alignment Score Range: 0.9309 - 0.9825
+Standard Deviation: 0.0155
+Number of Comparisons: 10
+
+Interpretation: EXCELLENT - Master clusters are highly consistent across references
+
+Pairwise Alignment Scores:
+  10% vs 25%: 0.9632
+  10% vs 50%: 0.9580
+  10% vs 75%: 0.9463
+  10% vs 95%: 0.9309
+  25% vs 50%: 0.9825
+  25% vs 75%: 0.9713
+  25% vs 95%: 0.9623
+  50% vs 75%: 0.9791
+  50% vs 95%: 0.9642
+  75% vs 95%: 0.9820
+
+STAGE 2: POST-ALIGNMENT FEATURE CONSISTENCY
+--------------------------------------------------
+Average Feature Consistency: 0.9173
+Average Importance CV: 0.0600
+References Aligned: 5
+Canonical Reference: 50%
+
+Interpretation: EXCELLENT - Features are highly consistent across references
+
+MASTER CLUSTER 0
+------------------------------
+Features Analyzed: 11
+
+Most Stable Features (high consistency, low variation):
+  gini_coefficient                         consistency: 1.00, CV: 0.011
+  skewness_normalized                      consistency: 1.00, CV: 0.011
+  biggest_group_metric                     consistency: 1.00, CV: 0.015
+  total_groups                             consistency: 1.00, CV: 0.026
+  riders_in_groups                         consistency: 1.00, CV: 0.046
+
+Most Variable Features (among consistent ones):
+  avg_group_size                           CV: 0.081, range: 0.0116
+  time_gap_evenness_metric                 CV: 0.064, range: 0.0076
+  proportion_in_groups                     CV: 0.061, range: 0.0069
+  largest_group_position                   CV: 0.059, range: 0.0064
+  clumpiness_score                         CV: 0.047, range: 0.0091
+
+MASTER CLUSTER 1
+------------------------------
+Features Analyzed: 10
+
+Most Stable Features (high consistency, low variation):
+  selection_metric                         consistency: 1.00, CV: 0.052
+  total_groups                             consistency: 1.00, CV: 0.057
+  biggest_group_metric                     consistency: 1.00, CV: 0.075
+  45th_percentile_gap                      consistency: 1.00, CV: 0.083
+  total_finishers                          consistency: 1.00, CV: 0.093
+
+Most Variable Features (among consistent ones):
+  abandon_ratio                            CV: 0.113, range: 0.0152
+  clumpiness_score                         CV: 0.107, range: 0.0135
+  riders_in_groups                         CV: 0.106, range: 0.0181
+  total_finishers                          CV: 0.093, range: 0.0145
+  shannon_entropy_absolute                 CV: 0.089, range: 0.0112
+
+MASTER CLUSTER 2
+------------------------------
+Features Analyzed: 11
+
+Most Stable Features (high consistency, low variation):
+  selection_metric                         consistency: 1.00, CV: 0.012
+  biggest_group_metric                     consistency: 1.00, CV: 0.026
+  std_deviation_normalized                 consistency: 1.00, CV: 0.039
+  avg_group_size                           consistency: 1.00, CV: 0.056
+  riders_in_groups                         consistency: 1.00, CV: 0.057
+
+Most Variable Features (among consistent ones):
+  5th_percentile_gap                       CV: 0.109, range: 0.0129
+  15th_percentile_gap                      CV: 0.100, range: 0.0101
+  proportion_in_groups                     CV: 0.076, range: 0.0108
+  largest_group_position                   CV: 0.062, range: 0.0059
+  variance_normalized                      CV: 0.059, range: 0.0090
+
+MASTER CLUSTER 3
+------------------------------
+Features Analyzed: 11
+
+Most Stable Features (high consistency, low variation):
+  time_gap_evenness_metric                 consistency: 1.00, CV: 0.029
+  abandon_ratio                            consistency: 1.00, CV: 0.031
+  total_groups                             consistency: 1.00, CV: 0.052
+  biggest_group_metric                     consistency: 1.00, CV: 0.056
+  clumpiness_score                         consistency: 1.00, CV: 0.066
+
+Most Variable Features (among consistent ones):
+  30th_percentile_gap                      CV: 0.123, range: 0.0172
+  std_group_size                           CV: 0.116, range: 0.0137
+  avg_group_size                           CV: 0.106, range: 0.0134
+  15th_percentile_gap                      CV: 0.089, range: 0.0128
+  clumpiness_score                         CV: 0.066, range: 0.0148
+
+MASTER CLUSTER 4
+------------------------------
+Features Analyzed: 11
+
+Most Stable Features (high consistency, low variation):
+  10th_percentile_gap                      consistency: 1.00, CV: 0.018
+  proportion_in_groups                     consistency: 1.00, CV: 0.047
+  avg_group_size                           consistency: 1.00, CV: 0.057
+  selection_metric                         consistency: 1.00, CV: 0.059
+  5th_percentile_gap                       consistency: 1.00, CV: 0.065
+
+Most Variable Features (among consistent ones):
+  30th_percentile_gap                      CV: 0.213, range: 0.0292
+  15th_percentile_gap                      CV: 0.116, range: 0.0146
+  std_deviation_normalized                 CV: 0.093, range: 0.0126
+  largest_group_position                   CV: 0.083, range: 0.0171
+  5th_percentile_gap                       CV: 0.065, range: 0.0200
+
+MASTER CLUSTER 5
+------------------------------
+Features Analyzed: 10
+
+Most Stable Features (high consistency, low variation):
+  proportion_in_groups                     consistency: 1.00, CV: 0.030
+  total_groups                             consistency: 1.00, CV: 0.033
+  selection_metric                         consistency: 1.00, CV: 0.038
+  abandon_ratio                            consistency: 1.00, CV: 0.061
+  largest_group_position                   consistency: 1.00, CV: 0.063
+
+Most Variable Features (among consistent ones):
+  avg_group_size                           CV: 0.121, range: 0.0149
+  largest_group_size                       CV: 0.108, range: 0.0174
+  riders_in_groups                         CV: 0.081, range: 0.0151
+  clumpiness_score                         CV: 0.067, range: 0.0087
+  largest_group_position                   CV: 0.063, range: 0.0129
+
+MASTER CLUSTER 6
+------------------------------
+Features Analyzed: 11
+
+Most Stable Features (high consistency, low variation):
+  clumpiness_score                         consistency: 1.00, CV: 0.011
+  gini_coefficient                         consistency: 1.00, CV: 0.017
+  biggest_group_metric                     consistency: 1.00, CV: 0.024
+  selection_metric                         consistency: 1.00, CV: 0.028
+  skewness_normalized                      consistency: 1.00, CV: 0.044
+
+Most Variable Features (among consistent ones):
+  std_group_size                           CV: 0.092, range: 0.0114
+  shannon_entropy_absolute                 CV: 0.069, range: 0.0077
+  total_finishers                          CV: 0.055, range: 0.0081
+  kurtosis_normalized                      CV: 0.054, range: 0.0134
+  skewness_normalized                      CV: 0.044, range: 0.0077
+
+OVERALL CONCLUSIONS
+------------------------------
+✓ ROBUST CLASSIFICATION: Race types are fundamental and consistent
+  - Master clusters align well across references
+  - Feature profiles remain stable
+  - Classification system captures universal race characteristics

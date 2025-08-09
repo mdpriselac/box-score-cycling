@@ -1,0 +1,65 @@
+================================================================================
+CLUSTER ALIGNMENT SUMMARY: no_breakdown
+================================================================================
+
+K-VALUE COMPARISON
+------------------------------------------------------------
+K     Avg Alignment   Stability       Coherence       Migrations     
+------------------------------------------------------------
+3     0.840           0.675           0.733           0.630          
+4     0.807           0.626           0.687           0.681          
+5     0.809           0.636           0.687           0.833          
+6     0.815           0.640           0.695           0.769          
+7     0.802           0.616           0.678           0.833          
+8     0.808           0.627           0.686           0.889          
+
+============================================================
+RECOMMENDED K VALUE: 3 (stability: 0.675)
+============================================================
+
+DETAILED RESULTS FOR K=3
+------------------------------------------------------------
+
+Master Cluster Profiles:
+----------------------------------------
+
+master_0:
+  Members: 19
+  Percentiles: ['10', '15', '20', '25', '30', '35', '40', '45', '50', '55', '60', '65', '70', '75', '80', '85', '90', '95', '100']
+  Top Features:
+    - selection_metric: 0.061
+    - kurtosis_normalized: 0.058
+    - biggest_group_metric: 0.058
+    - clumpiness_score: 0.057
+    - std_group_size: 0.056
+
+master_1:
+  Members: 19
+  Percentiles: ['10', '15', '20', '25', '30', '35', '40', '45', '50', '55', '60', '65', '70', '75', '80', '85', '90', '95', '100']
+  Top Features:
+    - selection_metric: 0.060
+    - avg_group_size: 0.057
+    - proportion_in_groups: 0.052
+    - 5th_percentile_gap: 0.052
+    - riders_in_groups: 0.051
+
+master_2:
+  Members: 19
+  Percentiles: ['10', '15', '20', '25', '30', '35', '40', '45', '50', '55', '60', '65', '70', '75', '80', '85', '90', '95', '100']
+  Top Features:
+    - clumpiness_score: 0.066
+    - 5th_percentile_gap: 0.056
+    - gini_coefficient: 0.055
+    - largest_group_position: 0.052
+    - avg_group_size: 0.051
+
+============================================================
+Stability Metrics:
+----------------------------------------
+  Overall Stability: 0.675
+  Transition Consistency: 0.893
+  Average Coherence: 0.733
+  Average Purity: 0.864
+
+  Most Stable Percentile: 35
+  Least Stable Percentile: 10

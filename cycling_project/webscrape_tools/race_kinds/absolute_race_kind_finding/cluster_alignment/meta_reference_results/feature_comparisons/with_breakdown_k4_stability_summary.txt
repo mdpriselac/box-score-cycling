@@ -1,0 +1,49 @@
+================================================================================
+FEATURE STABILITY SUMMARY
+Population: with_breakdown | K-Value: 4
+================================================================================
+
+MOST STABLE FEATURES (appear in most references with consistent importance):
+----------------------------------------------------------------------
+Master 1 - gini_coefficient                         (consistency: 1.00, CV: 0.104)
+Master 0 - proportion_in_groups                     (consistency: 1.00, CV: 0.123)
+Master 1 - proportion_in_groups                     (consistency: 1.00, CV: 0.125)
+Master 1 - selection_metric                         (consistency: 1.00, CV: 0.154)
+Master 1 - avg_group_size                           (consistency: 1.00, CV: 0.167)
+Master 1 - std_group_size                           (consistency: 1.00, CV: 0.219)
+Master 1 - abandon_ratio                            (consistency: 1.00, CV: 0.225)
+Master 0 - abandon_ratio                            (consistency: 1.00, CV: 0.243)
+Master 0 - biggest_group_metric                     (consistency: 1.00, CV: 0.270)
+Master 2 - std_deviation_absolute                   (consistency: 0.80, CV: 0.097)
+Master 0 - selection_metric                         (consistency: 0.80, CV: 0.124)
+Master 0 - avg_group_size                           (consistency: 0.80, CV: 0.148)
+Master 0 - kurtosis_normalized                      (consistency: 0.80, CV: 0.159)
+Master 1 - biggest_group_metric                     (consistency: 0.80, CV: 0.160)
+Master 3 - skewness_normalized                      (consistency: 0.80, CV: 0.236)
+
+
+MOST VARIABLE FEATURES (importance changes significantly across references):
+----------------------------------------------------------------------
+Master 3 - biggest_group_metric                     (CV: 0.452, range: 0.0527)
+Master 2 - biggest_group_metric                     (CV: 0.436, range: 0.0500)
+Master 0 - std_group_size                           (CV: 0.388, range: 0.0698)
+Master 2 - abandon_ratio                            (CV: 0.346, range: 0.0555)
+Master 0 - gini_coefficient                         (CV: 0.321, range: 0.0602)
+Master 3 - abandon_ratio                            (CV: 0.312, range: 0.0557)
+Master 2 - skewness_normalized                      (CV: 0.306, range: 0.0376)
+Master 2 - 30th_percentile_gap                      (CV: 0.270, range: 0.0419)
+Master 0 - biggest_group_metric                     (CV: 0.270, range: 0.0476)
+Master 2 - 35th_percentile_gap                      (CV: 0.252, range: 0.0318)
+Master 1 - skewness_normalized                      (CV: 0.250, range: 0.0375)
+Master 0 - abandon_ratio                            (CV: 0.243, range: 0.0466)
+Master 3 - skewness_normalized                      (CV: 0.236, range: 0.0316)
+Master 1 - abandon_ratio                            (CV: 0.225, range: 0.0410)
+Master 1 - std_group_size                           (CV: 0.219, range: 0.0477)
+
+
+OVERALL STATISTICS:
+------------------------------
+Average feature consistency: 0.597
+Average coefficient of variation: 0.135
+Features appearing in all references: 9
+Features appearing in only one reference: 0

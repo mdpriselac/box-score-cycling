@@ -1,0 +1,873 @@
+{
+  "percentiles_analyzed": [
+    10,
+    15,
+    20,
+    25,
+    30,
+    35,
+    40,
+    45,
+    50,
+    55,
+    60,
+    65,
+    70,
+    75,
+    80,
+    85,
+    90,
+    95,
+    100
+  ],
+  "cluster_range": [
+    3,
+    4,
+    5,
+    6,
+    7,
+    8
+  ],
+  "total_races_by_percentile": {
+    "10": 2777,
+    "15": 3235,
+    "20": 3282,
+    "25": 3294,
+    "30": 3294,
+    "35": 3294,
+    "40": 3294,
+    "45": 3294,
+    "50": 3294,
+    "55": 3294,
+    "60": 3294,
+    "65": 3294,
+    "70": 3294,
+    "75": 3294,
+    "80": 3294,
+    "85": 3294,
+    "90": 3294,
+    "95": 3294,
+    "100": 3294
+  },
+  "best_k_by_percentile": {
+    "10": {
+      "by_silhouette": 3,
+      "by_calinski": 3,
+      "by_davies_bouldin": 5
+    },
+    "15": {
+      "by_silhouette": 6,
+      "by_calinski": 6,
+      "by_davies_bouldin": 4
+    },
+    "20": {
+      "by_silhouette": 8,
+      "by_calinski": 3,
+      "by_davies_bouldin": 5
+    },
+    "25": {
+      "by_silhouette": 3,
+      "by_calinski": 5,
+      "by_davies_bouldin": 3
+    },
+    "30": {
+      "by_silhouette": 4,
+      "by_calinski": 3,
+      "by_davies_bouldin": 4
+    },
+    "35": {
+      "by_silhouette": 4,
+      "by_calinski": 3,
+      "by_davies_bouldin": 3
+    },
+    "40": {
+      "by_silhouette": 3,
+      "by_calinski": 3,
+      "by_davies_bouldin": 3
+    },
+    "45": {
+      "by_silhouette": 4,
+      "by_calinski": 3,
+      "by_davies_bouldin": 7
+    },
+    "50": {
+      "by_silhouette": 3,
+      "by_calinski": 3,
+      "by_davies_bouldin": 6
+    },
+    "55": {
+      "by_silhouette": 4,
+      "by_calinski": 3,
+      "by_davies_bouldin": 4
+    },
+    "60": {
+      "by_silhouette": 3,
+      "by_calinski": 3,
+      "by_davies_bouldin": 8
+    },
+    "65": {
+      "by_silhouette": 3,
+      "by_calinski": 3,
+      "by_davies_bouldin": 3
+    },
+    "70": {
+      "by_silhouette": 3,
+      "by_calinski": 3,
+      "by_davies_bouldin": 6
+    },
+    "75": {
+      "by_silhouette": 3,
+      "by_calinski": 3,
+      "by_davies_bouldin": 3
+    },
+    "80": {
+      "by_silhouette": 3,
+      "by_calinski": 3,
+      "by_davies_bouldin": 5
+    },
+    "85": {
+      "by_silhouette": 3,
+      "by_calinski": 3,
+      "by_davies_bouldin": 3
+    },
+    "90": {
+      "by_silhouette": 3,
+      "by_calinski": 3,
+      "by_davies_bouldin": 4
+    },
+    "95": {
+      "by_silhouette": 4,
+      "by_calinski": 3,
+      "by_davies_bouldin": 4
+    },
+    "100": {
+      "by_silhouette": 4,
+      "by_calinski": 3,
+      "by_davies_bouldin": 4
+    }
+  },
+  "metrics_summary": {
+    "10": {
+      "3": {
+        "silhouette_score": 0.3069270707040576,
+        "calinski_harabasz_score": 1501.8651777542673,
+        "davies_bouldin_score": 1.1591474914928634,
+        "inertia": 7999.748197998393
+      },
+      "4": {
+        "silhouette_score": 0.2884866347300277,
+        "calinski_harabasz_score": 1394.5968991473453,
+        "davies_bouldin_score": 1.1677484021600235,
+        "inertia": 6641.528832682683
+      },
+      "5": {
+        "silhouette_score": 0.2908398872915443,
+        "calinski_harabasz_score": 1376.3125114282595,
+        "davies_bouldin_score": 1.0657235214369458,
+        "inertia": 5580.012378015566
+      },
+      "6": {
+        "silhouette_score": 0.28316122438149716,
+        "calinski_harabasz_score": 1286.2991853547553,
+        "davies_bouldin_score": 1.1190770432339676,
+        "inertia": 5017.1608189112685
+      },
+      "7": {
+        "silhouette_score": 0.2802166901067207,
+        "calinski_harabasz_score": 1223.702721624221,
+        "davies_bouldin_score": 1.1173647080395586,
+        "inertia": 4564.156708578089
+      },
+      "8": {
+        "silhouette_score": 0.27446897669893,
+        "calinski_harabasz_score": 1173.4213502503758,
+        "davies_bouldin_score": 1.1192079128282169,
+        "inertia": 4200.791253995767
+      }
+    },
+    "15": {
+      "3": {
+        "silhouette_score": 0.2939903516203028,
+        "calinski_harabasz_score": 1134.2334989751714,
+        "davies_bouldin_score": 1.1469979833789699,
+        "inertia": 22810.10685942719
+      },
+      "4": {
+        "silhouette_score": 0.2959960301641213,
+        "calinski_harabasz_score": 1263.4479632413177,
+        "davies_bouldin_score": 0.8691676238896274,
+        "inertia": 17863.734061447776
+      },
+      "5": {
+        "silhouette_score": 0.29799295402350706,
+        "calinski_harabasz_score": 1298.970962864881,
+        "davies_bouldin_score": 0.9037872953421602,
+        "inertia": 14881.365856772703
+      },
+      "6": {
+        "silhouette_score": 0.30547000173460254,
+        "calinski_harabasz_score": 1344.0629871204976,
+        "davies_bouldin_score": 0.9458433506135776,
+        "inertia": 12598.835277738584
+      },
+      "7": {
+        "silhouette_score": 0.2892583643236036,
+        "calinski_harabasz_score": 1336.4349597900612,
+        "davies_bouldin_score": 0.9443418159919499,
+        "inertia": 11142.1097280106
+      },
+      "8": {
+        "silhouette_score": 0.263760559833672,
+        "calinski_harabasz_score": 1291.4232217503231,
+        "davies_bouldin_score": 0.9902235027032682,
+        "inertia": 10212.201811879137
+      }
+    },
+    "20": {
+      "3": {
+        "silhouette_score": 0.26092977219868757,
+        "calinski_harabasz_score": 1183.3362089513353,
+        "davies_bouldin_score": 1.2314971666297732,
+        "inertia": 34311.27236248009
+      },
+      "4": {
+        "silhouette_score": 0.2645591366255449,
+        "calinski_harabasz_score": 1082.5786849859817,
+        "davies_bouldin_score": 1.0068779866683466,
+        "inertia": 29674.9862956644
+      },
+      "5": {
+        "silhouette_score": 0.2681417536931504,
+        "calinski_harabasz_score": 1060.9008629315006,
+        "davies_bouldin_score": 0.9368761932047913,
+        "inertia": 25741.558272902963
+      },
+      "6": {
+        "silhouette_score": 0.2782193448990021,
+        "calinski_harabasz_score": 1032.7699948054485,
+        "davies_bouldin_score": 0.9370687118580775,
+        "inertia": 22930.862589341294
+      },
+      "7": {
+        "silhouette_score": 0.2865387043203802,
+        "calinski_harabasz_score": 1033.9296806003972,
+        "davies_bouldin_score": 0.9974546473676755,
+        "inertia": 20411.70500193738
+      },
+      "8": {
+        "silhouette_score": 0.29563370402926337,
+        "calinski_harabasz_score": 1024.4940546368955,
+        "davies_bouldin_score": 0.9637850089185153,
+        "inertia": 18516.64301538113
+      }
+    },
+    "25": {
+      "3": {
+        "silhouette_score": 0.5487504778239545,
+        "calinski_harabasz_score": 940.390666795788,
+        "davies_bouldin_score": 0.8591722017451299,
+        "inertia": 39825.838084488794
+      },
+      "4": {
+        "silhouette_score": 0.23758159285004538,
+        "calinski_harabasz_score": 868.6252968736421,
+        "davies_bouldin_score": 0.9902965385185655,
+        "inertia": 34924.07469696733
+      },
+      "5": {
+        "silhouette_score": 0.2559752334941892,
+        "calinski_harabasz_score": 949.9616113701334,
+        "davies_bouldin_score": 0.971768014302801,
+        "inertia": 29037.933702509654
+      },
+      "6": {
+        "silhouette_score": 0.2680592491571605,
+        "calinski_harabasz_score": 902.5923212191567,
+        "davies_bouldin_score": 0.9465661510451017,
+        "inertia": 26379.154057007327
+      },
+      "7": {
+        "silhouette_score": 0.27575898505890295,
+        "calinski_harabasz_score": 897.0356810326965,
+        "davies_bouldin_score": 1.1219111559957076,
+        "inertia": 23730.019394792685
+      },
+      "8": {
+        "silhouette_score": 0.27695176492206885,
+        "calinski_harabasz_score": 891.2839364199413,
+        "davies_bouldin_score": 1.0730776542039322,
+        "inertia": 21591.376872019893
+      }
+    },
+    "30": {
+      "3": {
+        "silhouette_score": 0.5172768246952272,
+        "calinski_harabasz_score": 967.9334611477623,
+        "davies_bouldin_score": 1.233476361099478,
+        "inertia": 43554.12857919488
+      },
+      "4": {
+        "silhouette_score": 0.5199929394029749,
+        "calinski_harabasz_score": 925.2461907519883,
+        "davies_bouldin_score": 0.8812250323114501,
+        "inertia": 37519.33211248793
+      },
+      "5": {
+        "silhouette_score": 0.25350970016386803,
+        "calinski_harabasz_score": 903.1817556860605,
+        "davies_bouldin_score": 0.996182356322438,
+        "inertia": 32964.70268417053
+      },
+      "6": {
+        "silhouette_score": 0.2632129492520495,
+        "calinski_harabasz_score": 892.7664996161274,
+        "davies_bouldin_score": 1.0168801068835147,
+        "inertia": 29340.819579098777
+      },
+      "7": {
+        "silhouette_score": 0.2637598998323771,
+        "calinski_harabasz_score": 872.9402050859022,
+        "davies_bouldin_score": 1.0769245840902495,
+        "inertia": 26672.725486278818
+      },
+      "8": {
+        "silhouette_score": 0.27636350206705934,
+        "calinski_harabasz_score": 892.5915839228006,
+        "davies_bouldin_score": 0.8933044113594726,
+        "inertia": 23841.26403764309
+      }
+    },
+    "35": {
+      "3": {
+        "silhouette_score": 0.4816271733423973,
+        "calinski_harabasz_score": 1096.1588667463682,
+        "davies_bouldin_score": 0.8344211033481014,
+        "inertia": 43494.139787534616
+      },
+      "4": {
+        "silhouette_score": 0.492781473344712,
+        "calinski_harabasz_score": 1006.0117463911832,
+        "davies_bouldin_score": 0.9544033786914896,
+        "inertia": 37796.19342000335
+      },
+      "5": {
+        "silhouette_score": 0.24898216847522148,
+        "calinski_harabasz_score": 950.3151291529658,
+        "davies_bouldin_score": 1.0388661493791629,
+        "inertia": 33616.15393977404
+      },
+      "6": {
+        "silhouette_score": 0.25435228749925337,
+        "calinski_harabasz_score": 932.0224720541614,
+        "davies_bouldin_score": 1.2431140076799154,
+        "inertia": 29978.820418282357
+      },
+      "7": {
+        "silhouette_score": 0.2529288978066163,
+        "calinski_harabasz_score": 927.8327253427824,
+        "davies_bouldin_score": 1.233339724438224,
+        "inertia": 26903.380418146924
+      },
+      "8": {
+        "silhouette_score": 0.26703024581389456,
+        "calinski_harabasz_score": 915.0703417492145,
+        "davies_bouldin_score": 1.181831843429629,
+        "inertia": 24571.01944284251
+      }
+    },
+    "40": {
+      "3": {
+        "silhouette_score": 0.42952706846449806,
+        "calinski_harabasz_score": 1002.7001559414342,
+        "davies_bouldin_score": 0.8829908505268338,
+        "inertia": 42982.33150716468
+      },
+      "4": {
+        "silhouette_score": 0.4283005405024615,
+        "calinski_harabasz_score": 863.5108112208351,
+        "davies_bouldin_score": 1.1252655488903898,
+        "inertia": 38700.99562706728
+      },
+      "5": {
+        "silhouette_score": 0.2393076430809364,
+        "calinski_harabasz_score": 875.2486494230711,
+        "davies_bouldin_score": 1.1231326026085575,
+        "inertia": 33507.13799939181
+      },
+      "6": {
+        "silhouette_score": 0.25187509536823605,
+        "calinski_harabasz_score": 865.7931427259571,
+        "davies_bouldin_score": 1.1283163059662635,
+        "inertia": 29860.267418020456
+      },
+      "7": {
+        "silhouette_score": 0.23827273293630963,
+        "calinski_harabasz_score": 836.0079361983591,
+        "davies_bouldin_score": 1.3088494804981663,
+        "inertia": 27384.615415853397
+      },
+      "8": {
+        "silhouette_score": 0.2486812348210553,
+        "calinski_harabasz_score": 825.9616970890872,
+        "davies_bouldin_score": 1.2271553558087331,
+        "inertia": 25067.543572917755
+      }
+    },
+    "45": {
+      "3": {
+        "silhouette_score": 0.40150671964435014,
+        "calinski_harabasz_score": 826.3115468890793,
+        "davies_bouldin_score": 1.5391904737134157,
+        "inertia": 50435.224787625906
+      },
+      "4": {
+        "silhouette_score": 0.4039324344152126,
+        "calinski_harabasz_score": 813.570693077398,
+        "davies_bouldin_score": 1.1607687911182507,
+        "inertia": 43494.94034140966
+      },
+      "5": {
+        "silhouette_score": 0.22797282703210367,
+        "calinski_harabasz_score": 740.0531532577526,
+        "davies_bouldin_score": 1.2791843427748488,
+        "inertia": 39874.057476832575
+      },
+      "6": {
+        "silhouette_score": 0.2429226941314799,
+        "calinski_harabasz_score": 733.5001923189083,
+        "davies_bouldin_score": 1.2204185577004296,
+        "inertia": 35814.16455485513
+      },
+      "7": {
+        "silhouette_score": 0.24501455678202383,
+        "calinski_harabasz_score": 714.3121806899364,
+        "davies_bouldin_score": 1.082423570412472,
+        "inertia": 32884.440453856245
+      },
+      "8": {
+        "silhouette_score": 0.23440576281642456,
+        "calinski_harabasz_score": 704.2219318994971,
+        "davies_bouldin_score": 1.2534567657589544,
+        "inertia": 30302.79290110866
+      }
+    },
+    "50": {
+      "3": {
+        "silhouette_score": 0.37148639792682514,
+        "calinski_harabasz_score": 887.4621307033808,
+        "davies_bouldin_score": 1.4400156996479254,
+        "inertia": 51357.517912783034
+      },
+      "4": {
+        "silhouette_score": 0.37080610073955955,
+        "calinski_harabasz_score": 832.0836673661677,
+        "davies_bouldin_score": 1.2434552758286763,
+        "inertia": 44950.39014133181
+      },
+      "5": {
+        "silhouette_score": 0.22537210036395403,
+        "calinski_harabasz_score": 755.3674455846278,
+        "davies_bouldin_score": 1.2831292223223867,
+        "inertia": 41203.82999163655
+      },
+      "6": {
+        "silhouette_score": 0.23973921351665034,
+        "calinski_harabasz_score": 753.1783770981814,
+        "davies_bouldin_score": 1.2102330911130885,
+        "inertia": 36850.11115697234
+      },
+      "7": {
+        "silhouette_score": 0.22767953287763573,
+        "calinski_harabasz_score": 734.310149345067,
+        "davies_bouldin_score": 1.3514743593906704,
+        "inertia": 33779.00938038178
+      },
+      "8": {
+        "silhouette_score": 0.23492330740873787,
+        "calinski_harabasz_score": 716.2095688445564,
+        "davies_bouldin_score": 1.3302870022202238,
+        "inertia": 31300.618351777863
+      }
+    },
+    "55": {
+      "3": {
+        "silhouette_score": 0.3478034817274275,
+        "calinski_harabasz_score": 881.3823390926811,
+        "davies_bouldin_score": 1.4293590326522985,
+        "inertia": 51481.08639150569
+      },
+      "4": {
+        "silhouette_score": 0.34892666204516887,
+        "calinski_harabasz_score": 826.8235974268173,
+        "davies_bouldin_score": 1.1045283899891025,
+        "inertia": 45073.313662369845
+      },
+      "5": {
+        "silhouette_score": 0.32049181946958216,
+        "calinski_harabasz_score": 740.6372631924037,
+        "davies_bouldin_score": 1.3659918512139617,
+        "inertia": 41592.14616018514
+      },
+      "6": {
+        "silhouette_score": 0.33604625043786174,
+        "calinski_harabasz_score": 740.7677244175643,
+        "davies_bouldin_score": 1.3229782488653756,
+        "inertia": 37177.07774015836
+      },
+      "7": {
+        "silhouette_score": 0.2236957082783026,
+        "calinski_harabasz_score": 730.5120654789648,
+        "davies_bouldin_score": 1.3325082938238118,
+        "inertia": 33879.35063578166
+      },
+      "8": {
+        "silhouette_score": 0.22857525550066266,
+        "calinski_harabasz_score": 721.1904376586972,
+        "davies_bouldin_score": 1.270108003996855,
+        "inertia": 31169.622574148765
+      }
+    },
+    "60": {
+      "3": {
+        "silhouette_score": 0.32744209710337346,
+        "calinski_harabasz_score": 876.1800253572061,
+        "davies_bouldin_score": 1.277363358502658,
+        "inertia": 55886.234804924185
+      },
+      "4": {
+        "silhouette_score": 0.2920469039738784,
+        "calinski_harabasz_score": 755.0539420587133,
+        "davies_bouldin_score": 1.6360295876178426,
+        "inertia": 50721.971531467265
+      },
+      "5": {
+        "silhouette_score": 0.29367937698944035,
+        "calinski_harabasz_score": 700.8260644393272,
+        "davies_bouldin_score": 1.3315195681495702,
+        "inertia": 46235.946104476185
+      },
+      "6": {
+        "silhouette_score": 0.19513400214151858,
+        "calinski_harabasz_score": 645.9661702193016,
+        "davies_bouldin_score": 1.3463632667091632,
+        "inertia": 43204.32678578038
+      },
+      "7": {
+        "silhouette_score": 0.2149421303013318,
+        "calinski_harabasz_score": 644.6684215693426,
+        "davies_bouldin_score": 1.3490675377820316,
+        "inertia": 39344.74656112175
+      },
+      "8": {
+        "silhouette_score": 0.21768990818818168,
+        "calinski_harabasz_score": 626.0265902394739,
+        "davies_bouldin_score": 1.2329909622255686,
+        "inertia": 36700.489420498474
+      }
+    },
+    "65": {
+      "3": {
+        "silhouette_score": 0.33309137604093764,
+        "calinski_harabasz_score": 955.812580749745,
+        "davies_bouldin_score": 1.2426549797257067,
+        "inertia": 58342.76016004893
+      },
+      "4": {
+        "silhouette_score": 0.2841297871649386,
+        "calinski_harabasz_score": 838.5815713319965,
+        "davies_bouldin_score": 1.5896889697603451,
+        "inertia": 52266.066834822544
+      },
+      "5": {
+        "silhouette_score": 0.30179930285259976,
+        "calinski_harabasz_score": 752.2700712290305,
+        "davies_bouldin_score": 1.5498746785899895,
+        "inertia": 48165.63687295717
+      },
+      "6": {
+        "silhouette_score": 0.30260567340080413,
+        "calinski_harabasz_score": 682.5588456562531,
+        "davies_bouldin_score": 1.55979250069789,
+        "inertia": 45257.14499933026
+      },
+      "7": {
+        "silhouette_score": 0.2136411081872175,
+        "calinski_harabasz_score": 651.1761352787122,
+        "davies_bouldin_score": 1.453796732811806,
+        "inertia": 42141.25519666675
+      },
+      "8": {
+        "silhouette_score": 0.2213463886813921,
+        "calinski_harabasz_score": 630.6900622438602,
+        "davies_bouldin_score": 1.3224940183694724,
+        "inertia": 39356.149283605264
+      }
+    },
+    "70": {
+      "3": {
+        "silhouette_score": 0.31418646044724713,
+        "calinski_harabasz_score": 887.7947320263513,
+        "davies_bouldin_score": 1.2926133814148022,
+        "inertia": 55630.006338533756
+      },
+      "4": {
+        "silhouette_score": 0.266093466338117,
+        "calinski_harabasz_score": 804.4958224703404,
+        "davies_bouldin_score": 1.5604716781164985,
+        "inertia": 49402.88930413012
+      },
+      "5": {
+        "silhouette_score": 0.2685577198006668,
+        "calinski_harabasz_score": 793.4908221262368,
+        "davies_bouldin_score": 1.2893955304046045,
+        "inertia": 43584.23372836529
+      },
+      "6": {
+        "silhouette_score": 0.27707640503144193,
+        "calinski_harabasz_score": 728.3459301742167,
+        "davies_bouldin_score": 1.2778730951540198,
+        "inertia": 40636.14111765568
+      },
+      "7": {
+        "silhouette_score": 0.27659302592014345,
+        "calinski_harabasz_score": 708.6627942533551,
+        "davies_bouldin_score": 1.3766204160545819,
+        "inertia": 37340.853640444664
+      },
+      "8": {
+        "silhouette_score": 0.2122175016907628,
+        "calinski_harabasz_score": 690.1214384432848,
+        "davies_bouldin_score": 1.2863820757246835,
+        "inertia": 34671.84703475754
+      }
+    },
+    "75": {
+      "3": {
+        "silhouette_score": 0.322467979602666,
+        "calinski_harabasz_score": 945.6089960844007,
+        "davies_bouldin_score": 1.2217945901341256,
+        "inertia": 58572.509388584804
+      },
+      "4": {
+        "silhouette_score": 0.26189792566792064,
+        "calinski_harabasz_score": 849.2055878641098,
+        "davies_bouldin_score": 1.5599573442452075,
+        "inertia": 51980.678466681085
+      },
+      "5": {
+        "silhouette_score": 0.2633833294840636,
+        "calinski_harabasz_score": 791.6332392763125,
+        "davies_bouldin_score": 1.2632508861017904,
+        "inertia": 46990.90943953207
+      },
+      "6": {
+        "silhouette_score": 0.1912426803505407,
+        "calinski_harabasz_score": 692.8134810450716,
+        "davies_bouldin_score": 1.3016833290093597,
+        "inertia": 44913.51484836099
+      },
+      "7": {
+        "silhouette_score": 0.26185753492092306,
+        "calinski_harabasz_score": 683.2927481744235,
+        "davies_bouldin_score": 1.42435068684397,
+        "inertia": 41041.90850876852
+      },
+      "8": {
+        "silhouette_score": 0.20780396853723823,
+        "calinski_harabasz_score": 651.114380423798,
+        "davies_bouldin_score": 1.340534107718846,
+        "inertia": 38638.71164280391
+      }
+    },
+    "80": {
+      "3": {
+        "silhouette_score": 0.31502583358222647,
+        "calinski_harabasz_score": 893.4435601560026,
+        "davies_bouldin_score": 1.3061990624339586,
+        "inertia": 57641.09186854387
+      },
+      "4": {
+        "silhouette_score": 0.2510276290211486,
+        "calinski_harabasz_score": 841.4979241188183,
+        "davies_bouldin_score": 1.5210396693990123,
+        "inertia": 50323.558929776744
+      },
+      "5": {
+        "silhouette_score": 0.2522170053164632,
+        "calinski_harabasz_score": 755.1180260986499,
+        "davies_bouldin_score": 1.2407177562114031,
+        "inertia": 46361.712465874996
+      },
+      "6": {
+        "silhouette_score": 0.2585780793024146,
+        "calinski_harabasz_score": 695.5676502767873,
+        "davies_bouldin_score": 1.4755129414915231,
+        "inertia": 43221.27327536753
+      },
+      "7": {
+        "silhouette_score": 0.24077669175267072,
+        "calinski_harabasz_score": 652.6577256650476,
+        "davies_bouldin_score": 1.541218232931147,
+        "inertia": 40586.094466400275
+      },
+      "8": {
+        "silhouette_score": 0.2438417588821231,
+        "calinski_harabasz_score": 621.4211272735075,
+        "davies_bouldin_score": 1.3727354617526153,
+        "inertia": 38273.07364474312
+      }
+    },
+    "85": {
+      "3": {
+        "silhouette_score": 0.2761161237995608,
+        "calinski_harabasz_score": 818.9900298700119,
+        "davies_bouldin_score": 1.3887103401206355,
+        "inertia": 59382.48309848187
+      },
+      "4": {
+        "silhouette_score": 0.24275894615851956,
+        "calinski_harabasz_score": 817.9093838548675,
+        "davies_bouldin_score": 1.452330288601458,
+        "inertia": 50943.58621953934
+      },
+      "5": {
+        "silhouette_score": 0.24718703793449864,
+        "calinski_harabasz_score": 736.6726591080495,
+        "davies_bouldin_score": 1.578419225197969,
+        "inertia": 46910.14725209953
+      },
+      "6": {
+        "silhouette_score": 0.2144106097078818,
+        "calinski_harabasz_score": 671.3774747979327,
+        "davies_bouldin_score": 1.6148353772505983,
+        "inertia": 44008.00472528291
+      },
+      "7": {
+        "silhouette_score": 0.21774590196238966,
+        "calinski_harabasz_score": 633.7314222757059,
+        "davies_bouldin_score": 1.4060382356278527,
+        "inertia": 41236.16650607147
+      },
+      "8": {
+        "silhouette_score": 0.22198192741815306,
+        "calinski_harabasz_score": 601.3027478100215,
+        "davies_bouldin_score": 1.5059390553094945,
+        "inertia": 38992.077223820386
+      }
+    },
+    "90": {
+      "3": {
+        "silhouette_score": 0.24442521996864153,
+        "calinski_harabasz_score": 745.0826198372132,
+        "davies_bouldin_score": 1.482066949066363,
+        "inertia": 63485.67698126015
+      },
+      "4": {
+        "silhouette_score": 0.23655468268786256,
+        "calinski_harabasz_score": 727.2142598277158,
+        "davies_bouldin_score": 1.3806590784384767,
+        "inertia": 55457.436135599375
+      },
+      "5": {
+        "silhouette_score": 0.23536452364559596,
+        "calinski_harabasz_score": 651.3712125902956,
+        "davies_bouldin_score": 1.5834016995206182,
+        "inertia": 51463.56260510668
+      },
+      "6": {
+        "silhouette_score": 0.18538042523680826,
+        "calinski_harabasz_score": 599.9172986298558,
+        "davies_bouldin_score": 1.6393446302533186,
+        "inertia": 48231.43409351711
+      },
+      "7": {
+        "silhouette_score": 0.18616540101635928,
+        "calinski_harabasz_score": 562.1519121586352,
+        "davies_bouldin_score": 1.4249401013831036,
+        "inertia": 45521.113190657845
+      },
+      "8": {
+        "silhouette_score": 0.19385303279636942,
+        "calinski_harabasz_score": 535.5589075971752,
+        "davies_bouldin_score": 1.4093143347968358,
+        "inertia": 43081.46808154494
+      }
+    },
+    "95": {
+      "3": {
+        "silhouette_score": 0.23301938968772248,
+        "calinski_harabasz_score": 722.186780114902,
+        "davies_bouldin_score": 1.5258246755801028,
+        "inertia": 61810.32061719663
+      },
+      "4": {
+        "silhouette_score": 0.23624036399690468,
+        "calinski_harabasz_score": 652.8605520978788,
+        "davies_bouldin_score": 1.3560212618300107,
+        "inertia": 55749.58567173478
+      },
+      "5": {
+        "silhouette_score": 0.158241574939348,
+        "calinski_harabasz_score": 587.8234414433543,
+        "davies_bouldin_score": 1.65165238339018,
+        "inertia": 51862.04746434072
+      },
+      "6": {
+        "silhouette_score": 0.16630181475391512,
+        "calinski_harabasz_score": 557.1492674499639,
+        "davies_bouldin_score": 1.6096763441344437,
+        "inertia": 48146.27252365348
+      },
+      "7": {
+        "silhouette_score": 0.17852112577432389,
+        "calinski_harabasz_score": 518.7989975585831,
+        "davies_bouldin_score": 1.5047694409682446,
+        "inertia": 45679.51812035637
+      },
+      "8": {
+        "silhouette_score": 0.16388683411051708,
+        "calinski_harabasz_score": 496.8221656151257,
+        "davies_bouldin_score": 1.5997876691950665,
+        "inertia": 43208.2860950265
+      }
+    },
+    "100": {
+      "3": {
+        "silhouette_score": 0.24409666778691425,
+        "calinski_harabasz_score": 785.6907622842871,
+        "davies_bouldin_score": 1.4115266519327243,
+        "inertia": 53507.41514153824
+      },
+      "4": {
+        "silhouette_score": 0.2463915939103723,
+        "calinski_harabasz_score": 677.0436978310443,
+        "davies_bouldin_score": 1.0932265087876276,
+        "inertia": 48879.50238964276
+      },
+      "5": {
+        "silhouette_score": 0.16044550052531598,
+        "calinski_harabasz_score": 616.0814954975178,
+        "davies_bouldin_score": 1.4905781342799505,
+        "inertia": 45194.04556480092
+      },
+      "6": {
+        "silhouette_score": 0.22966643004002832,
+        "calinski_harabasz_score": 593.2527081701014,
+        "davies_bouldin_score": 1.2815445267089873,
+        "inertia": 41561.42866417358
+      },
+      "7": {
+        "silhouette_score": 0.15399382734498127,
+        "calinski_harabasz_score": 569.7936008985196,
+        "davies_bouldin_score": 1.4307858234071225,
+        "inertia": 38751.355885399214
+      },
+      "8": {
+        "silhouette_score": 0.15525727257714608,
+        "calinski_harabasz_score": 538.646316377204,
+        "davies_bouldin_score": 1.4180398789607263,
+        "inertia": 36813.87721465322
+      }
+    }
+  }
+}

@@ -1,0 +1,65 @@
+================================================================================
+CLUSTER ALIGNMENT SUMMARY: with_breakdown
+================================================================================
+
+K-VALUE COMPARISON
+------------------------------------------------------------
+K     Avg Alignment   Stability       Coherence       Migrations     
+------------------------------------------------------------
+3     0.747           0.523           0.605           0.574          
+4     0.713           0.481           0.573           0.500          
+5     0.722           0.472           0.567           0.844          
+6     0.712           0.467           0.560           0.833          
+7     0.724           0.470           0.566           0.825          
+8     0.714           0.467           0.563           0.819          
+
+============================================================
+RECOMMENDED K VALUE: 3 (stability: 0.523)
+============================================================
+
+DETAILED RESULTS FOR K=3
+------------------------------------------------------------
+
+Master Cluster Profiles:
+----------------------------------------
+
+master_0:
+  Members: 19
+  Percentiles: ['10', '15', '20', '25', '30', '35', '40', '45', '50', '55', '60', '65', '70', '75', '80', '85', '90', '95', '100']
+  Top Features:
+    - selection_metric: 0.083
+    - gini_coefficient: 0.079
+    - avg_group_size: 0.076
+    - std_group_size: 0.075
+    - abandon_ratio: 0.057
+
+master_1:
+  Members: 19
+  Percentiles: ['10', '15', '20', '25', '30', '35', '40', '45', '50', '55', '60', '65', '70', '75', '80', '85', '90', '95', '100']
+  Top Features:
+    - 30th_percentile_gap: 0.080
+    - variance_absolute: 0.080
+    - 45th_percentile_gap: 0.063
+    - 40th_percentile_gap: 0.062
+    - 50th_percentile_gap: 0.058
+
+master_2:
+  Members: 19
+  Percentiles: ['10', '15', '20', '25', '30', '35', '40', '45', '50', '55', '60', '65', '70', '75', '80', '85', '90', '95', '100']
+  Top Features:
+    - avg_group_size: 0.085
+    - gini_coefficient: 0.085
+    - selection_metric: 0.075
+    - abandon_ratio: 0.072
+    - std_group_size: 0.071
+
+============================================================
+Stability Metrics:
+----------------------------------------
+  Overall Stability: 0.523
+  Transition Consistency: 0.771
+  Average Coherence: 0.605
+  Average Purity: 0.787
+
+  Most Stable Percentile: 85
+  Least Stable Percentile: 10

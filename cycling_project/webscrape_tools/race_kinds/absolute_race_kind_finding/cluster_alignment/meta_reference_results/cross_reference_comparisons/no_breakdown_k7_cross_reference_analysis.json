@@ -1,0 +1,101 @@
+{
+  "population_type": "no_breakdown",
+  "k_value": 7,
+  "reference_percentiles": [
+    "10",
+    "25",
+    "50",
+    "75",
+    "95"
+  ],
+  "master_correlations": [
+    [
+      1.0,
+      0.96319166286426,
+      0.958013018011942,
+      0.9463053653724213,
+      0.9308757445212485
+    ],
+    [
+      0.9631916628642598,
+      1.0,
+      0.9824692724252791,
+      0.9713359334578168,
+      0.962288467393108
+    ],
+    [
+      0.9580130180119422,
+      0.982469272425279,
+      1.0,
+      0.9790678761844271,
+      0.9642414165431737
+    ],
+    [
+      0.9463053653724213,
+      0.9713359334578168,
+      0.979067876184427,
+      1.0,
+      0.9820349055579888
+    ],
+    [
+      0.9308757445212484,
+      0.962288467393108,
+      0.9642414165431737,
+      0.9820349055579888,
+      1.0
+    ]
+  ],
+  "consistency_scores": {
+    "10": 0.949596447692468,
+    "25": 0.9698213340351158,
+    "50": 0.9709478957912054,
+    "75": 0.9696860201431634,
+    "95": 0.9598601335038797
+  },
+  "stable_clusters": {
+    "master_0": {
+      "avg_cross_ref_similarity": 0.8376920909791206,
+      "min_similarity": 0.6985140330775532,
+      "max_similarity": 0.9819555150969204,
+      "stability_score": 0.8376920909791206
+    },
+    "master_1": {
+      "avg_cross_ref_similarity": 0.7764677344424369,
+      "min_similarity": 0.6167558510905016,
+      "max_similarity": 0.9484452547908757,
+      "stability_score": 0.7764677344424369
+    },
+    "master_2": {
+      "avg_cross_ref_similarity": 0.7472744842090746,
+      "min_similarity": 0.607603420986425,
+      "max_similarity": 0.870763459404034,
+      "stability_score": 0.7472744842090746
+    },
+    "master_3": {
+      "avg_cross_ref_similarity": 0.7335757574737288,
+      "min_similarity": 0.5224701799668073,
+      "max_similarity": 0.9798158932990504,
+      "stability_score": 0.7335757574737288
+    },
+    "master_4": {
+      "avg_cross_ref_similarity": 0.7589860882358991,
+      "min_similarity": 0.5966174864922379,
+      "max_similarity": 0.9798445051670096,
+      "stability_score": 0.7589860882358991
+    },
+    "master_5": {
+      "avg_cross_ref_similarity": 0.7839985740697717,
+      "min_similarity": 0.6520376022243075,
+      "max_similarity": 0.9689695564655086,
+      "stability_score": 0.7839985740697717
+    },
+    "master_6": {
+      "avg_cross_ref_similarity": 0.744276568466921,
+      "min_similarity": 0.6396586270661084,
+      "max_similarity": 0.9725577772581321,
+      "stability_score": 0.744276568466921
+    }
+  },
+  "most_consistent_reference": "50",
+  "least_consistent_reference": "10"
+}

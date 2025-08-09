@@ -1,0 +1,145 @@
+====================================================================================================
+MASTER CLUSTER FEATURE COMPARISON
+Population: no_breakdown | K-Value: 4
+====================================================================================================
+
+MASTER CLUSTER 0
+--------------------------------------------------
+
+Feature                            Ref10%      Ref25%      Ref50%      Ref75%      Ref95%      Consistency Avg       Range          
+------------------------------------------------------------------------------------------------------------------------
+clumpiness_score                   0.0602      0.0775      0.0634      0.0578      0.0518      1.00        0.0621    0.0257         
+std_group_size                     0.0618      --          0.0525      0.0621      0.0702      0.80        0.0617    0.0176         
+avg_group_size                     --          0.0606      --          --          --          0.20        0.0606    0.0000         
+selection_metric                   0.0518      --          0.0610      0.0560      0.0602      0.80        0.0572    0.0093         
+kurtosis_normalized                0.0563      --          0.0602      0.0572      0.0493      0.80        0.0558    0.0109         
+gini_coefficient                   0.0516      0.0498      0.0536      0.0541      0.0478      1.00        0.0514    0.0064         
+shannon_entropy_absolute           0.0582      --          0.0452      0.0575      0.0435      0.80        0.0511    0.0147         
+biggest_group_metric               0.0462      --          0.0599      0.0492      0.0472      0.80        0.0506    0.0136         
+15th_percentile_gap                0.0448      --          --          0.0505      0.0541      0.60        0.0498    0.0093         
+5th_percentile_gap                 --          0.0486      --          --          --          0.20        0.0486    0.0000         
+proportion_in_groups               --          0.0479      --          --          --          0.20        0.0479    0.0000         
+total_finishers                    --          --          0.0479      --          --          0.20        0.0479    0.0000         
+skewness_normalized                0.0493      0.0431      0.0519      0.0501      0.0412      1.00        0.0472    0.0107         
+time_gap_evenness_metric           0.0505      0.0515      0.0431      0.0452      0.0409      1.00        0.0463    0.0106         
+largest_group_position             --          0.0423      --          --          --          0.20        0.0423    0.0000         
+riders_in_groups                   --          0.0407      --          --          --          0.20        0.0407    0.0000         
+30th_percentile_gap                --          0.0382      --          --          --          0.20        0.0382    0.0000         
+
+Legend:
+  Consistency: Fraction of references where feature appears in top 10
+  Avg: Average importance across references where feature appears
+  Range: Difference between max and min importance values
+  --: Feature not in top 10 for this reference
+
+
+====================================================================================================
+
+MASTER CLUSTER 1
+--------------------------------------------------
+
+Feature                            Ref10%      Ref25%      Ref50%      Ref75%      Ref95%      Consistency Avg       Range          
+------------------------------------------------------------------------------------------------------------------------
+time_gap_evenness_metric           0.0769      0.0776      --          0.0476      0.0823      0.80        0.0711    0.0347         
+clumpiness_score                   --          0.0469      --          0.0826      --          0.40        0.0648    0.0357         
+avg_group_size                     --          --          0.0629      0.0624      --          0.40        0.0627    0.0004         
+std_deviation_normalized           --          --          0.0620      --          --          0.20        0.0620    0.0000         
+5th_percentile_gap                 --          --          0.0793      0.0446      --          0.40        0.0619    0.0347         
+biggest_group_metric               0.0670      0.0683      --          0.0459      0.0653      0.80        0.0616    0.0224         
+total_finishers                    0.0589      0.0560      --          --          0.0601      0.60        0.0583    0.0041         
+proportion_in_groups               --          --          0.0652      0.0501      --          0.40        0.0577    0.0151         
+abandon_ratio                      0.0541      0.0545      --          --          0.0549      0.60        0.0545    0.0008         
+riders_in_groups                   0.0534      0.0532      --          0.0470      0.0504      0.80        0.0510    0.0064         
+total_groups                       0.0481      0.0524      --          --          0.0502      0.60        0.0502    0.0044         
+largest_group_position             --          --          0.0532      0.0447      --          0.40        0.0489    0.0085         
+selection_metric                   0.0505      0.0425      0.0533      --          0.0452      0.80        0.0479    0.0108         
+gini_coefficient                   --          --          --          0.0475      --          0.20        0.0475    0.0000         
+variance_normalized                --          --          0.0463      --          --          0.20        0.0463    0.0000         
+30th_percentile_gap                --          --          0.0437      --          --          0.20        0.0437    0.0000         
+10th_percentile_gap                --          --          0.0426      --          --          0.20        0.0426    0.0000         
+15th_percentile_gap                0.0394      --          0.0467      --          0.0415      0.60        0.0425    0.0073         
+45th_percentile_gap                --          0.0415      --          --          0.0432      0.40        0.0423    0.0017         
+skewness_normalized                --          --          --          0.0408      --          0.20        0.0408    0.0000         
+kurtosis_normalized                0.0403      --          --          --          --          0.20        0.0403    0.0000         
+std_group_size                     0.0388      0.0392      --          --          0.0410      0.60        0.0397    0.0023         
+
+Legend:
+  Consistency: Fraction of references where feature appears in top 10
+  Avg: Average importance across references where feature appears
+  Range: Difference between max and min importance values
+  --: Feature not in top 10 for this reference
+
+
+====================================================================================================
+
+MASTER CLUSTER 2
+--------------------------------------------------
+
+Feature                            Ref10%      Ref25%      Ref50%      Ref75%      Ref95%      Consistency Avg       Range          
+------------------------------------------------------------------------------------------------------------------------
+clumpiness_score                   0.0830      0.0572      0.0757      --          --          0.60        0.0720    0.0257         
+kurtosis_normalized                --          0.0660      --          --          --          0.20        0.0660    0.0000         
+avg_group_size                     0.0637      --          0.0606      --          0.0705      0.60        0.0649    0.0099         
+time_gap_evenness_metric           0.0501      0.0484      0.0520      0.0824      --          0.80        0.0583    0.0340         
+abandon_ratio                      --          --          --          0.0553      --          0.20        0.0553    0.0000         
+5th_percentile_gap                 0.0420      --          0.0500      --          0.0733      0.60        0.0551    0.0313         
+proportion_in_groups               0.0475      --          0.0479      --          0.0674      0.60        0.0543    0.0199         
+selection_metric                   --          0.0660      --          0.0447      0.0493      0.60        0.0533    0.0213         
+biggest_group_metric               0.0500      0.0585      0.0379      0.0624      --          0.80        0.0522    0.0245         
+skewness_normalized                --          0.0572      0.0454      --          --          0.40        0.0513    0.0118         
+std_deviation_normalized           --          --          --          --          0.0507      0.20        0.0507    0.0000         
+gini_coefficient                   0.0463      0.0536      0.0500      --          --          0.60        0.0500    0.0073         
+total_finishers                    0.0413      0.0484      --          0.0567      --          0.60        0.0488    0.0154         
+std_group_size                     --          0.0521      --          0.0453      --          0.40        0.0487    0.0068         
+total_groups                       --          --          --          0.0486      --          0.20        0.0486    0.0000         
+largest_group_position             0.0423      --          0.0469      --          0.0565      0.60        0.0486    0.0142         
+riders_in_groups                   0.0508      --          0.0442      0.0469      0.0410      0.80        0.0457    0.0099         
+shannon_entropy_absolute           --          0.0426      --          --          --          0.20        0.0426    0.0000         
+15th_percentile_gap                --          --          --          0.0467      0.0361      0.40        0.0414    0.0105         
+45th_percentile_gap                --          --          --          0.0413      --          0.20        0.0413    0.0000         
+10th_percentile_gap                --          --          --          --          0.0411      0.20        0.0411    0.0000         
+variance_normalized                --          --          --          --          0.0352      0.20        0.0352    0.0000         
+
+Legend:
+  Consistency: Fraction of references where feature appears in top 10
+  Avg: Average importance across references where feature appears
+  Range: Difference between max and min importance values
+  --: Feature not in top 10 for this reference
+
+
+====================================================================================================
+
+MASTER CLUSTER 3
+--------------------------------------------------
+
+Feature                            Ref10%      Ref25%      Ref50%      Ref75%      Ref95%      Consistency Avg       Range          
+------------------------------------------------------------------------------------------------------------------------
+5th_percentile_gap                 0.0793      0.0793      --          0.0755      0.0422      0.80        0.0691    0.0371         
+time_gap_evenness_metric           --          --          0.0823      --          0.0472      0.40        0.0648    0.0351         
+clumpiness_score                   --          --          0.0426      --          0.0831      0.40        0.0628    0.0406         
+avg_group_size                     0.0629      0.0629      --          0.0619      0.0604      0.80        0.0620    0.0025         
+proportion_in_groups               0.0652      0.0652      --          0.0670      0.0475      0.80        0.0613    0.0195         
+std_deviation_normalized           0.0620      0.0620      --          0.0542      --          0.60        0.0594    0.0078         
+biggest_group_metric               --          --          0.0655      --          0.0498      0.40        0.0577    0.0158         
+abandon_ratio                      --          --          0.0547      --          --          0.20        0.0547    0.0000         
+total_groups                       --          --          0.0521      --          --          0.20        0.0521    0.0000         
+selection_metric                   0.0533      0.0533      0.0437      0.0570      --          0.80        0.0518    0.0133         
+largest_group_position             0.0532      0.0532      --          0.0558      0.0429      0.80        0.0513    0.0130         
+total_finishers                    --          --          0.0593      --          0.0420      0.40        0.0507    0.0172         
+riders_in_groups                   --          --          0.0508      0.0450      0.0506      0.60        0.0488    0.0058         
+gini_coefficient                   --          --          --          --          0.0480      0.20        0.0480    0.0000         
+variance_normalized                0.0463      0.0463      --          0.0389      --          0.60        0.0438    0.0074         
+30th_percentile_gap                0.0437      0.0437      --          --          --          0.40        0.0437    0.0000         
+45th_percentile_gap                --          --          0.0428      --          --          0.20        0.0428    0.0000         
+15th_percentile_gap                0.0467      0.0467      0.0411      0.0364      --          0.80        0.0427    0.0103         
+10th_percentile_gap                0.0426      0.0426      --          0.0426      --          0.60        0.0426    0.0000         
+
+Legend:
+  Consistency: Fraction of references where feature appears in top 10
+  Avg: Average importance across references where feature appears
+  Range: Difference between max and min importance values
+  --: Feature not in top 10 for this reference
+
+
+====================================================================================================
+

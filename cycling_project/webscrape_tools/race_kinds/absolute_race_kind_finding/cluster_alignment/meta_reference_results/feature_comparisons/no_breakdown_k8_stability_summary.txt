@@ -1,0 +1,49 @@
+================================================================================
+FEATURE STABILITY SUMMARY
+Population: no_breakdown | K-Value: 8
+================================================================================
+
+MOST STABLE FEATURES (appear in most references with consistent importance):
+----------------------------------------------------------------------
+Master 4 - avg_group_size                           (consistency: 1.00, CV: 0.135)
+Master 1 - clumpiness_score                         (consistency: 1.00, CV: 0.148)
+Master 0 - biggest_group_metric                     (consistency: 1.00, CV: 0.191)
+Master 7 - avg_group_size                           (consistency: 1.00, CV: 0.240)
+Master 3 - 15th_percentile_gap                      (consistency: 1.00, CV: 0.244)
+Master 4 - biggest_group_metric                     (consistency: 1.00, CV: 0.264)
+Master 7 - selection_metric                         (consistency: 1.00, CV: 0.315)
+Master 4 - riders_in_groups                         (consistency: 0.80, CV: 0.054)
+Master 4 - proportion_in_groups                     (consistency: 0.80, CV: 0.111)
+Master 3 - biggest_group_metric                     (consistency: 0.80, CV: 0.112)
+Master 5 - clumpiness_score                         (consistency: 0.80, CV: 0.114)
+Master 0 - total_groups                             (consistency: 0.80, CV: 0.118)
+Master 6 - 15th_percentile_gap                      (consistency: 0.80, CV: 0.123)
+Master 0 - abandon_ratio                            (consistency: 0.80, CV: 0.132)
+Master 2 - biggest_group_metric                     (consistency: 0.80, CV: 0.134)
+
+
+MOST VARIABLE FEATURES (importance changes significantly across references):
+----------------------------------------------------------------------
+Master 1 - time_gap_evenness_metric                 (CV: 0.525, range: 0.0877)
+Master 2 - time_gap_evenness_metric                 (CV: 0.524, range: 0.0816)
+Master 3 - time_gap_evenness_metric                 (CV: 0.492, range: 0.0790)
+Master 7 - std_deviation_normalized                 (CV: 0.465, range: 0.0545)
+Master 6 - 5th_percentile_gap                       (CV: 0.398, range: 0.0814)
+Master 6 - std_deviation_normalized                 (CV: 0.391, range: 0.0472)
+Master 1 - skewness_normalized                      (CV: 0.366, range: 0.0474)
+Master 7 - proportion_in_groups                     (CV: 0.358, range: 0.0477)
+Master 7 - selection_metric                         (CV: 0.315, range: 0.0472)
+Master 0 - clumpiness_score                         (CV: 0.303, range: 0.0421)
+Master 4 - total_groups                             (CV: 0.300, range: 0.0335)
+Master 3 - std_group_size                           (CV: 0.281, range: 0.0397)
+Master 2 - abandon_ratio                            (CV: 0.280, range: 0.0368)
+Master 7 - largest_group_position                   (CV: 0.279, range: 0.0405)
+Master 2 - total_groups                             (CV: 0.274, range: 0.0352)
+
+
+OVERALL STATISTICS:
+------------------------------
+Average feature consistency: 0.577
+Average coefficient of variation: 0.171
+Features appearing in all references: 7
+Features appearing in only one reference: 0
