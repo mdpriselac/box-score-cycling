@@ -89,8 +89,8 @@ class AlignmentAnalysisPipeline:
         """
         if reference_percentiles is None:
             reference_percentiles = {
-                'with_breakdown': '50',
-                'no_breakdown': '50'
+                'with_breakdown': '30',
+                'no_breakdown': '30'
             }
         
         print("=" * 80)

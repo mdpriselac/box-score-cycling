@@ -135,22 +135,6 @@
       "3": 2,
       "4": 3,
       "5": 5
-    },
-    "95": {
-      "0": 0,
-      "1": 2,
-      "2": 3,
-      "3": 4,
-      "4": 1,
-      "5": 5
-    },
-    "100": {
-      "0": 0,
-      "1": 2,
-      "2": 3,
-      "3": 5,
-      "4": 4,
-      "5": 1
     }
   },
   "alignment_scores": {
@@ -170,13 +154,11 @@
     "75": 0.7956356301449746,
     "80": 0.7795160795950323,
     "85": 0.7528971768451801,
-    "90": 0.7933006787343886,
-    "95": 0.7620291282408141,
-    "100": 0.649872410493317
+    "90": 0.7933006787343886
   },
   "master_profiles": {
     "master_0": {
-      "n_members": 19,
+      "n_members": 17,
       "percentiles_present": [
         "10",
         "15",
@@ -194,93 +176,91 @@
         "75",
         "80",
         "85",
-        "90",
-        "95",
-        "100"
+        "90"
       ],
       "avg_feature_importance": {
-        "10th_percentile_gap": 0.0005844344115124804,
-        "15th_percentile_gap": 0.0031482212893383654,
-        "20th_percentile_gap": 0.007271020248320033,
-        "25th_percentile_gap": 0.010581553955421753,
-        "30th_percentile_gap": 0.007524413401520637,
-        "35th_percentile_gap": 0.011803221655902202,
-        "40th_percentile_gap": 0.008871938192527967,
-        "45th_percentile_gap": 0.00989520892717569,
-        "50th_percentile_gap": 0.006820975812302843,
-        "5th_percentile_gap": 0.03570635311781335,
-        "abandon_ratio": 0.07190559504626277,
-        "avg_group_size": 0.09819995694531965,
-        "biggest_group_metric": 0.02988468400766793,
-        "clumpiness_score": 0.05006897369857116,
-        "gini_coefficient": 0.053803545358796744,
-        "kurtosis_absolute": 0.0041000877501125715,
-        "kurtosis_normalized": 0.024403078592771937,
-        "largest_group_position": 0.027798182741058632,
-        "largest_group_size": 0.03790760880525378,
-        "proportion_in_groups": 0.07419244919260326,
-        "riders_in_groups": 0.00016862073811306903,
-        "selection_metric": 0.054046527136691516,
-        "shannon_entropy_absolute": 0.031500918569995755,
-        "shannon_entropy_normalized": 0.018784169492403087,
+        "10th_percentile_gap": 0.00025357800770092645,
+        "15th_percentile_gap": 0.0027255534457507136,
+        "20th_percentile_gap": 0.00701576794579827,
+        "25th_percentile_gap": 0.010428300657543027,
+        "30th_percentile_gap": 0.00698141183135407,
+        "35th_percentile_gap": 0.011602067676254251,
+        "40th_percentile_gap": 0.009915695626943022,
+        "45th_percentile_gap": 0.00926089984214425,
+        "50th_percentile_gap": 0.007623443554926707,
+        "5th_percentile_gap": 0.03736316696876998,
+        "abandon_ratio": 0.07748503543716734,
+        "avg_group_size": 0.0955412595893469,
+        "biggest_group_metric": 0.030251138002370285,
+        "clumpiness_score": 0.04650273532135269,
+        "gini_coefficient": 0.053937705544324054,
+        "kurtosis_absolute": 0.0,
+        "kurtosis_normalized": 0.025520124701932965,
+        "largest_group_position": 0.028780299943997317,
+        "largest_group_size": 0.03414096074188475,
+        "proportion_in_groups": 0.0761983597716245,
+        "riders_in_groups": 0.0,
+        "selection_metric": 0.05830645865797816,
+        "shannon_entropy_absolute": 0.03209554292126664,
+        "shannon_entropy_normalized": 0.02082930545287913,
         "skewness_absolute": 0.0,
-        "skewness_normalized": 0.026080051636568985,
-        "std_deviation_absolute": 0.016953319553579562,
-        "std_deviation_normalized": 0.008697708567122741,
-        "std_group_size": 0.042548109915360996,
-        "time_gap_evenness_metric": 0.04226553627071686,
-        "total_finishers": 0.07860155237745482,
-        "total_groups": 0.04284724334738216,
-        "total_race_duration": 0.005654203565206861,
-        "variance_absolute": 0.018845476022081687,
-        "winning_time": 0.03853505965706815
+        "skewness_normalized": 0.02569077153902474,
+        "std_deviation_absolute": 0.018947827736353628,
+        "std_deviation_normalized": 0.009720968398548946,
+        "std_group_size": 0.04106848777613807,
+        "time_gap_evenness_metric": 0.03615768962726397,
+        "total_finishers": 0.08293764484750075,
+        "total_groups": 0.039107467754791195,
+        "total_race_duration": 0.003512753041783681,
+        "variance_absolute": 0.019127464983944832,
+        "winning_time": 0.040970112651340276
       },
       "top_features": [
         [
           "avg_group_size",
-          0.09819995694531965
+          0.0955412595893469
         ],
         [
           "total_finishers",
-          0.07860155237745482
-        ],
-        [
-          "proportion_in_groups",
-          0.07419244919260326
+          0.08293764484750075
         ],
         [
           "abandon_ratio",
-          0.07190559504626277
+          0.07748503543716734
+        ],
+        [
+          "proportion_in_groups",
+          0.0761983597716245
         ],
         [
           "selection_metric",
-          0.054046527136691516
+          0.05830645865797816
         ],
         [
           "gini_coefficient",
-          0.053803545358796744
+          0.053937705544324054
         ],
         [
           "clumpiness_score",
-          0.05006897369857116
-        ],
-        [
-          "total_groups",
-          0.04284724334738216
+          0.04650273532135269
         ],
         [
           "std_group_size",
-          0.042548109915360996
+          0.04106848777613807
         ],
         [
-          "time_gap_evenness_metric",
-          0.04226553627071686
+          "winning_time",
+          0.040970112651340276
+        ],
+        [
+          "total_groups",
+          0.039107467754791195
         ]
       ],
-      "feature_diversity": 0.024799218492622063
+      "feature_diversity": 0.02531058478907613
     },
     "master_1": {
-      "n_members": 19,
+      "n_members": 17,
       "percentiles_present": [
         "10",
         "15",
@@ -298,93 +278,91 @@
         "75",
         "80",
         "85",
-        "90",
-        "95",
-        "100"
+        "90"
       ],
       "avg_feature_importance": {
-        "10th_percentile_gap": 0.0005749326729778459,
-        "15th_percentile_gap": 0.003354817564911841,
-        "20th_percentile_gap": 0.007922981096218163,
-        "25th_percentile_gap": 0.011080682128975086,
-        "30th_percentile_gap": 0.011047080301458524,
-        "35th_percentile_gap": 0.014637845936335223,
-        "40th_percentile_gap": 0.009773335991104299,
-        "45th_percentile_gap": 0.01425010733681961,
-        "50th_percentile_gap": 0.010320438193755499,
-        "5th_percentile_gap": 0.03372669131077583,
-        "abandon_ratio": 0.04638070048284112,
-        "avg_group_size": 0.05732932257286691,
-        "biggest_group_metric": 0.028443809471303573,
-        "clumpiness_score": 0.030112458019620446,
-        "gini_coefficient": 0.11018308652017848,
-        "kurtosis_absolute": 0.004825528015784111,
-        "kurtosis_normalized": 0.055449446484722505,
-        "largest_group_position": 0.02694943364386597,
-        "largest_group_size": 0.026864014820119898,
-        "proportion_in_groups": 0.03435142258232194,
-        "riders_in_groups": 0.00196860299250517,
-        "selection_metric": 0.06790705612950904,
-        "shannon_entropy_absolute": 0.027320416698529,
-        "shannon_entropy_normalized": 0.012121306878766292,
+        "10th_percentile_gap": 0.00013564823454389403,
+        "15th_percentile_gap": 0.0024832358378599853,
+        "20th_percentile_gap": 0.006945876562929266,
+        "25th_percentile_gap": 0.010095840411130763,
+        "30th_percentile_gap": 0.009978726363620193,
+        "35th_percentile_gap": 0.013806125542878148,
+        "40th_percentile_gap": 0.010923140225351863,
+        "45th_percentile_gap": 0.013496899606988093,
+        "50th_percentile_gap": 0.011534607393020853,
+        "5th_percentile_gap": 0.03745584149663911,
+        "abandon_ratio": 0.048460476964516004,
+        "avg_group_size": 0.05747766263303689,
+        "biggest_group_metric": 0.028443278662551103,
+        "clumpiness_score": 0.026505723320008077,
+        "gini_coefficient": 0.11457097776023263,
+        "kurtosis_absolute": 0.0,
+        "kurtosis_normalized": 0.056682351331555136,
+        "largest_group_position": 0.02593278176810066,
+        "largest_group_size": 0.021631246057269987,
+        "proportion_in_groups": 0.0322816907753551,
+        "riders_in_groups": 0.0,
+        "selection_metric": 0.073207718854946,
+        "shannon_entropy_absolute": 0.029082844827420653,
+        "shannon_entropy_normalized": 0.009626513978449045,
         "skewness_absolute": 0.0,
-        "skewness_normalized": 0.09061475980603663,
-        "std_deviation_absolute": 0.01280698913386018,
-        "std_deviation_normalized": 0.0017605999131286591,
-        "std_group_size": 0.12407680909990738,
-        "time_gap_evenness_metric": 0.024766609437385765,
-        "total_finishers": 0.029588316790021205,
-        "total_groups": 0.025161608393182978,
-        "total_race_duration": 0.006688811017303928,
-        "variance_absolute": 0.010230409627181133,
-        "winning_time": 0.027409568935725746
+        "skewness_normalized": 0.0968882455873582,
+        "std_deviation_absolute": 0.014313693737843731,
+        "std_deviation_normalized": 0.0019677293146732073,
+        "std_group_size": 0.13055676468502986,
+        "time_gap_evenness_metric": 0.019760244282067175,
+        "total_finishers": 0.03243532707556844,
+        "total_groups": 0.02333851320056065,
+        "total_race_duration": 0.002874104802730688,
+        "variance_absolute": 0.009160347302694018,
+        "winning_time": 0.027945821403070552
       },
       "top_features": [
         [
           "std_group_size",
-          0.12407680909990738
+          0.13055676468502986
         ],
         [
           "gini_coefficient",
-          0.11018308652017848
+          0.11457097776023263
         ],
         [
           "skewness_normalized",
-          0.09061475980603663
+          0.0968882455873582
         ],
         [
           "selection_metric",
-          0.06790705612950904
+          0.073207718854946
         ],
         [
           "avg_group_size",
-          0.05732932257286691
+          0.05747766263303689
         ],
         [
           "kurtosis_normalized",
-          0.055449446484722505
+          0.056682351331555136
         ],
         [
           "abandon_ratio",
-          0.04638070048284112
-        ],
-        [
-          "proportion_in_groups",
-          0.03435142258232194
+          0.048460476964516004
         ],
         [
           "5th_percentile_gap",
-          0.03372669131077583
+          0.03745584149663911
         ],
         [
-          "clumpiness_score",
-          0.030112458019620446
+          "total_finishers",
+          0.03243532707556844
+        ],
+        [
+          "proportion_in_groups",
+          0.0322816907753551
         ]
       ],
-      "feature_diversity": 0.029678692661225147
+      "feature_diversity": 0.03171188612201621
     },
     "master_2": {
-      "n_members": 19,
+      "n_members": 17,
       "percentiles_present": [
         "10",
         "15",
@@ -402,93 +380,91 @@
         "75",
         "80",
         "85",
-        "90",
-        "95",
-        "100"
+        "90"
       ],
       "avg_feature_importance": {
-        "10th_percentile_gap": 0.001210043432325366,
-        "15th_percentile_gap": 0.005426193376730238,
-        "20th_percentile_gap": 0.010108064243931618,
-        "25th_percentile_gap": 0.011636265245517358,
-        "30th_percentile_gap": 0.01798355729448009,
-        "35th_percentile_gap": 0.018686104766550467,
-        "40th_percentile_gap": 0.01584229767959208,
-        "45th_percentile_gap": 0.025733883830544972,
-        "50th_percentile_gap": 0.019770562586786104,
-        "5th_percentile_gap": 0.03508053433274166,
-        "abandon_ratio": 0.07713300527861858,
-        "avg_group_size": 0.04647422133977474,
-        "biggest_group_metric": 0.13188440097069615,
-        "clumpiness_score": 0.027439166348226636,
-        "gini_coefficient": 0.027711406655434555,
-        "kurtosis_absolute": 0.002332674967705121,
-        "kurtosis_normalized": 0.01603763925779633,
-        "largest_group_position": 0.09749732367858406,
-        "largest_group_size": 0.028707513862262446,
-        "proportion_in_groups": 0.04701960837658116,
-        "riders_in_groups": 0.0003903110958139042,
-        "selection_metric": 0.05417107655638865,
-        "shannon_entropy_absolute": 0.03368721623948221,
-        "shannon_entropy_normalized": 0.01950309404782695,
+        "10th_percentile_gap": 0.00051911882679771,
+        "15th_percentile_gap": 0.004655944275608941,
+        "20th_percentile_gap": 0.008482713558299763,
+        "25th_percentile_gap": 0.009485577952874578,
+        "30th_percentile_gap": 0.016132870821628724,
+        "35th_percentile_gap": 0.015724615575063248,
+        "40th_percentile_gap": 0.01770609740660291,
+        "45th_percentile_gap": 0.021571124682168635,
+        "50th_percentile_gap": 0.022096511126408,
+        "5th_percentile_gap": 0.0389651492077801,
+        "abandon_ratio": 0.08368548995524219,
+        "avg_group_size": 0.04863470868356845,
+        "biggest_group_metric": 0.13325480425509842,
+        "clumpiness_score": 0.027690574883547217,
+        "gini_coefficient": 0.02555452308777705,
+        "kurtosis_absolute": 0.0,
+        "kurtosis_normalized": 0.015681387981440947,
+        "largest_group_position": 0.09538830615828205,
+        "largest_group_size": 0.025024721032468833,
+        "proportion_in_groups": 0.05044762794943094,
+        "riders_in_groups": 0.0,
+        "selection_metric": 0.05787398279316188,
+        "shannon_entropy_absolute": 0.03342026801068771,
+        "shannon_entropy_normalized": 0.01959521602913738,
         "skewness_absolute": 0.0,
-        "skewness_normalized": 0.024946536048474258,
-        "std_deviation_absolute": 0.01776031552959624,
-        "std_deviation_normalized": 0.01369985865866751,
-        "std_group_size": 0.02524483061625415,
-        "time_gap_evenness_metric": 0.025839461764553404,
-        "total_finishers": 0.022856954557324186,
-        "total_groups": 0.030092619287970544,
-        "total_race_duration": 0.0221949848920462,
-        "variance_absolute": 0.02606587623888129,
-        "winning_time": 0.019832396941840788
+        "skewness_normalized": 0.024562569635447035,
+        "std_deviation_absolute": 0.019849764415431095,
+        "std_deviation_normalized": 0.015311606736157805,
+        "std_group_size": 0.024374906812180307,
+        "time_gap_evenness_metric": 0.025118194662655635,
+        "total_finishers": 0.02529666142611655,
+        "total_groups": 0.031219456043732916,
+        "total_race_duration": 0.019512140987869516,
+        "variance_absolute": 0.023667906509254457,
+        "winning_time": 0.019495458518078986
       },
       "top_features": [
         [
           "biggest_group_metric",
-          0.13188440097069615
+          0.13325480425509842
         ],
         [
           "largest_group_position",
-          0.09749732367858406
+          0.09538830615828205
         ],
         [
           "abandon_ratio",
-          0.07713300527861858
+          0.08368548995524219
         ],
         [
           "selection_metric",
-          0.05417107655638865
+          0.05787398279316188
         ],
         [
           "proportion_in_groups",
-          0.04701960837658116
+          0.05044762794943094
         ],
         [
           "avg_group_size",
-          0.04647422133977474
+          0.04863470868356845
         ],
         [
           "5th_percentile_gap",
-          0.03508053433274166
+          0.0389651492077801
         ],
         [
           "shannon_entropy_absolute",
-          0.03368721623948221
+          0.03342026801068771
         ],
         [
           "total_groups",
-          0.030092619287970544
+          0.031219456043732916
         ],
         [
-          "largest_group_size",
-          0.028707513862262446
+          "clumpiness_score",
+          0.027690574883547217
         ]
       ],
-      "feature_diversity": 0.026514169444219186
+      "feature_diversity": 0.027364879603767562
     },
     "master_3": {
-      "n_members": 19,
+      "n_members": 17,
       "percentiles_present": [
         "10",
         "15",
@@ -506,197 +482,91 @@
         "75",
         "80",
         "85",
-        "90",
-        "95",
-        "100"
+        "90"
       ],
       "avg_feature_importance": {
-        "10th_percentile_gap": 0.0007701097275114827,
-        "15th_percentile_gap": 0.008380196156902161,
-        "20th_percentile_gap": 0.017865766780864347,
-        "25th_percentile_gap": 0.04057313298545887,
-        "30th_percentile_gap": 0.054268624976142,
-        "35th_percentile_gap": 0.054771916018785186,
-        "40th_percentile_gap": 0.04221216842650405,
-        "45th_percentile_gap": 0.07395298157526715,
-        "50th_percentile_gap": 0.058138461331143566,
-        "5th_percentile_gap": 0.033996852523172284,
-        "abandon_ratio": 0.03596533786822798,
-        "avg_group_size": 0.031958037608624826,
-        "biggest_group_metric": 0.03492728674389065,
-        "clumpiness_score": 0.024858386889583008,
-        "gini_coefficient": 0.026268126362641312,
-        "kurtosis_absolute": 0.0008115382257083413,
-        "kurtosis_normalized": 0.06506876023377393,
-        "largest_group_position": 0.030357895910487893,
-        "largest_group_size": 0.008431929810020751,
-        "proportion_in_groups": 0.021664564063323684,
-        "riders_in_groups": 0.00015767258661282527,
-        "selection_metric": 0.043813864448910236,
-        "shannon_entropy_absolute": 0.015825514857864518,
-        "shannon_entropy_normalized": 0.012615522880003087,
+        "10th_percentile_gap": 0.00036989728406950305,
+        "15th_percentile_gap": 0.004836303980098154,
+        "20th_percentile_gap": 0.013224511570655531,
+        "25th_percentile_gap": 0.036563907288582484,
+        "30th_percentile_gap": 0.051653523598140315,
+        "35th_percentile_gap": 0.05172206895870895,
+        "40th_percentile_gap": 0.047178305888445696,
+        "45th_percentile_gap": 0.0742093656648222,
+        "50th_percentile_gap": 0.0649782803112781,
+        "5th_percentile_gap": 0.034914926532657854,
+        "abandon_ratio": 0.039116840238915394,
+        "avg_group_size": 0.03286266671528,
+        "biggest_group_metric": 0.033382672964893535,
+        "clumpiness_score": 0.02582476780424712,
+        "gini_coefficient": 0.02501112847098686,
+        "kurtosis_absolute": 0.0,
+        "kurtosis_normalized": 0.07125702516275247,
+        "largest_group_position": 0.027921022341414636,
+        "largest_group_size": 0.005664679034762332,
+        "proportion_in_groups": 0.022086344216107414,
+        "riders_in_groups": 0.0,
+        "selection_metric": 0.04566965458621049,
+        "shannon_entropy_absolute": 0.014922763645186703,
+        "shannon_entropy_normalized": 0.012071625596778898,
         "skewness_absolute": 0.0,
-        "skewness_normalized": 0.03712320225156363,
-        "std_deviation_absolute": 0.04901887563099375,
-        "std_deviation_normalized": 0.008385622023960829,
-        "std_group_size": 0.02105221322571289,
-        "time_gap_evenness_metric": 0.014484353124901825,
-        "total_finishers": 0.031087621765087572,
-        "total_groups": 0.026300687148086282,
-        "total_race_duration": 0.014247219725929882,
-        "variance_absolute": 0.01867348040511547,
-        "winning_time": 0.04197207570722375
+        "skewness_normalized": 0.03986409149706748,
+        "std_deviation_absolute": 0.05478580217581654,
+        "std_deviation_normalized": 0.00937216579148563,
+        "std_group_size": 0.020043798811504646,
+        "time_gap_evenness_metric": 0.014877763510057658,
+        "total_finishers": 0.028755156729694448,
+        "total_groups": 0.02304592915835433,
+        "total_race_duration": 0.01299928086686606,
+        "variance_absolute": 0.017202544788068264,
+        "winning_time": 0.043611184816090304
       },
       "top_features": [
         [
           "45th_percentile_gap",
-          0.07395298157526715
+          0.0742093656648222
         ],
         [
           "kurtosis_normalized",
-          0.06506876023377393
+          0.07125702516275247
         ],
         [
           "50th_percentile_gap",
-          0.058138461331143566
-        ],
-        [
-          "35th_percentile_gap",
-          0.054771916018785186
-        ],
-        [
-          "30th_percentile_gap",
-          0.054268624976142
+          0.0649782803112781
         ],
         [
           "std_deviation_absolute",
-          0.04901887563099375
+          0.05478580217581654
         ],
         [
-          "selection_metric",
-          0.043813864448910236
+          "35th_percentile_gap",
+          0.05172206895870895
+        ],
+        [
+          "30th_percentile_gap",
+          0.051653523598140315
         ],
         [
           "40th_percentile_gap",
-          0.04221216842650405
-        ],
-        [
-          "winning_time",
-          0.04197207570722375
-        ],
-        [
-          "25th_percentile_gap",
-          0.04057313298545887
-        ]
-      ],
-      "feature_diversity": 0.018929192178429078
-    },
-    "master_4": {
-      "n_members": 19,
-      "percentiles_present": [
-        "10",
-        "15",
-        "20",
-        "25",
-        "30",
-        "35",
-        "40",
-        "45",
-        "50",
-        "55",
-        "60",
-        "65",
-        "70",
-        "75",
-        "80",
-        "85",
-        "90",
-        "95",
-        "100"
-      ],
-      "avg_feature_importance": {
-        "10th_percentile_gap": 0.0003177800349866381,
-        "15th_percentile_gap": 0.004529834662312346,
-        "20th_percentile_gap": 0.007959523119566958,
-        "25th_percentile_gap": 0.014008459603687901,
-        "30th_percentile_gap": 0.008460321042696345,
-        "35th_percentile_gap": 0.0162684276411007,
-        "40th_percentile_gap": 0.008121241732899178,
-        "45th_percentile_gap": 0.019065978497336517,
-        "50th_percentile_gap": 0.010151035549625464,
-        "5th_percentile_gap": 0.029055480723654836,
-        "abandon_ratio": 0.05984573414800476,
-        "avg_group_size": 0.05156522381386925,
-        "biggest_group_metric": 0.04540899081650609,
-        "clumpiness_score": 0.04349370302792662,
-        "gini_coefficient": 0.07102265092788274,
-        "kurtosis_absolute": 0.0043184271564633584,
-        "kurtosis_normalized": 0.0408364154875506,
-        "largest_group_position": 0.028915359814874517,
-        "largest_group_size": 0.026846651182592877,
-        "proportion_in_groups": 0.04757324994466027,
-        "riders_in_groups": 0.0017729332157356793,
-        "selection_metric": 0.06220026112705251,
-        "shannon_entropy_absolute": 0.030371370337195468,
-        "shannon_entropy_normalized": 0.02650799934821338,
-        "skewness_absolute": 0.0,
-        "skewness_normalized": 0.0369008222816744,
-        "std_deviation_absolute": 0.031736632658342825,
-        "std_deviation_normalized": 0.00288413851506472,
-        "std_group_size": 0.05518380429492543,
-        "time_gap_evenness_metric": 0.035792467989554835,
-        "total_finishers": 0.06466506118596081,
-        "total_groups": 0.018637289234701968,
-        "total_race_duration": 0.004534076537133483,
-        "variance_absolute": 0.023162596297187373,
-        "winning_time": 0.06788605804905924
-      },
-      "top_features": [
-        [
-          "gini_coefficient",
-          0.07102265092788274
-        ],
-        [
-          "winning_time",
-          0.06788605804905924
-        ],
-        [
-          "total_finishers",
-          0.06466506118596081
+          0.047178305888445696
         ],
         [
           "selection_metric",
-          0.06220026112705251
+          0.04566965458621049
         ],
         [
-          "abandon_ratio",
-          0.05984573414800476
+          "winning_time",
+          0.043611184816090304
         ],
         [
-          "std_group_size",
-          0.05518380429492543
-        ],
-        [
-          "avg_group_size",
-          0.05156522381386925
-        ],
-        [
-          "proportion_in_groups",
-          0.04757324994466027
-        ],
-        [
-          "biggest_group_metric",
-          0.04540899081650609
-        ],
-        [
-          "clumpiness_score",
-          0.04349370302792662
+          "skewness_normalized",
+          0.03986409149706748
         ]
       ],
-      "feature_diversity": 0.02142202699646287
+      "feature_diversity": 0.020252502918182428
     },
-    "master_5": {
-      "n_members": 19,
+    "master_4": {
+      "n_members": 17,
       "percentiles_present": [
         "10",
         "15",
@@ -714,90 +584,190 @@
         "75",
         "80",
         "85",
-        "90",
-        "95",
-        "100"
+        "90"
       ],
       "avg_feature_importance": {
-        "10th_percentile_gap": 0.019289023317906214,
-        "15th_percentile_gap": 0.047462824380460164,
-        "20th_percentile_gap": 0.06567959314633186,
-        "25th_percentile_gap": 0.0719864876128463,
-        "30th_percentile_gap": 0.0957716396113068,
-        "35th_percentile_gap": 0.06661587215336869,
-        "40th_percentile_gap": 0.06259224639830151,
-        "45th_percentile_gap": 0.05256560167766252,
-        "50th_percentile_gap": 0.05431976427024018,
-        "5th_percentile_gap": 0.007844262731017895,
-        "abandon_ratio": 0.022675781886379788,
-        "avg_group_size": 0.008435787424105591,
-        "biggest_group_metric": 0.020036468770010345,
-        "clumpiness_score": 0.018799365377066512,
-        "gini_coefficient": 0.007381994723251596,
-        "kurtosis_absolute": 0.0002343915475733559,
-        "kurtosis_normalized": 0.017064490895056142,
-        "largest_group_position": 0.017947587298606005,
-        "largest_group_size": 0.00380105852965507,
-        "proportion_in_groups": 0.005238341059495461,
-        "riders_in_groups": 7.25773778378796e-05,
-        "selection_metric": 0.011973818684319766,
-        "shannon_entropy_absolute": 0.004785666325658942,
-        "shannon_entropy_normalized": 0.005260203278581134,
+        "10th_percentile_gap": 2.511554586776522e-05,
+        "15th_percentile_gap": 0.004346999538440485,
+        "20th_percentile_gap": 0.007763017482241521,
+        "25th_percentile_gap": 0.01418206771255771,
+        "30th_percentile_gap": 0.00780333005509648,
+        "35th_percentile_gap": 0.01626211077514895,
+        "40th_percentile_gap": 0.00907668193676967,
+        "45th_percentile_gap": 0.018892873047659936,
+        "50th_percentile_gap": 0.011345275026051989,
+        "5th_percentile_gap": 0.03234212996931681,
+        "abandon_ratio": 0.0635952257042895,
+        "avg_group_size": 0.04878497046805481,
+        "biggest_group_metric": 0.045210644540745824,
+        "clumpiness_score": 0.04101664703212582,
+        "gini_coefficient": 0.06948815894813605,
+        "kurtosis_absolute": 0.0,
+        "kurtosis_normalized": 0.043029206139347694,
+        "largest_group_position": 0.029842318348021483,
+        "largest_group_size": 0.022079799458343895,
+        "proportion_in_groups": 0.0474216926173157,
+        "riders_in_groups": 0.0,
+        "selection_metric": 0.06693663416104854,
+        "shannon_entropy_absolute": 0.02971020052221194,
+        "shannon_entropy_normalized": 0.022629825059090104,
         "skewness_absolute": 0.0,
-        "skewness_normalized": 0.04225952444129404,
-        "std_deviation_absolute": 0.03599254913198696,
-        "std_deviation_normalized": 0.013316006056876238,
-        "std_group_size": 0.007532184372881498,
-        "time_gap_evenness_metric": 0.003299991257774747,
-        "total_finishers": 0.008386383869013681,
-        "total_groups": 0.005896359885684203,
-        "total_race_duration": 0.006059628296675466,
-        "variance_absolute": 0.17042960331992899,
-        "winning_time": 0.0189929208908445
+        "skewness_normalized": 0.03666618647871608,
+        "std_deviation_absolute": 0.03547035414755963,
+        "std_deviation_normalized": 0.0032234489286017457,
+        "std_group_size": 0.055168243597368063,
+        "time_gap_evenness_metric": 0.031675613221370455,
+        "total_finishers": 0.07221117289382936,
+        "total_groups": 0.017129780095024538,
+        "total_race_duration": 0.0003332047392581003,
+        "variance_absolute": 0.02304572344239217,
+        "winning_time": 0.07329134836799724
+      },
+      "top_features": [
+        [
+          "winning_time",
+          0.07329134836799724
+        ],
+        [
+          "total_finishers",
+          0.07221117289382936
+        ],
+        [
+          "gini_coefficient",
+          0.06948815894813605
+        ],
+        [
+          "selection_metric",
+          0.06693663416104854
+        ],
+        [
+          "abandon_ratio",
+          0.0635952257042895
+        ],
+        [
+          "std_group_size",
+          0.055168243597368063
+        ],
+        [
+          "avg_group_size",
+          0.04878497046805481
+        ],
+        [
+          "proportion_in_groups",
+          0.0474216926173157
+        ],
+        [
+          "biggest_group_metric",
+          0.045210644540745824
+        ],
+        [
+          "kurtosis_normalized",
+          0.043029206139347694
+        ]
+      ],
+      "feature_diversity": 0.02271050171295672
+    },
+    "master_5": {
+      "n_members": 17,
+      "percentiles_present": [
+        "10",
+        "15",
+        "20",
+        "25",
+        "30",
+        "35",
+        "40",
+        "45",
+        "50",
+        "55",
+        "60",
+        "65",
+        "70",
+        "75",
+        "80",
+        "85",
+        "90"
+      ],
+      "avg_feature_importance": {
+        "10th_percentile_gap": 0.0011036119416876673,
+        "15th_percentile_gap": 0.037395539969738406,
+        "20th_percentile_gap": 0.05752489009940366,
+        "25th_percentile_gap": 0.06790770369055592,
+        "30th_percentile_gap": 0.09614130621471356,
+        "35th_percentile_gap": 0.06510875607113233,
+        "40th_percentile_gap": 0.06995604009221934,
+        "45th_percentile_gap": 0.05231200780600359,
+        "50th_percentile_gap": 0.06071032477262137,
+        "5th_percentile_gap": 0.00860571156359876,
+        "abandon_ratio": 0.02502341214371585,
+        "avg_group_size": 0.008897115564082594,
+        "biggest_group_metric": 0.019195822896762072,
+        "clumpiness_score": 0.020337228912389368,
+        "gini_coefficient": 0.006677144146041909,
+        "kurtosis_absolute": 0.0,
+        "kurtosis_normalized": 0.017696238198697662,
+        "largest_group_position": 0.01689839037633904,
+        "largest_group_size": 0.0029196359830034814,
+        "proportion_in_groups": 0.005185853366734803,
+        "riders_in_groups": 0.0,
+        "selection_metric": 0.012736860150807971,
+        "shannon_entropy_absolute": 0.004564947112991753,
+        "shannon_entropy_normalized": 0.004137614013111806,
+        "skewness_absolute": 0.0,
+        "skewness_normalized": 0.045852677705049104,
+        "std_deviation_absolute": 0.0402269666769266,
+        "std_deviation_normalized": 0.01488259500474403,
+        "std_group_size": 0.007781190526714796,
+        "time_gap_evenness_metric": 0.00305259523780036,
+        "total_finishers": 0.00920655738836799,
+        "total_groups": 0.006242631479129238,
+        "total_race_duration": 0.003719397229340301,
+        "variance_absolute": 0.18741749457806262,
+        "winning_time": 0.020581739087512086
       },
       "top_features": [
         [
           "variance_absolute",
-          0.17042960331992899
+          0.18741749457806262
         ],
         [
           "30th_percentile_gap",
-          0.0957716396113068
-        ],
-        [
-          "25th_percentile_gap",
-          0.0719864876128463
-        ],
-        [
-          "35th_percentile_gap",
-          0.06661587215336869
-        ],
-        [
-          "20th_percentile_gap",
-          0.06567959314633186
+          0.09614130621471356
         ],
         [
           "40th_percentile_gap",
-          0.06259224639830151
+          0.06995604009221934
+        ],
+        [
+          "25th_percentile_gap",
+          0.06790770369055592
+        ],
+        [
+          "35th_percentile_gap",
+          0.06510875607113233
         ],
         [
           "50th_percentile_gap",
-          0.05431976427024018
+          0.06071032477262137
+        ],
+        [
+          "20th_percentile_gap",
+          0.05752489009940366
         ],
         [
           "45th_percentile_gap",
-          0.05256560167766252
-        ],
-        [
-          "15th_percentile_gap",
-          0.047462824380460164
+          0.05231200780600359
         ],
         [
           "skewness_normalized",
-          0.04225952444129404
+          0.045852677705049104
+        ],
+        [
+          "std_deviation_absolute",
+          0.0402269666769266
         ]
       ],
-      "feature_diversity": 0.034629137995038334
+      "feature_diversity": 0.03691152281171465
     }
   },
   "migration_patterns": {
@@ -1316,64 +1286,10 @@
           }
         },
         "n_transitions": 6
-      },
-      {
-        "from_percentile": "90",
-        "to_percentile": "95",
-        "transitions": {
-          "0": {
-            "from_master": 4,
-            "to_master": 0,
-            "percentile_transition": "90->95"
-          },
-          "1": {
-            "from_master": 0,
-            "to_master": 2,
-            "percentile_transition": "90->95"
-          },
-          "2": {
-            "from_master": 1,
-            "to_master": 3,
-            "percentile_transition": "90->95"
-          },
-          "3": {
-            "from_master": 2,
-            "to_master": 4,
-            "percentile_transition": "90->95"
-          },
-          "4": {
-            "from_master": 3,
-            "to_master": 1,
-            "percentile_transition": "90->95"
-          }
-        },
-        "n_transitions": 5
-      },
-      {
-        "from_percentile": "95",
-        "to_percentile": "100",
-        "transitions": {
-          "3": {
-            "from_master": 4,
-            "to_master": 5,
-            "percentile_transition": "95->100"
-          },
-          "4": {
-            "from_master": 1,
-            "to_master": 4,
-            "percentile_transition": "95->100"
-          },
-          "5": {
-            "from_master": 5,
-            "to_master": 1,
-            "percentile_transition": "95->100"
-          }
-        },
-        "n_transitions": 3
       }
     ],
-    "total_migrations": 90,
-    "migration_rate": 0.8333333333333334
+    "total_migrations": 82,
+    "migration_rate": 0.8541666666666666
   },
   "stability_metrics": {
     "transition_consistency": {
@@ -1505,22 +1421,6 @@
           0.9591046939497944,
           0.9984138769493681,
           0.9763849881176624
-        ],
-        [
-          0.9257587527484187,
-          0.8850729998907636,
-          0.8728876012871861,
-          0.9284373209578529,
-          0.9234934960925043,
-          0.8927731305037953
-        ],
-        [
-          0.6784821216423813,
-          0.6273171186545421,
-          0.8188986145073011,
-          0.4459125255183216,
-          0.5734886004007624,
-          0.5376723973018789
         ]
       ],
       "transition_details": [
@@ -1731,47 +1631,21 @@
             0.9984138769493681,
             0.9763849881176624
           ]
-        },
-        {
-          "from_percentile": "90",
-          "to_percentile": "95",
-          "similarity": 0.9047372169134201,
-          "per_cluster": [
-            0.9257587527484187,
-            0.8850729998907636,
-            0.8728876012871861,
-            0.9284373209578529,
-            0.9234934960925043,
-            0.8927731305037953
-          ]
-        },
-        {
-          "from_percentile": "95",
-          "to_percentile": "100",
-          "similarity": 0.6136285630041979,
-          "per_cluster": [
-            0.6784821216423813,
-            0.6273171186545421,
-            0.8188986145073011,
-            0.4459125255183216,
-            0.5734886004007624,
-            0.5376723973018789
-          ]
         }
       ],
-      "avg_transition_consistency": 0.7245297483947868,
+      "avg_transition_consistency": 0.720198105699284,
       "min_transition_consistency": 0.021214132456468908,
       "max_transition_consistency": 0.9984138769493681,
-      "std_transition_consistency": 0.23179460780998262
+      "std_transition_consistency": 0.23820775810853997
     },
     "master_coherence": {
       "per_master_coherence": {
         "master_0": {
-          "coherence_score": 0.6468526266848773,
-          "coherence_std": 0.16869175503825648,
+          "coherence_score": 0.6481301812456265,
+          "coherence_std": 0.17253008036674602,
           "min_similarity": 0.07147320059374114,
           "max_similarity": 0.9918874222465022,
-          "n_members": 19,
+          "n_members": 17,
           "members": [
             [
               "50",
@@ -1840,23 +1714,15 @@
             [
               "90",
               1
-            ],
-            [
-              "95",
-              0
-            ],
-            [
-              "100",
-              0
             ]
           ]
         },
         "master_1": {
-          "coherence_score": 0.6605419944554928,
-          "coherence_std": 0.2178022012836642,
+          "coherence_score": 0.6798994703502804,
+          "coherence_std": 0.2281657066684951,
           "min_similarity": 0.03355128595220014,
           "max_similarity": 0.9896646848403794,
-          "n_members": 19,
+          "n_members": 17,
           "members": [
             [
               "50",
@@ -1925,23 +1791,15 @@
             [
               "90",
               2
-            ],
-            [
-              "95",
-              4
-            ],
-            [
-              "100",
-              5
             ]
           ]
         },
         "master_2": {
-          "coherence_score": 0.5317630630794177,
-          "coherence_std": 0.26833135651329704,
+          "coherence_score": 0.511883357646885,
+          "coherence_std": 0.27314441192516214,
           "min_similarity": 0.021214132456468908,
           "max_similarity": 0.970789615423505,
-          "n_members": 19,
+          "n_members": 17,
           "members": [
             [
               "50",
@@ -2010,23 +1868,15 @@
             [
               "90",
               3
-            ],
-            [
-              "95",
-              1
-            ],
-            [
-              "100",
-              1
             ]
           ]
         },
         "master_3": {
-          "coherence_score": 0.4493426889474927,
-          "coherence_std": 0.2305176562478568,
+          "coherence_score": 0.45036203904864885,
+          "coherence_std": 0.23622614939831582,
           "min_similarity": 0.012017760943666236,
           "max_similarity": 0.9629663746750253,
-          "n_members": 19,
+          "n_members": 17,
           "members": [
             [
               "50",
@@ -2095,23 +1945,15 @@
             [
               "90",
               4
-            ],
-            [
-              "95",
-              2
-            ],
-            [
-              "100",
-              2
             ]
           ]
         },
         "master_4": {
-          "coherence_score": 0.6215390013902965,
-          "coherence_std": 0.18271042586423658,
+          "coherence_score": 0.6381075123561621,
+          "coherence_std": 0.17710733361254735,
           "min_similarity": 0.09856047798954112,
           "max_similarity": 0.9984138769493682,
-          "n_members": 19,
+          "n_members": 17,
           "members": [
             [
               "50",
@@ -2180,23 +2022,15 @@
             [
               "90",
               0
-            ],
-            [
-              "95",
-              3
-            ],
-            [
-              "100",
-              4
             ]
           ]
         },
         "master_5": {
-          "coherence_score": 0.4481775538707246,
-          "coherence_std": 0.25431616102175014,
+          "coherence_score": 0.46539684566038103,
+          "coherence_std": 0.24350260400684512,
           "min_similarity": 0.01088149373397403,
           "max_similarity": 0.9763849881176624,
-          "n_members": 19,
+          "n_members": 17,
           "members": [
             [
               "50",
@@ -2265,21 +2099,13 @@
             [
               "90",
               5
-            ],
-            [
-              "95",
-              5
-            ],
-            [
-              "100",
-              3
             ]
           ]
         }
       },
-      "average_coherence": 0.5597028214047169,
-      "min_coherence": 0.4481775538707246,
-      "max_coherence": 0.6605419944554928
+      "average_coherence": 0.5656299010513307,
+      "min_coherence": 0.45036203904864885,
+      "max_coherence": 0.6798994703502804
     },
     "percentile_stability": {
       "per_percentile_stability": {
@@ -2348,568 +2174,560 @@
           "n_comparisons": 12
         },
         "90": {
-          "stability_score": 0.9419437772294286,
-          "n_comparisons": 12
-        },
-        "95": {
-          "stability_score": 0.7591828899588092,
-          "n_comparisons": 12
-        },
-        "100": {
-          "stability_score": 0.6136285630041979,
+          "stability_score": 0.9791503375454372,
           "n_comparisons": 6
         }
       },
-      "average_stability": 0.7123020889451419,
+      "average_stability": 0.7175373410182763,
       "most_stable_percentile": "90",
       "least_stable_percentile": "10"
     },
     "feature_consistency": {
       "per_master_consistency": {
         "master_0": {
-          "avg_cv": 1.282527152681265,
+          "avg_cv": 1.124010296676692,
           "most_consistent_features": [
+            [
+              "kurtosis_absolute",
+              0
+            ],
+            [
+              "riders_in_groups",
+              0
+            ],
             [
               "skewness_absolute",
               0
             ],
             [
-              "std_group_size",
-              0.46556386190826055
-            ],
-            [
-              "gini_coefficient",
-              0.4779232908704711
+              "selection_metric",
+              0.439586121240388
             ],
             [
               "avg_group_size",
-              0.5045433643583299
-            ],
-            [
-              "selection_metric",
-              0.5069192199094067
+              0.49444520693956656
             ]
           ],
           "least_consistent_features": [
             [
-              "10th_percentile_gap",
-              2.4914810109182315
+              "40th_percentile_gap",
+              1.6047045370354796
             ],
             [
-              "total_race_duration",
-              2.7740331097553343
+              "15th_percentile_gap",
+              1.705788116675594
             ],
             [
               "std_deviation_normalized",
-              3.308594964198216
+              3.1127548370078753
             ],
             [
-              "riders_in_groups",
-              4.242640687119285
+              "10th_percentile_gap",
+              4.0
             ],
             [
-              "kurtosis_absolute",
-              4.242640687119286
+              "total_race_duration",
+              4.000000000000001
             ]
           ],
           "feature_cvs": {
-            "10th_percentile_gap": 2.4914810109182315,
-            "15th_percentile_gap": 1.4650891047906374,
-            "20th_percentile_gap": 1.1253460321842672,
-            "25th_percentile_gap": 1.2438537079500709,
-            "30th_percentile_gap": 0.6936343817874121,
-            "35th_percentile_gap": 1.0889777748658416,
-            "40th_percentile_gap": 1.7308015207592455,
-            "45th_percentile_gap": 0.8366452995776315,
-            "50th_percentile_gap": 1.0748841249230632,
-            "5th_percentile_gap": 0.7716189272698772,
-            "abandon_ratio": 0.7181570359309873,
-            "avg_group_size": 0.5045433643583299,
-            "biggest_group_metric": 0.576067464957923,
-            "clumpiness_score": 1.063949597705115,
-            "gini_coefficient": 0.4779232908704711,
-            "kurtosis_absolute": 4.242640687119286,
-            "kurtosis_normalized": 0.7011813870368913,
-            "largest_group_position": 0.9384397713290022,
-            "largest_group_size": 0.9698542718720694,
-            "proportion_in_groups": 0.8615743668058717,
-            "riders_in_groups": 4.242640687119285,
-            "selection_metric": 0.5069192199094067,
-            "shannon_entropy_absolute": 1.2205332602902856,
-            "shannon_entropy_normalized": 1.668071525831965,
+            "10th_percentile_gap": 4.0,
+            "15th_percentile_gap": 1.705788116675594,
+            "20th_percentile_gap": 1.2132971659367655,
+            "25th_percentile_gap": 1.3270398255171951,
+            "30th_percentile_gap": 0.7383105643725031,
+            "35th_percentile_gap": 1.1669372919018322,
+            "40th_percentile_gap": 1.6047045370354796,
+            "45th_percentile_gap": 0.91910114835228,
+            "50th_percentile_gap": 0.9635840441917469,
+            "5th_percentile_gap": 0.7413839636058533,
+            "abandon_ratio": 0.6598495755012954,
+            "avg_group_size": 0.49444520693956656,
+            "biggest_group_metric": 0.5854224533548743,
+            "clumpiness_score": 1.1877510077435578,
+            "gini_coefficient": 0.5005585772045195,
+            "kurtosis_absolute": 0,
+            "kurtosis_normalized": 0.6664055290683635,
+            "largest_group_position": 0.9509765358697528,
+            "largest_group_size": 1.0732451321838599,
+            "proportion_in_groups": 0.8788723317770938,
+            "riders_in_groups": 0,
+            "selection_metric": 0.439586121240388,
+            "shannon_entropy_absolute": 1.2331666090111795,
+            "shannon_entropy_normalized": 1.5610889033477287,
             "skewness_absolute": 0,
-            "skewness_normalized": 0.6921968685917841,
-            "std_deviation_absolute": 1.1496044464284274,
-            "std_deviation_normalized": 3.308594964198216,
-            "std_group_size": 0.46556386190826055,
-            "time_gap_evenness_metric": 0.9776510389110075,
-            "total_finishers": 0.8280589909123378,
-            "total_groups": 0.7648965772753983,
-            "total_race_duration": 2.7740331097553343,
-            "variance_absolute": 1.3567754194878443,
-            "winning_time": 1.356247250212487
+            "skewness_normalized": 0.6290632517190783,
+            "std_deviation_absolute": 1.037888456516052,
+            "std_deviation_normalized": 3.1127548370078753,
+            "std_group_size": 0.4971110706758372,
+            "time_gap_evenness_metric": 1.0804779685449606,
+            "total_finishers": 0.7953250602417393,
+            "total_groups": 0.8318860330737856,
+            "total_race_duration": 4.000000000000001,
+            "variance_absolute": 1.410387272299179,
+            "winning_time": 1.3339517927742799
           }
         },
         "master_1": {
-          "avg_cv": 1.3190929818486048,
+          "avg_cv": 1.1872003068050812,
           "most_consistent_features": [
+            [
+              "kurtosis_absolute",
+              0
+            ],
+            [
+              "riders_in_groups",
+              0
+            ],
             [
               "skewness_absolute",
               0
             ],
             [
               "std_group_size",
-              0.42307703970085075
+              0.396418061053286
             ],
             [
               "gini_coefficient",
-              0.42754552116714334
-            ],
-            [
-              "skewness_normalized",
-              0.5931084695924791
-            ],
-            [
-              "avg_group_size",
-              0.5933888424279921
+              0.41834237686856957
             ]
           ],
           "least_consistent_features": [
             [
-              "total_race_duration",
-              2.3443539633834773
-            ],
-            [
-              "10th_percentile_gap",
-              2.4115072395174066
-            ],
-            [
-              "std_deviation_normalized",
-              2.411820179287138
-            ],
-            [
-              "kurtosis_absolute",
-              4.242640687119286
-            ],
-            [
-              "riders_in_groups",
-              4.242640687119286
-            ]
-          ],
-          "feature_cvs": {
-            "10th_percentile_gap": 2.4115072395174066,
-            "15th_percentile_gap": 1.2115720930343625,
-            "20th_percentile_gap": 0.9432945388132639,
-            "25th_percentile_gap": 0.814428412214924,
-            "30th_percentile_gap": 0.8762000203015975,
-            "35th_percentile_gap": 0.707302085476682,
-            "40th_percentile_gap": 1.196752663216358,
-            "45th_percentile_gap": 0.8557163298833996,
-            "50th_percentile_gap": 1.2577121911186169,
-            "5th_percentile_gap": 1.016961928540589,
-            "abandon_ratio": 1.0657449626734739,
-            "avg_group_size": 0.5933888424279921,
-            "biggest_group_metric": 0.6427181246959706,
-            "clumpiness_score": 1.755500736842083,
-            "gini_coefficient": 0.42754552116714334,
-            "kurtosis_absolute": 4.242640687119286,
-            "kurtosis_normalized": 1.121759540215852,
-            "largest_group_position": 0.8336535919622919,
-            "largest_group_size": 1.0433921059236237,
-            "proportion_in_groups": 0.9416057885581819,
-            "riders_in_groups": 4.242640687119286,
-            "selection_metric": 0.6859283224260194,
-            "shannon_entropy_absolute": 1.612973819403745,
-            "shannon_entropy_normalized": 1.8590261144799793,
-            "skewness_absolute": 0,
-            "skewness_normalized": 0.5931084695924791,
-            "std_deviation_absolute": 1.1352695066165417,
-            "std_deviation_normalized": 2.411820179287138,
-            "std_group_size": 0.42307703970085075,
-            "time_gap_evenness_metric": 1.4754980448751231,
-            "total_finishers": 1.7497755475381074,
-            "total_groups": 1.013024479052937,
-            "total_race_duration": 2.3443539633834773,
-            "variance_absolute": 0.8004118004484411,
-            "winning_time": 1.8619489870739439
-          }
-        },
-        "master_2": {
-          "avg_cv": 1.46392335889954,
-          "most_consistent_features": [
-            [
-              "skewness_absolute",
-              0
-            ],
-            [
-              "avg_group_size",
-              0.5264887992688989
-            ],
-            [
-              "biggest_group_metric",
-              0.5889834274254658
-            ],
-            [
-              "gini_coefficient",
-              0.6545958852983483
-            ],
-            [
-              "std_group_size",
-              0.79091513693698
-            ]
-          ],
-          "least_consistent_features": [
-            [
-              "10th_percentile_gap",
-              2.4072403689438477
-            ],
-            [
-              "std_deviation_normalized",
-              3.1153424231721876
-            ],
-            [
-              "total_race_duration",
-              3.3558249769073414
-            ],
-            [
-              "kurtosis_absolute",
-              4.242640687119285
-            ],
-            [
-              "riders_in_groups",
-              4.242640687119285
-            ]
-          ],
-          "feature_cvs": {
-            "10th_percentile_gap": 2.4072403689438477,
-            "15th_percentile_gap": 1.3887963641207155,
-            "20th_percentile_gap": 0.9971524779202028,
-            "25th_percentile_gap": 1.1681628401929123,
-            "30th_percentile_gap": 0.8031887875919708,
-            "35th_percentile_gap": 0.9642067878790295,
-            "40th_percentile_gap": 1.2632175795815983,
-            "45th_percentile_gap": 0.9353106555959118,
-            "50th_percentile_gap": 1.2194858988742865,
-            "5th_percentile_gap": 2.2966621517231647,
-            "abandon_ratio": 0.9710590206845044,
-            "avg_group_size": 0.5264887992688989,
-            "biggest_group_metric": 0.5889834274254658,
-            "clumpiness_score": 1.5493375132306186,
-            "gini_coefficient": 0.6545958852983483,
-            "kurtosis_absolute": 4.242640687119285,
-            "kurtosis_normalized": 0.9251101059590725,
-            "largest_group_position": 0.8435397688824327,
-            "largest_group_size": 1.1732938632041392,
-            "proportion_in_groups": 1.8843043262805876,
-            "riders_in_groups": 4.242640687119285,
-            "selection_metric": 1.3041739798994425,
-            "shannon_entropy_absolute": 1.2134586047592715,
-            "shannon_entropy_normalized": 1.5472757156348043,
-            "skewness_absolute": 0,
-            "skewness_normalized": 0.8299699598751467,
-            "std_deviation_absolute": 1.1751269860181335,
-            "std_deviation_normalized": 3.1153424231721876,
-            "std_group_size": 0.79091513693698,
-            "time_gap_evenness_metric": 1.1464666321942754,
-            "total_finishers": 1.6796935635828727,
-            "total_groups": 1.9375071162953654,
-            "total_race_duration": 3.3558249769073414,
-            "variance_absolute": 0.959347948395521,
-            "winning_time": 1.1367965209162858
-          }
-        },
-        "master_3": {
-          "avg_cv": 1.4805361241235835,
-          "most_consistent_features": [
-            [
-              "skewness_absolute",
-              0
-            ],
-            [
-              "biggest_group_metric",
-              0.5392261448152879
-            ],
-            [
-              "selection_metric",
-              0.5774131956919072
-            ],
-            [
-              "avg_group_size",
-              0.5920712721162991
-            ],
-            [
-              "largest_group_position",
-              0.6499712689988656
-            ]
-          ],
-          "least_consistent_features": [
-            [
-              "std_deviation_normalized",
-              2.3644728865951516
-            ],
-            [
-              "10th_percentile_gap",
-              2.3853433494012126
-            ],
-            [
-              "total_race_duration",
-              3.475080194386872
-            ],
-            [
-              "kurtosis_absolute",
-              4.242640687119286
-            ],
-            [
-              "riders_in_groups",
-              4.242640687119286
-            ]
-          ],
-          "feature_cvs": {
-            "10th_percentile_gap": 2.3853433494012126,
-            "15th_percentile_gap": 1.7988852659935124,
-            "20th_percentile_gap": 1.3495686349191993,
-            "25th_percentile_gap": 1.1291483315851423,
-            "30th_percentile_gap": 0.8856744402775203,
-            "35th_percentile_gap": 0.8877466746091548,
-            "40th_percentile_gap": 1.1797120195481652,
-            "45th_percentile_gap": 0.84646657273658,
-            "50th_percentile_gap": 1.3536560028767046,
-            "5th_percentile_gap": 0.9022352997765097,
-            "abandon_ratio": 1.3432563128808086,
-            "avg_group_size": 0.5920712721162991,
-            "biggest_group_metric": 0.5392261448152879,
-            "clumpiness_score": 1.9865066230716684,
-            "gini_coefficient": 0.9244161073851093,
-            "kurtosis_absolute": 4.242640687119286,
-            "kurtosis_normalized": 0.9281039701390998,
-            "largest_group_position": 0.6499712689988656,
-            "largest_group_size": 1.4916766485939537,
-            "proportion_in_groups": 1.005849161804016,
-            "riders_in_groups": 4.242640687119286,
-            "selection_metric": 0.5774131956919072,
-            "shannon_entropy_absolute": 1.3433948916777885,
-            "shannon_entropy_normalized": 1.6185276438102076,
-            "skewness_absolute": 0,
-            "skewness_normalized": 1.9078662547473306,
-            "std_deviation_absolute": 1.3506609575224433,
-            "std_deviation_normalized": 2.3644728865951516,
-            "std_group_size": 0.9212635134577627,
-            "time_gap_evenness_metric": 1.597391748020663,
-            "total_finishers": 1.3847480692862155,
-            "total_groups": 1.50819277285176,
-            "total_race_duration": 3.475080194386872,
-            "variance_absolute": 1.3655503569192546,
-            "winning_time": 1.7394063835906821
-          }
-        },
-        "master_4": {
-          "avg_cv": 1.2894648713497694,
-          "most_consistent_features": [
-            [
-              "skewness_absolute",
-              0
-            ],
-            [
-              "std_group_size",
-              0.34833717483201576
-            ],
-            [
-              "selection_metric",
-              0.38330387786335957
-            ],
-            [
-              "gini_coefficient",
-              0.41296441749317914
-            ],
-            [
-              "biggest_group_metric",
-              0.500669440786237
-            ]
-          ],
-          "least_consistent_features": [
-            [
-              "15th_percentile_gap",
-              2.6600248918663776
-            ],
-            [
-              "total_race_duration",
-              2.7177473832342973
-            ],
-            [
-              "10th_percentile_gap",
-              2.718415732101279
-            ],
-            [
-              "kurtosis_absolute",
-              4.242640687119286
-            ],
-            [
-              "riders_in_groups",
-              4.242640687119286
-            ]
-          ],
-          "feature_cvs": {
-            "10th_percentile_gap": 2.718415732101279,
-            "15th_percentile_gap": 2.6600248918663776,
-            "20th_percentile_gap": 1.7048319685886573,
-            "25th_percentile_gap": 1.6189700713804211,
-            "30th_percentile_gap": 0.6605425947227362,
-            "35th_percentile_gap": 1.1740417422151683,
-            "40th_percentile_gap": 0.9744509699936517,
-            "45th_percentile_gap": 1.1055167635938457,
-            "50th_percentile_gap": 0.910755143636907,
-            "5th_percentile_gap": 0.8503492446941735,
-            "abandon_ratio": 0.5824000939826149,
-            "avg_group_size": 0.6446157580132618,
-            "biggest_group_metric": 0.500669440786237,
-            "clumpiness_score": 1.0470314460118475,
-            "gini_coefficient": 0.41296441749317914,
-            "kurtosis_absolute": 4.242640687119286,
-            "kurtosis_normalized": 1.0913105116927821,
-            "largest_group_position": 0.8181403568541282,
-            "largest_group_size": 1.0563983982192693,
-            "proportion_in_groups": 0.5175246592546074,
-            "riders_in_groups": 4.242640687119286,
-            "selection_metric": 0.38330387786335957,
-            "shannon_entropy_absolute": 1.2052174370459106,
-            "shannon_entropy_normalized": 1.5103356698052222,
-            "skewness_absolute": 0,
-            "skewness_normalized": 0.5324741130200166,
-            "std_deviation_absolute": 1.5744844912740732,
-            "std_deviation_normalized": 1.9552590771701877,
-            "std_group_size": 0.34833717483201576,
-            "time_gap_evenness_metric": 0.9762901704422041,
-            "total_finishers": 1.1890065188024825,
-            "total_groups": 1.0681392942884296,
-            "total_race_duration": 2.7177473832342973,
-            "variance_absolute": 1.1251493935187145,
-            "winning_time": 1.0112903166052976
-          }
-        },
-        "master_5": {
-          "avg_cv": 1.6935320378814267,
-          "most_consistent_features": [
-            [
-              "skewness_absolute",
-              0
-            ],
-            [
-              "biggest_group_metric",
-              0.744342776207297
-            ],
-            [
-              "35th_percentile_gap",
-              0.8284844262270693
-            ],
-            [
-              "kurtosis_normalized",
-              0.8294728902799657
-            ],
-            [
-              "variance_absolute",
-              0.8363937979361469
-            ]
-          ],
-          "least_consistent_features": [
-            [
-              "std_deviation_normalized",
-              2.9586675325672838
+              "shannon_entropy_normalized",
+              2.0188886655018607
             ],
             [
               "clumpiness_score",
-              2.974766321034648
+              2.066257762834099
+            ],
+            [
+              "std_deviation_normalized",
+              2.2581653220524296
             ],
             [
               "10th_percentile_gap",
-              3.758612455400369
+              4.0
             ],
             [
-              "riders_in_groups",
-              4.242640687119285
-            ],
-            [
-              "kurtosis_absolute",
-              4.242640687119286
+              "total_race_duration",
+              4.0
             ]
           ],
           "feature_cvs": {
-            "10th_percentile_gap": 3.758612455400369,
-            "15th_percentile_gap": 1.582851436170194,
-            "20th_percentile_gap": 1.1902412271172107,
-            "25th_percentile_gap": 1.0150072078775045,
-            "30th_percentile_gap": 0.8408585481255249,
-            "35th_percentile_gap": 0.8284844262270693,
-            "40th_percentile_gap": 1.1791619898047463,
-            "45th_percentile_gap": 0.8901171723474794,
-            "50th_percentile_gap": 1.2593731782539048,
-            "5th_percentile_gap": 1.473026570113275,
-            "abandon_ratio": 2.3940619106567045,
-            "avg_group_size": 0.8974977762825889,
-            "biggest_group_metric": 0.744342776207297,
-            "clumpiness_score": 2.974766321034648,
-            "gini_coefficient": 1.592517438403323,
-            "kurtosis_absolute": 4.242640687119286,
-            "kurtosis_normalized": 0.8294728902799657,
-            "largest_group_position": 0.9246399222873989,
-            "largest_group_size": 1.4170225098740912,
-            "proportion_in_groups": 1.1378028137486897,
-            "riders_in_groups": 4.242640687119285,
-            "selection_metric": 0.8770228073730088,
-            "shannon_entropy_absolute": 1.491580674586349,
-            "shannon_entropy_normalized": 1.6901345041138518,
+            "10th_percentile_gap": 4.0,
+            "15th_percentile_gap": 1.2254460442635462,
+            "20th_percentile_gap": 1.0057392018169784,
+            "25th_percentile_gap": 0.868755776808258,
+            "30th_percentile_gap": 0.9474954145709846,
+            "35th_percentile_gap": 0.7590765810664701,
+            "40th_percentile_gap": 1.0845248274938948,
+            "45th_percentile_gap": 0.9394310086748692,
+            "50th_percentile_gap": 1.1445817265594558,
+            "5th_percentile_gap": 0.9179680532285212,
+            "abandon_ratio": 1.0507357530114951,
+            "avg_group_size": 0.6211156379277767,
+            "biggest_group_metric": 0.6327907734444135,
+            "clumpiness_score": 2.066257762834099,
+            "gini_coefficient": 0.41834237686856957,
+            "kurtosis_absolute": 0,
+            "kurtosis_normalized": 1.1257551564798658,
+            "largest_group_position": 0.8898923452213284,
+            "largest_group_size": 1.1471805351508935,
+            "proportion_in_groups": 1.0348651291217117,
+            "riders_in_groups": 0,
+            "selection_metric": 0.6342329405456892,
+            "shannon_entropy_absolute": 1.584283221280188,
+            "shannon_entropy_normalized": 2.0188886655018607,
             "skewness_absolute": 0,
-            "skewness_normalized": 1.9889904068739575,
-            "std_deviation_absolute": 1.7494053031617847,
-            "std_deviation_normalized": 2.9586675325672838,
-            "std_group_size": 1.889913328349083,
-            "time_gap_evenness_metric": 1.2163695859347532,
-            "total_finishers": 2.229953595233412,
-            "total_groups": 1.708562152036819,
-            "total_race_duration": 2.6927479847807545,
-            "variance_absolute": 0.8363937979361469,
-            "winning_time": 2.5287397084521754
+            "skewness_normalized": 0.5353886866375169,
+            "std_deviation_absolute": 1.0236731205014724,
+            "std_deviation_normalized": 2.2581653220524296,
+            "std_group_size": 0.396418061053286,
+            "time_gap_evenness_metric": 1.7528168778781388,
+            "total_finishers": 1.6646691445672623,
+            "total_groups": 1.0403476516501817,
+            "total_race_duration": 4.0,
+            "variance_absolute": 0.83413526488267,
+            "winning_time": 1.9290376770840159
+          }
+        },
+        "master_2": {
+          "avg_cv": 1.3033189531770641,
+          "most_consistent_features": [
+            [
+              "kurtosis_absolute",
+              0
+            ],
+            [
+              "riders_in_groups",
+              0
+            ],
+            [
+              "skewness_absolute",
+              0
+            ],
+            [
+              "avg_group_size",
+              0.5139459606783685
+            ],
+            [
+              "biggest_group_metric",
+              0.6128563751784231
+            ]
+          ],
+          "least_consistent_features": [
+            [
+              "total_groups",
+              1.9631142344668246
+            ],
+            [
+              "5th_percentile_gap",
+              2.1641643684018446
+            ],
+            [
+              "std_deviation_normalized",
+              2.928903989652804
+            ],
+            [
+              "10th_percentile_gap",
+              4.0
+            ],
+            [
+              "total_race_duration",
+              4.0
+            ]
+          ],
+          "feature_cvs": {
+            "10th_percentile_gap": 4.0,
+            "15th_percentile_gap": 1.6257620670632758,
+            "20th_percentile_gap": 1.0997952466709566,
+            "25th_percentile_gap": 1.34311104863929,
+            "30th_percentile_gap": 0.8744741143349679,
+            "35th_percentile_gap": 1.0629706558656271,
+            "40th_percentile_gap": 1.1499935264620509,
+            "45th_percentile_gap": 1.0177835598672402,
+            "50th_percentile_gap": 1.1069512321879227,
+            "5th_percentile_gap": 2.1641643684018446,
+            "abandon_ratio": 0.9106886869994079,
+            "avg_group_size": 0.5139459606783685,
+            "biggest_group_metric": 0.6128563751784231,
+            "clumpiness_score": 1.6201838120196819,
+            "gini_coefficient": 0.7015999437607915,
+            "kurtosis_absolute": 0,
+            "kurtosis_normalized": 0.9064528883629627,
+            "largest_group_position": 0.9058481910556013,
+            "largest_group_size": 1.3469171779963882,
+            "proportion_in_groups": 1.8446475803979194,
+            "riders_in_groups": 0,
+            "selection_metric": 1.275383328849487,
+            "shannon_entropy_absolute": 1.239082457895894,
+            "shannon_entropy_normalized": 1.594689377362266,
+            "skewness_absolute": 0,
+            "skewness_normalized": 0.7978997412788917,
+            "std_deviation_absolute": 1.0631556395827881,
+            "std_deviation_normalized": 2.928903989652804,
+            "std_group_size": 0.8576047295661205,
+            "time_gap_evenness_metric": 1.2428960177769923,
+            "total_finishers": 1.5764533928089839,
+            "total_groups": 1.9631142344668246,
+            "total_race_duration": 4.0,
+            "variance_absolute": 1.0474318016227855,
+            "winning_time": 1.2214022143906833
+          }
+        },
+        "master_3": {
+          "avg_cv": 1.3029340207082896,
+          "most_consistent_features": [
+            [
+              "kurtosis_absolute",
+              0
+            ],
+            [
+              "riders_in_groups",
+              0
+            ],
+            [
+              "skewness_absolute",
+              0
+            ],
+            [
+              "selection_metric",
+              0.5457053329216469
+            ],
+            [
+              "biggest_group_metric",
+              0.5763716046881081
+            ]
+          ],
+          "least_consistent_features": [
+            [
+              "skewness_normalized",
+              1.8625067773280284
+            ],
+            [
+              "clumpiness_score",
+              2.017860650067336
+            ],
+            [
+              "std_deviation_normalized",
+              2.2129100218887934
+            ],
+            [
+              "10th_percentile_gap",
+              4.0
+            ],
+            [
+              "total_race_duration",
+              4.0
+            ]
+          ],
+          "feature_cvs": {
+            "10th_percentile_gap": 4.0,
+            "15th_percentile_gap": 1.635757930589706,
+            "20th_percentile_gap": 1.3167441971334597,
+            "25th_percentile_gap": 1.209227004216892,
+            "30th_percentile_gap": 0.9245608758986058,
+            "35th_percentile_gap": 0.9318245049938306,
+            "40th_percentile_gap": 1.0676892814842072,
+            "45th_percentile_gap": 0.8780907624312595,
+            "50th_percentile_gap": 1.2386439478233813,
+            "5th_percentile_gap": 0.8887068173820786,
+            "abandon_ratio": 1.2793044604952646,
+            "avg_group_size": 0.5767871813058996,
+            "biggest_group_metric": 0.5763716046881081,
+            "clumpiness_score": 2.017860650067336,
+            "gini_coefficient": 0.9705006142402463,
+            "kurtosis_absolute": 0,
+            "kurtosis_normalized": 0.8529437897635725,
+            "largest_group_position": 0.6927897813786603,
+            "largest_group_size": 1.6511142663545104,
+            "proportion_in_groups": 1.016739397862599,
+            "riders_in_groups": 0,
+            "selection_metric": 0.5457053329216469,
+            "shannon_entropy_absolute": 1.3935407979496772,
+            "shannon_entropy_normalized": 1.7141758590948681,
+            "skewness_absolute": 0,
+            "skewness_normalized": 1.8625067773280284,
+            "std_deviation_absolute": 1.235715121679123,
+            "std_deviation_normalized": 2.2129100218887934,
+            "std_group_size": 0.9778692600890699,
+            "time_gap_evenness_metric": 1.6348458101083039,
+            "total_finishers": 1.4399889416728755,
+            "total_groups": 1.6168323042505972,
+            "total_race_duration": 4.0,
+            "variance_absolute": 1.4861497884074597,
+            "winning_time": 1.756793641290075
+          }
+        },
+        "master_4": {
+          "avg_cv": 1.1232975126854425,
+          "most_consistent_features": [
+            [
+              "kurtosis_absolute",
+              0
+            ],
+            [
+              "riders_in_groups",
+              0
+            ],
+            [
+              "skewness_absolute",
+              0
+            ],
+            [
+              "selection_metric",
+              0.3069335690669227
+            ],
+            [
+              "std_group_size",
+              0.3679372243054952
+            ]
+          ],
+          "least_consistent_features": [
+            [
+              "std_deviation_normalized",
+              1.8208102158475186
+            ],
+            [
+              "20th_percentile_gap",
+              1.8345972214284587
+            ],
+            [
+              "15th_percentile_gap",
+              2.918297742502803
+            ],
+            [
+              "10th_percentile_gap",
+              4.0
+            ],
+            [
+              "total_race_duration",
+              4.0
+            ]
+          ],
+          "feature_cvs": {
+            "10th_percentile_gap": 4.0,
+            "15th_percentile_gap": 2.918297742502803,
+            "20th_percentile_gap": 1.8345972214284587,
+            "25th_percentile_gap": 1.6856041440438723,
+            "30th_percentile_gap": 0.6666864186700536,
+            "35th_percentile_gap": 1.2347584369071285,
+            "40th_percentile_gap": 0.8627504908466526,
+            "45th_percentile_gap": 1.1706236948758626,
+            "50th_percentile_gap": 0.7980592854325922,
+            "5th_percentile_gap": 0.7443184571195275,
+            "abandon_ratio": 0.5290765107752717,
+            "avg_group_size": 0.6362673866431464,
+            "biggest_group_metric": 0.5228473955985846,
+            "clumpiness_score": 1.1470638398688708,
+            "gini_coefficient": 0.4360863073998599,
+            "kurtosis_absolute": 0,
+            "kurtosis_normalized": 1.0690573727597654,
+            "largest_group_position": 0.8276914216045054,
+            "largest_group_size": 1.155360685643811,
+            "proportion_in_groups": 0.5487189580068369,
+            "riders_in_groups": 0,
+            "selection_metric": 0.3069335690669227,
+            "shannon_entropy_absolute": 1.2325350935507018,
+            "shannon_entropy_normalized": 1.5513314360909347,
+            "skewness_absolute": 0,
+            "skewness_normalized": 0.43379551628702767,
+            "std_deviation_absolute": 1.4535441989091031,
+            "std_deviation_normalized": 1.8208102158475186,
+            "std_group_size": 0.3679372243054952,
+            "time_gap_evenness_metric": 1.0946319588954623,
+            "total_finishers": 1.078577474878434,
+            "total_groups": 1.0321025317381884,
+            "total_race_duration": 4.0,
+            "variance_absolute": 1.1915227495575715,
+            "winning_time": 0.9638252047355298
+          }
+        },
+        "master_5": {
+          "avg_cv": 1.4985265831577324,
+          "most_consistent_features": [
+            [
+              "kurtosis_absolute",
+              0
+            ],
+            [
+              "riders_in_groups",
+              0
+            ],
+            [
+              "skewness_absolute",
+              0
+            ],
+            [
+              "biggest_group_metric",
+              0.7332141535792969
+            ],
+            [
+              "variance_absolute",
+              0.7535919571850992
+            ]
+          ],
+          "least_consistent_features": [
+            [
+              "winning_time",
+              2.455304338012484
+            ],
+            [
+              "std_deviation_normalized",
+              2.7797494269935865
+            ],
+            [
+              "clumpiness_score",
+              2.8976828287329788
+            ],
+            [
+              "10th_percentile_gap",
+              4.0
+            ],
+            [
+              "total_race_duration",
+              4.0
+            ]
+          ],
+          "feature_cvs": {
+            "10th_percentile_gap": 4.0,
+            "15th_percentile_gap": 1.8780516847303212,
+            "20th_percentile_gap": 1.3530236489026826,
+            "25th_percentile_gap": 1.1194583352600116,
+            "30th_percentile_gap": 0.8771674423737333,
+            "35th_percentile_gap": 0.8684673126834989,
+            "40th_percentile_gap": 1.0671455030620338,
+            "45th_percentile_gap": 0.9213642199190497,
+            "50th_percentile_gap": 1.146214677141352,
+            "5th_percentile_gap": 1.3919584153102977,
+            "abandon_ratio": 2.2749174414542743,
+            "avg_group_size": 0.8741752082305847,
+            "biggest_group_metric": 0.7332141535792969,
+            "clumpiness_score": 2.8976828287329788,
+            "gini_coefficient": 1.7890667115378478,
+            "kurtosis_absolute": 0,
+            "kurtosis_normalized": 0.8071917854851022,
+            "largest_group_position": 0.9084912902123823,
+            "largest_group_size": 1.606624251246034,
+            "proportion_in_groups": 1.2145759457107845,
+            "riders_in_groups": 0,
+            "selection_metric": 0.8505094924374745,
+            "shannon_entropy_absolute": 1.5684598534127656,
+            "shannon_entropy_normalized": 1.7190236288735907,
+            "skewness_absolute": 0,
+            "skewness_normalized": 1.9208515649242113,
+            "std_deviation_absolute": 1.6226541213057437,
+            "std_deviation_normalized": 2.7797494269935865,
+            "std_group_size": 1.9214925621295114,
+            "time_gap_evenness_metric": 1.3013403405027408,
+            "total_finishers": 2.129183616152837,
+            "total_groups": 1.6974786530183161,
+            "total_race_duration": 4.0,
+            "variance_absolute": 0.7535919571850992,
+            "winning_time": 2.455304338012484
           }
         }
       },
-      "overall_feature_consistency": 1.4215127544640316
+      "overall_feature_consistency": 1.2565479455350503
     },
     "cluster_purity": {
       "per_master_purity": {
         "master_0": {
-          "purity_score": 0.8141959923392519,
-          "dispersion": 0.09524037915237596,
-          "n_members": 19
+          "purity_score": 0.8159203411938801,
+          "dispersion": 0.09312579112378824,
+          "n_members": 17
         },
         "master_1": {
-          "purity_score": 0.8228712987344003,
-          "dispersion": 0.14937490480518875,
-          "n_members": 19
+          "purity_score": 0.8351215347163807,
+          "dispersion": 0.15143321786838745,
+          "n_members": 17
         },
         "master_2": {
-          "purity_score": 0.7436765552110101,
-          "dispersion": 0.19000474655014712,
-          "n_members": 19
+          "purity_score": 0.7329624236955952,
+          "dispersion": 0.19218181224216735,
+          "n_members": 17
         },
         "master_3": {
-          "purity_score": 0.6901634136217587,
-          "dispersion": 0.14578263326531626,
-          "n_members": 19
+          "purity_score": 0.6932311681772247,
+          "dispersion": 0.15006140685090372,
+          "n_members": 17
         },
         "master_4": {
-          "purity_score": 0.7989378363283874,
-          "dispersion": 0.09912745829057437,
-          "n_members": 19
+          "purity_score": 0.8097927623743018,
+          "dispersion": 0.08955682939253835,
+          "n_members": 17
         },
         "master_5": {
-          "purity_score": 0.6872257588083159,
-          "dispersion": 0.12089925332970101,
-          "n_members": 19
+          "purity_score": 0.701247622111097,
+          "dispersion": 0.1111478785765056,
+          "n_members": 17
         }
       },
-      "average_purity": 0.7595118091738541,
-      "min_purity": 0.6872257588083159,
-      "max_purity": 0.8228712987344003
+      "average_purity": 0.7647126420447465,
+      "min_purity": 0.6932311681772247,
+      "max_purity": 0.8351215347163807
     },
-    "overall_stability": 0.46690674269089366
+    "overall_stability": 0.5023060088557175
   }
 }

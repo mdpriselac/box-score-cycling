@@ -57,7 +57,7 @@ class MasterClusterAligner:
             Tuple of (master_assignments, alignment_scores, master_embeddings)
         """
         percentiles = ['10', '15', '20', '25', '30', '35', '40', '45', '50', 
-                      '55', '60', '65', '70', '75', '80', '85', '90', '95', '100']
+                      '55', '60', '65', '70', '75', '80', '85', '90']
         
         print(f"\nAligning {population_type} clusters for K={k_value}")
         print(f"Reference percentile: {reference_percentile}")
