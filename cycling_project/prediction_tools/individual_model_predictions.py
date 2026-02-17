@@ -3,6 +3,7 @@ from cycling_project.data_loading_tools.load_scraped_data import load_db,FCCycli
 from cycling_project.data_loading_tools.create_rider_data import create_rider_db,RiderResult,RiderCareer,RiderDB
 from cycling_project.webscrape_tools.create_race_data import Race,Stage
 from cycling_project.engineering_tools.place_handling import place_bucketer
+from cycling_project.engineering_tools.imputation import calculate_new_rider_default
 
 import pandas as pd
 import numpy as np
@@ -153,8 +154,13 @@ class RiderModel(RiderCareer):
         #create the training data
         training_data, target_data = self.generate_historical_training_data(race_data['date'])
         if training_data is None or target_data is None:
-            #print(f"No training data for rider {self.name} on date {race_data['date']}, returning default prediction of 6.0")
-            prediction = 6.0
+            # Calculate context-aware default prediction based on available data
+            prediction = calculate_new_rider_default(
+                tour_level=race_data.get('tour_type'),
+                personal_bib=race_data.get('personal_number'),
+                age=race_data.get('age'),
+                log_calculation=False
+            )
             training_meta_data = {'train_count':0,'train_error':0,'coefficients':{}}
             return prediction, training_meta_data
         

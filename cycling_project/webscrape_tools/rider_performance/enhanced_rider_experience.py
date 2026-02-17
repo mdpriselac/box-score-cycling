@@ -14,6 +14,8 @@ import numpy as np
 from typing import Dict, List, Optional, Tuple
 import warnings
 
+from cycling_project.engineering_tools.imputation import impute_age
+
 # Suppress numpy warnings about empty slices and divide by zero
 warnings.filterwarnings('ignore', category=RuntimeWarning, message='Mean of empty slice')
 warnings.filterwarnings('ignore', category=RuntimeWarning, message='invalid value encountered')
@@ -298,8 +300,10 @@ class EnhancedRiderExperience:
                 point_variance = 0
             features['points_variance'].append(point_variance)
             
-            # Add rider age from current race
-            features['rider_age_at_race'].append(current_race.get('rider_age', 0))
+            # Add rider age from current race (impute using tour-level median if missing)
+            raw_age = current_race.get('rider_age', None)
+            tour_level = current_race.get('race_category', None)
+            features['rider_age_at_race'].append(impute_age(raw_age, tour_level=tour_level, log_imputation=False))
             
             # Calculate WT proportion (for compatibility with basic features)
             wt_races = len(prior_results[prior_results['race_category'] == 'wt'])
@@ -309,7 +313,9 @@ class EnhancedRiderExperience:
             # Zero values for first race
             for feature in quality_features:
                 if feature == 'rider_age_at_race':
-                    features[feature].append(current_race.get('rider_age', 0))
+                    raw_age = current_race.get('rider_age', None)
+                    tour_level = current_race.get('race_category', None)
+                    features[feature].append(impute_age(raw_age, tour_level=tour_level, log_imputation=False))
                 else:
                     features[feature].append(0)
     
@@ -498,9 +504,11 @@ class EnhancedRiderExperience:
                 if feature_name not in features:
                     features[feature_name] = []
                     
-                # Special handling for rider age - get from current race
+                # Special handling for rider age - get from current race (impute if missing)
                 if feature_name == 'rider_age_at_race':
-                    features[feature_name].append(current_race.get('rider_age', 0))
+                    raw_age = current_race.get('rider_age', None)
+                    tour_level = current_race.get('race_category', None)
+                    features[feature_name].append(impute_age(raw_age, tour_level=tour_level, log_imputation=False))
                 else:
                     features[feature_name].append(0)
     

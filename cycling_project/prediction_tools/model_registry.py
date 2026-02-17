@@ -1,0 +1,283 @@
+"""
+Model Registry for Cycling Race Predictions
+
+Handles saving and loading of trained models with metadata.
+
+Directory structure:
+    models/prediction_system/
+        bucket_model.txt         # LightGBM model
+        time_gap_model.txt       # LightGBM model
+        feature_columns.json     # Feature column names
+        metadata.json            # Training metadata and evaluation
+"""
+
+import os
+import json
+import pickle
+from datetime import datetime
+from typing import Dict, Any, Optional, Tuple
+from pathlib import Path
+
+from .bucket_predictor import OrdinalBucketPredictor, BucketPredictorConfig
+from .time_gap_predictor import TimeGapPredictor, TimeGapPredictorConfig
+from .race_ranking_predictor import RaceRankingPredictor, RaceRankingConfig
+from .feature_engineering import FeatureEngineer
+
+
+class ModelRegistry:
+    """
+    Handles saving and loading of trained models with metadata.
+
+    Stores:
+    - LightGBM model files
+    - Feature column configurations
+    - Training metadata and evaluation metrics
+    - Feature engineer state
+
+    Example usage:
+        # Save
+        registry = ModelRegistry('models/v1')
+        registry.save(bucket_predictor, time_gap_predictor, evaluation)
+
+        # Load
+        bucket_pred, time_gap_pred = registry.load()
+    """
+
+    def __init__(self, base_dir: str = 'models/prediction_system'):
+        self.base_dir = Path(base_dir)
+
+    def save(
+        self,
+        bucket_predictor: OrdinalBucketPredictor,
+        time_gap_predictor: Optional[TimeGapPredictor] = None,
+        evaluation: Optional[Dict[str, Any]] = None,
+        training_info: Optional[Dict[str, Any]] = None
+    ):
+        """
+        Save trained models and metadata.
+
+        Args:
+            bucket_predictor: Trained bucket prediction model
+            time_gap_predictor: Optional trained time gap model
+            evaluation: Optional evaluation metrics
+            training_info: Optional training metadata
+        """
+        self.base_dir.mkdir(parents=True, exist_ok=True)
+
+        # Save bucket model
+        bucket_model_path = self.base_dir / 'bucket_model.txt'
+        bucket_predictor.save(str(bucket_model_path))
+
+        # Save bucket feature engineer
+        bucket_fe_path = self.base_dir / 'bucket_feature_engineer.pkl'
+        with open(bucket_fe_path, 'wb') as f:
+            pickle.dump({
+                'feature_columns': bucket_predictor.feature_columns,
+                'feature_engineer': bucket_predictor.feature_engineer,
+            }, f)
+
+        # Save time gap model (optional)
+        if time_gap_predictor is not None:
+            time_gap_model_path = self.base_dir / 'time_gap_model.txt'
+            time_gap_predictor.save(str(time_gap_model_path))
+
+            time_gap_fe_path = self.base_dir / 'time_gap_feature_engineer.pkl'
+            with open(time_gap_fe_path, 'wb') as f:
+                pickle.dump({
+                    'feature_columns': time_gap_predictor.feature_columns,
+                    'feature_engineer': time_gap_predictor.feature_engineer,
+                }, f)
+
+        # Save metadata
+        metadata = {
+            'has_time_gap_model': time_gap_predictor is not None,
+            'bucket_feature_columns': bucket_predictor.feature_columns,
+            'saved_at': datetime.now().isoformat(),
+        }
+
+        if evaluation:
+            metadata['evaluation'] = self._make_json_safe(evaluation)
+
+        if training_info:
+            metadata['training_info'] = self._make_json_safe(training_info)
+
+        metadata_path = self.base_dir / 'metadata.json'
+        with open(metadata_path, 'w') as f:
+            json.dump(metadata, f, indent=2)
+
+        print(f"Models saved to {self.base_dir}")
+
+    def load(
+        self,
+        load_time_gap: bool = True
+    ) -> Tuple[OrdinalBucketPredictor, Optional[TimeGapPredictor]]:
+        """
+        Load trained models from disk.
+
+        Args:
+            load_time_gap: If True, also load time gap model if available
+
+        Returns:
+            (bucket_predictor, time_gap_predictor) tuple
+        """
+        # Load metadata
+        metadata_path = self.base_dir / 'metadata.json'
+        if not metadata_path.exists():
+            raise FileNotFoundError(f"Metadata not found at {metadata_path}")
+
+        with open(metadata_path, 'r') as f:
+            metadata = json.load(f)
+
+        # Load bucket model
+        bucket_model_path = self.base_dir / 'bucket_model.txt'
+        bucket_predictor = OrdinalBucketPredictor()
+        bucket_predictor.load(str(bucket_model_path))
+
+        # Load bucket feature engineer
+        bucket_fe_path = self.base_dir / 'bucket_feature_engineer.pkl'
+        if bucket_fe_path.exists():
+            with open(bucket_fe_path, 'rb') as f:
+                fe_data = pickle.load(f)
+                bucket_predictor.feature_columns = fe_data['feature_columns']
+                bucket_predictor.feature_engineer = fe_data['feature_engineer']
+
+        # Load time gap model (optional)
+        time_gap_predictor = None
+        if load_time_gap and metadata.get('has_time_gap_model', False):
+            time_gap_model_path = self.base_dir / 'time_gap_model.txt'
+            if time_gap_model_path.exists():
+                time_gap_predictor = TimeGapPredictor()
+                time_gap_predictor.load(str(time_gap_model_path))
+
+                time_gap_fe_path = self.base_dir / 'time_gap_feature_engineer.pkl'
+                if time_gap_fe_path.exists():
+                    with open(time_gap_fe_path, 'rb') as f:
+                        fe_data = pickle.load(f)
+                        time_gap_predictor.feature_columns = fe_data['feature_columns']
+                        time_gap_predictor.feature_engineer = fe_data['feature_engineer']
+
+        print(f"Models loaded from {self.base_dir}")
+
+        return bucket_predictor, time_gap_predictor
+
+    def load_with_ranker(
+        self,
+        ranking_method: str = 'expected_bucket'
+    ) -> Tuple[OrdinalBucketPredictor, Optional[TimeGapPredictor], RaceRankingPredictor]:
+        """
+        Load models and create race ranker.
+
+        Args:
+            ranking_method: Method for ranking ('expected_bucket', 'time_gap', 'ensemble')
+
+        Returns:
+            (bucket_predictor, time_gap_predictor, race_ranker) tuple
+        """
+        bucket_pred, time_gap_pred = self.load()
+
+        race_ranker = RaceRankingPredictor(
+            bucket_predictor=bucket_pred,
+            time_gap_predictor=time_gap_pred,
+            config=RaceRankingConfig(ranking_method=ranking_method)
+        )
+
+        return bucket_pred, time_gap_pred, race_ranker
+
+    def get_metadata(self) -> Dict[str, Any]:
+        """Get saved metadata."""
+        metadata_path = self.base_dir / 'metadata.json'
+        if not metadata_path.exists():
+            return {}
+
+        with open(metadata_path, 'r') as f:
+            return json.load(f)
+
+    def get_evaluation(self) -> Optional[Dict[str, Any]]:
+        """Get saved evaluation metrics."""
+        metadata = self.get_metadata()
+        return metadata.get('evaluation')
+
+    def exists(self) -> bool:
+        """Check if models exist at this path."""
+        return (self.base_dir / 'bucket_model.txt').exists()
+
+    def _make_json_safe(self, obj: Any) -> Any:
+        """Convert object to JSON-serializable format."""
+        if isinstance(obj, dict):
+            return {k: self._make_json_safe(v) for k, v in obj.items()}
+        elif isinstance(obj, list):
+            return [self._make_json_safe(v) for v in obj]
+        elif isinstance(obj, (int, float, str, bool, type(None))):
+            return obj
+        else:
+            return str(obj)
+
+
+def save_models(
+    bucket_predictor: OrdinalBucketPredictor,
+    time_gap_predictor: Optional[TimeGapPredictor] = None,
+    path: str = 'models/prediction_system',
+    evaluation: Optional[Dict] = None
+):
+    """
+    Convenience function to save models.
+
+    Args:
+        bucket_predictor: Trained bucket model
+        time_gap_predictor: Optional trained time gap model
+        path: Directory to save to
+        evaluation: Optional evaluation metrics
+    """
+    registry = ModelRegistry(path)
+    registry.save(bucket_predictor, time_gap_predictor, evaluation)
+
+
+def load_models(
+    path: str = 'models/prediction_system'
+) -> Tuple[OrdinalBucketPredictor, Optional[TimeGapPredictor]]:
+    """
+    Convenience function to load models.
+
+    Args:
+        path: Directory to load from
+
+    Returns:
+        (bucket_predictor, time_gap_predictor) tuple
+    """
+    registry = ModelRegistry(path)
+    return registry.load()
+
+
+if __name__ == '__main__':
+    import sys
+    sys.path.insert(0, '..')
+
+    print("Testing ModelRegistry...")
+
+    # Quick training to test save/load
+    from prediction_tools.data_pipeline import CyclingDataPipeline
+    from prediction_tools.bucket_predictor import BucketPredictorConfig
+
+    pipeline = CyclingDataPipeline()
+    df = pipeline.load_training_data()
+    train, val, test = pipeline.get_temporal_split(df)
+
+    # Train a small model
+    config = BucketPredictorConfig(n_estimators=50, early_stopping_rounds=10)
+    bucket_pred = OrdinalBucketPredictor(config)
+    bucket_pred.train(train.head(10000), val.head(2000), verbose=False)
+
+    # Test save
+    registry = ModelRegistry('/tmp/test_model_registry')
+    registry.save(bucket_pred, evaluation={'test': 'metrics'})
+
+    # Test load
+    loaded_pred, _ = registry.load()
+    print(f"Loaded model with {len(loaded_pred.feature_columns)} features")
+
+    # Test prediction
+    sample = test.head(100)
+    preds = loaded_pred.predict(sample)
+    print(f"Sample predictions: {preds[:10]}")
+
+    print("\nModelRegistry test complete!")

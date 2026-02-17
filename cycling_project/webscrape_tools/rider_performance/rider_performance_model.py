@@ -23,6 +23,8 @@ from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score, r
 import warnings
 warnings.filterwarnings('ignore', category=UserWarning)
 
+from cycling_project.engineering_tools.imputation import smart_fillna
+
 
 class RiderPerformanceModel:
     """
@@ -127,10 +129,10 @@ class RiderPerformanceModel:
         
         # Extract features
         X = df[feature_cols].copy()
-        
-        # Handle missing values (fill with 0 for now, could be improved)
-        X = X.fillna(0)
-        
+
+        # Handle missing values with type-aware imputation
+        X = smart_fillna(X, feature_columns=feature_cols)
+
         return X, self.categorical_features
     
     def train(self, 
@@ -292,7 +294,7 @@ class RiderPerformanceModel:
         
         # Ensure we have the right features
         if isinstance(X, pd.DataFrame):
-            X = X[self.feature_columns].fillna(0)
+            X = smart_fillna(X[self.feature_columns], feature_columns=self.feature_columns)
         
         # Stage 1: Predict probability of non-zero points
         prob_nonzero = self.classifier.predict(X, num_iteration=self.classifier.best_iteration)
@@ -326,17 +328,17 @@ class RiderPerformanceModel:
         """
         if not self.training_info['trained']:
             raise ValueError("Model must be trained before making predictions")
-        
+
         if isinstance(X, pd.DataFrame):
-            X = X[self.feature_columns].fillna(0)
-        
+            X = smart_fillna(X[self.feature_columns], feature_columns=self.feature_columns)
+
         return self.classifier.predict(X, num_iteration=self.classifier.best_iteration)
     
     def _evaluate(self, X: pd.DataFrame, y_true: np.ndarray) -> Dict:
         """Evaluate model performance."""
         # Get predictions directly from models (bypass the trained check)
         if isinstance(X, pd.DataFrame):
-            X_features = X[self.feature_columns].fillna(0)
+            X_features = smart_fillna(X[self.feature_columns], feature_columns=self.feature_columns)
         else:
             X_features = X
         

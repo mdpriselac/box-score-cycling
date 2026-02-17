@@ -2,8 +2,9 @@ from cycling_project.webscrape_tools.create_race_data import Race, Stage
 from cycling_project.data_loading_tools.create_rider_data import RiderDB,RiderCareer
 from cycling_project.data_loading_tools.load_scraped_data import FCCyclingYear,FCCyclingTour,FCCyclingDB
 from cycling_project.engineering_tools.place_handling import place_bucketer
+from cycling_project.engineering_tools.imputation import calculate_new_rider_default
 from random import shuffle
-from typing import Union,List,Dict,Tuple
+from typing import Union,List,Dict,Tuple,Optional
 import os
 import pickle
 import numpy as np
@@ -144,15 +145,29 @@ def validate_race_for_bib_prediction(race:Union[Race,Stage])->Union[Race,Stage]:
 
 #### Extract multiple different types of prior race history data for race_type and tour_type specific averages
 ##### Get a specific race type and tour type average result for a rider
-def get_rider_hist_w_unknown_date_min_req(rider_career:RiderCareer,prior_to_time:str|int=None,min_req_history:int=3,avg_default:float=6.0,race_type=['gc','stage','one_day'],tour_type=['wt','pro','d1']):
+def get_rider_hist_w_unknown_date_min_req(
+    rider_career:RiderCareer,
+    prior_to_time:str|int=None,
+    min_req_history:int=3,
+    avg_default:Optional[float]=None,
+    race_type=['gc','stage','one_day'],
+    tour_type=['wt','pro','d1'],
+    # New optional parameters for context-aware default
+    context_tour_level:Optional[str]=None,
+    context_personal_bib:Optional[int]=None,
+    context_rider_age:Optional[int]=None
+):
     """Given a RiderCareer object, prior to date (either an actual date as a string or a year only date as an int), a minimum required history length for returning a non default value, a default place bucket, and then the race_type or tour_type to be included in the average, returns an average finishing bucket.
     Args:
         rider_career: RiderCareer object
         prior_to_time: A string date or int year to generate the average finishing place up to.
         min_req_history: Minimum required history length to return a non default value.
-        avg_default: Default value to return if the rider doesn't have enough history.
+        avg_default: Default value to return if the rider doesn't have enough history. If None, calculates context-aware default.
         race_type: List of strings ('gc','stage','one_day') to specify the race type to include in the average.
         tour_type: List of strings ('wt','pro','d1') to specify the tour type to include in the average.
+        context_tour_level: Tour level for context-aware default calculation (if avg_default is None).
+        context_personal_bib: Personal bib number for context-aware default calculation (if avg_default is None).
+        context_rider_age: Rider age for context-aware default calculation (if avg_default is None).
     Returns:
         float that's the average finishing place. If the rider doesn't have enough history, returns the default value. If the rider has enough history, returns the average finishing place bucketed.
     """
@@ -163,34 +178,60 @@ def get_rider_hist_w_unknown_date_min_req(rider_career:RiderCareer,prior_to_time
     else:
         rider_history = []
     if len(rider_history) < min_req_history:
-        avg_place = avg_default
+        # Calculate default: use explicit avg_default if provided, otherwise calculate context-aware default
+        if avg_default is not None:
+            avg_place = avg_default
+        else:
+            avg_place = calculate_new_rider_default(
+                tour_level=context_tour_level,
+                personal_bib=context_personal_bib,
+                age=context_rider_age,
+                log_calculation=False
+            )
     else:
         avg_place = sum([place_bucketer(rider_history.place) for rider_history in rider_history])/len(rider_history)
     return avg_place,len(rider_history)
 
 ##### Get all different race_type and tour_type average finishing places for a rider
-def extract_specific_career_averages(rider_career:RiderCareer,prior_to_time:str|int=None,min_req_history:int=3):
-    """Utilizes the get_rider_hist_w_unknown_date_min_req function to extract the average finishing place for a rider across the desired ranges. 
+def extract_specific_career_averages(
+    rider_career:RiderCareer,
+    prior_to_time:str|int=None,
+    min_req_history:int=3,
+    # New optional parameters for context-aware default
+    context_tour_level:Optional[str]=None,
+    context_personal_bib:Optional[int]=None,
+    context_rider_age:Optional[int]=None
+):
+    """Utilizes the get_rider_hist_w_unknown_date_min_req function to extract the average finishing place for a rider across the desired ranges.
     Change this function to alter which average finishing places are returned for the rider when regressing the model.
     Args:
         rider_career: RiderCareer object
         prior_to_time: A string date or int year to generate the average finishing place up to.
         min_req_history: Minimum required history length to return a non default value.
+        context_tour_level: Tour level for context-aware default calculation.
+        context_personal_bib: Personal bib number for context-aware default calculation.
+        context_rider_age: Rider age for context-aware default calculation.
     Returns:
         a tuple of average finishing places for gc, stage, one_day, wt, pro, d1, and the total history length used to generate the averages."""
     #Let's establish a standard order: gc,stage,one_day,wt,pro,d1. Those will be the average results we'll use
+    # Common context params to pass to all calls
+    ctx_params = dict(
+        context_tour_level=context_tour_level,
+        context_personal_bib=context_personal_bib,
+        context_rider_age=context_rider_age
+    )
     #Get the average gc place
-    gc_avg,gc_hist_len = get_rider_hist_w_unknown_date_min_req(rider_career,prior_to_time=prior_to_time,min_req_history=min_req_history,race_type=['gc'])
+    gc_avg,gc_hist_len = get_rider_hist_w_unknown_date_min_req(rider_career,prior_to_time=prior_to_time,min_req_history=min_req_history,race_type=['gc'],**ctx_params)
     #Get the average stage place
-    stage_avg,stage_hist_len = get_rider_hist_w_unknown_date_min_req(rider_career,prior_to_time=prior_to_time,min_req_history=min_req_history,race_type=['stage'])
+    stage_avg,stage_hist_len = get_rider_hist_w_unknown_date_min_req(rider_career,prior_to_time=prior_to_time,min_req_history=min_req_history,race_type=['stage'],**ctx_params)
     #Get the average one day place
-    one_day_avg,one_day_hist_len = get_rider_hist_w_unknown_date_min_req(rider_career,prior_to_time=prior_to_time,min_req_history=min_req_history,race_type=['one_day'])
+    one_day_avg,one_day_hist_len = get_rider_hist_w_unknown_date_min_req(rider_career,prior_to_time=prior_to_time,min_req_history=min_req_history,race_type=['one_day'],**ctx_params)
     #Get the average wt place
-    wt_avg,wt_hist_len = get_rider_hist_w_unknown_date_min_req(rider_career,prior_to_time=prior_to_time,min_req_history=min_req_history,tour_type=['wt'])
+    wt_avg,wt_hist_len = get_rider_hist_w_unknown_date_min_req(rider_career,prior_to_time=prior_to_time,min_req_history=min_req_history,tour_type=['wt'],**ctx_params)
     #Get the average pro place
-    pro_avg,pro_hist_len = get_rider_hist_w_unknown_date_min_req(rider_career,prior_to_time=prior_to_time,min_req_history=min_req_history,tour_type=['pro'])
+    pro_avg,pro_hist_len = get_rider_hist_w_unknown_date_min_req(rider_career,prior_to_time=prior_to_time,min_req_history=min_req_history,tour_type=['pro'],**ctx_params)
     #Get the average d1 place
-    d1_avg,d1_hist_len = get_rider_hist_w_unknown_date_min_req(rider_career,prior_to_time=prior_to_time,min_req_history=min_req_history,tour_type=['d1'])
+    d1_avg,d1_hist_len = get_rider_hist_w_unknown_date_min_req(rider_career,prior_to_time=prior_to_time,min_req_history=min_req_history,tour_type=['d1'],**ctx_params)
     total_hist_len = wt_hist_len + pro_hist_len + d1_hist_len
     return gc_avg,stage_avg,one_day_avg,wt_avg,pro_avg,d1_avg,total_hist_len
 

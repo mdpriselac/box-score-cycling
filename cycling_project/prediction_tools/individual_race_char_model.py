@@ -12,15 +12,32 @@
 ## 6. Store the coefficients in a list for each rider.
 ## 7. Check for any segmentation that's possible: PCA, Clustering, etc.
 
-from typing import List,Union
+from typing import List,Union,Optional
 from cycling_project.webscrape_tools.create_race_data import Race,Stage
 from cycling_project.engineering_tools.race_kinds import FiveDimDB
 from cycling_project.engineering_tools.rider_race_char_scores import RiderRaceCharScores
 from cycling_project.engineering_tools.race_characteristics import extract_finishing_time_distributions
 from cycling_project.engineering_tools.place_handling import place_bucketer
 from cycling_project.engineering_tools.race_kinds import calculate_five_race_dimensions,process_race_for_five_dimensions
+from cycling_project.engineering_tools.imputation import calculate_new_rider_default, extract_personal_bib
 from random import shuffle
 import pandas as pd
+
+
+def _get_context_default(race: Union[Race, Stage], res_dict: dict, rider) -> float:
+    """Calculate context-aware default prediction for a rider without enough history."""
+    tour_level = getattr(race, 'category', None)
+    personal_bib = extract_personal_bib(res_dict.get('bib_number'))
+    # Try to get rider age from rider object if available
+    rider_age = None
+    if hasattr(rider, 'rider_object') and rider.rider_object is not None:
+        rider_age = rider.rider_object.get_age(race.year) if hasattr(rider.rider_object, 'get_age') else None
+    return calculate_new_rider_default(
+        tour_level=tour_level,
+        personal_bib=personal_bib,
+        age=rider_age,
+        log_calculation=False
+    )
 
 #create the RaceCharDB
 race_char_db = FiveDimDB(year_range=range(2010,2025))
@@ -70,10 +87,11 @@ def predict_race_on_chars(race:Union[Race,Stage]):
         #get the race type, check for not enough data, set the model for prediction
         if isinstance(race,Stage) and race.name.lower() != 'gc':
             if stage_values[0] is None:
-                print(f"{rider.rider_name} does not have enough stage data to predict. Setting prediction to 6.0")
-                predicted_place = 6.0
-                predicted_place_capped = 6.0
-                predicted_place_bucketed = 6.0
+                default_pred = _get_context_default(race, res_dict, rider)
+                print(f"{rider.rider_name} does not have enough stage data to predict. Setting prediction to {default_pred:.2f}")
+                predicted_place = default_pred
+                predicted_place_capped = default_pred
+                predicted_place_bucketed = int(default_pred)
                 race_predictions[rider_id] = {'rider_name':rider.rider_name,'predicted_place_raw':predicted_place,'predicted_place_capped':predicted_place_capped,'predicted_place_bucketed':predicted_place_bucketed,'actual_place':actual_place_bucketed}
                 continue
             else:
@@ -83,10 +101,11 @@ def predict_race_on_chars(race:Union[Race,Stage]):
         #We have a GC race if it's a stage and the name has 'GC' in it
         elif isinstance(race,Stage):
             if gc_values[0] is None:
-                print(f"{rider.rider_name} does not have enough GC data to predict. Setting prediction to 6.0")
-                predicted_place = 6.0
-                predicted_place_capped = 6.0
-                predicted_place_bucketed = 6.0
+                default_pred = _get_context_default(race, res_dict, rider)
+                print(f"{rider.rider_name} does not have enough GC data to predict. Setting prediction to {default_pred:.2f}")
+                predicted_place = default_pred
+                predicted_place_capped = default_pred
+                predicted_place_bucketed = int(default_pred)
                 race_predictions[rider_id] = {'rider_name':rider.rider_name,'predicted_place_raw':predicted_place,'predicted_place_capped':predicted_place_capped,'predicted_place_bucketed':predicted_place_bucketed,'actual_place':actual_place_bucketed}
                 continue
             else:
@@ -96,10 +115,11 @@ def predict_race_on_chars(race:Union[Race,Stage]):
         #If it's not a stage, it's a one day
         elif isinstance(race,Race):
             if one_day_values[0] is None:
-                print(f"{rider.rider_name} does not have enough one day data to predict. Setting prediction to 6.0")
-                predicted_place = 6.0
-                predicted_place_capped = 6.0
-                predicted_place_bucketed = 6.0
+                default_pred = _get_context_default(race, res_dict, rider)
+                print(f"{rider.rider_name} does not have enough one day data to predict. Setting prediction to {default_pred:.2f}")
+                predicted_place = default_pred
+                predicted_place_capped = default_pred
+                predicted_place_bucketed = int(default_pred)
                 race_predictions[rider_id] = {'rider_name':rider.rider_name,'predicted_place_raw':predicted_place,'predicted_place_capped':predicted_place_capped,'predicted_place_bucketed':predicted_place_bucketed,'actual_place':actual_place_bucketed}
                 continue
             else:

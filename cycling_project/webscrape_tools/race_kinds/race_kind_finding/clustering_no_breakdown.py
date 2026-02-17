@@ -18,6 +18,8 @@ import os
 import warnings
 warnings.filterwarnings('ignore')
 
+from cycling_project.engineering_tools.imputation import smart_fillna
+
 try:
     from dotenv import load_dotenv
     HAS_DOTENV = True
@@ -161,10 +163,10 @@ class RaceKindClusteringNoBreakdown:
         
         print(f"Using {len(feature_columns)} feature columns for clustering")
         self.feature_names = feature_columns
-        
-        # Extract features and handle missing values
-        feature_data = self.data[feature_columns].fillna(0)
-        
+
+        # Extract features and handle missing values with type-aware imputation
+        feature_data = smart_fillna(self.data[feature_columns], feature_columns=feature_columns)
+
         # Standardize features
         self.features = self.scaler.fit_transform(feature_data)
         

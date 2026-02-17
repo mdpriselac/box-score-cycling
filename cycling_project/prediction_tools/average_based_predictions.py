@@ -2,6 +2,7 @@ from cycling_project.webscrape_tools.create_race_data import Race, Stage
 from cycling_project.data_loading_tools.create_rider_data import RiderDB,create_rider_db,DB_PATH
 from cycling_project.data_loading_tools.load_scraped_data import FCCyclingYear,FCCyclingTour,load_year_path
 from cycling_project.engineering_tools.place_handling import place_bucketer
+from cycling_project.engineering_tools.imputation import calculate_new_rider_default, extract_personal_bib
 from random import shuffle
 from typing import Union,List,Dict,Tuple
 import os
@@ -103,9 +104,20 @@ def prepare_race_data(validated_race:Union[Race,Stage],rider_db:RiderDB,tour_typ
         else:
             rider_history = rider_career.generate_race_history(prior_to_date=prior_to_date,race_type=race_type,tour_type=tour_type)
         #Now that we have our rider history we can make our predicted finishing place by calculating the average finishing place up to this point in the rider's career.
-        #If the rider history is empty, set the average finish to 6 for above top 30
+        #If the rider history is empty, calculate context-aware default based on tour level, bib, and age
         if rider_history is None or rider_history==[]:
-            avg_place = 6
+            # Get context for better default prediction
+            tour_level = getattr(validated_race, 'category', None)
+            personal_bib = extract_personal_bib(validated_rider_dict.get('bib_number'))
+            # Get rider age - use prior_to_date year for age calculation
+            age_year = prior_to_date if isinstance(prior_to_date, int) else int(str(prior_to_date)[:4]) if prior_to_date else None
+            rider_age = rider_career.get_age(age_year) if age_year and hasattr(rider_career, 'get_age') else None
+            avg_place = calculate_new_rider_default(
+                tour_level=tour_level,
+                personal_bib=personal_bib,
+                age=rider_age,
+                log_calculation=False
+            )
         else:
             #Calculate the average place
             avg_place = sum([place_bucketer(race_res.place) for race_res in rider_history])/len(rider_history)

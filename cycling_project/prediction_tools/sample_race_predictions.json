@@ -1,0 +1,5246 @@
+[
+  {
+    "competition_id": 3,
+    "race_name": "Stage: 01",
+    "date": "2024-03-04",
+    "type": "stage",
+    "category": "WT",
+    "profile": "time_trial",
+    "field_size": 174,
+    "metrics": {
+      "exact_accuracy_top30": 0.3,
+      "practical_success_top30": 0.767
+    },
+    "predicted_top_30": [
+      {
+        "pred_rank": 1,
+        "rider_name": "Ganna Filippo",
+        "rider_id": 88,
+        "pred_bucket": "Winner",
+        "actual_bucket": "Podium"
+      },
+      {
+        "pred_rank": 2,
+        "rider_name": "Sheffield Magnus",
+        "rider_id": 16,
+        "pred_bucket": "Podium",
+        "actual_bucket": "Top 30"
+      },
+      {
+        "pred_rank": 3,
+        "rider_name": "del Toro Isaac",
+        "rider_id": 4,
+        "pred_bucket": "Podium",
+        "actual_bucket": "Top 50"
+      },
+      {
+        "pred_rank": 4,
+        "rider_name": "W\u00e6renskjold S\u00f8ren",
+        "rider_id": 120,
+        "pred_bucket": "Top 5",
+        "actual_bucket": "Top 15"
+      },
+      {
+        "pred_rank": 5,
+        "rider_name": "Asgreen Kasper",
+        "rider_id": 52,
+        "pred_bucket": "Top 5",
+        "actual_bucket": "Top 30"
+      },
+      {
+        "pred_rank": 6,
+        "rider_name": "Bjerg Mikkel",
+        "rider_id": 15,
+        "pred_bucket": "Top 15",
+        "actual_bucket": "Top 15"
+      },
+      {
+        "pred_rank": 7,
+        "rider_name": "Ayuso Juan",
+        "rider_id": 2,
+        "pred_bucket": "Top 15",
+        "actual_bucket": "Winner"
+      },
+      {
+        "pred_rank": 8,
+        "rider_name": "Martinez Daniel",
+        "rider_id": 132,
+        "pred_bucket": "Top 15",
+        "actual_bucket": "Top 30"
+      },
+      {
+        "pred_rank": 9,
+        "rider_name": "Milesi Lorenzo",
+        "rider_id": 65,
+        "pred_bucket": "Top 15",
+        "actual_bucket": "Top 30"
+      },
+      {
+        "pred_rank": 10,
+        "rider_name": "Vingegaard Jonas",
+        "rider_id": 1,
+        "pred_bucket": "Top 15",
+        "actual_bucket": "Top 15"
+      },
+      {
+        "pred_rank": 11,
+        "rider_name": "Vauquelin K\u00e9vin",
+        "rider_id": 10,
+        "pred_bucket": "Top 15",
+        "actual_bucket": "Top 15"
+      },
+      {
+        "pred_rank": 12,
+        "rider_name": "Vernon Ethan",
+        "rider_id": 83,
+        "pred_bucket": "Top 15",
+        "actual_bucket": "Top 5"
+      },
+      {
+        "pred_rank": 13,
+        "rider_name": "Poole Max",
+        "rider_id": 169,
+        "pred_bucket": "Top 15",
+        "actual_bucket": "Top 15"
+      },
+      {
+        "pred_rank": 14,
+        "rider_name": "Arensman Thymen",
+        "rider_id": 6,
+        "pred_bucket": "Top 15",
+        "actual_bucket": "Top 30"
+      },
+      {
+        "pred_rank": 15,
+        "rider_name": "Craddock Lawson",
+        "rider_id": 22,
+        "pred_bucket": "Top 15",
+        "actual_bucket": "Top 50"
+      },
+      {
+        "pred_rank": 16,
+        "rider_name": "Tiberi Antonio",
+        "rider_id": 27,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Top 15"
+      },
+      {
+        "pred_rank": 17,
+        "rider_name": "Steimle Jannik",
+        "rider_id": 113,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Top 30"
+      },
+      {
+        "pred_rank": 18,
+        "rider_name": "Cern\u00fd Josef",
+        "rider_id": 153,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Top 5"
+      },
+      {
+        "pred_rank": 19,
+        "rider_name": "Mas Enric",
+        "rider_id": 12,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Top 50"
+      },
+      {
+        "pred_rank": 20,
+        "rider_name": "Kwiatkowski Michal",
+        "rider_id": 98,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Top 50"
+      },
+      {
+        "pred_rank": 21,
+        "rider_name": "Oliveira Nelson",
+        "rider_id": 39,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Top 30"
+      },
+      {
+        "pred_rank": 22,
+        "rider_name": "Alaphilippe Julian",
+        "rider_id": 62,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Finisher"
+      },
+      {
+        "pred_rank": 23,
+        "rider_name": "Gr\u00e9goire Romain",
+        "rider_id": 13,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Top 15"
+      },
+      {
+        "pred_rank": 24,
+        "rider_name": "Healy Ben",
+        "rider_id": 61,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Top 50"
+      },
+      {
+        "pred_rank": 25,
+        "rider_name": "Geoghegan Hart Tao",
+        "rider_id": 29,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Top 50"
+      },
+      {
+        "pred_rank": 26,
+        "rider_name": "O'Connor Ben",
+        "rider_id": 5,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Top 30"
+      },
+      {
+        "pred_rank": 27,
+        "rider_name": "Leknessund Andreas",
+        "rider_id": 38,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Finisher"
+      },
+      {
+        "pred_rank": 28,
+        "rider_name": "Walscheid Max",
+        "rider_id": 160,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Top 50"
+      },
+      {
+        "pred_rank": 29,
+        "rider_name": "Caruso Damiano",
+        "rider_id": 41,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Top 30"
+      },
+      {
+        "pred_rank": 30,
+        "rider_name": "Bettiol Alberto",
+        "rider_id": 40,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Top 30"
+      }
+    ],
+    "actual_top_30": [
+      {
+        "rider_name": "Ayuso Juan",
+        "rider_id": 2,
+        "actual_bucket": "Winner",
+        "pred_rank": 7,
+        "pred_bucket": "Top 15"
+      },
+      {
+        "rider_name": "Ganna Filippo",
+        "rider_id": 88,
+        "actual_bucket": "Podium",
+        "pred_rank": 1,
+        "pred_bucket": "Winner"
+      },
+      {
+        "rider_name": "Milan Jonathan",
+        "rider_id": 94,
+        "actual_bucket": "Podium",
+        "pred_rank": 32,
+        "pred_bucket": "Top 50"
+      },
+      {
+        "rider_name": "Cern\u00fd Josef",
+        "rider_id": 153,
+        "actual_bucket": "Top 5",
+        "pred_rank": 18,
+        "pred_bucket": "Top 30"
+      },
+      {
+        "rider_name": "Vernon Ethan",
+        "rider_id": 83,
+        "actual_bucket": "Top 5",
+        "pred_rank": 12,
+        "pred_bucket": "Top 15"
+      },
+      {
+        "rider_name": "Tiberi Antonio",
+        "rider_id": 27,
+        "actual_bucket": "Top 15",
+        "pred_rank": 16,
+        "pred_bucket": "Top 30"
+      },
+      {
+        "rider_name": "K\u00e4mna Lennard",
+        "rider_id": 8,
+        "actual_bucket": "Top 15",
+        "pred_rank": 33,
+        "pred_bucket": "Top 50"
+      },
+      {
+        "rider_name": "Poole Max",
+        "rider_id": 169,
+        "actual_bucket": "Top 15",
+        "pred_rank": 13,
+        "pred_bucket": "Top 15"
+      },
+      {
+        "rider_name": "Vingegaard Jonas",
+        "rider_id": 1,
+        "actual_bucket": "Top 15",
+        "pred_rank": 10,
+        "pred_bucket": "Top 15"
+      },
+      {
+        "rider_name": "Vauquelin K\u00e9vin",
+        "rider_id": 10,
+        "actual_bucket": "Top 15",
+        "pred_rank": 11,
+        "pred_bucket": "Top 15"
+      },
+      {
+        "rider_name": "Bjerg Mikkel",
+        "rider_id": 15,
+        "actual_bucket": "Top 15",
+        "pred_rank": 6,
+        "pred_bucket": "Top 15"
+      },
+      {
+        "rider_name": "Ludvigsson Tobias",
+        "rider_id": 151,
+        "actual_bucket": "Top 15",
+        "pred_rank": 44,
+        "pred_bucket": "Top 50"
+      },
+      {
+        "rider_name": "W\u00e6renskjold S\u00f8ren",
+        "rider_id": 120,
+        "actual_bucket": "Top 15",
+        "pred_rank": 4,
+        "pred_bucket": "Top 5"
+      },
+      {
+        "rider_name": "Hindley Jai",
+        "rider_id": 3,
+        "actual_bucket": "Top 15",
+        "pred_rank": 79,
+        "pred_bucket": "Finisher"
+      },
+      {
+        "rider_name": "Gr\u00e9goire Romain",
+        "rider_id": 13,
+        "actual_bucket": "Top 15",
+        "pred_rank": 23,
+        "pred_bucket": "Top 30"
+      },
+      {
+        "rider_name": "O'Connor Ben",
+        "rider_id": 5,
+        "actual_bucket": "Top 30",
+        "pred_rank": 26,
+        "pred_bucket": "Top 30"
+      },
+      {
+        "rider_name": "Arndt Nikias",
+        "rider_id": 84,
+        "actual_bucket": "Top 30",
+        "pred_rank": 40,
+        "pred_bucket": "Top 50"
+      },
+      {
+        "rider_name": "Powless Neilson",
+        "rider_id": 140,
+        "actual_bucket": "Top 30",
+        "pred_rank": 36,
+        "pred_bucket": "Top 50"
+      },
+      {
+        "rider_name": "Herregodts Rune",
+        "rider_id": 143,
+        "actual_bucket": "Top 30",
+        "pred_rank": 46,
+        "pred_bucket": "Top 50"
+      },
+      {
+        "rider_name": "Maciejuk Filip",
+        "rider_id": 95,
+        "actual_bucket": "Top 30",
+        "pred_rank": 51,
+        "pred_bucket": "Finisher"
+      },
+      {
+        "rider_name": "Cort Magnus",
+        "rider_id": 173,
+        "actual_bucket": "Top 30",
+        "pred_rank": 31,
+        "pred_bucket": "Top 50"
+      },
+      {
+        "rider_name": "Caruso Damiano",
+        "rider_id": 41,
+        "actual_bucket": "Top 30",
+        "pred_rank": 29,
+        "pred_bucket": "Top 30"
+      },
+      {
+        "rider_name": "Bettiol Alberto",
+        "rider_id": 40,
+        "actual_bucket": "Top 30",
+        "pred_rank": 30,
+        "pred_bucket": "Top 30"
+      },
+      {
+        "rider_name": "Milesi Lorenzo",
+        "rider_id": 65,
+        "actual_bucket": "Top 30",
+        "pred_rank": 9,
+        "pred_bucket": "Top 15"
+      },
+      {
+        "rider_name": "Sheffield Magnus",
+        "rider_id": 16,
+        "actual_bucket": "Top 30",
+        "pred_rank": 2,
+        "pred_bucket": "Podium"
+      },
+      {
+        "rider_name": "Oliveira Nelson",
+        "rider_id": 39,
+        "actual_bucket": "Top 30",
+        "pred_rank": 21,
+        "pred_bucket": "Top 30"
+      },
+      {
+        "rider_name": "Asgreen Kasper",
+        "rider_id": 52,
+        "actual_bucket": "Top 30",
+        "pred_rank": 5,
+        "pred_bucket": "Top 5"
+      },
+      {
+        "rider_name": "Steimle Jannik",
+        "rider_id": 113,
+        "actual_bucket": "Top 30",
+        "pred_rank": 17,
+        "pred_bucket": "Top 30"
+      },
+      {
+        "rider_name": "Martinez Daniel",
+        "rider_id": 132,
+        "actual_bucket": "Top 30",
+        "pred_rank": 8,
+        "pred_bucket": "Top 15"
+      },
+      {
+        "rider_name": "Arensman Thymen",
+        "rider_id": 6,
+        "actual_bucket": "Top 30",
+        "pred_rank": 14,
+        "pred_bucket": "Top 15"
+      }
+    ]
+  },
+  {
+    "competition_id": 357,
+    "race_name": "Stage: 01",
+    "date": "2023-09-03",
+    "type": "stage",
+    "category": "PRO",
+    "profile": "sprint",
+    "field_size": 92,
+    "metrics": {
+      "exact_accuracy_top30": 0.345,
+      "practical_success_top30": 0.966
+    },
+    "predicted_top_30": [
+      {
+        "pred_rank": 1,
+        "rider_name": "Kooij Olav",
+        "rider_id": 185,
+        "pred_bucket": "Winner",
+        "actual_bucket": "Winner"
+      },
+      {
+        "pred_rank": 2,
+        "rider_name": "van Aert Wout",
+        "rider_id": 380,
+        "pred_bucket": "Podium",
+        "actual_bucket": "Podium"
+      },
+      {
+        "pred_rank": 3,
+        "rider_name": "Bennett Sam",
+        "rider_id": 490,
+        "pred_bucket": "Podium",
+        "actual_bucket": "Podium"
+      },
+      {
+        "pred_rank": 4,
+        "rider_name": "Gaviria Fernando",
+        "rider_id": 393,
+        "pred_bucket": "Top 5",
+        "actual_bucket": "Finisher"
+      },
+      {
+        "pred_rank": 5,
+        "rider_name": "Vernon Ethan",
+        "rider_id": 83,
+        "pred_bucket": "Top 5",
+        "actual_bucket": "Top 5"
+      },
+      {
+        "pred_rank": 6,
+        "rider_name": "van Poppel Danny",
+        "rider_id": 232,
+        "pred_bucket": "Top 15",
+        "actual_bucket": "Top 15"
+      },
+      {
+        "pred_rank": 7,
+        "rider_name": "Kanter Max",
+        "rider_id": 391,
+        "pred_bucket": "Top 15",
+        "actual_bucket": "Top 5"
+      },
+      {
+        "pred_rank": 8,
+        "rider_name": "Sheffield Magnus",
+        "rider_id": 16,
+        "pred_bucket": "Top 15",
+        "actual_bucket": "Top 50"
+      },
+      {
+        "pred_rank": 9,
+        "rider_name": "Lamperti Luke",
+        "rider_id": 239,
+        "pred_bucket": "Top 15",
+        "actual_bucket": "Finisher"
+      },
+      {
+        "pred_rank": 10,
+        "rider_name": "Persico Davide",
+        "rider_id": 399,
+        "pred_bucket": "Top 15",
+        "actual_bucket": "Top 50"
+      },
+      {
+        "pred_rank": 11,
+        "rider_name": "Fredheim Stian",
+        "rider_id": 225,
+        "pred_bucket": "Top 15",
+        "actual_bucket": "Top 15"
+      },
+      {
+        "pred_rank": 12,
+        "rider_name": "Fretin Milan",
+        "rider_id": 371,
+        "pred_bucket": "Top 15",
+        "actual_bucket": "Finisher"
+      },
+      {
+        "pred_rank": 13,
+        "rider_name": "Gudmestad Tord",
+        "rider_id": 388,
+        "pred_bucket": "Top 15",
+        "actual_bucket": "Top 30"
+      },
+      {
+        "pred_rank": 14,
+        "rider_name": "Walls Matthew",
+        "rider_id": 415,
+        "pred_bucket": "Top 15",
+        "actual_bucket": "Finisher"
+      },
+      {
+        "pred_rank": 15,
+        "rider_name": "Salby Alexander",
+        "rider_id": 1048,
+        "pred_bucket": "Top 15",
+        "actual_bucket": "Finisher"
+      },
+      {
+        "pred_rank": 16,
+        "rider_name": "Rodriguez Carlos",
+        "rider_id": 759,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Top 50"
+      },
+      {
+        "pred_rank": 17,
+        "rider_name": "Bloem Joren",
+        "rider_id": 1070,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Top 30"
+      },
+      {
+        "pred_rank": 18,
+        "rider_name": "Sajnok Szymon",
+        "rider_id": 351,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Top 50"
+      },
+      {
+        "pred_rank": 19,
+        "rider_name": "Pidcock Tom",
+        "rider_id": 9,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Top 15"
+      },
+      {
+        "pred_rank": 20,
+        "rider_name": "Wood Oliver",
+        "rider_id": 1063,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Finisher"
+      },
+      {
+        "pred_rank": 21,
+        "rider_name": "Serrano Gonzalo",
+        "rider_id": 192,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Top 15"
+      },
+      {
+        "pred_rank": 22,
+        "rider_name": "Koyama Tomoya",
+        "rider_id": 1066,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Finisher"
+      },
+      {
+        "pred_rank": 23,
+        "rider_name": "Bevin Patrick",
+        "rider_id": 287,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Finisher"
+      },
+      {
+        "pred_rank": 24,
+        "rider_name": "van Uden Casper",
+        "rider_id": 100,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Top 30"
+      },
+      {
+        "pred_rank": 25,
+        "rider_name": "Lund Andresen Tobias",
+        "rider_id": 412,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Top 15"
+      },
+      {
+        "pred_rank": 26,
+        "rider_name": "Affini Edoardo",
+        "rider_id": 501,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Finisher"
+      },
+      {
+        "pred_rank": 27,
+        "rider_name": "Bostock Matthew",
+        "rider_id": 1058,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Top 30"
+      },
+      {
+        "pred_rank": 28,
+        "rider_name": "Parisini Nicol\u00f2",
+        "rider_id": 89,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Top 30"
+      },
+      {
+        "pred_rank": 29,
+        "rider_name": "Townsend Rory",
+        "rider_id": 400,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Top 15"
+      },
+      {
+        "pred_rank": 30,
+        "rider_name": "Rees Oliver",
+        "rider_id": 1056,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Finisher"
+      }
+    ],
+    "actual_top_30": [
+      {
+        "rider_name": "Kooij Olav",
+        "rider_id": 185,
+        "actual_bucket": "Winner",
+        "pred_rank": 1,
+        "pred_bucket": "Winner"
+      },
+      {
+        "rider_name": "van Aert Wout",
+        "rider_id": 380,
+        "actual_bucket": "Podium",
+        "pred_rank": 2,
+        "pred_bucket": "Podium"
+      },
+      {
+        "rider_name": "Bennett Sam",
+        "rider_id": 490,
+        "actual_bucket": "Podium",
+        "pred_rank": 3,
+        "pred_bucket": "Podium"
+      },
+      {
+        "rider_name": "Vernon Ethan",
+        "rider_id": 83,
+        "actual_bucket": "Top 5",
+        "pred_rank": 5,
+        "pred_bucket": "Top 5"
+      },
+      {
+        "rider_name": "Kanter Max",
+        "rider_id": 391,
+        "actual_bucket": "Top 5",
+        "pred_rank": 7,
+        "pred_bucket": "Top 15"
+      },
+      {
+        "rider_name": "Townsend Rory",
+        "rider_id": 400,
+        "actual_bucket": "Top 15",
+        "pred_rank": 29,
+        "pred_bucket": "Top 30"
+      },
+      {
+        "rider_name": "Serrano Gonzalo",
+        "rider_id": 192,
+        "actual_bucket": "Top 15",
+        "pred_rank": 21,
+        "pred_bucket": "Top 30"
+      },
+      {
+        "rider_name": "M\u00e4rkl Niklas",
+        "rider_id": 358,
+        "actual_bucket": "Top 15",
+        "pred_rank": 32,
+        "pred_bucket": "Top 50"
+      },
+      {
+        "rider_name": "Pidcock Tom",
+        "rider_id": 9,
+        "actual_bucket": "Top 15",
+        "pred_rank": 19,
+        "pred_bucket": "Top 30"
+      },
+      {
+        "rider_name": "Johannessen Tobias Halland",
+        "rider_id": 582,
+        "actual_bucket": "Top 15",
+        "pred_rank": 37,
+        "pred_bucket": "Top 50"
+      },
+      {
+        "rider_name": "Bomboi Davide",
+        "rider_id": 815,
+        "actual_bucket": "Top 15",
+        "pred_rank": 39,
+        "pred_bucket": "Top 50"
+      },
+      {
+        "rider_name": "Lund Andresen Tobias",
+        "rider_id": 412,
+        "actual_bucket": "Top 15",
+        "pred_rank": 25,
+        "pred_bucket": "Top 30"
+      },
+      {
+        "rider_name": "Fredheim Stian",
+        "rider_id": 225,
+        "actual_bucket": "Top 15",
+        "pred_rank": 11,
+        "pred_bucket": "Top 15"
+      },
+      {
+        "rider_name": "van Poppel Danny",
+        "rider_id": 232,
+        "actual_bucket": "Top 15",
+        "pred_rank": 6,
+        "pred_bucket": "Top 15"
+      },
+      {
+        "rider_name": "Tiller Rasmus",
+        "rider_id": 312,
+        "actual_bucket": "Top 15",
+        "pred_rank": 77,
+        "pred_bucket": "Finisher"
+      },
+      {
+        "rider_name": "Bostock Matthew",
+        "rider_id": 1058,
+        "actual_bucket": "Top 30",
+        "pred_rank": 27,
+        "pred_bucket": "Top 30"
+      },
+      {
+        "rider_name": "Politt Nils",
+        "rider_id": 297,
+        "actual_bucket": "Top 30",
+        "pred_rank": 38,
+        "pred_bucket": "Top 50"
+      },
+      {
+        "rider_name": "Meens Johan",
+        "rider_id": 756,
+        "actual_bucket": "Top 30",
+        "pred_rank": 45,
+        "pred_bucket": "Top 50"
+      },
+      {
+        "rider_name": "Ballabio Giacomo",
+        "rider_id": 1050,
+        "actual_bucket": "Top 30",
+        "pred_rank": 35,
+        "pred_bucket": "Top 50"
+      },
+      {
+        "rider_name": "Turner Ben",
+        "rider_id": 298,
+        "actual_bucket": "Top 30",
+        "pred_rank": 33,
+        "pred_bucket": "Top 50"
+      },
+      {
+        "rider_name": "Donaldson Robert",
+        "rider_id": 1051,
+        "actual_bucket": "Top 30",
+        "pred_rank": 49,
+        "pred_bucket": "Top 50"
+      },
+      {
+        "rider_name": "Tidball Will",
+        "rider_id": 1059,
+        "actual_bucket": "Top 30",
+        "pred_rank": 71,
+        "pred_bucket": "Finisher"
+      },
+      {
+        "rider_name": "Parisini Nicol\u00f2",
+        "rider_id": 89,
+        "actual_bucket": "Top 30",
+        "pred_rank": 28,
+        "pred_bucket": "Top 30"
+      },
+      {
+        "rider_name": "Swift Connor",
+        "rider_id": 73,
+        "actual_bucket": "Top 30",
+        "pred_rank": 43,
+        "pred_bucket": "Top 50"
+      },
+      {
+        "rider_name": "Birchill Harry",
+        "rider_id": 1068,
+        "actual_bucket": "Top 30",
+        "pred_rank": 40,
+        "pred_bucket": "Top 50"
+      },
+      {
+        "rider_name": "Bugge Martin Urianstad",
+        "rider_id": 590,
+        "actual_bucket": "Top 30",
+        "pred_rank": 46,
+        "pred_bucket": "Top 50"
+      },
+      {
+        "rider_name": "van Uden Casper",
+        "rider_id": 100,
+        "actual_bucket": "Top 30",
+        "pred_rank": 24,
+        "pred_bucket": "Top 30"
+      },
+      {
+        "rider_name": "Bloem Joren",
+        "rider_id": 1070,
+        "actual_bucket": "Top 30",
+        "pred_rank": 17,
+        "pred_bucket": "Top 30"
+      },
+      {
+        "rider_name": "Gudmestad Tord",
+        "rider_id": 388,
+        "actual_bucket": "Top 30",
+        "pred_rank": 13,
+        "pred_bucket": "Top 15"
+      },
+      {
+        "rider_name": "De Pestel Sander",
+        "rider_id": 255,
+        "actual_bucket": "Top 50",
+        "pred_rank": 48,
+        "pred_bucket": "Top 50"
+      }
+    ]
+  },
+  {
+    "competition_id": 566,
+    "race_name": "Stage: 01",
+    "date": "2023-02-19",
+    "type": "stage",
+    "category": "D1",
+    "profile": "sprint",
+    "field_size": 56,
+    "metrics": {
+      "exact_accuracy_top30": 0.381,
+      "practical_success_top30": 0.714
+    },
+    "predicted_top_30": [
+      {
+        "pred_rank": 1,
+        "rider_name": "Vernon Ethan",
+        "rider_id": 83,
+        "pred_bucket": "Winner",
+        "actual_bucket": "Winner"
+      },
+      {
+        "pred_rank": 2,
+        "rider_name": "Fiorelli Filippo",
+        "rider_id": 174,
+        "pred_bucket": "Podium",
+        "actual_bucket": "Top 5"
+      },
+      {
+        "pred_rank": 3,
+        "rider_name": "Mulubrhan Henok",
+        "rider_id": 477,
+        "pred_bucket": "Podium",
+        "actual_bucket": "Podium"
+      },
+      {
+        "pred_rank": 4,
+        "rider_name": "Gabburo Davide",
+        "rider_id": 229,
+        "pred_bucket": "Top 5",
+        "actual_bucket": "Finisher"
+      },
+      {
+        "pred_rank": 5,
+        "rider_name": "Jeanni\u00e8re Emilien",
+        "rider_id": 384,
+        "pred_bucket": "Top 5",
+        "actual_bucket": "Podium"
+      },
+      {
+        "pred_rank": 6,
+        "rider_name": "Yemane Dawit",
+        "rider_id": 1774,
+        "pred_bucket": "Top 15",
+        "actual_bucket": "Top 30"
+      },
+      {
+        "pred_rank": 7,
+        "rider_name": "Christensen Ryan",
+        "rider_id": 1065,
+        "pred_bucket": "Top 15",
+        "actual_bucket": "Top 30"
+      },
+      {
+        "pred_rank": 8,
+        "rider_name": "Currie Logan",
+        "rider_id": 642,
+        "pred_bucket": "Top 15",
+        "actual_bucket": "Top 50"
+      },
+      {
+        "pred_rank": 9,
+        "rider_name": "Ed Doghmy Achraf",
+        "rider_id": 2031,
+        "pred_bucket": "Top 15",
+        "actual_bucket": "Top 30"
+      },
+      {
+        "pred_rank": 10,
+        "rider_name": "Planet Charles",
+        "rider_id": 1814,
+        "pred_bucket": "Top 15",
+        "actual_bucket": "Top 15"
+      },
+      {
+        "pred_rank": 11,
+        "rider_name": "Reinderink Pepijn",
+        "rider_id": 376,
+        "pred_bucket": "Top 15",
+        "actual_bucket": "Top 50"
+      },
+      {
+        "pred_rank": 12,
+        "rider_name": "Teklehaimanot Daniel",
+        "rider_id": 2028,
+        "pred_bucket": "Top 15",
+        "actual_bucket": "Finisher"
+      },
+      {
+        "pred_rank": 13,
+        "rider_name": "De Rossi Lucas",
+        "rider_id": 1651,
+        "pred_bucket": "Top 15",
+        "actual_bucket": "Top 30"
+      },
+      {
+        "pred_rank": 14,
+        "rider_name": "Bonnet Thomas",
+        "rider_id": 936,
+        "pred_bucket": "Top 15",
+        "actual_bucket": "Top 15"
+      },
+      {
+        "pred_rank": 15,
+        "rider_name": "Pritzen Marc",
+        "rider_id": 1502,
+        "pred_bucket": "Top 15",
+        "actual_bucket": "Top 30"
+      },
+      {
+        "pred_rank": 16,
+        "rider_name": "Mugisha Moise",
+        "rider_id": 2057,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Top 30"
+      },
+      {
+        "pred_rank": 17,
+        "rider_name": "Hagen Carl Fredrik",
+        "rider_id": 461,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Top 30"
+      },
+      {
+        "pred_rank": 18,
+        "rider_name": "Cahyadi Aiman",
+        "rider_id": 2062,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Top 15"
+      },
+      {
+        "pred_rank": 19,
+        "rider_name": "Raisberg Nadav",
+        "rider_id": 416,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Top 15"
+      },
+      {
+        "pred_rank": 20,
+        "rider_name": "Vercher Matt\u00e9o",
+        "rider_id": 797,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Finisher"
+      },
+      {
+        "pred_rank": 21,
+        "rider_name": "Mohd Zariff Nur Aiman",
+        "rider_id": 1268,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Finisher"
+      },
+      {
+        "pred_rank": 22,
+        "rider_name": "Main Kent",
+        "rider_id": 2023,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Finisher"
+      },
+      {
+        "pred_rank": 23,
+        "rider_name": "Grellier Fabien",
+        "rider_id": 535,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Finisher"
+      },
+      {
+        "pred_rank": 24,
+        "rider_name": "Meijers Jeroen",
+        "rider_id": 1140,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Top 15"
+      },
+      {
+        "pred_rank": 25,
+        "rider_name": "Manizabayo Eric",
+        "rider_id": 2056,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Finisher"
+      },
+      {
+        "pred_rank": 26,
+        "rider_name": "Conca Filippo",
+        "rider_id": 148,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Finisher"
+      },
+      {
+        "pred_rank": 27,
+        "rider_name": "Eyob Metkel",
+        "rider_id": 1727,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Top 30"
+      },
+      {
+        "pred_rank": 28,
+        "rider_name": "Pajur Markus",
+        "rider_id": 2036,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Top 15"
+      },
+      {
+        "pred_rank": 29,
+        "rider_name": "Kusztor Peter",
+        "rider_id": 960,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Top 30"
+      },
+      {
+        "pred_rank": 30,
+        "rider_name": "De La Parte Victor",
+        "rider_id": 561,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Top 50"
+      }
+    ],
+    "actual_top_30": [
+      {
+        "rider_name": "Vernon Ethan",
+        "rider_id": 83,
+        "actual_bucket": "Winner",
+        "pred_rank": 1,
+        "pred_bucket": "Winner"
+      },
+      {
+        "rider_name": "Mulubrhan Henok",
+        "rider_id": 477,
+        "actual_bucket": "Podium",
+        "pred_rank": 3,
+        "pred_bucket": "Podium"
+      },
+      {
+        "rider_name": "Jeanni\u00e8re Emilien",
+        "rider_id": 384,
+        "actual_bucket": "Podium",
+        "pred_rank": 5,
+        "pred_bucket": "Top 5"
+      },
+      {
+        "rider_name": "Fiorelli Filippo",
+        "rider_id": 174,
+        "actual_bucket": "Top 5",
+        "pred_rank": 2,
+        "pred_bucket": "Podium"
+      },
+      {
+        "rider_name": "Meijers Jeroen",
+        "rider_id": 1140,
+        "actual_bucket": "Top 15",
+        "pred_rank": 24,
+        "pred_bucket": "Top 30"
+      },
+      {
+        "rider_name": "Raisberg Nadav",
+        "rider_id": 416,
+        "actual_bucket": "Top 15",
+        "pred_rank": 19,
+        "pred_bucket": "Top 30"
+      },
+      {
+        "rider_name": "Cahyadi Aiman",
+        "rider_id": 2062,
+        "actual_bucket": "Top 15",
+        "pred_rank": 18,
+        "pred_bucket": "Top 30"
+      },
+      {
+        "rider_name": "Bonnet Thomas",
+        "rider_id": 936,
+        "actual_bucket": "Top 15",
+        "pred_rank": 14,
+        "pred_bucket": "Top 15"
+      },
+      {
+        "rider_name": "Planet Charles",
+        "rider_id": 1814,
+        "actual_bucket": "Top 15",
+        "pred_rank": 10,
+        "pred_bucket": "Top 15"
+      },
+      {
+        "rider_name": "Pajur Markus",
+        "rider_id": 2036,
+        "actual_bucket": "Top 15",
+        "pred_rank": 28,
+        "pred_bucket": "Top 30"
+      },
+      {
+        "rider_name": "Perry Toby",
+        "rider_id": 2040,
+        "actual_bucket": "Top 30",
+        "pred_rank": 33,
+        "pred_bucket": "Top 50"
+      },
+      {
+        "rider_name": "Eyob Metkel",
+        "rider_id": 1727,
+        "actual_bucket": "Top 30",
+        "pred_rank": 27,
+        "pred_bucket": "Top 30"
+      },
+      {
+        "rider_name": "Iribar Unai",
+        "rider_id": 720,
+        "actual_bucket": "Top 30",
+        "pred_rank": 37,
+        "pred_bucket": "Top 50"
+      },
+      {
+        "rider_name": "Ed Doghmy Achraf",
+        "rider_id": 2031,
+        "actual_bucket": "Top 30",
+        "pred_rank": 9,
+        "pred_bucket": "Top 15"
+      },
+      {
+        "rider_name": "Yemane Dawit",
+        "rider_id": 1774,
+        "actual_bucket": "Top 30",
+        "pred_rank": 6,
+        "pred_bucket": "Top 15"
+      },
+      {
+        "rider_name": "Christensen Ryan",
+        "rider_id": 1065,
+        "actual_bucket": "Top 30",
+        "pred_rank": 7,
+        "pred_bucket": "Top 15"
+      },
+      {
+        "rider_name": "Kusztor Peter",
+        "rider_id": 960,
+        "actual_bucket": "Top 30",
+        "pred_rank": 29,
+        "pred_bucket": "Top 30"
+      },
+      {
+        "rider_name": "Mugisha Moise",
+        "rider_id": 2057,
+        "actual_bucket": "Top 30",
+        "pred_rank": 16,
+        "pred_bucket": "Top 30"
+      },
+      {
+        "rider_name": "Pritzen Marc",
+        "rider_id": 1502,
+        "actual_bucket": "Top 30",
+        "pred_rank": 15,
+        "pred_bucket": "Top 15"
+      },
+      {
+        "rider_name": "De Rossi Lucas",
+        "rider_id": 1651,
+        "actual_bucket": "Top 30",
+        "pred_rank": 13,
+        "pred_bucket": "Top 15"
+      },
+      {
+        "rider_name": "Hagen Carl Fredrik",
+        "rider_id": 461,
+        "actual_bucket": "Top 30",
+        "pred_rank": 17,
+        "pred_bucket": "Top 30"
+      },
+      {
+        "rider_name": "Oram James",
+        "rider_id": 1032,
+        "actual_bucket": "Top 50",
+        "pred_rank": 52,
+        "pred_bucket": "Finisher"
+      },
+      {
+        "rider_name": "Ormiston Callum",
+        "rider_id": 1062,
+        "actual_bucket": "Top 50",
+        "pred_rank": 47,
+        "pred_bucket": "Top 50"
+      },
+      {
+        "rider_name": "Budiak Anatolii",
+        "rider_id": 2024,
+        "actual_bucket": "Top 50",
+        "pred_rank": 46,
+        "pred_bucket": "Top 50"
+      },
+      {
+        "rider_name": "Muhoza Eric",
+        "rider_id": 2025,
+        "actual_bucket": "Top 50",
+        "pred_rank": 40,
+        "pred_bucket": "Top 50"
+      },
+      {
+        "rider_name": "Mol Wesley",
+        "rider_id": 1473,
+        "actual_bucket": "Top 50",
+        "pred_rank": 39,
+        "pred_bucket": "Top 50"
+      },
+      {
+        "rider_name": "Stewart Mark",
+        "rider_id": 166,
+        "actual_bucket": "Top 50",
+        "pred_rank": 38,
+        "pred_bucket": "Top 50"
+      },
+      {
+        "rider_name": "Froome Chris",
+        "rider_id": 145,
+        "actual_bucket": "Top 50",
+        "pred_rank": 53,
+        "pred_bucket": "Finisher"
+      },
+      {
+        "rider_name": "Kessler Cole",
+        "rider_id": 2048,
+        "actual_bucket": "Top 50",
+        "pred_rank": 50,
+        "pred_bucket": "Top 50"
+      },
+      {
+        "rider_name": "Reinderink Pepijn",
+        "rider_id": 376,
+        "actual_bucket": "Top 50",
+        "pred_rank": 11,
+        "pred_bucket": "Top 15"
+      }
+    ]
+  },
+  {
+    "competition_id": 10,
+    "race_name": "Milano-Sanremo",
+    "date": "2024-03-16",
+    "type": "one_day",
+    "category": "WT",
+    "profile": "rolling",
+    "field_size": 164,
+    "metrics": {
+      "exact_accuracy_top30": 0.167,
+      "practical_success_top30": 0.833
+    },
+    "predicted_top_30": [
+      {
+        "pred_rank": 1,
+        "rider_name": "Pogacar Tadej",
+        "rider_id": 177,
+        "pred_bucket": "Winner",
+        "actual_bucket": "Podium"
+      },
+      {
+        "pred_rank": 2,
+        "rider_name": "van der Poel Mathieu",
+        "rider_id": 182,
+        "pred_bucket": "Podium",
+        "actual_bucket": "Top 15"
+      },
+      {
+        "pred_rank": 3,
+        "rider_name": "Girmay Biniam",
+        "rider_id": 142,
+        "pred_bucket": "Podium",
+        "actual_bucket": "Top 30"
+      },
+      {
+        "pred_rank": 4,
+        "rider_name": "Pidcock Tom",
+        "rider_id": 9,
+        "pred_bucket": "Top 5",
+        "actual_bucket": "Top 15"
+      },
+      {
+        "pred_rank": 5,
+        "rider_name": "Matthews Michael",
+        "rider_id": 176,
+        "pred_bucket": "Top 5",
+        "actual_bucket": "Podium"
+      },
+      {
+        "pred_rank": 6,
+        "rider_name": "Strong Corbin",
+        "rider_id": 42,
+        "pred_bucket": "Top 15",
+        "actual_bucket": "Top 30"
+      },
+      {
+        "pred_rank": 7,
+        "rider_name": "Van Gils Maxim",
+        "rider_id": 180,
+        "pred_bucket": "Top 15",
+        "actual_bucket": "Top 15"
+      },
+      {
+        "pred_rank": 8,
+        "rider_name": "Mohoric Matej",
+        "rider_id": 179,
+        "pred_bucket": "Top 15",
+        "actual_bucket": "Top 15"
+      },
+      {
+        "pred_rank": 9,
+        "rider_name": "Alaphilippe Julian",
+        "rider_id": 62,
+        "pred_bucket": "Top 15",
+        "actual_bucket": "Top 15"
+      },
+      {
+        "pred_rank": 10,
+        "rider_name": "Narvaez Jhonnatan",
+        "rider_id": 197,
+        "pred_bucket": "Top 15",
+        "actual_bucket": "Top 50"
+      },
+      {
+        "pred_rank": 11,
+        "rider_name": "Zimmermann Georg",
+        "rider_id": 200,
+        "pred_bucket": "Top 15",
+        "actual_bucket": "Top 50"
+      },
+      {
+        "pred_rank": 12,
+        "rider_name": "del Toro Isaac",
+        "rider_id": 4,
+        "pred_bucket": "Top 15",
+        "actual_bucket": "Finisher"
+      },
+      {
+        "pred_rank": 13,
+        "rider_name": "Philipsen Jasper",
+        "rider_id": 81,
+        "pred_bucket": "Top 15",
+        "actual_bucket": "Winner"
+      },
+      {
+        "pred_rank": 14,
+        "rider_name": "Hirschi Marc",
+        "rider_id": 79,
+        "pred_bucket": "Top 15",
+        "actual_bucket": "Finisher"
+      },
+      {
+        "pred_rank": 15,
+        "rider_name": "Champoussin Cl\u00e9ment",
+        "rider_id": 254,
+        "pred_bucket": "Top 15",
+        "actual_bucket": "Finisher"
+      },
+      {
+        "pred_rank": 16,
+        "rider_name": "van den Berg Marijn",
+        "rider_id": 211,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Finisher"
+      },
+      {
+        "pred_rank": 17,
+        "rider_name": "Pedersen Mads",
+        "rider_id": 178,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Top 5"
+      },
+      {
+        "pred_rank": 18,
+        "rider_name": "Cosnefroy Beno\u00eet",
+        "rider_id": 188,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Top 30"
+      },
+      {
+        "pred_rank": 19,
+        "rider_name": "Ulissi Diego",
+        "rider_id": 216,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Finisher"
+      },
+      {
+        "pred_rank": 20,
+        "rider_name": "van Poppel Danny",
+        "rider_id": 232,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Finisher"
+      },
+      {
+        "pred_rank": 21,
+        "rider_name": "Pithie Laurence",
+        "rider_id": 186,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Top 15"
+      },
+      {
+        "pred_rank": 22,
+        "rider_name": "Zingle Axel",
+        "rider_id": 137,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Top 50"
+      },
+      {
+        "pred_rank": 23,
+        "rider_name": "Vendrame Andrea",
+        "rider_id": 55,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Finisher"
+      },
+      {
+        "pred_rank": 24,
+        "rider_name": "Kooij Olav",
+        "rider_id": 185,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Top 15"
+      },
+      {
+        "pred_rank": 25,
+        "rider_name": "Vermaerke Kevin",
+        "rider_id": 24,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Top 50"
+      },
+      {
+        "pred_rank": 26,
+        "rider_name": "D\u00e9mare Arnaud",
+        "rider_id": 202,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Top 50"
+      },
+      {
+        "pred_rank": 27,
+        "rider_name": "Plapp Lucas",
+        "rider_id": 213,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Finisher"
+      },
+      {
+        "pred_rank": 28,
+        "rider_name": "Trentin Matteo",
+        "rider_id": 189,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Top 30"
+      },
+      {
+        "pred_rank": 29,
+        "rider_name": "Calmejane Lilian",
+        "rider_id": 208,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Finisher"
+      },
+      {
+        "pred_rank": 30,
+        "rider_name": "Stuyven Jasper",
+        "rider_id": 181,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Top 15"
+      }
+    ],
+    "actual_top_30": [
+      {
+        "rider_name": "Philipsen Jasper",
+        "rider_id": 81,
+        "actual_bucket": "Winner",
+        "pred_rank": 13,
+        "pred_bucket": "Top 15"
+      },
+      {
+        "rider_name": "Pogacar Tadej",
+        "rider_id": 177,
+        "actual_bucket": "Podium",
+        "pred_rank": 1,
+        "pred_bucket": "Winner"
+      },
+      {
+        "rider_name": "Matthews Michael",
+        "rider_id": 176,
+        "actual_bucket": "Podium",
+        "pred_rank": 5,
+        "pred_bucket": "Top 5"
+      },
+      {
+        "rider_name": "Pedersen Mads",
+        "rider_id": 178,
+        "actual_bucket": "Top 5",
+        "pred_rank": 17,
+        "pred_bucket": "Top 30"
+      },
+      {
+        "rider_name": "Bettiol Alberto",
+        "rider_id": 40,
+        "actual_bucket": "Top 5",
+        "pred_rank": 35,
+        "pred_bucket": "Top 50"
+      },
+      {
+        "rider_name": "Sobrero Matteo",
+        "rider_id": 183,
+        "actual_bucket": "Top 15",
+        "pred_rank": 45,
+        "pred_bucket": "Top 50"
+      },
+      {
+        "rider_name": "Van Gils Maxim",
+        "rider_id": 180,
+        "actual_bucket": "Top 15",
+        "pred_rank": 7,
+        "pred_bucket": "Top 15"
+      },
+      {
+        "rider_name": "Mohoric Matej",
+        "rider_id": 179,
+        "actual_bucket": "Top 15",
+        "pred_rank": 8,
+        "pred_bucket": "Top 15"
+      },
+      {
+        "rider_name": "Alaphilippe Julian",
+        "rider_id": 62,
+        "actual_bucket": "Top 15",
+        "pred_rank": 9,
+        "pred_bucket": "Top 15"
+      },
+      {
+        "rider_name": "Pedersen Casper",
+        "rider_id": 184,
+        "actual_bucket": "Top 15",
+        "pred_rank": 123,
+        "pred_bucket": "Finisher"
+      },
+      {
+        "rider_name": "Stuyven Jasper",
+        "rider_id": 181,
+        "actual_bucket": "Top 15",
+        "pred_rank": 30,
+        "pred_bucket": "Top 30"
+      },
+      {
+        "rider_name": "van der Poel Mathieu",
+        "rider_id": 182,
+        "actual_bucket": "Top 15",
+        "pred_rank": 2,
+        "pred_bucket": "Podium"
+      },
+      {
+        "rider_name": "Kooij Olav",
+        "rider_id": 185,
+        "actual_bucket": "Top 15",
+        "pred_rank": 24,
+        "pred_bucket": "Top 30"
+      },
+      {
+        "rider_name": "Pidcock Tom",
+        "rider_id": 9,
+        "actual_bucket": "Top 15",
+        "pred_rank": 4,
+        "pred_bucket": "Top 5"
+      },
+      {
+        "rider_name": "Pithie Laurence",
+        "rider_id": 186,
+        "actual_bucket": "Top 15",
+        "pred_rank": 21,
+        "pred_bucket": "Top 30"
+      },
+      {
+        "rider_name": "K\u00fcng Stefan",
+        "rider_id": 191,
+        "actual_bucket": "Top 30",
+        "pred_rank": 48,
+        "pred_bucket": "Top 50"
+      },
+      {
+        "rider_name": "Velasco Simone",
+        "rider_id": 28,
+        "actual_bucket": "Top 30",
+        "pred_rank": 32,
+        "pred_bucket": "Top 50"
+      },
+      {
+        "rider_name": "De Pretto Davide",
+        "rider_id": 193,
+        "actual_bucket": "Top 30",
+        "pred_rank": 86,
+        "pred_bucket": "Finisher"
+      },
+      {
+        "rider_name": "Serrano Gonzalo",
+        "rider_id": 192,
+        "actual_bucket": "Top 30",
+        "pred_rank": 49,
+        "pred_bucket": "Top 50"
+      },
+      {
+        "rider_name": "Trentin Matteo",
+        "rider_id": 189,
+        "actual_bucket": "Top 30",
+        "pred_rank": 28,
+        "pred_bucket": "Top 30"
+      },
+      {
+        "rider_name": "Asgreen Kasper",
+        "rider_id": 52,
+        "actual_bucket": "Top 30",
+        "pred_rank": 42,
+        "pred_bucket": "Top 50"
+      },
+      {
+        "rider_name": "Wright Fred",
+        "rider_id": 195,
+        "actual_bucket": "Top 30",
+        "pred_rank": 59,
+        "pred_bucket": "Finisher"
+      },
+      {
+        "rider_name": "Girmay Biniam",
+        "rider_id": 142,
+        "actual_bucket": "Top 30",
+        "pred_rank": 3,
+        "pred_bucket": "Podium"
+      },
+      {
+        "rider_name": "Strong Corbin",
+        "rider_id": 42,
+        "actual_bucket": "Top 30",
+        "pred_rank": 6,
+        "pred_bucket": "Top 15"
+      },
+      {
+        "rider_name": "Clarke Simon",
+        "rider_id": 68,
+        "actual_bucket": "Top 30",
+        "pred_rank": 73,
+        "pred_bucket": "Finisher"
+      },
+      {
+        "rider_name": "Battistella Samuele",
+        "rider_id": 190,
+        "actual_bucket": "Top 30",
+        "pred_rank": 65,
+        "pred_bucket": "Finisher"
+      },
+      {
+        "rider_name": "Pacher Quentin",
+        "rider_id": 187,
+        "actual_bucket": "Top 30",
+        "pred_rank": 39,
+        "pred_bucket": "Top 50"
+      },
+      {
+        "rider_name": "Campenaerts Victor",
+        "rider_id": 194,
+        "actual_bucket": "Top 30",
+        "pred_rank": 62,
+        "pred_bucket": "Finisher"
+      },
+      {
+        "rider_name": "Albanese Vincenzo",
+        "rider_id": 126,
+        "actual_bucket": "Top 30",
+        "pred_rank": 63,
+        "pred_bucket": "Finisher"
+      },
+      {
+        "rider_name": "Cosnefroy Beno\u00eet",
+        "rider_id": 188,
+        "actual_bucket": "Top 30",
+        "pred_rank": 18,
+        "pred_bucket": "Top 30"
+      }
+    ]
+  },
+  {
+    "competition_id": 365,
+    "race_name": "Clasica de Almeria",
+    "date": "2023-02-12",
+    "type": "one_day",
+    "category": "PRO",
+    "profile": "breakaway",
+    "field_size": 131,
+    "metrics": {
+      "exact_accuracy_top30": 0.433,
+      "practical_success_top30": 0.9
+    },
+    "predicted_top_30": [
+      {
+        "pred_rank": 1,
+        "rider_name": "Nizzolo Giacomo",
+        "rider_id": 885,
+        "pred_bucket": "Winner",
+        "actual_bucket": "Top 5"
+      },
+      {
+        "pred_rank": 2,
+        "rider_name": "Kristoff Alexander",
+        "rider_id": 99,
+        "pred_bucket": "Podium",
+        "actual_bucket": "Top 5"
+      },
+      {
+        "pred_rank": 3,
+        "rider_name": "De Lie Arnaud",
+        "rider_id": 494,
+        "pred_bucket": "Podium",
+        "actual_bucket": "Podium"
+      },
+      {
+        "pred_rank": 4,
+        "rider_name": "Trentin Matteo",
+        "rider_id": 189,
+        "pred_bucket": "Top 5",
+        "actual_bucket": "Top 50"
+      },
+      {
+        "pred_rank": 5,
+        "rider_name": "Coquard Bryan",
+        "rider_id": 639,
+        "pred_bucket": "Top 5",
+        "actual_bucket": "Finisher"
+      },
+      {
+        "pred_rank": 6,
+        "rider_name": "Teunissen Mike",
+        "rider_id": 57,
+        "pred_bucket": "Top 15",
+        "actual_bucket": "Top 50"
+      },
+      {
+        "pred_rank": 7,
+        "rider_name": "Johannessen Tobias Halland",
+        "rider_id": 582,
+        "pred_bucket": "Top 15",
+        "actual_bucket": "Finisher"
+      },
+      {
+        "pred_rank": 8,
+        "rider_name": "Walscheid Max",
+        "rider_id": 160,
+        "pred_bucket": "Top 15",
+        "actual_bucket": "Top 15"
+      },
+      {
+        "pred_rank": 9,
+        "rider_name": "Tesson Jason",
+        "rider_id": 389,
+        "pred_bucket": "Top 15",
+        "actual_bucket": "Top 15"
+      },
+      {
+        "pred_rank": 10,
+        "rider_name": "Garc\u00eda Cortina Iv\u00e1n",
+        "rider_id": 58,
+        "pred_bucket": "Top 15",
+        "actual_bucket": "Top 50"
+      },
+      {
+        "pred_rank": 11,
+        "rider_name": "Molano Sebastian",
+        "rider_id": 390,
+        "pred_bucket": "Top 15",
+        "actual_bucket": "Top 15"
+      },
+      {
+        "pred_rank": 12,
+        "rider_name": "Bonifazio Niccolo",
+        "rider_id": 106,
+        "pred_bucket": "Top 15",
+        "actual_bucket": "Top 15"
+      },
+      {
+        "pred_rank": 13,
+        "rider_name": "Meeus Jordi",
+        "rider_id": 308,
+        "pred_bucket": "Top 15",
+        "actual_bucket": "Podium"
+      },
+      {
+        "pred_rank": 14,
+        "rider_name": "Gaviria Fernando",
+        "rider_id": 393,
+        "pred_bucket": "Top 15",
+        "actual_bucket": "Top 15"
+      },
+      {
+        "pred_rank": 15,
+        "rider_name": "Bol Cees",
+        "rider_id": 110,
+        "pred_bucket": "Top 15",
+        "actual_bucket": "Top 30"
+      },
+      {
+        "pred_rank": 16,
+        "rider_name": "W\u00e6renskjold S\u00f8ren",
+        "rider_id": 120,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Top 15"
+      },
+      {
+        "pred_rank": 17,
+        "rider_name": "Pe\u00f1alver Manuel",
+        "rider_id": 1074,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Top 30"
+      },
+      {
+        "pred_rank": 18,
+        "rider_name": "Menten Milan",
+        "rider_id": 392,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Top 30"
+      },
+      {
+        "pred_rank": 19,
+        "rider_name": "Fretin Milan",
+        "rider_id": 371,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Finisher"
+      },
+      {
+        "pred_rank": 20,
+        "rider_name": "Covi Alessandro",
+        "rider_id": 78,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Finisher"
+      },
+      {
+        "pred_rank": 21,
+        "rider_name": "Moschetti Matteo",
+        "rider_id": 420,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Winner"
+      },
+      {
+        "pred_rank": 22,
+        "rider_name": "Boasson-Hagen Edvald",
+        "rider_id": 230,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Top 30"
+      },
+      {
+        "pred_rank": 23,
+        "rider_name": "Turner Ben",
+        "rider_id": 298,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Finisher"
+      },
+      {
+        "pred_rank": 24,
+        "rider_name": "Madouas Valentin",
+        "rider_id": 30,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Finisher"
+      },
+      {
+        "pred_rank": 25,
+        "rider_name": "Canal Carlos",
+        "rider_id": 205,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Top 30"
+      },
+      {
+        "pred_rank": 26,
+        "rider_name": "Heiduk Kim",
+        "rider_id": 776,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Top 30"
+      },
+      {
+        "pred_rank": 27,
+        "rider_name": "van Gestel Dries",
+        "rider_id": 302,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Top 30"
+      },
+      {
+        "pred_rank": 28,
+        "rider_name": "Penho\u00ebt Paul",
+        "rider_id": 811,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Top 15"
+      },
+      {
+        "pred_rank": 29,
+        "rider_name": "Babor Daniel",
+        "rider_id": 1075,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Top 50"
+      },
+      {
+        "pred_rank": 30,
+        "rider_name": "Askey Lewis",
+        "rider_id": 315,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Top 30"
+      }
+    ],
+    "actual_top_30": [
+      {
+        "rider_name": "Moschetti Matteo",
+        "rider_id": 420,
+        "actual_bucket": "Winner",
+        "pred_rank": 21,
+        "pred_bucket": "Top 30"
+      },
+      {
+        "rider_name": "De Lie Arnaud",
+        "rider_id": 494,
+        "actual_bucket": "Podium",
+        "pred_rank": 3,
+        "pred_bucket": "Podium"
+      },
+      {
+        "rider_name": "Meeus Jordi",
+        "rider_id": 308,
+        "actual_bucket": "Podium",
+        "pred_rank": 13,
+        "pred_bucket": "Top 15"
+      },
+      {
+        "rider_name": "Nizzolo Giacomo",
+        "rider_id": 885,
+        "actual_bucket": "Top 5",
+        "pred_rank": 1,
+        "pred_bucket": "Winner"
+      },
+      {
+        "rider_name": "Kristoff Alexander",
+        "rider_id": 99,
+        "actual_bucket": "Top 5",
+        "pred_rank": 2,
+        "pred_bucket": "Podium"
+      },
+      {
+        "rider_name": "Penho\u00ebt Paul",
+        "rider_id": 811,
+        "actual_bucket": "Top 15",
+        "pred_rank": 28,
+        "pred_bucket": "Top 30"
+      },
+      {
+        "rider_name": "Vermeersch Florian",
+        "rider_id": 543,
+        "actual_bucket": "Top 15",
+        "pred_rank": 32,
+        "pred_bucket": "Top 50"
+      },
+      {
+        "rider_name": "Soto Antonio",
+        "rider_id": 779,
+        "actual_bucket": "Top 15",
+        "pred_rank": 38,
+        "pred_bucket": "Top 50"
+      },
+      {
+        "rider_name": "W\u00e6renskjold S\u00f8ren",
+        "rider_id": 120,
+        "actual_bucket": "Top 15",
+        "pred_rank": 16,
+        "pred_bucket": "Top 30"
+      },
+      {
+        "rider_name": "Van Asbroeck Tom",
+        "rider_id": 56,
+        "actual_bucket": "Top 15",
+        "pred_rank": 40,
+        "pred_bucket": "Top 50"
+      },
+      {
+        "rider_name": "Gaviria Fernando",
+        "rider_id": 393,
+        "actual_bucket": "Top 15",
+        "pred_rank": 14,
+        "pred_bucket": "Top 15"
+      },
+      {
+        "rider_name": "Bonifazio Niccolo",
+        "rider_id": 106,
+        "actual_bucket": "Top 15",
+        "pred_rank": 12,
+        "pred_bucket": "Top 15"
+      },
+      {
+        "rider_name": "Molano Sebastian",
+        "rider_id": 390,
+        "actual_bucket": "Top 15",
+        "pred_rank": 11,
+        "pred_bucket": "Top 15"
+      },
+      {
+        "rider_name": "Tesson Jason",
+        "rider_id": 389,
+        "actual_bucket": "Top 15",
+        "pred_rank": 9,
+        "pred_bucket": "Top 15"
+      },
+      {
+        "rider_name": "Walscheid Max",
+        "rider_id": 160,
+        "actual_bucket": "Top 15",
+        "pred_rank": 8,
+        "pred_bucket": "Top 15"
+      },
+      {
+        "rider_name": "Politt Nils",
+        "rider_id": 297,
+        "actual_bucket": "Top 30",
+        "pred_rank": 41,
+        "pred_bucket": "Top 50"
+      },
+      {
+        "rider_name": "Heming Mika",
+        "rider_id": 609,
+        "actual_bucket": "Top 30",
+        "pred_rank": 88,
+        "pred_bucket": "Finisher"
+      },
+      {
+        "rider_name": "Jaime Alex",
+        "rider_id": 873,
+        "actual_bucket": "Top 30",
+        "pred_rank": 37,
+        "pred_bucket": "Top 50"
+      },
+      {
+        "rider_name": "Bauer Jack",
+        "rider_id": 891,
+        "actual_bucket": "Top 30",
+        "pred_rank": 111,
+        "pred_bucket": "Finisher"
+      },
+      {
+        "rider_name": "Askey Lewis",
+        "rider_id": 315,
+        "actual_bucket": "Top 30",
+        "pred_rank": 30,
+        "pred_bucket": "Top 30"
+      },
+      {
+        "rider_name": "Ezquerra Jesus",
+        "rider_id": 858,
+        "actual_bucket": "Top 30",
+        "pred_rank": 60,
+        "pred_bucket": "Finisher"
+      },
+      {
+        "rider_name": "Martin David",
+        "rider_id": 924,
+        "actual_bucket": "Top 30",
+        "pred_rank": 63,
+        "pred_bucket": "Finisher"
+      },
+      {
+        "rider_name": "van Gestel Dries",
+        "rider_id": 302,
+        "actual_bucket": "Top 30",
+        "pred_rank": 27,
+        "pred_bucket": "Top 30"
+      },
+      {
+        "rider_name": "Heiduk Kim",
+        "rider_id": 776,
+        "actual_bucket": "Top 30",
+        "pred_rank": 26,
+        "pred_bucket": "Top 30"
+      },
+      {
+        "rider_name": "Russo Cl\u00e9ment",
+        "rider_id": 249,
+        "actual_bucket": "Top 30",
+        "pred_rank": 43,
+        "pred_bucket": "Top 50"
+      },
+      {
+        "rider_name": "Pe\u00f1alver Manuel",
+        "rider_id": 1074,
+        "actual_bucket": "Top 30",
+        "pred_rank": 17,
+        "pred_bucket": "Top 30"
+      },
+      {
+        "rider_name": "Canal Carlos",
+        "rider_id": 205,
+        "actual_bucket": "Top 30",
+        "pred_rank": 25,
+        "pred_bucket": "Top 30"
+      },
+      {
+        "rider_name": "Boasson-Hagen Edvald",
+        "rider_id": 230,
+        "actual_bucket": "Top 30",
+        "pred_rank": 22,
+        "pred_bucket": "Top 30"
+      },
+      {
+        "rider_name": "Bol Cees",
+        "rider_id": 110,
+        "actual_bucket": "Top 30",
+        "pred_rank": 15,
+        "pred_bucket": "Top 15"
+      },
+      {
+        "rider_name": "Menten Milan",
+        "rider_id": 392,
+        "actual_bucket": "Top 30",
+        "pred_rank": 18,
+        "pred_bucket": "Top 30"
+      }
+    ]
+  },
+  {
+    "competition_id": 582,
+    "race_name": "Giro della Toscana",
+    "date": "2023-09-13",
+    "type": "one_day",
+    "category": "D1",
+    "profile": "rolling",
+    "field_size": 54,
+    "metrics": {
+      "exact_accuracy_top30": 0.286,
+      "practical_success_top30": 0.821
+    },
+    "predicted_top_30": [
+      {
+        "pred_rank": 1,
+        "rider_name": "Pogacar Tadej",
+        "rider_id": 177,
+        "pred_bucket": "Winner",
+        "actual_bucket": "Top 5"
+      },
+      {
+        "pred_rank": 2,
+        "rider_name": "Hayter Ethan",
+        "rider_id": 681,
+        "pred_bucket": "Podium",
+        "actual_bucket": "Top 15"
+      },
+      {
+        "pred_rank": 3,
+        "rider_name": "Carapaz Richard",
+        "rider_id": 138,
+        "pred_bucket": "Podium",
+        "actual_bucket": "Podium"
+      },
+      {
+        "pred_rank": 4,
+        "rider_name": "Martin Guillaume",
+        "rider_id": 23,
+        "pred_bucket": "Top 5",
+        "actual_bucket": "Top 15"
+      },
+      {
+        "pred_rank": 5,
+        "rider_name": "Lutsenko Alexey",
+        "rider_id": 242,
+        "pred_bucket": "Top 5",
+        "actual_bucket": "Finisher"
+      },
+      {
+        "pred_rank": 6,
+        "rider_name": "Sivakov Pavel",
+        "rider_id": 651,
+        "pred_bucket": "Top 15",
+        "actual_bucket": "Winner"
+      },
+      {
+        "pred_rank": 7,
+        "rider_name": "Zimmermann Georg",
+        "rider_id": 200,
+        "pred_bucket": "Top 15",
+        "actual_bucket": "Top 15"
+      },
+      {
+        "pred_rank": 8,
+        "rider_name": "Busatto Francesco",
+        "rider_id": 459,
+        "pred_bucket": "Top 15",
+        "actual_bucket": "Finisher"
+      },
+      {
+        "pred_rank": 9,
+        "rider_name": "Calmejane Lilian",
+        "rider_id": 208,
+        "pred_bucket": "Top 15",
+        "actual_bucket": "Top 15"
+      },
+      {
+        "pred_rank": 10,
+        "rider_name": "Sheffield Magnus",
+        "rider_id": 16,
+        "pred_bucket": "Top 15",
+        "actual_bucket": "Top 50"
+      },
+      {
+        "pred_rank": 11,
+        "rider_name": "Conti Valerio",
+        "rider_id": 248,
+        "pred_bucket": "Top 15",
+        "actual_bucket": "Top 15"
+      },
+      {
+        "pred_rank": 12,
+        "rider_name": "Valgren Michael",
+        "rider_id": 231,
+        "pred_bucket": "Top 15",
+        "actual_bucket": "Top 15"
+      },
+      {
+        "pred_rank": 13,
+        "rider_name": "Meintjes Louis",
+        "rider_id": 672,
+        "pred_bucket": "Top 15",
+        "actual_bucket": "Finisher"
+      },
+      {
+        "pred_rank": 14,
+        "rider_name": "Bennett George",
+        "rider_id": 669,
+        "pred_bucket": "Top 15",
+        "actual_bucket": "Top 30"
+      },
+      {
+        "pred_rank": 15,
+        "rider_name": "Burgaudeau Mathieu",
+        "rider_id": 529,
+        "pred_bucket": "Top 15",
+        "actual_bucket": "Top 30"
+      },
+      {
+        "pred_rank": 16,
+        "rider_name": "Formolo Davide",
+        "rider_id": 26,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Top 15"
+      },
+      {
+        "pred_rank": 17,
+        "rider_name": "Albanese Vincenzo",
+        "rider_id": 126,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Top 15"
+      },
+      {
+        "pred_rank": 18,
+        "rider_name": "Mart\u00edn Gotzon",
+        "rider_id": 765,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Top 30"
+      },
+      {
+        "pred_rank": 19,
+        "rider_name": "Brambilla Gianluca",
+        "rider_id": 492,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Top 15"
+      },
+      {
+        "pred_rank": 20,
+        "rider_name": "de Bod Stefan",
+        "rider_id": 624,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Top 50"
+      },
+      {
+        "pred_rank": 21,
+        "rider_name": "Cepeda Alexander",
+        "rider_id": 703,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Finisher"
+      },
+      {
+        "pred_rank": 22,
+        "rider_name": "Zana Filippo",
+        "rider_id": 19,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Top 5"
+      },
+      {
+        "pred_rank": 23,
+        "rider_name": "Mulubrhan Henok",
+        "rider_id": 477,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Top 50"
+      },
+      {
+        "pred_rank": 24,
+        "rider_name": "Gro\u00dfschartner Felix",
+        "rider_id": 457,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Podium"
+      },
+      {
+        "pred_rank": 25,
+        "rider_name": "Ponomar Andrii",
+        "rider_id": 694,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Top 15"
+      },
+      {
+        "pred_rank": 26,
+        "rider_name": "Fortunato Lorenzo",
+        "rider_id": 14,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Top 50"
+      },
+      {
+        "pred_rank": 27,
+        "rider_name": "Ferron Valentin",
+        "rider_id": 753,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Top 50"
+      },
+      {
+        "pred_rank": 28,
+        "rider_name": "Lastra Jonathan",
+        "rider_id": 725,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Top 30"
+      },
+      {
+        "pred_rank": 29,
+        "rider_name": "Piganzoli Davide",
+        "rider_id": 18,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Top 30"
+      },
+      {
+        "pred_rank": 30,
+        "rider_name": "Tercero Fernando",
+        "rider_id": 690,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Finisher"
+      }
+    ],
+    "actual_top_30": [
+      {
+        "rider_name": "Sivakov Pavel",
+        "rider_id": 651,
+        "actual_bucket": "Winner",
+        "pred_rank": 6,
+        "pred_bucket": "Top 15"
+      },
+      {
+        "rider_name": "Gro\u00dfschartner Felix",
+        "rider_id": 457,
+        "actual_bucket": "Podium",
+        "pred_rank": 24,
+        "pred_bucket": "Top 30"
+      },
+      {
+        "rider_name": "Carapaz Richard",
+        "rider_id": 138,
+        "actual_bucket": "Podium",
+        "pred_rank": 3,
+        "pred_bucket": "Podium"
+      },
+      {
+        "rider_name": "Pogacar Tadej",
+        "rider_id": 177,
+        "actual_bucket": "Top 5",
+        "pred_rank": 1,
+        "pred_bucket": "Winner"
+      },
+      {
+        "rider_name": "Zana Filippo",
+        "rider_id": 19,
+        "actual_bucket": "Top 5",
+        "pred_rank": 22,
+        "pred_bucket": "Top 30"
+      },
+      {
+        "rider_name": "Martin Guillaume",
+        "rider_id": 23,
+        "actual_bucket": "Top 15",
+        "pred_rank": 4,
+        "pred_bucket": "Top 5"
+      },
+      {
+        "rider_name": "Ponomar Andrii",
+        "rider_id": 694,
+        "actual_bucket": "Top 15",
+        "pred_rank": 25,
+        "pred_bucket": "Top 30"
+      },
+      {
+        "rider_name": "Brambilla Gianluca",
+        "rider_id": 492,
+        "actual_bucket": "Top 15",
+        "pred_rank": 19,
+        "pred_bucket": "Top 30"
+      },
+      {
+        "rider_name": "Albanese Vincenzo",
+        "rider_id": 126,
+        "actual_bucket": "Top 15",
+        "pred_rank": 17,
+        "pred_bucket": "Top 30"
+      },
+      {
+        "rider_name": "Formolo Davide",
+        "rider_id": 26,
+        "actual_bucket": "Top 15",
+        "pred_rank": 16,
+        "pred_bucket": "Top 30"
+      },
+      {
+        "rider_name": "Valgren Michael",
+        "rider_id": 231,
+        "actual_bucket": "Top 15",
+        "pred_rank": 12,
+        "pred_bucket": "Top 15"
+      },
+      {
+        "rider_name": "Conti Valerio",
+        "rider_id": 248,
+        "actual_bucket": "Top 15",
+        "pred_rank": 11,
+        "pred_bucket": "Top 15"
+      },
+      {
+        "rider_name": "Calmejane Lilian",
+        "rider_id": 208,
+        "actual_bucket": "Top 15",
+        "pred_rank": 9,
+        "pred_bucket": "Top 15"
+      },
+      {
+        "rider_name": "Zimmermann Georg",
+        "rider_id": 200,
+        "actual_bucket": "Top 15",
+        "pred_rank": 7,
+        "pred_bucket": "Top 15"
+      },
+      {
+        "rider_name": "Hayter Ethan",
+        "rider_id": 681,
+        "actual_bucket": "Top 15",
+        "pred_rank": 2,
+        "pred_bucket": "Podium"
+      },
+      {
+        "rider_name": "Covili Luca",
+        "rider_id": 662,
+        "actual_bucket": "Top 30",
+        "pred_rank": 31,
+        "pred_bucket": "Top 50"
+      },
+      {
+        "rider_name": "Rivera Brandon",
+        "rider_id": 587,
+        "actual_bucket": "Top 30",
+        "pred_rank": 38,
+        "pred_bucket": "Top 50"
+      },
+      {
+        "rider_name": "Lastra Jonathan",
+        "rider_id": 725,
+        "actual_bucket": "Top 30",
+        "pred_rank": 28,
+        "pred_bucket": "Top 30"
+      },
+      {
+        "rider_name": "Tolio Alex",
+        "rider_id": 90,
+        "actual_bucket": "Top 30",
+        "pred_rank": 41,
+        "pred_bucket": "Top 50"
+      },
+      {
+        "rider_name": "Molenaar Alex",
+        "rider_id": 1596,
+        "actual_bucket": "Top 30",
+        "pred_rank": 44,
+        "pred_bucket": "Top 50"
+      },
+      {
+        "rider_name": "Tejada Harold",
+        "rider_id": 763,
+        "actual_bucket": "Top 30",
+        "pred_rank": 33,
+        "pred_bucket": "Top 50"
+      },
+      {
+        "rider_name": "Piganzoli Davide",
+        "rider_id": 18,
+        "actual_bucket": "Top 30",
+        "pred_rank": 29,
+        "pred_bucket": "Top 30"
+      },
+      {
+        "rider_name": "Mart\u00edn Gotzon",
+        "rider_id": 765,
+        "actual_bucket": "Top 30",
+        "pred_rank": 18,
+        "pred_bucket": "Top 30"
+      },
+      {
+        "rider_name": "Martin Alex",
+        "rider_id": 833,
+        "actual_bucket": "Top 30",
+        "pred_rank": 37,
+        "pred_bucket": "Top 50"
+      },
+      {
+        "rider_name": "Burgaudeau Mathieu",
+        "rider_id": 529,
+        "actual_bucket": "Top 30",
+        "pred_rank": 15,
+        "pred_bucket": "Top 15"
+      },
+      {
+        "rider_name": "Bennett George",
+        "rider_id": 669,
+        "actual_bucket": "Top 30",
+        "pred_rank": 14,
+        "pred_bucket": "Top 15"
+      },
+      {
+        "rider_name": "Pinarello Alessandro",
+        "rider_id": 695,
+        "actual_bucket": "Top 30",
+        "pred_rank": 46,
+        "pred_bucket": "Top 50"
+      },
+      {
+        "rider_name": "Pe\u00f1a Jesus David",
+        "rider_id": 460,
+        "actual_bucket": "Top 30",
+        "pred_rank": 36,
+        "pred_bucket": "Top 50"
+      },
+      {
+        "rider_name": "Umba Santiago",
+        "rider_id": 678,
+        "actual_bucket": "Top 50",
+        "pred_rank": 47,
+        "pred_bucket": "Top 50"
+      },
+      {
+        "rider_name": "Osorio Alejandro",
+        "rider_id": 1591,
+        "actual_bucket": "Top 50",
+        "pred_rank": 48,
+        "pred_bucket": "Top 50"
+      }
+    ]
+  },
+  {
+    "competition_id": 1,
+    "race_name": "GC",
+    "date": "2024-03-10",
+    "type": "gc",
+    "category": "WT",
+    "profile": "rolling",
+    "field_size": 125,
+    "metrics": {
+      "exact_accuracy_top30": 0.267,
+      "practical_success_top30": 0.8
+    },
+    "predicted_top_30": [
+      {
+        "pred_rank": 1,
+        "rider_name": "Ayuso Juan",
+        "rider_id": 2,
+        "pred_bucket": "Winner",
+        "actual_bucket": "Podium"
+      },
+      {
+        "pred_rank": 2,
+        "rider_name": "del Toro Isaac",
+        "rider_id": 4,
+        "pred_bucket": "Podium",
+        "actual_bucket": "Top 5"
+      },
+      {
+        "pred_rank": 3,
+        "rider_name": "Vingegaard Jonas",
+        "rider_id": 1,
+        "pred_bucket": "Podium",
+        "actual_bucket": "Winner"
+      },
+      {
+        "pred_rank": 4,
+        "rider_name": "Uijtdebroeks Cian",
+        "rider_id": 7,
+        "pred_bucket": "Top 5",
+        "actual_bucket": "Top 15"
+      },
+      {
+        "pred_rank": 5,
+        "rider_name": "Mas Enric",
+        "rider_id": 12,
+        "pred_bucket": "Top 5",
+        "actual_bucket": "Top 15"
+      },
+      {
+        "pred_rank": 6,
+        "rider_name": "Martin Guillaume",
+        "rider_id": 23,
+        "pred_bucket": "Top 15",
+        "actual_bucket": "Top 30"
+      },
+      {
+        "pred_rank": 7,
+        "rider_name": "Pidcock Tom",
+        "rider_id": 9,
+        "pred_bucket": "Top 15",
+        "actual_bucket": "Top 15"
+      },
+      {
+        "pred_rank": 8,
+        "rider_name": "Alaphilippe Julian",
+        "rider_id": 62,
+        "pred_bucket": "Top 15",
+        "actual_bucket": "Finisher"
+      },
+      {
+        "pred_rank": 9,
+        "rider_name": "O'Connor Ben",
+        "rider_id": 5,
+        "pred_bucket": "Top 15",
+        "actual_bucket": "Top 5"
+      },
+      {
+        "pred_rank": 10,
+        "rider_name": "Vauquelin K\u00e9vin",
+        "rider_id": 10,
+        "pred_bucket": "Top 15",
+        "actual_bucket": "Top 15"
+      },
+      {
+        "pred_rank": 11,
+        "rider_name": "Hindley Jai",
+        "rider_id": 3,
+        "pred_bucket": "Top 15",
+        "actual_bucket": "Podium"
+      },
+      {
+        "pred_rank": 12,
+        "rider_name": "Geoghegan Hart Tao",
+        "rider_id": 29,
+        "pred_bucket": "Top 15",
+        "actual_bucket": "Top 30"
+      },
+      {
+        "pred_rank": 13,
+        "rider_name": "Majka Rafal",
+        "rider_id": 37,
+        "pred_bucket": "Top 15",
+        "actual_bucket": "Top 50"
+      },
+      {
+        "pred_rank": 14,
+        "rider_name": "Arensman Thymen",
+        "rider_id": 6,
+        "pred_bucket": "Top 15",
+        "actual_bucket": "Top 15"
+      },
+      {
+        "pred_rank": 15,
+        "rider_name": "Hirschi Marc",
+        "rider_id": 79,
+        "pred_bucket": "Top 15",
+        "actual_bucket": "Finisher"
+      },
+      {
+        "pred_rank": 16,
+        "rider_name": "Kruijswijk Steven",
+        "rider_id": 69,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Finisher"
+      },
+      {
+        "pred_rank": 17,
+        "rider_name": "Madouas Valentin",
+        "rider_id": 30,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Top 30"
+      },
+      {
+        "pred_rank": 18,
+        "rider_name": "Caruso Damiano",
+        "rider_id": 41,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Top 50"
+      },
+      {
+        "pred_rank": 19,
+        "rider_name": "Valter Attila",
+        "rider_id": 47,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Top 50"
+      },
+      {
+        "pred_rank": 20,
+        "rider_name": "Gr\u00e9goire Romain",
+        "rider_id": 13,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Top 15"
+      },
+      {
+        "pred_rank": 21,
+        "rider_name": "Sheffield Magnus",
+        "rider_id": 16,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Top 30"
+      },
+      {
+        "pred_rank": 22,
+        "rider_name": "Tiberi Antonio",
+        "rider_id": 27,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Top 30"
+      },
+      {
+        "pred_rank": 23,
+        "rider_name": "Pozzovivo Domenico",
+        "rider_id": 31,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Top 50"
+      },
+      {
+        "pred_rank": 24,
+        "rider_name": "Bagioli Andrea",
+        "rider_id": 32,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Top 50"
+      },
+      {
+        "pred_rank": 25,
+        "rider_name": "Leknessund Andreas",
+        "rider_id": 38,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Top 50"
+      },
+      {
+        "pred_rank": 26,
+        "rider_name": "Sosa Ivan",
+        "rider_id": 20,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Top 30"
+      },
+      {
+        "pred_rank": 27,
+        "rider_name": "Tulett Ben",
+        "rider_id": 54,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Finisher"
+      },
+      {
+        "pred_rank": 28,
+        "rider_name": "Healy Ben",
+        "rider_id": 61,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Finisher"
+      },
+      {
+        "pred_rank": 29,
+        "rider_name": "Piganzoli Davide",
+        "rider_id": 18,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Top 30"
+      },
+      {
+        "pred_rank": 30,
+        "rider_name": "K\u00e4mna Lennard",
+        "rider_id": 8,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Top 15"
+      }
+    ],
+    "actual_top_30": [
+      {
+        "rider_name": "Vingegaard Jonas",
+        "rider_id": 1,
+        "actual_bucket": "Winner",
+        "pred_rank": 3,
+        "pred_bucket": "Podium"
+      },
+      {
+        "rider_name": "Ayuso Juan",
+        "rider_id": 2,
+        "actual_bucket": "Podium",
+        "pred_rank": 1,
+        "pred_bucket": "Winner"
+      },
+      {
+        "rider_name": "Hindley Jai",
+        "rider_id": 3,
+        "actual_bucket": "Podium",
+        "pred_rank": 11,
+        "pred_bucket": "Top 15"
+      },
+      {
+        "rider_name": "del Toro Isaac",
+        "rider_id": 4,
+        "actual_bucket": "Top 5",
+        "pred_rank": 2,
+        "pred_bucket": "Podium"
+      },
+      {
+        "rider_name": "O'Connor Ben",
+        "rider_id": 5,
+        "actual_bucket": "Top 5",
+        "pred_rank": 9,
+        "pred_bucket": "Top 15"
+      },
+      {
+        "rider_name": "Gr\u00e9goire Romain",
+        "rider_id": 13,
+        "actual_bucket": "Top 15",
+        "pred_rank": 20,
+        "pred_bucket": "Top 30"
+      },
+      {
+        "rider_name": "K\u00e4mna Lennard",
+        "rider_id": 8,
+        "actual_bucket": "Top 15",
+        "pred_rank": 30,
+        "pred_bucket": "Top 30"
+      },
+      {
+        "rider_name": "Poels Wout",
+        "rider_id": 11,
+        "actual_bucket": "Top 15",
+        "pred_rank": 31,
+        "pred_bucket": "Top 50"
+      },
+      {
+        "rider_name": "Arensman Thymen",
+        "rider_id": 6,
+        "actual_bucket": "Top 15",
+        "pred_rank": 14,
+        "pred_bucket": "Top 15"
+      },
+      {
+        "rider_name": "Fortunato Lorenzo",
+        "rider_id": 14,
+        "actual_bucket": "Top 15",
+        "pred_rank": 36,
+        "pred_bucket": "Top 50"
+      },
+      {
+        "rider_name": "Pidcock Tom",
+        "rider_id": 9,
+        "actual_bucket": "Top 15",
+        "pred_rank": 7,
+        "pred_bucket": "Top 15"
+      },
+      {
+        "rider_name": "Mas Enric",
+        "rider_id": 12,
+        "actual_bucket": "Top 15",
+        "pred_rank": 5,
+        "pred_bucket": "Top 5"
+      },
+      {
+        "rider_name": "Uijtdebroeks Cian",
+        "rider_id": 7,
+        "actual_bucket": "Top 15",
+        "pred_rank": 4,
+        "pred_bucket": "Top 5"
+      },
+      {
+        "rider_name": "Vauquelin K\u00e9vin",
+        "rider_id": 10,
+        "actual_bucket": "Top 15",
+        "pred_rank": 10,
+        "pred_bucket": "Top 15"
+      },
+      {
+        "rider_name": "Bjerg Mikkel",
+        "rider_id": 15,
+        "actual_bucket": "Top 15",
+        "pred_rank": 67,
+        "pred_bucket": "Finisher"
+      },
+      {
+        "rider_name": "Rota Lorenzo",
+        "rider_id": 25,
+        "actual_bucket": "Top 30",
+        "pred_rank": 37,
+        "pred_bucket": "Top 50"
+      },
+      {
+        "rider_name": "Sosa Ivan",
+        "rider_id": 20,
+        "actual_bucket": "Top 30",
+        "pred_rank": 26,
+        "pred_bucket": "Top 30"
+      },
+      {
+        "rider_name": "Formolo Davide",
+        "rider_id": 26,
+        "actual_bucket": "Top 30",
+        "pred_rank": 35,
+        "pred_bucket": "Top 50"
+      },
+      {
+        "rider_name": "Vermaerke Kevin",
+        "rider_id": 24,
+        "actual_bucket": "Top 30",
+        "pred_rank": 34,
+        "pred_bucket": "Top 50"
+      },
+      {
+        "rider_name": "Zana Filippo",
+        "rider_id": 19,
+        "actual_bucket": "Top 30",
+        "pred_rank": 33,
+        "pred_bucket": "Top 50"
+      },
+      {
+        "rider_name": "Rodriguez Cristian",
+        "rider_id": 17,
+        "actual_bucket": "Top 30",
+        "pred_rank": 39,
+        "pred_bucket": "Top 50"
+      },
+      {
+        "rider_name": "Piganzoli Davide",
+        "rider_id": 18,
+        "actual_bucket": "Top 30",
+        "pred_rank": 29,
+        "pred_bucket": "Top 30"
+      },
+      {
+        "rider_name": "Neilands Krists",
+        "rider_id": 21,
+        "actual_bucket": "Top 30",
+        "pred_rank": 56,
+        "pred_bucket": "Finisher"
+      },
+      {
+        "rider_name": "Sheffield Magnus",
+        "rider_id": 16,
+        "actual_bucket": "Top 30",
+        "pred_rank": 21,
+        "pred_bucket": "Top 30"
+      },
+      {
+        "rider_name": "Tiberi Antonio",
+        "rider_id": 27,
+        "actual_bucket": "Top 30",
+        "pred_rank": 22,
+        "pred_bucket": "Top 30"
+      },
+      {
+        "rider_name": "Velasco Simone",
+        "rider_id": 28,
+        "actual_bucket": "Top 30",
+        "pred_rank": 45,
+        "pred_bucket": "Top 50"
+      },
+      {
+        "rider_name": "Martin Guillaume",
+        "rider_id": 23,
+        "actual_bucket": "Top 30",
+        "pred_rank": 6,
+        "pred_bucket": "Top 15"
+      },
+      {
+        "rider_name": "Craddock Lawson",
+        "rider_id": 22,
+        "actual_bucket": "Top 30",
+        "pred_rank": 83,
+        "pred_bucket": "Finisher"
+      },
+      {
+        "rider_name": "Madouas Valentin",
+        "rider_id": 30,
+        "actual_bucket": "Top 30",
+        "pred_rank": 17,
+        "pred_bucket": "Top 30"
+      },
+      {
+        "rider_name": "Geoghegan Hart Tao",
+        "rider_id": 29,
+        "actual_bucket": "Top 30",
+        "pred_rank": 12,
+        "pred_bucket": "Top 15"
+      }
+    ]
+  },
+  {
+    "competition_id": 355,
+    "race_name": "GC",
+    "date": "2023-09-10",
+    "type": "gc",
+    "category": "PRO",
+    "profile": "rolling",
+    "field_size": 75,
+    "metrics": {
+      "exact_accuracy_top30": 0.3,
+      "practical_success_top30": 0.867
+    },
+    "predicted_top_30": [
+      {
+        "pred_rank": 1,
+        "rider_name": "van Aert Wout",
+        "rider_id": 380,
+        "pred_bucket": "Winner",
+        "actual_bucket": "Winner"
+      },
+      {
+        "pred_rank": 2,
+        "rider_name": "Sheffield Magnus",
+        "rider_id": 16,
+        "pred_bucket": "Podium",
+        "actual_bucket": "Top 5"
+      },
+      {
+        "pred_rank": 3,
+        "rider_name": "Johannessen Tobias Halland",
+        "rider_id": 582,
+        "pred_bucket": "Podium",
+        "actual_bucket": "Podium"
+      },
+      {
+        "pred_rank": 4,
+        "rider_name": "Rodriguez Carlos",
+        "rider_id": 759,
+        "pred_bucket": "Top 5",
+        "actual_bucket": "Top 15"
+      },
+      {
+        "pred_rank": 5,
+        "rider_name": "Politt Nils",
+        "rider_id": 297,
+        "pred_bucket": "Top 5",
+        "actual_bucket": "Top 15"
+      },
+      {
+        "pred_rank": 6,
+        "rider_name": "Serrano Gonzalo",
+        "rider_id": 192,
+        "pred_bucket": "Top 15",
+        "actual_bucket": "Top 30"
+      },
+      {
+        "pred_rank": 7,
+        "rider_name": "Donovan Mark",
+        "rider_id": 149,
+        "pred_bucket": "Top 15",
+        "actual_bucket": "Top 5"
+      },
+      {
+        "pred_rank": 8,
+        "rider_name": "Kooij Olav",
+        "rider_id": 185,
+        "pred_bucket": "Top 15",
+        "actual_bucket": "Top 50"
+      },
+      {
+        "pred_rank": 9,
+        "rider_name": "Schelling Ide",
+        "rider_id": 497,
+        "pred_bucket": "Top 15",
+        "actual_bucket": "Finisher"
+      },
+      {
+        "pred_rank": 10,
+        "rider_name": "Rodr\u00edguez \u00d3scar",
+        "rider_id": 715,
+        "pred_bucket": "Top 15",
+        "actual_bucket": "Top 50"
+      },
+      {
+        "pred_rank": 11,
+        "rider_name": "van Poppel Danny",
+        "rider_id": 232,
+        "pred_bucket": "Top 15",
+        "actual_bucket": "Top 15"
+      },
+      {
+        "pred_rank": 12,
+        "rider_name": "Kruijswijk Steven",
+        "rider_id": 69,
+        "pred_bucket": "Top 15",
+        "actual_bucket": "Finisher"
+      },
+      {
+        "pred_rank": 13,
+        "rider_name": "Verona Carlos",
+        "rider_id": 762,
+        "pred_bucket": "Top 15",
+        "actual_bucket": "Finisher"
+      },
+      {
+        "pred_rank": 14,
+        "rider_name": "M\u00fchlberger Gregor",
+        "rider_id": 671,
+        "pred_bucket": "Top 15",
+        "actual_bucket": "Top 15"
+      },
+      {
+        "pred_rank": 15,
+        "rider_name": "Howson Damien",
+        "rider_id": 150,
+        "pred_bucket": "Top 15",
+        "actual_bucket": "Podium"
+      },
+      {
+        "pred_rank": 16,
+        "rider_name": "Adri\u00e0 Roger",
+        "rider_id": 568,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Top 15"
+      },
+      {
+        "pred_rank": 17,
+        "rider_name": "Turner Ben",
+        "rider_id": 298,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Top 50"
+      },
+      {
+        "pred_rank": 18,
+        "rider_name": "Bevin Patrick",
+        "rider_id": 287,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Top 50"
+      },
+      {
+        "pred_rank": 19,
+        "rider_name": "De Tier Floris",
+        "rider_id": 346,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Top 50"
+      },
+      {
+        "pred_rank": 20,
+        "rider_name": "Ballabio Giacomo",
+        "rider_id": 1050,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Top 30"
+      },
+      {
+        "pred_rank": 21,
+        "rider_name": "Arrieta Igor",
+        "rider_id": 648,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Top 30"
+      },
+      {
+        "pred_rank": 22,
+        "rider_name": "Crockett Finn",
+        "rider_id": 1052,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Top 30"
+      },
+      {
+        "pred_rank": 23,
+        "rider_name": "Teugels Lennert",
+        "rider_id": 1016,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Top 15"
+      },
+      {
+        "pred_rank": 24,
+        "rider_name": "Tiller Rasmus",
+        "rider_id": 312,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Top 15"
+      },
+      {
+        "pred_rank": 25,
+        "rider_name": "Stewart Mark",
+        "rider_id": 166,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Top 30"
+      },
+      {
+        "pred_rank": 26,
+        "rider_name": "Van Hooydonck Nathan",
+        "rider_id": 918,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Top 50"
+      },
+      {
+        "pred_rank": 27,
+        "rider_name": "Swift Connor",
+        "rider_id": 73,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Top 50"
+      },
+      {
+        "pred_rank": 28,
+        "rider_name": "Magnier Paul",
+        "rider_id": 305,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Top 30"
+      },
+      {
+        "pred_rank": 29,
+        "rider_name": "Lamperti Luke",
+        "rider_id": 239,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Top 50"
+      },
+      {
+        "pred_rank": 30,
+        "rider_name": "Williams Stephen",
+        "rider_id": 572,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Top 15"
+      }
+    ],
+    "actual_top_30": [
+      {
+        "rider_name": "van Aert Wout",
+        "rider_id": 380,
+        "actual_bucket": "Winner",
+        "pred_rank": 1,
+        "pred_bucket": "Winner"
+      },
+      {
+        "rider_name": "Johannessen Tobias Halland",
+        "rider_id": 582,
+        "actual_bucket": "Podium",
+        "pred_rank": 3,
+        "pred_bucket": "Podium"
+      },
+      {
+        "rider_name": "Howson Damien",
+        "rider_id": 150,
+        "actual_bucket": "Podium",
+        "pred_rank": 15,
+        "pred_bucket": "Top 15"
+      },
+      {
+        "rider_name": "Sheffield Magnus",
+        "rider_id": 16,
+        "actual_bucket": "Top 5",
+        "pred_rank": 2,
+        "pred_bucket": "Podium"
+      },
+      {
+        "rider_name": "Donovan Mark",
+        "rider_id": 149,
+        "actual_bucket": "Top 5",
+        "pred_rank": 7,
+        "pred_bucket": "Top 15"
+      },
+      {
+        "rider_name": "Bonneu Kamiel",
+        "rider_id": 377,
+        "actual_bucket": "Top 15",
+        "pred_rank": 36,
+        "pred_bucket": "Top 50"
+      },
+      {
+        "rider_name": "Kyffin Zeb",
+        "rider_id": 597,
+        "actual_bucket": "Top 15",
+        "pred_rank": 70,
+        "pred_bucket": "Finisher"
+      },
+      {
+        "rider_name": "Tiller Rasmus",
+        "rider_id": 312,
+        "actual_bucket": "Top 15",
+        "pred_rank": 24,
+        "pred_bucket": "Top 30"
+      },
+      {
+        "rider_name": "Teugels Lennert",
+        "rider_id": 1016,
+        "actual_bucket": "Top 15",
+        "pred_rank": 23,
+        "pred_bucket": "Top 30"
+      },
+      {
+        "rider_name": "Adri\u00e0 Roger",
+        "rider_id": 568,
+        "actual_bucket": "Top 15",
+        "pred_rank": 16,
+        "pred_bucket": "Top 30"
+      },
+      {
+        "rider_name": "M\u00fchlberger Gregor",
+        "rider_id": 671,
+        "actual_bucket": "Top 15",
+        "pred_rank": 14,
+        "pred_bucket": "Top 15"
+      },
+      {
+        "rider_name": "Williams Stephen",
+        "rider_id": 572,
+        "actual_bucket": "Top 15",
+        "pred_rank": 30,
+        "pred_bucket": "Top 30"
+      },
+      {
+        "rider_name": "Rodriguez Carlos",
+        "rider_id": 759,
+        "actual_bucket": "Top 15",
+        "pred_rank": 4,
+        "pred_bucket": "Top 5"
+      },
+      {
+        "rider_name": "van Poppel Danny",
+        "rider_id": 232,
+        "actual_bucket": "Top 15",
+        "pred_rank": 11,
+        "pred_bucket": "Top 15"
+      },
+      {
+        "rider_name": "Politt Nils",
+        "rider_id": 297,
+        "actual_bucket": "Top 15",
+        "pred_rank": 5,
+        "pred_bucket": "Top 5"
+      },
+      {
+        "rider_name": "Meens Johan",
+        "rider_id": 756,
+        "actual_bucket": "Top 30",
+        "pred_rank": 40,
+        "pred_bucket": "Top 50"
+      },
+      {
+        "rider_name": "Vernon Ethan",
+        "rider_id": 83,
+        "actual_bucket": "Top 30",
+        "pred_rank": 35,
+        "pred_bucket": "Top 50"
+      },
+      {
+        "rider_name": "Bugge Martin Urianstad",
+        "rider_id": 590,
+        "actual_bucket": "Top 30",
+        "pred_rank": 41,
+        "pred_bucket": "Top 50"
+      },
+      {
+        "rider_name": "van Uden Casper",
+        "rider_id": 100,
+        "actual_bucket": "Top 30",
+        "pred_rank": 33,
+        "pred_bucket": "Top 50"
+      },
+      {
+        "rider_name": "Rosskopf Joey",
+        "rider_id": 476,
+        "actual_bucket": "Top 30",
+        "pred_rank": 42,
+        "pred_bucket": "Top 50"
+      },
+      {
+        "rider_name": "Magnier Paul",
+        "rider_id": 305,
+        "actual_bucket": "Top 30",
+        "pred_rank": 28,
+        "pred_bucket": "Top 30"
+      },
+      {
+        "rider_name": "Parisini Nicol\u00f2",
+        "rider_id": 89,
+        "actual_bucket": "Top 30",
+        "pred_rank": 48,
+        "pred_bucket": "Top 50"
+      },
+      {
+        "rider_name": "Parra Jos\u00e9 F\u00e9lix",
+        "rider_id": 760,
+        "actual_bucket": "Top 30",
+        "pred_rank": 37,
+        "pred_bucket": "Top 50"
+      },
+      {
+        "rider_name": "Stewart Mark",
+        "rider_id": 166,
+        "actual_bucket": "Top 30",
+        "pred_rank": 25,
+        "pred_bucket": "Top 30"
+      },
+      {
+        "rider_name": "Crockett Finn",
+        "rider_id": 1052,
+        "actual_bucket": "Top 30",
+        "pred_rank": 22,
+        "pred_bucket": "Top 30"
+      },
+      {
+        "rider_name": "Arrieta Igor",
+        "rider_id": 648,
+        "actual_bucket": "Top 30",
+        "pred_rank": 21,
+        "pred_bucket": "Top 30"
+      },
+      {
+        "rider_name": "Ballabio Giacomo",
+        "rider_id": 1050,
+        "actual_bucket": "Top 30",
+        "pred_rank": 20,
+        "pred_bucket": "Top 30"
+      },
+      {
+        "rider_name": "Donaldson Robert",
+        "rider_id": 1051,
+        "actual_bucket": "Top 30",
+        "pred_rank": 63,
+        "pred_bucket": "Finisher"
+      },
+      {
+        "rider_name": "Serrano Gonzalo",
+        "rider_id": 192,
+        "actual_bucket": "Top 30",
+        "pred_rank": 6,
+        "pred_bucket": "Top 15"
+      },
+      {
+        "rider_name": "Sessler Nicolas",
+        "rider_id": 1049,
+        "actual_bucket": "Top 30",
+        "pred_rank": 69,
+        "pred_bucket": "Finisher"
+      }
+    ]
+  },
+  {
+    "competition_id": 564,
+    "race_name": "GC",
+    "date": "2023-02-26",
+    "type": "gc",
+    "category": "D1",
+    "profile": "rolling",
+    "field_size": 46,
+    "metrics": {
+      "exact_accuracy_top30": 0.481,
+      "practical_success_top30": 0.741
+    },
+    "predicted_top_30": [
+      {
+        "pred_rank": 1,
+        "rider_name": "Stewart Mark",
+        "rider_id": 166,
+        "pred_bucket": "Winner",
+        "actual_bucket": "Top 15"
+      },
+      {
+        "pred_rank": 2,
+        "rider_name": "Budiak Anatolii",
+        "rider_id": 2024,
+        "pred_bucket": "Podium",
+        "actual_bucket": "Top 15"
+      },
+      {
+        "pred_rank": 3,
+        "rider_name": "Yemane Dawit",
+        "rider_id": 1774,
+        "pred_bucket": "Podium",
+        "actual_bucket": "Top 15"
+      },
+      {
+        "pred_rank": 4,
+        "rider_name": "Calzoni Walter",
+        "rider_id": 588,
+        "pred_bucket": "Top 5",
+        "actual_bucket": "Podium"
+      },
+      {
+        "pred_rank": 5,
+        "rider_name": "Bizkarra Mikel",
+        "rider_id": 741,
+        "pred_bucket": "Top 5",
+        "actual_bucket": "Top 15"
+      },
+      {
+        "pred_rank": 6,
+        "rider_name": "De La Parte Victor",
+        "rider_id": 561,
+        "pred_bucket": "Top 15",
+        "actual_bucket": "Top 5"
+      },
+      {
+        "pred_rank": 7,
+        "rider_name": "Mulubrhan Henok",
+        "rider_id": 477,
+        "pred_bucket": "Top 15",
+        "actual_bucket": "Winner"
+      },
+      {
+        "pred_rank": 8,
+        "rider_name": "Piccoli James",
+        "rider_id": 637,
+        "pred_bucket": "Top 15",
+        "actual_bucket": "Top 15"
+      },
+      {
+        "pred_rank": 9,
+        "rider_name": "Main Kent",
+        "rider_id": 2023,
+        "pred_bucket": "Top 15",
+        "actual_bucket": "Top 5"
+      },
+      {
+        "pred_rank": 10,
+        "rider_name": "Muhoza Eric",
+        "rider_id": 2025,
+        "pred_bucket": "Top 15",
+        "actual_bucket": "Top 15"
+      },
+      {
+        "pred_rank": 11,
+        "rider_name": "Gabburo Davide",
+        "rider_id": 229,
+        "pred_bucket": "Top 15",
+        "actual_bucket": "Top 30"
+      },
+      {
+        "pred_rank": 12,
+        "rider_name": "Eyob Metkel",
+        "rider_id": 1727,
+        "pred_bucket": "Top 15",
+        "actual_bucket": "Top 15"
+      },
+      {
+        "pred_rank": 13,
+        "rider_name": "Tolio Alex",
+        "rider_id": 90,
+        "pred_bucket": "Top 15",
+        "actual_bucket": "Top 15"
+      },
+      {
+        "pred_rank": 14,
+        "rider_name": "Currie Logan",
+        "rider_id": 642,
+        "pred_bucket": "Top 15",
+        "actual_bucket": "Top 30"
+      },
+      {
+        "pred_rank": 15,
+        "rider_name": "Froome Chris",
+        "rider_id": 145,
+        "pred_bucket": "Top 15",
+        "actual_bucket": "Top 30"
+      },
+      {
+        "pred_rank": 16,
+        "rider_name": "Gelders Gil",
+        "rider_id": 429,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Top 30"
+      },
+      {
+        "pred_rank": 17,
+        "rider_name": "Meijers Jeroen",
+        "rider_id": 1140,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Top 50"
+      },
+      {
+        "pred_rank": 18,
+        "rider_name": "Niyonkuru Samuel",
+        "rider_id": 2026,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Top 30"
+      },
+      {
+        "pred_rank": 19,
+        "rider_name": "Grellier Fabien",
+        "rider_id": 535,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Top 30"
+      },
+      {
+        "pred_rank": 20,
+        "rider_name": "Bonnet Thomas",
+        "rider_id": 936,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Top 30"
+      },
+      {
+        "pred_rank": 21,
+        "rider_name": "Lozano David",
+        "rider_id": 621,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Top 50"
+      },
+      {
+        "pred_rank": 22,
+        "rider_name": "De Rossi Lucas",
+        "rider_id": 1651,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Top 30"
+      },
+      {
+        "pred_rank": 23,
+        "rider_name": "Ormiston Callum",
+        "rider_id": 1062,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Top 30"
+      },
+      {
+        "pred_rank": 24,
+        "rider_name": "Tarozzi Manuele",
+        "rider_id": 708,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Top 30"
+      },
+      {
+        "pred_rank": 25,
+        "rider_name": "Brough Jack",
+        "rider_id": 1064,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Top 50"
+      },
+      {
+        "pred_rank": 26,
+        "rider_name": "Planet Charles",
+        "rider_id": 1814,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Top 50"
+      },
+      {
+        "pred_rank": 27,
+        "rider_name": "Pritzen Marc",
+        "rider_id": 1502,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Top 50"
+      },
+      {
+        "pred_rank": 28,
+        "rider_name": "Arefayne Aklilu",
+        "rider_id": 2029,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Top 50"
+      },
+      {
+        "pred_rank": 29,
+        "rider_name": "Etxeberria Asier",
+        "rider_id": 562,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Top 30"
+      },
+      {
+        "pred_rank": 30,
+        "rider_name": "Teklehaimanot Daniel",
+        "rider_id": 2028,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Top 30"
+      }
+    ],
+    "actual_top_30": [
+      {
+        "rider_name": "Mulubrhan Henok",
+        "rider_id": 477,
+        "actual_bucket": "Winner",
+        "pred_rank": 7,
+        "pred_bucket": "Top 15"
+      },
+      {
+        "rider_name": "Calzoni Walter",
+        "rider_id": 588,
+        "actual_bucket": "Podium",
+        "pred_rank": 4,
+        "pred_bucket": "Top 5"
+      },
+      {
+        "rider_name": "De La Parte Victor",
+        "rider_id": 561,
+        "actual_bucket": "Top 5",
+        "pred_rank": 6,
+        "pred_bucket": "Top 15"
+      },
+      {
+        "rider_name": "Main Kent",
+        "rider_id": 2023,
+        "actual_bucket": "Top 5",
+        "pred_rank": 9,
+        "pred_bucket": "Top 15"
+      },
+      {
+        "rider_name": "Stewart Mark",
+        "rider_id": 166,
+        "actual_bucket": "Top 15",
+        "pred_rank": 1,
+        "pred_bucket": "Winner"
+      },
+      {
+        "rider_name": "Kusztor Peter",
+        "rider_id": 960,
+        "actual_bucket": "Top 15",
+        "pred_rank": 35,
+        "pred_bucket": "Top 50"
+      },
+      {
+        "rider_name": "Tolio Alex",
+        "rider_id": 90,
+        "actual_bucket": "Top 15",
+        "pred_rank": 13,
+        "pred_bucket": "Top 15"
+      },
+      {
+        "rider_name": "Eyob Metkel",
+        "rider_id": 1727,
+        "actual_bucket": "Top 15",
+        "pred_rank": 12,
+        "pred_bucket": "Top 15"
+      },
+      {
+        "rider_name": "Muhoza Eric",
+        "rider_id": 2025,
+        "actual_bucket": "Top 15",
+        "pred_rank": 10,
+        "pred_bucket": "Top 15"
+      },
+      {
+        "rider_name": "Bizkarra Mikel",
+        "rider_id": 741,
+        "actual_bucket": "Top 15",
+        "pred_rank": 5,
+        "pred_bucket": "Top 5"
+      },
+      {
+        "rider_name": "Yemane Dawit",
+        "rider_id": 1774,
+        "actual_bucket": "Top 15",
+        "pred_rank": 3,
+        "pred_bucket": "Podium"
+      },
+      {
+        "rider_name": "Budiak Anatolii",
+        "rider_id": 2024,
+        "actual_bucket": "Top 15",
+        "pred_rank": 2,
+        "pred_bucket": "Podium"
+      },
+      {
+        "rider_name": "Piccoli James",
+        "rider_id": 637,
+        "actual_bucket": "Top 15",
+        "pred_rank": 8,
+        "pred_bucket": "Top 15"
+      },
+      {
+        "rider_name": "Tarozzi Manuele",
+        "rider_id": 708,
+        "actual_bucket": "Top 30",
+        "pred_rank": 24,
+        "pred_bucket": "Top 30"
+      },
+      {
+        "rider_name": "Berasategi Xabier",
+        "rider_id": 727,
+        "actual_bucket": "Top 30",
+        "pred_rank": 44,
+        "pred_bucket": "Top 50"
+      },
+      {
+        "rider_name": "Iribar Unai",
+        "rider_id": 720,
+        "actual_bucket": "Top 30",
+        "pred_rank": 31,
+        "pred_bucket": "Top 50"
+      },
+      {
+        "rider_name": "Teklehaimanot Daniel",
+        "rider_id": 2028,
+        "actual_bucket": "Top 30",
+        "pred_rank": 30,
+        "pred_bucket": "Top 30"
+      },
+      {
+        "rider_name": "Etxeberria Asier",
+        "rider_id": 562,
+        "actual_bucket": "Top 30",
+        "pred_rank": 29,
+        "pred_bucket": "Top 30"
+      },
+      {
+        "rider_name": "De Rossi Lucas",
+        "rider_id": 1651,
+        "actual_bucket": "Top 30",
+        "pred_rank": 22,
+        "pred_bucket": "Top 30"
+      },
+      {
+        "rider_name": "Ormiston Callum",
+        "rider_id": 1062,
+        "actual_bucket": "Top 30",
+        "pred_rank": 23,
+        "pred_bucket": "Top 30"
+      },
+      {
+        "rider_name": "Grellier Fabien",
+        "rider_id": 535,
+        "actual_bucket": "Top 30",
+        "pred_rank": 19,
+        "pred_bucket": "Top 30"
+      },
+      {
+        "rider_name": "Gabburo Davide",
+        "rider_id": 229,
+        "actual_bucket": "Top 30",
+        "pred_rank": 11,
+        "pred_bucket": "Top 15"
+      },
+      {
+        "rider_name": "Niyonkuru Samuel",
+        "rider_id": 2026,
+        "actual_bucket": "Top 30",
+        "pred_rank": 18,
+        "pred_bucket": "Top 30"
+      },
+      {
+        "rider_name": "Gelders Gil",
+        "rider_id": 429,
+        "actual_bucket": "Top 30",
+        "pred_rank": 16,
+        "pred_bucket": "Top 30"
+      },
+      {
+        "rider_name": "Froome Chris",
+        "rider_id": 145,
+        "actual_bucket": "Top 30",
+        "pred_rank": 15,
+        "pred_bucket": "Top 15"
+      },
+      {
+        "rider_name": "Bonnet Thomas",
+        "rider_id": 936,
+        "actual_bucket": "Top 30",
+        "pred_rank": 20,
+        "pred_bucket": "Top 30"
+      },
+      {
+        "rider_name": "Currie Logan",
+        "rider_id": 642,
+        "actual_bucket": "Top 30",
+        "pred_rank": 14,
+        "pred_bucket": "Top 15"
+      },
+      {
+        "rider_name": "Lozano David",
+        "rider_id": 621,
+        "actual_bucket": "Top 50",
+        "pred_rank": 21,
+        "pred_bucket": "Top 30"
+      },
+      {
+        "rider_name": "Ed Doghmy Achraf",
+        "rider_id": 2031,
+        "actual_bucket": "Top 50",
+        "pred_rank": 43,
+        "pred_bucket": "Top 50"
+      },
+      {
+        "rider_name": "Weinberg Roi",
+        "rider_id": 1184,
+        "actual_bucket": "Top 50",
+        "pred_rank": 42,
+        "pred_bucket": "Top 50"
+      }
+    ]
+  },
+  {
+    "competition_id": 4,
+    "race_name": "Stage: 02",
+    "date": "2024-03-05",
+    "type": "stage",
+    "category": "WT",
+    "profile": "sprint",
+    "field_size": 173,
+    "metrics": {
+      "exact_accuracy_top30": 0.267,
+      "practical_success_top30": 0.833
+    },
+    "predicted_top_30": [
+      {
+        "pred_rank": 1,
+        "rider_name": "Philipsen Jasper",
+        "rider_id": 81,
+        "pred_bucket": "Winner",
+        "actual_bucket": "Winner"
+      },
+      {
+        "pred_rank": 2,
+        "rider_name": "Ewan Caleb",
+        "rider_id": 158,
+        "pred_bucket": "Podium",
+        "actual_bucket": "Top 15"
+      },
+      {
+        "pred_rank": 3,
+        "rider_name": "Merlier Tim",
+        "rider_id": 155,
+        "pred_bucket": "Podium",
+        "actual_bucket": "Podium"
+      },
+      {
+        "pred_rank": 4,
+        "rider_name": "Kristoff Alexander",
+        "rider_id": 99,
+        "pred_bucket": "Top 5",
+        "actual_bucket": "Top 15"
+      },
+      {
+        "pred_rank": 5,
+        "rider_name": "Girmay Biniam",
+        "rider_id": 142,
+        "pred_bucket": "Top 5",
+        "actual_bucket": "Finisher"
+      },
+      {
+        "pred_rank": 6,
+        "rider_name": "Bauhaus Phil",
+        "rider_id": 134,
+        "pred_bucket": "Top 15",
+        "actual_bucket": "Top 15"
+      },
+      {
+        "pred_rank": 7,
+        "rider_name": "Vernon Ethan",
+        "rider_id": 83,
+        "pred_bucket": "Top 15",
+        "actual_bucket": "Top 15"
+      },
+      {
+        "pred_rank": 8,
+        "rider_name": "Consonni Simone",
+        "rider_id": 102,
+        "pred_bucket": "Top 15",
+        "actual_bucket": "Top 30"
+      },
+      {
+        "pred_rank": 9,
+        "rider_name": "Aniolkowski Stanislaw",
+        "rider_id": 122,
+        "pred_bucket": "Top 15",
+        "actual_bucket": "Finisher"
+      },
+      {
+        "pred_rank": 10,
+        "rider_name": "Bonifazio Niccolo",
+        "rider_id": 106,
+        "pred_bucket": "Top 15",
+        "actual_bucket": "Top 30"
+      },
+      {
+        "pred_rank": 11,
+        "rider_name": "Garc\u00eda Cortina Iv\u00e1n",
+        "rider_id": 58,
+        "pred_bucket": "Top 15",
+        "actual_bucket": "Top 50"
+      },
+      {
+        "pred_rank": 12,
+        "rider_name": "Lonardi Giovanni",
+        "rider_id": 91,
+        "pred_bucket": "Top 15",
+        "actual_bucket": "Top 15"
+      },
+      {
+        "pred_rank": 13,
+        "rider_name": "Milan Jonathan",
+        "rider_id": 94,
+        "pred_bucket": "Top 15",
+        "actual_bucket": "Top 15"
+      },
+      {
+        "pred_rank": 14,
+        "rider_name": "Venturini Cl\u00e9ment",
+        "rider_id": 67,
+        "pred_bucket": "Top 15",
+        "actual_bucket": "Finisher"
+      },
+      {
+        "pred_rank": 15,
+        "rider_name": "Zanoncello Enrico",
+        "rider_id": 117,
+        "pred_bucket": "Top 15",
+        "actual_bucket": "Top 30"
+      },
+      {
+        "pred_rank": 16,
+        "rider_name": "Capiot Amaury",
+        "rider_id": 93,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Top 5"
+      },
+      {
+        "pred_rank": 17,
+        "rider_name": "van Uden Casper",
+        "rider_id": 100,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Top 5"
+      },
+      {
+        "pred_rank": 18,
+        "rider_name": "Strong Corbin",
+        "rider_id": 42,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Top 15"
+      },
+      {
+        "pred_rank": 19,
+        "rider_name": "Theuns Edward",
+        "rider_id": 147,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Finisher"
+      },
+      {
+        "pred_rank": 20,
+        "rider_name": "Fiorelli Filippo",
+        "rider_id": 174,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Top 30"
+      },
+      {
+        "pred_rank": 21,
+        "rider_name": "Walscheid Max",
+        "rider_id": 160,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Finisher"
+      },
+      {
+        "pred_rank": 22,
+        "rider_name": "Cavendish Mark",
+        "rider_id": 130,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Finisher"
+      },
+      {
+        "pred_rank": 23,
+        "rider_name": "Pasqualon Andrea",
+        "rider_id": 135,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Top 50"
+      },
+      {
+        "pred_rank": 24,
+        "rider_name": "Degenkolb John",
+        "rider_id": 112,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Finisher"
+      },
+      {
+        "pred_rank": 25,
+        "rider_name": "Mayrhofer Marius",
+        "rider_id": 172,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Top 30"
+      },
+      {
+        "pred_rank": 26,
+        "rider_name": "Bol Cees",
+        "rider_id": 110,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Finisher"
+      },
+      {
+        "pred_rank": 27,
+        "rider_name": "W\u00e6renskjold S\u00f8ren",
+        "rider_id": 120,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Top 15"
+      },
+      {
+        "pred_rank": 28,
+        "rider_name": "Page Hugo",
+        "rider_id": 77,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Finisher"
+      },
+      {
+        "pred_rank": 29,
+        "rider_name": "Teunissen Mike",
+        "rider_id": 57,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Top 50"
+      },
+      {
+        "pred_rank": 30,
+        "rider_name": "Welten Bram",
+        "rider_id": 170,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Finisher"
+      }
+    ],
+    "actual_top_30": [
+      {
+        "rider_name": "Philipsen Jasper",
+        "rider_id": 81,
+        "actual_bucket": "Winner",
+        "pred_rank": 1,
+        "pred_bucket": "Winner"
+      },
+      {
+        "rider_name": "Zingle Axel",
+        "rider_id": 137,
+        "actual_bucket": "Podium",
+        "pred_rank": 48,
+        "pred_bucket": "Top 50"
+      },
+      {
+        "rider_name": "Merlier Tim",
+        "rider_id": 155,
+        "actual_bucket": "Podium",
+        "pred_rank": 3,
+        "pred_bucket": "Podium"
+      },
+      {
+        "rider_name": "van Uden Casper",
+        "rider_id": 100,
+        "actual_bucket": "Top 5",
+        "pred_rank": 17,
+        "pred_bucket": "Top 30"
+      },
+      {
+        "rider_name": "Capiot Amaury",
+        "rider_id": 93,
+        "actual_bucket": "Top 5",
+        "pred_rank": 16,
+        "pred_bucket": "Top 30"
+      },
+      {
+        "rider_name": "Bauhaus Phil",
+        "rider_id": 134,
+        "actual_bucket": "Top 15",
+        "pred_rank": 6,
+        "pred_bucket": "Top 15"
+      },
+      {
+        "rider_name": "Lienhard Fabian",
+        "rider_id": 101,
+        "actual_bucket": "Top 15",
+        "pred_rank": 82,
+        "pred_bucket": "Finisher"
+      },
+      {
+        "rider_name": "W\u00e6renskjold S\u00f8ren",
+        "rider_id": 120,
+        "actual_bucket": "Top 15",
+        "pred_rank": 27,
+        "pred_bucket": "Top 30"
+      },
+      {
+        "rider_name": "Ewan Caleb",
+        "rider_id": 158,
+        "actual_bucket": "Top 15",
+        "pred_rank": 2,
+        "pred_bucket": "Podium"
+      },
+      {
+        "rider_name": "Strong Corbin",
+        "rider_id": 42,
+        "actual_bucket": "Top 15",
+        "pred_rank": 18,
+        "pred_bucket": "Top 30"
+      },
+      {
+        "rider_name": "Kristoff Alexander",
+        "rider_id": 99,
+        "actual_bucket": "Top 15",
+        "pred_rank": 4,
+        "pred_bucket": "Top 5"
+      },
+      {
+        "rider_name": "Milan Jonathan",
+        "rider_id": 94,
+        "actual_bucket": "Top 15",
+        "pred_rank": 13,
+        "pred_bucket": "Top 15"
+      },
+      {
+        "rider_name": "Van Asbroeck Tom",
+        "rider_id": 56,
+        "actual_bucket": "Top 15",
+        "pred_rank": 33,
+        "pred_bucket": "Top 50"
+      },
+      {
+        "rider_name": "Vernon Ethan",
+        "rider_id": 83,
+        "actual_bucket": "Top 15",
+        "pred_rank": 7,
+        "pred_bucket": "Top 15"
+      },
+      {
+        "rider_name": "Lonardi Giovanni",
+        "rider_id": 91,
+        "actual_bucket": "Top 15",
+        "pred_rank": 12,
+        "pred_bucket": "Top 15"
+      },
+      {
+        "rider_name": "Brenner Marco",
+        "rider_id": 72,
+        "actual_bucket": "Top 30",
+        "pred_rank": 51,
+        "pred_bucket": "Finisher"
+      },
+      {
+        "rider_name": "Fedorov Yevgeniy",
+        "rider_id": 53,
+        "actual_bucket": "Top 30",
+        "pred_rank": 69,
+        "pred_bucket": "Finisher"
+      },
+      {
+        "rider_name": "Consonni Simone",
+        "rider_id": 102,
+        "actual_bucket": "Top 30",
+        "pred_rank": 8,
+        "pred_bucket": "Top 15"
+      },
+      {
+        "rider_name": "Ganna Filippo",
+        "rider_id": 88,
+        "actual_bucket": "Top 30",
+        "pred_rank": 66,
+        "pred_bucket": "Finisher"
+      },
+      {
+        "rider_name": "Mayrhofer Marius",
+        "rider_id": 172,
+        "actual_bucket": "Top 30",
+        "pred_rank": 25,
+        "pred_bucket": "Top 30"
+      },
+      {
+        "rider_name": "Martin Guillaume",
+        "rider_id": 23,
+        "actual_bucket": "Top 30",
+        "pred_rank": 62,
+        "pred_bucket": "Finisher"
+      },
+      {
+        "rider_name": "Ludvigsson Tobias",
+        "rider_id": 151,
+        "actual_bucket": "Top 30",
+        "pred_rank": 123,
+        "pred_bucket": "Finisher"
+      },
+      {
+        "rider_name": "Parisini Nicol\u00f2",
+        "rider_id": 89,
+        "actual_bucket": "Top 30",
+        "pred_rank": 58,
+        "pred_bucket": "Finisher"
+      },
+      {
+        "rider_name": "Fiorelli Filippo",
+        "rider_id": 174,
+        "actual_bucket": "Top 30",
+        "pred_rank": 20,
+        "pred_bucket": "Top 30"
+      },
+      {
+        "rider_name": "Pidcock Tom",
+        "rider_id": 9,
+        "actual_bucket": "Top 30",
+        "pred_rank": 49,
+        "pred_bucket": "Top 50"
+      },
+      {
+        "rider_name": "Bonifazio Niccolo",
+        "rider_id": 106,
+        "actual_bucket": "Top 30",
+        "pred_rank": 10,
+        "pred_bucket": "Top 15"
+      },
+      {
+        "rider_name": "Gamper Patrick",
+        "rider_id": 103,
+        "actual_bucket": "Top 30",
+        "pred_rank": 101,
+        "pred_bucket": "Finisher"
+      },
+      {
+        "rider_name": "Sbaragli Kristian",
+        "rider_id": 165,
+        "actual_bucket": "Top 30",
+        "pred_rank": 74,
+        "pred_bucket": "Finisher"
+      },
+      {
+        "rider_name": "Zanoncello Enrico",
+        "rider_id": 117,
+        "actual_bucket": "Top 30",
+        "pred_rank": 15,
+        "pred_bucket": "Top 15"
+      },
+      {
+        "rider_name": "Neilands Krists",
+        "rider_id": 21,
+        "actual_bucket": "Top 30",
+        "pred_rank": 102,
+        "pred_bucket": "Finisher"
+      }
+    ]
+  },
+  {
+    "competition_id": 5,
+    "race_name": "Stage: 03",
+    "date": "2024-03-06",
+    "type": "stage",
+    "category": "WT",
+    "profile": "hilly",
+    "field_size": 170,
+    "metrics": {
+      "exact_accuracy_top30": 0.033,
+      "practical_success_top30": 0.967
+    },
+    "predicted_top_30": [
+      {
+        "pred_rank": 1,
+        "rider_name": "Philipsen Jasper",
+        "rider_id": 81,
+        "pred_bucket": "Winner",
+        "actual_bucket": "Finisher"
+      },
+      {
+        "pred_rank": 2,
+        "rider_name": "Ewan Caleb",
+        "rider_id": 158,
+        "pred_bucket": "Podium",
+        "actual_bucket": "Finisher"
+      },
+      {
+        "pred_rank": 3,
+        "rider_name": "Merlier Tim",
+        "rider_id": 155,
+        "pred_bucket": "Podium",
+        "actual_bucket": "Finisher"
+      },
+      {
+        "pred_rank": 4,
+        "rider_name": "Kristoff Alexander",
+        "rider_id": 99,
+        "pred_bucket": "Top 5",
+        "actual_bucket": "Finisher"
+      },
+      {
+        "pred_rank": 5,
+        "rider_name": "Girmay Biniam",
+        "rider_id": 142,
+        "pred_bucket": "Top 5",
+        "actual_bucket": "Top 30"
+      },
+      {
+        "pred_rank": 6,
+        "rider_name": "Vernon Ethan",
+        "rider_id": 83,
+        "pred_bucket": "Top 15",
+        "actual_bucket": "Finisher"
+      },
+      {
+        "pred_rank": 7,
+        "rider_name": "Consonni Simone",
+        "rider_id": 102,
+        "pred_bucket": "Top 15",
+        "actual_bucket": "Finisher"
+      },
+      {
+        "pred_rank": 8,
+        "rider_name": "Garc\u00eda Cortina Iv\u00e1n",
+        "rider_id": 58,
+        "pred_bucket": "Top 15",
+        "actual_bucket": "Top 15"
+      },
+      {
+        "pred_rank": 9,
+        "rider_name": "Bonifazio Niccolo",
+        "rider_id": 106,
+        "pred_bucket": "Top 15",
+        "actual_bucket": "Finisher"
+      },
+      {
+        "pred_rank": 10,
+        "rider_name": "Aniolkowski Stanislaw",
+        "rider_id": 122,
+        "pred_bucket": "Top 15",
+        "actual_bucket": "Finisher"
+      },
+      {
+        "pred_rank": 11,
+        "rider_name": "Milan Jonathan",
+        "rider_id": 94,
+        "pred_bucket": "Top 15",
+        "actual_bucket": "Podium"
+      },
+      {
+        "pred_rank": 12,
+        "rider_name": "Strong Corbin",
+        "rider_id": 42,
+        "pred_bucket": "Top 15",
+        "actual_bucket": "Finisher"
+      },
+      {
+        "pred_rank": 13,
+        "rider_name": "Venturini Cl\u00e9ment",
+        "rider_id": 67,
+        "pred_bucket": "Top 15",
+        "actual_bucket": "Finisher"
+      },
+      {
+        "pred_rank": 14,
+        "rider_name": "Bauhaus Phil",
+        "rider_id": 134,
+        "pred_bucket": "Top 15",
+        "actual_bucket": "Winner"
+      },
+      {
+        "pred_rank": 15,
+        "rider_name": "Lonardi Giovanni",
+        "rider_id": 91,
+        "pred_bucket": "Top 15",
+        "actual_bucket": "Finisher"
+      },
+      {
+        "pred_rank": 16,
+        "rider_name": "Fiorelli Filippo",
+        "rider_id": 174,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Finisher"
+      },
+      {
+        "pred_rank": 17,
+        "rider_name": "Capiot Amaury",
+        "rider_id": 93,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Finisher"
+      },
+      {
+        "pred_rank": 18,
+        "rider_name": "Walscheid Max",
+        "rider_id": 160,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Finisher"
+      },
+      {
+        "pred_rank": 19,
+        "rider_name": "Mayrhofer Marius",
+        "rider_id": 172,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Top 15"
+      },
+      {
+        "pred_rank": 20,
+        "rider_name": "Teunissen Mike",
+        "rider_id": 57,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Finisher"
+      },
+      {
+        "pred_rank": 21,
+        "rider_name": "Theuns Edward",
+        "rider_id": 147,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Finisher"
+      },
+      {
+        "pred_rank": 22,
+        "rider_name": "W\u00e6renskjold S\u00f8ren",
+        "rider_id": 120,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Finisher"
+      },
+      {
+        "pred_rank": 23,
+        "rider_name": "Pasqualon Andrea",
+        "rider_id": 135,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Top 15"
+      },
+      {
+        "pred_rank": 24,
+        "rider_name": "Bol Cees",
+        "rider_id": 110,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Finisher"
+      },
+      {
+        "pred_rank": 25,
+        "rider_name": "Page Hugo",
+        "rider_id": 77,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Finisher"
+      },
+      {
+        "pred_rank": 26,
+        "rider_name": "Albanese Vincenzo",
+        "rider_id": 126,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Top 15"
+      },
+      {
+        "pred_rank": 27,
+        "rider_name": "Degenkolb John",
+        "rider_id": 112,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Finisher"
+      },
+      {
+        "pred_rank": 28,
+        "rider_name": "Vendrame Andrea",
+        "rider_id": 55,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Top 5"
+      },
+      {
+        "pred_rank": 29,
+        "rider_name": "van Uden Casper",
+        "rider_id": 100,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Finisher"
+      },
+      {
+        "pred_rank": 30,
+        "rider_name": "Cavendish Mark",
+        "rider_id": 130,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Finisher"
+      }
+    ],
+    "actual_top_30": [
+      {
+        "rider_name": "Bauhaus Phil",
+        "rider_id": 134,
+        "actual_bucket": "Winner",
+        "pred_rank": 14,
+        "pred_bucket": "Top 15"
+      },
+      {
+        "rider_name": "Vauquelin K\u00e9vin",
+        "rider_id": 10,
+        "actual_bucket": "Podium",
+        "pred_rank": 56,
+        "pred_bucket": "Finisher"
+      },
+      {
+        "rider_name": "Milan Jonathan",
+        "rider_id": 94,
+        "actual_bucket": "Podium",
+        "pred_rank": 11,
+        "pred_bucket": "Top 15"
+      },
+      {
+        "rider_name": "Bettiol Alberto",
+        "rider_id": 40,
+        "actual_bucket": "Top 5",
+        "pred_rank": 78,
+        "pred_bucket": "Finisher"
+      },
+      {
+        "rider_name": "Vendrame Andrea",
+        "rider_id": 55,
+        "actual_bucket": "Top 5",
+        "pred_rank": 28,
+        "pred_bucket": "Top 30"
+      },
+      {
+        "rider_name": "Pasqualon Andrea",
+        "rider_id": 135,
+        "actual_bucket": "Top 15",
+        "pred_rank": 23,
+        "pred_bucket": "Top 30"
+      },
+      {
+        "rider_name": "Albanese Vincenzo",
+        "rider_id": 126,
+        "actual_bucket": "Top 15",
+        "pred_rank": 26,
+        "pred_bucket": "Top 30"
+      },
+      {
+        "rider_name": "Parisini Nicol\u00f2",
+        "rider_id": 89,
+        "actual_bucket": "Top 15",
+        "pred_rank": 70,
+        "pred_bucket": "Finisher"
+      },
+      {
+        "rider_name": "Mayrhofer Marius",
+        "rider_id": 172,
+        "actual_bucket": "Top 15",
+        "pred_rank": 19,
+        "pred_bucket": "Top 30"
+      },
+      {
+        "rider_name": "Arndt Nikias",
+        "rider_id": 84,
+        "actual_bucket": "Top 15",
+        "pred_rank": 66,
+        "pred_bucket": "Finisher"
+      },
+      {
+        "rider_name": "Ayuso Juan",
+        "rider_id": 2,
+        "actual_bucket": "Top 15",
+        "pred_rank": 47,
+        "pred_bucket": "Top 50"
+      },
+      {
+        "rider_name": "Vermaerke Kevin",
+        "rider_id": 24,
+        "actual_bucket": "Top 15",
+        "pred_rank": 72,
+        "pred_bucket": "Finisher"
+      },
+      {
+        "rider_name": "Garc\u00eda Cortina Iv\u00e1n",
+        "rider_id": 58,
+        "actual_bucket": "Top 15",
+        "pred_rank": 8,
+        "pred_bucket": "Top 15"
+      },
+      {
+        "rider_name": "Velasco Simone",
+        "rider_id": 28,
+        "actual_bucket": "Top 15",
+        "pred_rank": 39,
+        "pred_bucket": "Top 50"
+      },
+      {
+        "rider_name": "Caruso Damiano",
+        "rider_id": 41,
+        "actual_bucket": "Top 15",
+        "pred_rank": 95,
+        "pred_bucket": "Finisher"
+      },
+      {
+        "rider_name": "Sheffield Magnus",
+        "rider_id": 16,
+        "actual_bucket": "Top 30",
+        "pred_rank": 33,
+        "pred_bucket": "Top 50"
+      },
+      {
+        "rider_name": "Stork Florian",
+        "rider_id": 44,
+        "actual_bucket": "Top 30",
+        "pred_rank": 146,
+        "pred_bucket": "Finisher"
+      },
+      {
+        "rider_name": "K\u00e4mna Lennard",
+        "rider_id": 8,
+        "actual_bucket": "Top 30",
+        "pred_rank": 125,
+        "pred_bucket": "Finisher"
+      },
+      {
+        "rider_name": "Garofoli Gianmarco",
+        "rider_id": 33,
+        "actual_bucket": "Top 30",
+        "pred_rank": 53,
+        "pred_bucket": "Finisher"
+      },
+      {
+        "rider_name": "Martinez Daniel",
+        "rider_id": 132,
+        "actual_bucket": "Top 30",
+        "pred_rank": 103,
+        "pred_bucket": "Finisher"
+      },
+      {
+        "rider_name": "Martin Guillaume",
+        "rider_id": 23,
+        "actual_bucket": "Top 30",
+        "pred_rank": 48,
+        "pred_bucket": "Top 50"
+      },
+      {
+        "rider_name": "Brenner Marco",
+        "rider_id": 72,
+        "actual_bucket": "Top 30",
+        "pred_rank": 43,
+        "pred_bucket": "Top 50"
+      },
+      {
+        "rider_name": "Carapaz Richard",
+        "rider_id": 138,
+        "actual_bucket": "Top 30",
+        "pred_rank": 60,
+        "pred_bucket": "Finisher"
+      },
+      {
+        "rider_name": "Healy Ben",
+        "rider_id": 61,
+        "actual_bucket": "Top 30",
+        "pred_rank": 129,
+        "pred_bucket": "Finisher"
+      },
+      {
+        "rider_name": "Tiberi Antonio",
+        "rider_id": 27,
+        "actual_bucket": "Top 30",
+        "pred_rank": 45,
+        "pred_bucket": "Top 50"
+      },
+      {
+        "rider_name": "Formolo Davide",
+        "rider_id": 26,
+        "actual_bucket": "Top 30",
+        "pred_rank": 114,
+        "pred_bucket": "Finisher"
+      },
+      {
+        "rider_name": "O'Connor Ben",
+        "rider_id": 5,
+        "actual_bucket": "Top 30",
+        "pred_rank": 81,
+        "pred_bucket": "Finisher"
+      },
+      {
+        "rider_name": "Girmay Biniam",
+        "rider_id": 142,
+        "actual_bucket": "Top 30",
+        "pred_rank": 5,
+        "pred_bucket": "Top 5"
+      },
+      {
+        "rider_name": "Hindley Jai",
+        "rider_id": 3,
+        "actual_bucket": "Top 30",
+        "pred_rank": 112,
+        "pred_bucket": "Finisher"
+      },
+      {
+        "rider_name": "Restrepo Jhonatan",
+        "rider_id": 162,
+        "actual_bucket": "Top 30",
+        "pred_rank": 75,
+        "pred_bucket": "Finisher"
+      }
+    ]
+  },
+  {
+    "competition_id": 6,
+    "race_name": "Stage: 04",
+    "date": "2024-03-07",
+    "type": "stage",
+    "category": "WT",
+    "profile": "hilly",
+    "field_size": 166,
+    "metrics": {
+      "exact_accuracy_top30": 0.133,
+      "practical_success_top30": 0.9
+    },
+    "predicted_top_30": [
+      {
+        "pred_rank": 1,
+        "rider_name": "Philipsen Jasper",
+        "rider_id": 81,
+        "pred_bucket": "Winner",
+        "actual_bucket": "Podium"
+      },
+      {
+        "pred_rank": 2,
+        "rider_name": "Ewan Caleb",
+        "rider_id": 158,
+        "pred_bucket": "Podium",
+        "actual_bucket": "Top 50"
+      },
+      {
+        "pred_rank": 3,
+        "rider_name": "Girmay Biniam",
+        "rider_id": 142,
+        "pred_bucket": "Podium",
+        "actual_bucket": "Top 5"
+      },
+      {
+        "pred_rank": 4,
+        "rider_name": "Kristoff Alexander",
+        "rider_id": 99,
+        "pred_bucket": "Top 5",
+        "actual_bucket": "Finisher"
+      },
+      {
+        "pred_rank": 5,
+        "rider_name": "Merlier Tim",
+        "rider_id": 155,
+        "pred_bucket": "Top 5",
+        "actual_bucket": "Finisher"
+      },
+      {
+        "pred_rank": 6,
+        "rider_name": "Vernon Ethan",
+        "rider_id": 83,
+        "pred_bucket": "Top 15",
+        "actual_bucket": "Top 30"
+      },
+      {
+        "pred_rank": 7,
+        "rider_name": "Consonni Simone",
+        "rider_id": 102,
+        "pred_bucket": "Top 15",
+        "actual_bucket": "Finisher"
+      },
+      {
+        "pred_rank": 8,
+        "rider_name": "Garc\u00eda Cortina Iv\u00e1n",
+        "rider_id": 58,
+        "pred_bucket": "Top 15",
+        "actual_bucket": "Top 15"
+      },
+      {
+        "pred_rank": 9,
+        "rider_name": "Bonifazio Niccolo",
+        "rider_id": 106,
+        "pred_bucket": "Top 15",
+        "actual_bucket": "Finisher"
+      },
+      {
+        "pred_rank": 10,
+        "rider_name": "Milan Jonathan",
+        "rider_id": 94,
+        "pred_bucket": "Top 15",
+        "actual_bucket": "Winner"
+      },
+      {
+        "pred_rank": 11,
+        "rider_name": "Bauhaus Phil",
+        "rider_id": 134,
+        "pred_bucket": "Top 15",
+        "actual_bucket": "Finisher"
+      },
+      {
+        "pred_rank": 12,
+        "rider_name": "Venturini Cl\u00e9ment",
+        "rider_id": 67,
+        "pred_bucket": "Top 15",
+        "actual_bucket": "Finisher"
+      },
+      {
+        "pred_rank": 13,
+        "rider_name": "Aniolkowski Stanislaw",
+        "rider_id": 122,
+        "pred_bucket": "Top 15",
+        "actual_bucket": "Finisher"
+      },
+      {
+        "pred_rank": 14,
+        "rider_name": "Lonardi Giovanni",
+        "rider_id": 91,
+        "pred_bucket": "Top 15",
+        "actual_bucket": "Finisher"
+      },
+      {
+        "pred_rank": 15,
+        "rider_name": "Strong Corbin",
+        "rider_id": 42,
+        "pred_bucket": "Top 15",
+        "actual_bucket": "Podium"
+      },
+      {
+        "pred_rank": 16,
+        "rider_name": "Fiorelli Filippo",
+        "rider_id": 174,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Top 30"
+      },
+      {
+        "pred_rank": 17,
+        "rider_name": "Mayrhofer Marius",
+        "rider_id": 172,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Top 15"
+      },
+      {
+        "pred_rank": 18,
+        "rider_name": "Capiot Amaury",
+        "rider_id": 93,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Finisher"
+      },
+      {
+        "pred_rank": 19,
+        "rider_name": "Page Hugo",
+        "rider_id": 77,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Finisher"
+      },
+      {
+        "pred_rank": 20,
+        "rider_name": "van Uden Casper",
+        "rider_id": 100,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Finisher"
+      },
+      {
+        "pred_rank": 21,
+        "rider_name": "Walscheid Max",
+        "rider_id": 160,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Finisher"
+      },
+      {
+        "pred_rank": 22,
+        "rider_name": "Pasqualon Andrea",
+        "rider_id": 135,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Top 30"
+      },
+      {
+        "pred_rank": 23,
+        "rider_name": "Teunissen Mike",
+        "rider_id": 57,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Finisher"
+      },
+      {
+        "pred_rank": 24,
+        "rider_name": "Bol Cees",
+        "rider_id": 110,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Top 50"
+      },
+      {
+        "pred_rank": 25,
+        "rider_name": "Albanese Vincenzo",
+        "rider_id": 126,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Top 15"
+      },
+      {
+        "pred_rank": 26,
+        "rider_name": "W\u00e6renskjold S\u00f8ren",
+        "rider_id": 120,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Finisher"
+      },
+      {
+        "pred_rank": 27,
+        "rider_name": "Theuns Edward",
+        "rider_id": 147,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Finisher"
+      },
+      {
+        "pred_rank": 28,
+        "rider_name": "Vendrame Andrea",
+        "rider_id": 55,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Finisher"
+      },
+      {
+        "pred_rank": 29,
+        "rider_name": "Degenkolb John",
+        "rider_id": 112,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Finisher"
+      },
+      {
+        "pred_rank": 30,
+        "rider_name": "Ayuso Juan",
+        "rider_id": 2,
+        "pred_bucket": "Top 30",
+        "actual_bucket": "Top 30"
+      }
+    ],
+    "actual_top_30": [
+      {
+        "rider_name": "Milan Jonathan",
+        "rider_id": 94,
+        "actual_bucket": "Winner",
+        "pred_rank": 10,
+        "pred_bucket": "Top 15"
+      },
+      {
+        "rider_name": "Philipsen Jasper",
+        "rider_id": 81,
+        "actual_bucket": "Podium",
+        "pred_rank": 1,
+        "pred_bucket": "Winner"
+      },
+      {
+        "rider_name": "Strong Corbin",
+        "rider_id": 42,
+        "actual_bucket": "Podium",
+        "pred_rank": 15,
+        "pred_bucket": "Top 15"
+      },
+      {
+        "rider_name": "Zingle Axel",
+        "rider_id": 137,
+        "actual_bucket": "Top 5",
+        "pred_rank": 48,
+        "pred_bucket": "Top 50"
+      },
+      {
+        "rider_name": "Girmay Biniam",
+        "rider_id": 142,
+        "actual_bucket": "Top 5",
+        "pred_rank": 3,
+        "pred_bucket": "Podium"
+      },
+      {
+        "rider_name": "Velasco Simone",
+        "rider_id": 28,
+        "actual_bucket": "Top 15",
+        "pred_rank": 40,
+        "pred_bucket": "Top 50"
+      },
+      {
+        "rider_name": "Tiberi Antonio",
+        "rider_id": 27,
+        "actual_bucket": "Top 15",
+        "pred_rank": 39,
+        "pred_bucket": "Top 50"
+      },
+      {
+        "rider_name": "Alaphilippe Julian",
+        "rider_id": 62,
+        "actual_bucket": "Top 15",
+        "pred_rank": 51,
+        "pred_bucket": "Finisher"
+      },
+      {
+        "rider_name": "Parisini Nicol\u00f2",
+        "rider_id": 89,
+        "actual_bucket": "Top 15",
+        "pred_rank": 56,
+        "pred_bucket": "Finisher"
+      },
+      {
+        "rider_name": "Abrahamsen Jonas",
+        "rider_id": 50,
+        "actual_bucket": "Top 15",
+        "pred_rank": 123,
+        "pred_bucket": "Finisher"
+      },
+      {
+        "rider_name": "Albanese Vincenzo",
+        "rider_id": 126,
+        "actual_bucket": "Top 15",
+        "pred_rank": 25,
+        "pred_bucket": "Top 30"
+      },
+      {
+        "rider_name": "Mayrhofer Marius",
+        "rider_id": 172,
+        "actual_bucket": "Top 15",
+        "pred_rank": 17,
+        "pred_bucket": "Top 30"
+      },
+      {
+        "rider_name": "Vingegaard Jonas",
+        "rider_id": 1,
+        "actual_bucket": "Top 15",
+        "pred_rank": 76,
+        "pred_bucket": "Finisher"
+      },
+      {
+        "rider_name": "Pidcock Tom",
+        "rider_id": 9,
+        "actual_bucket": "Top 15",
+        "pred_rank": 45,
+        "pred_bucket": "Top 50"
+      },
+      {
+        "rider_name": "Garc\u00eda Cortina Iv\u00e1n",
+        "rider_id": 58,
+        "actual_bucket": "Top 15",
+        "pred_rank": 8,
+        "pred_bucket": "Top 15"
+      },
+      {
+        "rider_name": "Vauquelin K\u00e9vin",
+        "rider_id": 10,
+        "actual_bucket": "Top 30",
+        "pred_rank": 46,
+        "pred_bucket": "Top 50"
+      },
+      {
+        "rider_name": "Brenner Marco",
+        "rider_id": 72,
+        "actual_bucket": "Top 30",
+        "pred_rank": 41,
+        "pred_bucket": "Top 50"
+      },
+      {
+        "rider_name": "Vernon Ethan",
+        "rider_id": 83,
+        "actual_bucket": "Top 30",
+        "pred_rank": 6,
+        "pred_bucket": "Top 15"
+      },
+      {
+        "rider_name": "Gr\u00e9goire Romain",
+        "rider_id": 13,
+        "actual_bucket": "Top 30",
+        "pred_rank": 57,
+        "pred_bucket": "Finisher"
+      },
+      {
+        "rider_name": "Vermaerke Kevin",
+        "rider_id": 24,
+        "actual_bucket": "Top 30",
+        "pred_rank": 61,
+        "pred_bucket": "Finisher"
+      },
+      {
+        "rider_name": "Arndt Nikias",
+        "rider_id": 84,
+        "actual_bucket": "Top 30",
+        "pred_rank": 63,
+        "pred_bucket": "Finisher"
+      },
+      {
+        "rider_name": "Ayuso Juan",
+        "rider_id": 2,
+        "actual_bucket": "Top 30",
+        "pred_rank": 30,
+        "pred_bucket": "Top 30"
+      },
+      {
+        "rider_name": "Bettiol Alberto",
+        "rider_id": 40,
+        "actual_bucket": "Top 30",
+        "pred_rank": 70,
+        "pred_bucket": "Finisher"
+      },
+      {
+        "rider_name": "Lienhard Fabian",
+        "rider_id": 101,
+        "actual_bucket": "Top 30",
+        "pred_rank": 86,
+        "pred_bucket": "Finisher"
+      },
+      {
+        "rider_name": "Martinez Daniel",
+        "rider_id": 132,
+        "actual_bucket": "Top 30",
+        "pred_rank": 89,
+        "pred_bucket": "Finisher"
+      },
+      {
+        "rider_name": "Garofoli Gianmarco",
+        "rider_id": 33,
+        "actual_bucket": "Top 30",
+        "pred_rank": 44,
+        "pred_bucket": "Top 50"
+      },
+      {
+        "rider_name": "Pasqualon Andrea",
+        "rider_id": 135,
+        "actual_bucket": "Top 30",
+        "pred_rank": 22,
+        "pred_bucket": "Top 30"
+      },
+      {
+        "rider_name": "K\u00e4mna Lennard",
+        "rider_id": 8,
+        "actual_bucket": "Top 30",
+        "pred_rank": 119,
+        "pred_bucket": "Finisher"
+      },
+      {
+        "rider_name": "Fiorelli Filippo",
+        "rider_id": 174,
+        "actual_bucket": "Top 30",
+        "pred_rank": 16,
+        "pred_bucket": "Top 30"
+      },
+      {
+        "rider_name": "O'Connor Ben",
+        "rider_id": 5,
+        "actual_bucket": "Top 30",
+        "pred_rank": 75,
+        "pred_bucket": "Finisher"
+      }
+    ]
+  }
+]

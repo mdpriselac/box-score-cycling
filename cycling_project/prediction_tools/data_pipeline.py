@@ -1,0 +1,500 @@
+"""
+Data Pipeline for Cycling Race Predictions
+
+Provides efficient data loading from pre-computed feature tables
+with temporal train/validation/test splits.
+
+Key features:
+1. Loads rider features from rider_competition_snapshots
+2. Loads field features from competition_field_features
+3. Joins with rider_results for target variables (place_bucket, time_gap)
+4. Supports temporal splitting for proper evaluation
+"""
+
+import sqlite3
+import os
+from dataclasses import dataclass, field
+from typing import List, Tuple, Optional, Literal
+from pathlib import Path
+import pandas as pd
+import numpy as np
+
+try:
+    from dotenv import load_dotenv
+    HAS_DOTENV = True
+except ImportError:
+    HAS_DOTENV = False
+
+
+@dataclass
+class DataConfig:
+    """Configuration for data loading."""
+    db_path: Optional[str] = None  # Auto-detect if None
+    start_date: str = '2018-01-01'  # Training data start
+    min_races_career: int = 10  # Minimum career races for reliable features
+    competition_types: List[str] = field(default_factory=lambda: ['stage', 'one_day', 'gc'])
+    race_categories: List[str] = field(default_factory=lambda: ['wt', 'pro', 'd1'])
+    require_race_profile: bool = True  # Require race profile scores
+    exclude_dnf_for_time_gap: bool = True  # Exclude DNF when predicting time gap
+
+
+class CyclingDataPipeline:
+    """
+    Unified data loading pipeline for cycling race predictions.
+
+    Loads pre-computed features from:
+    - rider_competition_snapshots: Rider historical features at each race
+    - competition_field_features: Field-level aggregates and race profiles
+    - rider_results: Target variables (place_bucket, time_gap)
+
+    Example usage:
+        pipeline = CyclingDataPipeline()
+        df = pipeline.load_training_data()
+        train, val, test = pipeline.get_temporal_split(df)
+    """
+
+    # Column definitions
+    RIDER_FEATURE_COLS = [
+        'rider_id', 'rider_name', 'age', 'team_bib', 'personal_bib',
+        'races_career', 'races_this_year',
+        'stage_avg_bucket', 'stage_count',
+        'one_day_avg_bucket', 'one_day_count',
+        'gc_avg_bucket', 'gc_count',
+        'wt_avg_bucket', 'wt_count',
+        'pro_avg_bucket', 'pro_count',
+        'd1_avg_bucket', 'd1_count',
+        'sprint_avg_bucket', 'mountain_avg_bucket', 'hilly_avg_bucket',
+        'rolling_avg_bucket', 'breakaway_avg_bucket', 'time_trial_avg_bucket',
+        'best_profile',
+        # Form features
+        'form_recent_avg_bucket', 'form_recent_best_bucket',
+        'form_recent_count', 'form_delta',
+        'form_profile_recent_avg', 'days_since_last_race',
+        # Team features
+        'team_quality_mean', 'team_quality_median', 'team_quality_std',
+        'team_quality_min', 'team_quality_max',
+        'team_quality_p25', 'team_quality_p75',
+        'team_size', 'team_depth',
+    ]
+
+    FIELD_FEATURE_COLS = [
+        'field_size',
+        'experience_mean', 'experience_median', 'experience_std',
+        'experience_min', 'experience_max', 'experience_p25', 'experience_p75',
+        'bucket_mean', 'bucket_median', 'bucket_std',
+        'bucket_min', 'bucket_max', 'bucket_p25', 'bucket_p75',
+        'sprinter_count', 'climber_count', 'hilly_specialist_count',
+        'rolling_specialist_count', 'breakaway_specialist_count',
+        'time_trialist_count', 'unknown_profile_count'
+    ]
+
+    RACE_PROFILE_COLS = [
+        'race_sprint_score', 'race_mountain_score', 'race_hilly_score',
+        'race_rolling_score', 'race_breakaway_score', 'race_time_trial_score',
+        'race_dominant_profile'
+    ]
+
+    METADATA_COLS = [
+        'competition_id', 'competition_name', 'competition_date',
+        'competition_type', 'race_category'
+    ]
+
+    TARGET_COLS = ['place_bucket', 'time_gap']
+
+    def __init__(self, config: Optional[DataConfig] = None):
+        self.config = config or DataConfig()
+        self.db_path = self._find_database(self.config.db_path)
+
+    def _find_database(self, db_path: Optional[str] = None) -> str:
+        """Find the SQLite database file."""
+        if db_path and os.path.isfile(db_path):
+            return db_path
+
+        if HAS_DOTENV:
+            load_dotenv()
+            env_path = os.getenv('DB_PATH')
+            # Only use if it's a file that exists (not a directory)
+            if env_path and os.path.isfile(env_path):
+                return env_path
+
+        # Search in common locations
+        possible_paths = [
+            Path(__file__).parent.parent / "webscrape_tools" / "database" / "database" / "cycling_races.db",
+            Path(__file__).parent.parent / "cycling_races.db",
+        ]
+        for path in possible_paths:
+            if path.exists() and path.is_file():
+                return str(path)
+
+        raise FileNotFoundError(
+            "Database not found. Searched: " +
+            ", ".join(str(p) for p in possible_paths)
+        )
+
+    def _get_connection(self) -> sqlite3.Connection:
+        """Create a database connection."""
+        conn = sqlite3.connect(self.db_path)
+        conn.row_factory = sqlite3.Row
+        return conn
+
+    def load_training_data(
+        self,
+        target: Literal['bucket', 'time_gap', 'both'] = 'both',
+        start_date: Optional[str] = None,
+        end_date: Optional[str] = None,
+        min_races_career: Optional[int] = None,
+        competition_types: Optional[List[str]] = None,
+        race_categories: Optional[List[str]] = None,
+    ) -> pd.DataFrame:
+        """
+        Load complete training dataset with rider + field + race profile features.
+
+        Args:
+            target: Which target variable(s) to include
+            start_date: Override config start date
+            end_date: Optional end date filter
+            min_races_career: Override minimum career races filter
+            competition_types: Override competition type filter
+            race_categories: Override race category filter
+
+        Returns:
+            DataFrame with features and target variable(s)
+        """
+        start_date = start_date or self.config.start_date
+        min_races = min_races_career or self.config.min_races_career
+        comp_types = competition_types or self.config.competition_types
+        categories = race_categories or self.config.race_categories
+
+        # Build SQL query
+        query = self._build_training_query(
+            target=target,
+            start_date=start_date,
+            end_date=end_date,
+            min_races_career=min_races,
+            competition_types=comp_types,
+            race_categories=categories
+        )
+
+        conn = self._get_connection()
+        try:
+            df = pd.read_sql_query(query, conn)
+        finally:
+            conn.close()
+
+        # Convert date column
+        df['competition_date'] = pd.to_datetime(df['competition_date'])
+
+        return df
+
+    def _build_training_query(
+        self,
+        target: str,
+        start_date: str,
+        end_date: Optional[str],
+        min_races_career: int,
+        competition_types: List[str],
+        race_categories: List[str]
+    ) -> str:
+        """Build the SQL query for training data."""
+
+        # Select columns
+        rider_cols = ', '.join([f'rcs.{c}' for c in self.RIDER_FEATURE_COLS])
+        field_cols = ', '.join([f'cff.{c}' for c in self.FIELD_FEATURE_COLS])
+        profile_cols = ', '.join([f'cff.{c}' for c in self.RACE_PROFILE_COLS])
+        metadata_cols = ', '.join([f'cff.{c}' for c in self.METADATA_COLS])
+
+        # Target columns
+        target_cols = 'rr.place_bucket'
+        if target in ('time_gap', 'both'):
+            target_cols += ', rr.time_gap'
+
+        # Build WHERE conditions
+        conditions = [
+            f"cff.competition_date >= '{start_date}'",
+            f"rcs.races_career >= {min_races_career}",
+            "rr.place_bucket IS NOT NULL"
+        ]
+
+        if end_date:
+            conditions.append(f"cff.competition_date <= '{end_date}'")
+
+        if self.config.require_race_profile:
+            conditions.append("cff.race_sprint_score IS NOT NULL")
+
+        # Competition type filter
+        if competition_types:
+            type_list = ', '.join([f"'{t}'" for t in competition_types])
+            conditions.append(f"cff.competition_type IN ({type_list})")
+
+        # Race category filter
+        if race_categories:
+            cat_list = ', '.join([f"'{c}'" for c in race_categories])
+            conditions.append(f"cff.race_category IN ({cat_list})")
+
+        where_clause = ' AND '.join(conditions)
+
+        query = f"""
+        SELECT
+            {rider_cols},
+            {field_cols},
+            {profile_cols},
+            {metadata_cols},
+            {target_cols}
+        FROM rider_competition_snapshots rcs
+        JOIN competition_field_features cff
+            ON rcs.competition_id = cff.competition_id
+        JOIN rider_results rr
+            ON rcs.rider_id = rr.rider_id
+            AND rcs.competition_id = rr.competition_id
+        WHERE {where_clause}
+        ORDER BY cff.competition_date, cff.competition_id, rcs.rider_id
+        """
+
+        return query
+
+    def get_temporal_split(
+        self,
+        df: pd.DataFrame,
+        train_end: str = '2022-12-31',
+        val_end: str = '2023-06-30',
+        date_col: str = 'competition_date'
+    ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+        """
+        Split data temporally for proper evaluation.
+
+        Args:
+            df: Full dataset
+            train_end: Last date for training set (inclusive)
+            val_end: Last date for validation set (inclusive)
+            date_col: Name of date column
+
+        Returns:
+            (train, validation, test) DataFrames
+        """
+        train_end_dt = pd.to_datetime(train_end)
+        val_end_dt = pd.to_datetime(val_end)
+
+        # Ensure date column is datetime
+        if not pd.api.types.is_datetime64_any_dtype(df[date_col]):
+            df = df.copy()
+            df[date_col] = pd.to_datetime(df[date_col])
+
+        train = df[df[date_col] <= train_end_dt].copy()
+        val = df[(df[date_col] > train_end_dt) & (df[date_col] <= val_end_dt)].copy()
+        test = df[df[date_col] > val_end_dt].copy()
+
+        return train, val, test
+
+    def load_race_startlist(
+        self,
+        competition_id: int,
+        include_targets: bool = False
+    ) -> pd.DataFrame:
+        """
+        Load all riders for a specific competition.
+
+        Used for inference - predicting a race given its start list.
+
+        Args:
+            competition_id: ID of the competition
+            include_targets: If True, include actual results (for evaluation)
+
+        Returns:
+            DataFrame with rider and race features
+        """
+        conn = self._get_connection()
+
+        try:
+            # Build query
+            rider_cols = ', '.join([f'rcs.{c}' for c in self.RIDER_FEATURE_COLS])
+            field_cols = ', '.join([f'cff.{c}' for c in self.FIELD_FEATURE_COLS])
+            profile_cols = ', '.join([f'cff.{c}' for c in self.RACE_PROFILE_COLS])
+            metadata_cols = ', '.join([f'cff.{c}' for c in self.METADATA_COLS])
+
+            target_clause = ', rr.place_bucket, rr.time_gap' if include_targets else ''
+
+            query = f"""
+            SELECT
+                {rider_cols},
+                {field_cols},
+                {profile_cols},
+                {metadata_cols}
+                {target_clause}
+            FROM rider_competition_snapshots rcs
+            JOIN competition_field_features cff
+                ON rcs.competition_id = cff.competition_id
+            {'JOIN' if include_targets else 'LEFT JOIN'} rider_results rr
+                ON rcs.rider_id = rr.rider_id
+                AND rcs.competition_id = rr.competition_id
+            WHERE rcs.competition_id = ?
+            ORDER BY rcs.rider_id
+            """
+
+            df = pd.read_sql_query(query, conn, params=[competition_id])
+
+        finally:
+            conn.close()
+
+        return df
+
+    def load_races_in_range(
+        self,
+        start_date: str,
+        end_date: str,
+        competition_types: Optional[List[str]] = None,
+        race_categories: Optional[List[str]] = None,
+    ) -> pd.DataFrame:
+        """
+        Get competitions in a date range.
+
+        Args:
+            start_date: Start of date range
+            end_date: End of date range
+            competition_types: Filter by competition type
+            race_categories: Filter by race category
+
+        Returns:
+            DataFrame with competition metadata
+        """
+        conn = self._get_connection()
+
+        try:
+            conditions = [
+                f"competition_date >= '{start_date}'",
+                f"competition_date <= '{end_date}'"
+            ]
+
+            if competition_types:
+                type_list = ', '.join([f"'{t}'" for t in competition_types])
+                conditions.append(f"competition_type IN ({type_list})")
+
+            if race_categories:
+                cat_list = ', '.join([f"'{c}'" for c in race_categories])
+                conditions.append(f"race_category IN ({cat_list})")
+
+            where_clause = ' AND '.join(conditions)
+
+            query = f"""
+            SELECT
+                competition_id, competition_name, competition_date,
+                competition_type, race_category, field_size,
+                race_dominant_profile
+            FROM competition_field_features
+            WHERE {where_clause}
+            ORDER BY competition_date
+            """
+
+            df = pd.read_sql_query(query, conn)
+
+        finally:
+            conn.close()
+
+        df['competition_date'] = pd.to_datetime(df['competition_date'])
+        return df
+
+    def get_data_summary(self) -> dict:
+        """Get summary statistics about the available data."""
+        conn = self._get_connection()
+
+        try:
+            summary = {}
+
+            # Count rider snapshots
+            cursor = conn.execute(
+                "SELECT COUNT(*) FROM rider_competition_snapshots"
+            )
+            summary['total_rider_snapshots'] = cursor.fetchone()[0]
+
+            # Count competitions
+            cursor = conn.execute(
+                "SELECT COUNT(*) FROM competition_field_features"
+            )
+            summary['total_competitions'] = cursor.fetchone()[0]
+
+            # Date range
+            cursor = conn.execute("""
+                SELECT MIN(competition_date), MAX(competition_date)
+                FROM competition_field_features
+            """)
+            row = cursor.fetchone()
+            summary['date_range'] = (row[0], row[1])
+
+            # Competition type breakdown
+            cursor = conn.execute("""
+                SELECT competition_type, COUNT(*)
+                FROM competition_field_features
+                GROUP BY competition_type
+            """)
+            summary['by_competition_type'] = dict(cursor.fetchall())
+
+            # Race category breakdown
+            cursor = conn.execute("""
+                SELECT race_category, COUNT(*)
+                FROM competition_field_features
+                GROUP BY race_category
+            """)
+            summary['by_race_category'] = dict(cursor.fetchall())
+
+        finally:
+            conn.close()
+
+        return summary
+
+
+def load_training_data(
+    start_date: str = '2018-01-01',
+    min_races_career: int = 10,
+    **kwargs
+) -> pd.DataFrame:
+    """
+    Convenience function to load training data.
+
+    Args:
+        start_date: Start date for training data
+        min_races_career: Minimum career races filter
+        **kwargs: Additional arguments passed to CyclingDataPipeline.load_training_data
+
+    Returns:
+        Training DataFrame
+    """
+    config = DataConfig(
+        start_date=start_date,
+        min_races_career=min_races_career
+    )
+    pipeline = CyclingDataPipeline(config)
+    return pipeline.load_training_data(**kwargs)
+
+
+if __name__ == '__main__':
+    # Test the pipeline
+    print("Testing CyclingDataPipeline...")
+
+    pipeline = CyclingDataPipeline()
+    print(f"Database: {pipeline.db_path}")
+
+    # Get data summary
+    summary = pipeline.get_data_summary()
+    print(f"\nData Summary:")
+    print(f"  Total rider snapshots: {summary['total_rider_snapshots']:,}")
+    print(f"  Total competitions: {summary['total_competitions']:,}")
+    print(f"  Date range: {summary['date_range']}")
+    print(f"  By competition type: {summary['by_competition_type']}")
+    print(f"  By race category: {summary['by_race_category']}")
+
+    # Load sample data
+    print("\nLoading training data (2018+, min 10 career races)...")
+    df = pipeline.load_training_data()
+    print(f"  Loaded {len(df):,} samples")
+    print(f"  Columns: {len(df.columns)}")
+    print(f"  Date range: {df['competition_date'].min()} to {df['competition_date'].max()}")
+
+    # Test temporal split
+    train, val, test = pipeline.get_temporal_split(df)
+    print(f"\nTemporal split:")
+    print(f"  Train: {len(train):,} samples ({train['competition_date'].min()} to {train['competition_date'].max()})")
+    print(f"  Val:   {len(val):,} samples ({val['competition_date'].min()} to {val['competition_date'].max()})")
+    print(f"  Test:  {len(test):,} samples ({test['competition_date'].min()} to {test['competition_date'].max()})")
+
+    # Show sample
+    print(f"\nSample columns:")
+    print(df.columns.tolist())

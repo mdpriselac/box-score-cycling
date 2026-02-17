@@ -1,6 +1,7 @@
-from typing import Union
+from typing import Union, Optional
 from cycling_project.webscrape_tools.create_race_data import Race,Stage
 from cycling_project.data_loading_tools.load_scraped_data import FCCyclingTour,FCCyclingYear
+from cycling_project.engineering_tools.imputation import impute_age
 #the goal of this is to generate training data to train a population model that takes into accout:
 # - rider race characteristic coefficients up to that date
 # - rider age
@@ -90,7 +91,7 @@ from cycling_project.engineering_tools.place_handling import place_bucketer
 from cycling_project.engineering_tools.rider_race_char_scores import RiderRaceCharScores
 cached_RiderRaceCharScores = {y:{} for y in range(2010,2026)}
 
-def generate_rider_data(rider_res_dict:dict,race_year:int,race_type:str)->dict:
+def generate_rider_data(rider_res_dict:dict,race_year:int,race_type:str,tour_level:Optional[str]=None)->dict:
     # First, get the rider id
     rider_id = rider_res_dict.get('rider_id',None)
     if rider_id is None:
@@ -109,11 +110,9 @@ def generate_rider_data(rider_res_dict:dict,race_year:int,race_type:str)->dict:
     except ValueError as e:
         print(e)
         raise Exception(f"Failed to find or create a RiderRaceObject for rider id {rider_id} in year {race_year}")
-    # Third, get the rider age
+    # Third, get the rider age (impute using tour-level median if missing)
     rider_age = rider.rider_object.get_age(year=race_year)
-    if rider_age is None:
-        print(f"Rider {rider.rider_name} does not have an age, setting generic age of 28")
-        rider_age = 28
+    rider_age = impute_age(rider_age, tour_level=tour_level, log_imputation=True)
     # Fourth, set the rider coefficients so that when combined with the mean race characteristic for races in that category, you get a predicted place of 6. Ie the 5 columns should add to 6
     # First, get the coefficients
     if rider.gc_coefs is None:
@@ -197,7 +196,7 @@ def create_data_from_race(race:Union[Race,Stage])->list:
     #Second go through each rider result dictionary and generate the data and add the entry to the race_training_data
     for result in race.results:
         try:
-            rider_data = generate_rider_data(rider_res_dict=result,race_year=int(race.year),race_type=race_data['race_type'])
+            rider_data = generate_rider_data(rider_res_dict=result,race_year=int(race.year),race_type=race_data['race_type'],tour_level=race.category)
         except ValueError as e:
             print(e)
             continue
