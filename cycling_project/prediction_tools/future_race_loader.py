@@ -56,6 +56,18 @@ def parse_firstcycling_url(url: str) -> Tuple[int, int]:
     return race_id, year
 
 
+def get_race_name(fc_race_id: int, db_path: str = None) -> str:
+    """Look up a race name from the database by FirstCycling race ID."""
+    db_path = db_path or str(_DEFAULT_DB)
+    conn = sqlite3.connect(db_path)
+    row = conn.execute(
+        "SELECT name FROM races WHERE fc_race_id = ? ORDER BY year DESC LIMIT 1",
+        (str(fc_race_id),),
+    ).fetchone()
+    conn.close()
+    return row[0] if row else f"Race {fc_race_id}"
+
+
 def scrape_startlist(race_id: int, year: int) -> List[Team]:
     """Scrape a start list from FirstCycling."""
     teams = get_start_list(race_id, year)

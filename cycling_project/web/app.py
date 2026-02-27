@@ -15,6 +15,7 @@ import pandas as pd
 
 from cycling_project.prediction_tools.future_race_loader import (
     parse_firstcycling_url,
+    get_race_name,
     scrape_startlist,
     match_riders_to_db,
     get_latest_rider_snapshots,
@@ -35,6 +36,8 @@ st.title("Cycling Race Predictor")
 # Initialize session state for selected references
 if 'selected_refs' not in st.session_state:
     st.session_state['selected_refs'] = {}  # {comp_id: row_dict}
+if 'search_counter' not in st.session_state:
+    st.session_state['search_counter'] = 0
 
 
 # ── Step 1: Scrape Start List ─────────────────────────────────────────────
@@ -45,7 +48,7 @@ url = st.text_input(
     placeholder="https://firstcycling.com/race.php?r=9&y=2026",
 )
 
-if st.button("Scrape Start List") and url:
+if st.button("Get Start List") and url:
     try:
         race_id, year = parse_firstcycling_url(url)
         with st.spinner(f"Scraping start list for race {race_id}, year {year}..."):
@@ -65,6 +68,8 @@ if st.button("Scrape Start List") and url:
         st.session_state['snapshots'] = snapshots
         st.session_state['field_features'] = field_features
         st.session_state['url'] = url
+        st.session_state['race_name'] = get_race_name(race_id)
+        st.session_state['race_year'] = year
         # Clear old predictions when new start list is scraped
         st.session_state.pop('all_predictions', None)
     except Exception as e:
@@ -72,6 +77,9 @@ if st.button("Scrape Start List") and url:
 
 # Show start list results
 if 'matched' in st.session_state and not st.session_state['matched'].empty:
+    if 'race_name' in st.session_state:
+        st.subheader(f"{st.session_state['race_name']} {st.session_state['race_year']}")
+
     matched = st.session_state['matched']
     unmatched = st.session_state['unmatched']
 
@@ -83,7 +91,7 @@ if 'matched' in st.session_state and not st.session_state['matched'].empty:
                 columns={'rider_name': 'Rider', 'team_name': 'Team', 'bib_number': 'Bib'}
             ),
             hide_index=True,
-            use_container_width=True,
+            width='stretch',
         )
     with col2:
         if unmatched:
@@ -91,7 +99,7 @@ if 'matched' in st.session_state and not st.session_state['matched'].empty:
             unmatched_df = pd.DataFrame(unmatched)[['rider_name', 'team_name', 'bib_number']].rename(
                 columns={'rider_name': 'Rider', 'team_name': 'Team', 'bib_number': 'Bib'}
             )
-            st.dataframe(unmatched_df, hide_index=True, use_container_width=True)
+            st.dataframe(unmatched_df, hide_index=True, width='stretch')
         else:
             st.success("All riders found in database")
 
@@ -117,7 +125,7 @@ if 'matched' in st.session_state and not st.session_state['matched'].empty:
                           'Sprint', 'Mtn', 'Hilly', 'Rolling', 'Breakaway', 'TT']
         for col in ['Sprint', 'Mtn', 'Hilly', 'Rolling', 'Breakaway', 'TT']:
             sel_df[col] = sel_df[col].apply(lambda v: f"{v:.2f}" if v is not None else "")
-        st.dataframe(sel_df, hide_index=True, use_container_width=True)
+        st.dataframe(sel_df, hide_index=True, width='stretch')
 
         # Remove buttons
         cols = st.columns(min(len(selected_refs), 5))
@@ -156,6 +164,7 @@ if 'matched' in st.session_state and not st.session_state['matched'].empty:
             limit=200,
         )
         st.session_state['search_results'] = results
+        st.session_state['search_counter'] += 1
 
     if 'search_results' in st.session_state and not st.session_state['search_results'].empty:
         results = st.session_state['search_results']
@@ -165,7 +174,7 @@ if 'matched' in st.session_state and not st.session_state['matched'].empty:
 
         # Multi-select from search results
         already_selected = set(st.session_state['selected_refs'].keys())
-        available = results[~results['competition_id'].isin(already_selected)]
+        available = results[~results['competition_id'].isin(already_selected)].reset_index(drop=True)
 
         if available.empty:
             st.info("All search results are already selected.")
@@ -176,7 +185,37 @@ if 'matched' in st.session_state and not st.session_state['matched'].empty:
                 'race_dominant_profile',
             ]].copy()
             display_df.columns = ['ID', 'Name', 'Date', 'Type', 'Category', 'Field Size', 'Profile']
-            st.dataframe(display_df, hide_index=True, use_container_width=True)
+            event = st.dataframe(
+                display_df,
+                hide_index=True,
+                width='stretch',
+                on_select="rerun",
+                selection_mode="multi-row",
+                key=f"search_results_table_{st.session_state['search_counter']}",
+            )
+
+            # ── Click-to-add from dataframe selection ──
+            selected_rows = event.selection.rows
+            if selected_rows:
+                spots_left = 5 - len(st.session_state['selected_refs'])
+                if spots_left <= 0:
+                    st.warning("5/5 reference races selected. Remove one to add more.")
+                else:
+                    rows_to_add = selected_rows[:spots_left]
+                    n_selected = len(selected_rows)
+                    label = f"Add {len(rows_to_add)} selected race{'s' if len(rows_to_add) != 1 else ''}"
+                    if n_selected > spots_left:
+                        label += f" (only {spots_left} spot{'s' if spots_left != 1 else ''} left)"
+                    if st.button(label, key="add_from_dataframe"):
+                        for row_idx in rows_to_add:
+                            comp_id = int(available.iloc[row_idx]['competition_id'])
+                            if comp_id not in st.session_state['selected_refs']:
+                                row = results[results['competition_id'] == comp_id]
+                                if not row.empty:
+                                    st.session_state['selected_refs'][comp_id] = row.iloc[0].to_dict()
+                        st.rerun()
+
+            st.divider()
 
             # Add by ID input
             spots_left = 5 - len(st.session_state['selected_refs'])
@@ -297,5 +336,5 @@ if (
                 st.dataframe(
                     display,
                     hide_index=True,
-                    use_container_width=True,
+                    width='stretch',
                 )
