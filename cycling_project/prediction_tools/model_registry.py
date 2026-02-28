@@ -20,6 +20,7 @@ from pathlib import Path
 
 from .bucket_predictor import OrdinalBucketPredictor, BucketPredictorConfig
 from .time_gap_predictor import TimeGapPredictor, TimeGapPredictorConfig
+from .probability_predictor import ProbabilityPredictor, ProbabilityPredictorConfig
 from .race_ranking_predictor import RaceRankingPredictor, RaceRankingConfig
 from .feature_engineering import FeatureEngineer
 
@@ -40,7 +41,7 @@ class ModelRegistry:
         registry.save(bucket_predictor, time_gap_predictor, evaluation)
 
         # Load
-        bucket_pred, time_gap_pred = registry.load()
+        bucket_pred, time_gap_pred, prob_pred = registry.load()
     """
 
     def __init__(self, base_dir: str = 'models/prediction_system'):
@@ -50,6 +51,7 @@ class ModelRegistry:
         self,
         bucket_predictor: OrdinalBucketPredictor,
         time_gap_predictor: Optional[TimeGapPredictor] = None,
+        probability_predictor: Optional[ProbabilityPredictor] = None,
         evaluation: Optional[Dict[str, Any]] = None,
         training_info: Optional[Dict[str, Any]] = None
     ):
@@ -59,6 +61,7 @@ class ModelRegistry:
         Args:
             bucket_predictor: Trained bucket prediction model
             time_gap_predictor: Optional trained time gap model
+            probability_predictor: Optional trained probability model
             evaluation: Optional evaluation metrics
             training_info: Optional training metadata
         """
@@ -88,9 +91,23 @@ class ModelRegistry:
                     'feature_engineer': time_gap_predictor.feature_engineer,
                 }, f)
 
+        # Save probability model (optional)
+        if probability_predictor is not None:
+            prob_model_path = self.base_dir / 'probability_model.txt'
+            probability_predictor.save(str(prob_model_path))
+
+            prob_fe_path = self.base_dir / 'probability_feature_engineer.pkl'
+            with open(prob_fe_path, 'wb') as f:
+                pickle.dump({
+                    'feature_columns': probability_predictor.feature_columns,
+                    'feature_engineer': probability_predictor.feature_engineer,
+                    'temperature': probability_predictor.config.temperature,
+                }, f)
+
         # Save metadata
         metadata = {
             'has_time_gap_model': time_gap_predictor is not None,
+            'has_probability_model': probability_predictor is not None,
             'bucket_feature_columns': bucket_predictor.feature_columns,
             'saved_at': datetime.now().isoformat(),
         }
@@ -109,16 +126,18 @@ class ModelRegistry:
 
     def load(
         self,
-        load_time_gap: bool = True
-    ) -> Tuple[OrdinalBucketPredictor, Optional[TimeGapPredictor]]:
+        load_time_gap: bool = True,
+        load_probability: bool = True
+    ) -> Tuple[OrdinalBucketPredictor, Optional[TimeGapPredictor], Optional[ProbabilityPredictor]]:
         """
         Load trained models from disk.
 
         Args:
             load_time_gap: If True, also load time gap model if available
+            load_probability: If True, also load probability model if available
 
         Returns:
-            (bucket_predictor, time_gap_predictor) tuple
+            (bucket_predictor, time_gap_predictor, probability_predictor) tuple
         """
         # Load metadata
         metadata_path = self.base_dir / 'metadata.json'
@@ -156,9 +175,26 @@ class ModelRegistry:
                         time_gap_predictor.feature_columns = fe_data['feature_columns']
                         time_gap_predictor.feature_engineer = fe_data['feature_engineer']
 
+        # Load probability model (optional)
+        probability_predictor = None
+        if load_probability and metadata.get('has_probability_model', False):
+            prob_model_path = self.base_dir / 'probability_model.txt'
+            if prob_model_path.exists():
+                probability_predictor = ProbabilityPredictor()
+                probability_predictor.load(str(prob_model_path))
+
+                prob_fe_path = self.base_dir / 'probability_feature_engineer.pkl'
+                if prob_fe_path.exists():
+                    with open(prob_fe_path, 'rb') as f:
+                        fe_data = pickle.load(f)
+                        probability_predictor.feature_columns = fe_data['feature_columns']
+                        probability_predictor.feature_engineer = fe_data['feature_engineer']
+                        if 'temperature' in fe_data:
+                            probability_predictor.config.temperature = fe_data['temperature']
+
         print(f"Models loaded from {self.base_dir}")
 
-        return bucket_predictor, time_gap_predictor
+        return bucket_predictor, time_gap_predictor, probability_predictor
 
     def load_with_ranker(
         self,
@@ -173,11 +209,12 @@ class ModelRegistry:
         Returns:
             (bucket_predictor, time_gap_predictor, race_ranker) tuple
         """
-        bucket_pred, time_gap_pred = self.load()
+        bucket_pred, time_gap_pred, probability_pred = self.load()
 
         race_ranker = RaceRankingPredictor(
             bucket_predictor=bucket_pred,
             time_gap_predictor=time_gap_pred,
+            probability_predictor=probability_pred,
             config=RaceRankingConfig(ranking_method=ranking_method)
         )
 
@@ -234,7 +271,7 @@ def save_models(
 
 def load_models(
     path: str = 'models/prediction_system'
-) -> Tuple[OrdinalBucketPredictor, Optional[TimeGapPredictor]]:
+) -> Tuple[OrdinalBucketPredictor, Optional[TimeGapPredictor], Optional[ProbabilityPredictor]]:
     """
     Convenience function to load models.
 
@@ -242,7 +279,7 @@ def load_models(
         path: Directory to load from
 
     Returns:
-        (bucket_predictor, time_gap_predictor) tuple
+        (bucket_predictor, time_gap_predictor, probability_predictor) tuple
     """
     registry = ModelRegistry(path)
     return registry.load()
@@ -272,7 +309,7 @@ if __name__ == '__main__':
     registry.save(bucket_pred, evaluation={'test': 'metrics'})
 
     # Test load
-    loaded_pred, _ = registry.load()
+    loaded_pred, _, _ = registry.load()
     print(f"Loaded model with {len(loaded_pred.feature_columns)} features")
 
     # Test prediction

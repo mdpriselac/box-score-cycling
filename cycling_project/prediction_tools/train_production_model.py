@@ -18,6 +18,7 @@ import pandas as pd
 from cycling_project.prediction_tools.data_pipeline import CyclingDataPipeline, DataConfig
 from cycling_project.prediction_tools.bucket_predictor import OrdinalBucketPredictor, BucketPredictorConfig
 from cycling_project.prediction_tools.time_gap_predictor import TimeGapPredictor, TimeGapPredictorConfig
+from cycling_project.prediction_tools.probability_predictor import ProbabilityPredictor, ProbabilityPredictorConfig
 from cycling_project.prediction_tools.model_registry import ModelRegistry
 
 
@@ -110,6 +111,33 @@ def main():
     print(f"Best iteration: {time_gap_info['best_iteration']}")
     print(f"Training samples: {time_gap_info['train_samples']:,}")
 
+    # --- Train Probability Predictor ---
+    print("\n" + "=" * 70)
+    print("TRAINING PROBABILITY PREDICTOR")
+    print("=" * 70)
+
+    probability_config = ProbabilityPredictorConfig(
+        n_estimators=1000,
+        early_stopping_rounds=100,
+        use_sample_weights=True,
+    )
+    probability_config.lgb_params.update({
+        'num_leaves': 63,
+        'learning_rate': 0.05,
+        'feature_fraction': 0.8,
+        'bagging_fraction': 0.8,
+        'bagging_freq': 5,
+        'min_child_samples': 50,
+    })
+
+    probability_predictor = ProbabilityPredictor(probability_config)
+    probability_info = probability_predictor.train(train, early_stop, verbose=True)
+    print(f"Best iteration: {probability_info['best_iteration']}")
+
+    # Calibrate temperature on early-stop set
+    temp = probability_predictor.calibrate_temperature(early_stop)
+    print(f"Calibrated temperature: {temp:.3f}")
+
     # --- Save via ModelRegistry ---
     print("\n" + "=" * 70)
     print("SAVING PRODUCTION MODEL")
@@ -120,6 +148,7 @@ def main():
     registry.save(
         bucket_predictor=bucket_predictor,
         time_gap_predictor=time_gap_predictor,
+        probability_predictor=probability_predictor,
         training_info={
             'mode': 'production',
             'total_samples': len(df),
@@ -132,6 +161,8 @@ def main():
             'bucket_n_features': bucket_info['n_features'],
             'time_gap_best_iteration': time_gap_info['best_iteration'],
             'time_gap_train_samples': time_gap_info['train_samples'],
+            'probability_best_iteration': probability_info['best_iteration'],
+            'probability_temperature': temp,
             'min_races_career': 10,
             'start_date': '2018-01-01',
             'timestamp': datetime.now().isoformat(),
@@ -152,6 +183,15 @@ def main():
     print(f"Bucket MAE:    {mae:.3f}")
     print(f"Accuracy:      {accuracy:.1%}")
     print(f"Within-1:      {within_1:.1%}")
+
+    # Probability metrics
+    prob_metrics = probability_predictor.evaluate(early_stop)
+    print(f"\nProbability Log Loss:  {prob_metrics['log_loss']:.4f}")
+    print(f"Probability Accuracy:  {prob_metrics['accuracy']:.1%}")
+    print(f"Brier Score:           {prob_metrics['brier_score']:.4f}")
+    print(f"Mean Cal Error:        {prob_metrics['mean_calibration_error']:.4f}")
+    print(f"ECE:                   {prob_metrics['ece']:.4f}")
+    print(f"Sharpness:             {prob_metrics['sharpness']:.3f}")
 
     print(f"\nCompleted: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 

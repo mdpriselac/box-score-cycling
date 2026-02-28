@@ -18,6 +18,7 @@ import pandas as pd
 
 from .bucket_predictor import OrdinalBucketPredictor
 from .time_gap_predictor import TimeGapPredictor
+from .probability_predictor import ProbabilityPredictor, CUMULATIVE_LABELS, MAX_ODDS
 
 try:
     from ..engineering_tools.place_handling import place_bucketer
@@ -69,10 +70,12 @@ class RaceRankingPredictor:
         self,
         bucket_predictor: OrdinalBucketPredictor,
         time_gap_predictor: Optional[TimeGapPredictor] = None,
+        probability_predictor: Optional[ProbabilityPredictor] = None,
         config: Optional[RaceRankingConfig] = None
     ):
         self.bucket_predictor = bucket_predictor
         self.time_gap_predictor = time_gap_predictor
+        self.probability_predictor = probability_predictor
         self.config = config or RaceRankingConfig()
 
         # Validate config
@@ -157,11 +160,28 @@ class RaceRankingPredictor:
 
         # Add probability distribution if requested
         if return_details:
-            proba = self.bucket_predictor.predict_proba(race_df)
+            # Use probability predictor if available, else fall back to Gaussian heuristic
+            if self.probability_predictor is not None:
+                proba = self.probability_predictor.predict_proba(race_df)
+            else:
+                proba = self.bucket_predictor.predict_proba(race_df)
+
             # Re-sort probabilities to match the ranking order
             proba_sorted = proba[results.index]
+
+            # Raw bucket probabilities
             for i in range(8):
                 results[f'prob_bucket_{i}'] = proba_sorted[:, i]
+
+            # Cumulative probabilities (Win, Podium, Top 5, etc.)
+            for label, buckets in CUMULATIVE_LABELS.items():
+                results[f'prob_{label}'] = proba_sorted[:, buckets].sum(axis=1)
+
+            # Decimal odds from cumulative probabilities
+            for label in CUMULATIVE_LABELS:
+                prob_col = results[f'prob_{label}'].values
+                odds = np.where(prob_col > 0, 1.0 / prob_col, MAX_ODDS)
+                results[f'odds_{label}'] = np.minimum(np.round(odds, 2), MAX_ODDS)
 
         # Reorder columns for clarity
         cols = ['rider_id']
@@ -174,6 +194,12 @@ class RaceRankingPredictor:
         if 'competition_id' in results.columns:
             cols.append('competition_id')
         if return_details:
+            # Cumulative probabilities and odds first (most useful)
+            for label in CUMULATIVE_LABELS:
+                cols.append(f'prob_{label}')
+            for label in CUMULATIVE_LABELS:
+                cols.append(f'odds_{label}')
+            # Raw bucket probabilities last
             cols.extend([f'prob_bucket_{i}' for i in range(8)])
 
         return results[[c for c in cols if c in results.columns]]
@@ -297,6 +323,7 @@ class RaceRankingPredictor:
 def create_race_ranker(
     bucket_predictor: OrdinalBucketPredictor,
     time_gap_predictor: Optional[TimeGapPredictor] = None,
+    probability_predictor: Optional[ProbabilityPredictor] = None,
     ranking_method: str = 'expected_bucket'
 ) -> RaceRankingPredictor:
     """
@@ -305,13 +332,16 @@ def create_race_ranker(
     Args:
         bucket_predictor: Trained bucket prediction model
         time_gap_predictor: Optional trained time gap model
+        probability_predictor: Optional trained probability model
         ranking_method: Method for ranking ('expected_bucket', 'time_gap', 'ensemble')
 
     Returns:
         Configured RaceRankingPredictor
     """
     config = RaceRankingConfig(ranking_method=ranking_method)
-    return RaceRankingPredictor(bucket_predictor, time_gap_predictor, config)
+    return RaceRankingPredictor(
+        bucket_predictor, time_gap_predictor, probability_predictor, config
+    )
 
 
 if __name__ == '__main__':

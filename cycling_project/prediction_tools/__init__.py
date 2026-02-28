@@ -53,6 +53,12 @@ from .time_gap_predictor import (
     train_time_gap_predictor,
 )
 
+from .probability_predictor import (
+    ProbabilityPredictor,
+    ProbabilityPredictorConfig,
+    train_probability_predictor,
+)
+
 from .race_ranking_predictor import (
     RaceRankingPredictor,
     RaceRankingConfig,
@@ -63,6 +69,7 @@ from .race_ranking_predictor import (
 from .evaluation import (
     BucketEvaluator,
     TimeGapEvaluator,
+    ProbabilityEvaluator,
     RankingEvaluator,
     evaluate_full_system,
     print_evaluation_report,
@@ -106,6 +113,9 @@ __all__ = [
     'TimeGapPredictor',
     'TimeGapPredictorConfig',
     'train_time_gap_predictor',
+    'ProbabilityPredictor',
+    'ProbabilityPredictorConfig',
+    'train_probability_predictor',
     'RaceRankingPredictor',
     'RaceRankingConfig',
     'create_race_ranker',
@@ -113,6 +123,7 @@ __all__ = [
     # Evaluation
     'BucketEvaluator',
     'TimeGapEvaluator',
+    'ProbabilityEvaluator',
     'RankingEvaluator',
     'evaluate_full_system',
     'print_evaluation_report',

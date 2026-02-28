@@ -224,6 +224,103 @@ class TimeGapEvaluator:
         return pd.DataFrame(results)
 
 
+class ProbabilityEvaluator:
+    """
+    Evaluation metrics for probability predictions (calibration quality).
+
+    Metrics:
+    - log_loss: Multi-class negative log-likelihood
+    - brier_score: Mean squared error of probability estimates
+    - mean_calibration_error: Mean |predicted prob - actual frequency| per bucket
+    - ece: Expected Calibration Error (binned confidence vs accuracy)
+    - sharpness: Mean of max per-sample probability (higher = more confident)
+    - top1_accuracy: How often the most-probable bucket is correct
+    """
+
+    @staticmethod
+    def evaluate(
+        y_true: np.ndarray,
+        y_proba: np.ndarray,
+        n_bins: int = 10
+    ) -> Dict[str, float]:
+        """
+        Comprehensive evaluation for probability predictions.
+
+        Args:
+            y_true: True bucket values (0-7), shape (n_samples,)
+            y_proba: Predicted probabilities, shape (n_samples, 8)
+            n_bins: Number of bins for ECE calculation
+
+        Returns:
+            Dictionary of evaluation metrics
+        """
+        y_true = np.asarray(y_true, dtype=int)
+        y_proba = np.asarray(y_proba)
+
+        n_samples = len(y_true)
+        n_buckets = y_proba.shape[1]
+
+        # One-hot encode true labels
+        one_hot = np.zeros((n_samples, n_buckets))
+        one_hot[np.arange(n_samples), y_true] = 1.0
+
+        # Log loss (negative log-likelihood)
+        log_probs = np.log(y_proba[np.arange(n_samples), y_true] + 1e-12)
+        log_loss = float(-np.mean(log_probs))
+
+        # Brier score (multiclass)
+        brier = float(np.mean(np.sum((one_hot - y_proba) ** 2, axis=1)))
+
+        # Top-1 accuracy
+        y_pred = np.argmax(y_proba, axis=1)
+        accuracy = float(np.mean(y_pred == y_true))
+
+        # Sharpness (mean max probability)
+        sharpness = float(np.mean(np.max(y_proba, axis=1)))
+
+        # Per-bucket calibration error
+        calibration_errors = []
+        for bucket in range(n_buckets):
+            actual_freq = np.mean(y_true == bucket)
+            predicted_prob = np.mean(y_proba[:, bucket])
+            cal_error = abs(predicted_prob - actual_freq)
+            calibration_errors.append(cal_error)
+
+        mean_cal_error = float(np.mean(calibration_errors))
+
+        # Expected Calibration Error (ECE)
+        max_probs = np.max(y_proba, axis=1)
+        correct = (y_pred == y_true).astype(float)
+        bin_boundaries = np.linspace(0, 1, n_bins + 1)
+        ece = 0.0
+        for i in range(n_bins):
+            mask = (max_probs > bin_boundaries[i]) & (max_probs <= bin_boundaries[i + 1])
+            if mask.sum() > 0:
+                bin_acc = correct[mask].mean()
+                bin_conf = max_probs[mask].mean()
+                ece += mask.sum() / n_samples * abs(bin_acc - bin_conf)
+
+        metrics = {
+            'log_loss': log_loss,
+            'brier_score': brier,
+            'accuracy': accuracy,
+            'sharpness': sharpness,
+            'mean_calibration_error': mean_cal_error,
+            'ece': float(ece),
+            'n_samples': n_samples,
+        }
+
+        # Per-bucket details
+        for bucket in range(n_buckets):
+            mask = y_true == bucket
+            metrics[f'bucket_{bucket}_cal_error'] = calibration_errors[bucket]
+            metrics[f'bucket_{bucket}_count'] = int(mask.sum())
+            if mask.sum() > 0:
+                metrics[f'bucket_{bucket}_mean_prob'] = float(np.mean(y_proba[mask, bucket]))
+
+        return metrics
+
+
 class RankingEvaluator:
     """
     Evaluation metrics for race ranking prediction.
@@ -333,7 +430,8 @@ def evaluate_full_system(
     time_gap_predictor,
     race_ranker,
     test_df: pd.DataFrame,
-    n_sample_races: int = 100
+    n_sample_races: int = 100,
+    probability_predictor=None
 ) -> Dict[str, Dict[str, float]]:
     """
     Comprehensive evaluation of the full prediction system.
@@ -344,9 +442,10 @@ def evaluate_full_system(
         race_ranker: Configured RaceRankingPredictor
         test_df: Test data with all features and targets
         n_sample_races: Number of races to sample for ranking evaluation
+        probability_predictor: Optional trained ProbabilityPredictor
 
     Returns:
-        Dictionary with 'bucket', 'time_gap', and 'ranking' metrics
+        Dictionary with 'bucket', 'time_gap', 'ranking', and optionally 'probability' metrics
     """
     results = {}
 
@@ -366,6 +465,11 @@ def evaluate_full_system(
         results['time_gap_by_bucket'] = TimeGapEvaluator.evaluate_by_bucket(
             y_true_time, y_pred_time, test_time_gap['place_bucket'].values
         ).to_dict('records')
+
+    # Probability evaluation
+    if probability_predictor is not None:
+        y_proba = probability_predictor.predict_proba(test_df)
+        results['probability'] = ProbabilityEvaluator.evaluate(y_true_bucket, y_proba)
 
     # Race ranking evaluation
     if 'competition_id' in test_df.columns:
@@ -415,6 +519,17 @@ def print_evaluation_report(results: Dict[str, Dict[str, float]]):
         print(f"  Median AE:      {tg['median_ae']:.1f} seconds")
         print(f"  R²:             {tg['r2']:.3f}")
         print(f"  Samples:        {tg['n_samples']:,}")
+
+    if 'probability' in results:
+        print("\n--- Probability Prediction ---")
+        prob = results['probability']
+        print(f"  Log loss:       {prob['log_loss']:.4f}")
+        print(f"  Brier score:    {prob['brier_score']:.4f}")
+        print(f"  Accuracy:       {prob['accuracy']:.1%}")
+        print(f"  Sharpness:      {prob['sharpness']:.3f}")
+        print(f"  Mean cal error: {prob['mean_calibration_error']:.4f}")
+        print(f"  ECE:            {prob['ece']:.4f}")
+        print(f"  Samples:        {prob['n_samples']:,}")
 
     if 'ranking' in results:
         print("\n--- Race Ranking ---")

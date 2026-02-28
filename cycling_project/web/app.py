@@ -358,7 +358,7 @@ if (
                     reference_profiles.append(profile)
 
                     pred_df = assemble_prediction_df(snapshots, matched, field_features, profile)
-                    result = race_ranker.predict_race(pred_df, return_details=False)
+                    result = race_ranker.predict_race(pred_df, return_details=True)
                     result['team'] = result['rider_id'].map(
                         lambda rid: name_map.get(rid, {}).get('team_name', '')
                     )
@@ -369,7 +369,7 @@ if (
                 # Average prediction (always, even for 1 race)
                 avg_profile = average_race_profiles(reference_profiles)
                 pred_df = assemble_prediction_df(snapshots, matched, field_features, avg_profile)
-                result = race_ranker.predict_race(pred_df, return_details=False)
+                result = race_ranker.predict_race(pred_df, return_details=True)
                 result['team'] = result['rider_id'].map(
                     lambda rid: name_map.get(rid, {}).get('team_name', '')
                 )
@@ -407,16 +407,56 @@ if (
                     cols_to_show.append('predicted_time_gap')
                     col_rename['predicted_time_gap'] = 'Time Gap (s)'
 
+                # Add cumulative probability columns if available
+                has_probs = 'prob_win' in result.columns
+                if has_probs:
+                    cols_to_show.extend(['prob_win', 'prob_podium', 'prob_top5', 'prob_top15'])
+                    col_rename.update({
+                        'prob_win': 'Win %',
+                        'prob_podium': 'Podium %',
+                        'prob_top5': 'Top 5 %',
+                        'prob_top15': 'Top 15 %',
+                    })
+
                 display = result[cols_to_show].copy().rename(columns=col_rename)
                 display['Expected Bucket'] = display['Expected Bucket'].round(2)
                 if 'Time Gap (s)' in display.columns:
                     display['Time Gap (s)'] = display['Time Gap (s)'].round(0).astype(int)
+                if has_probs:
+                    display['Win %'] = (result['prob_win'] * 100).round(1)
+                    display['Podium %'] = (result['prob_podium'] * 100).round(1)
+                    display['Top 5 %'] = (result['prob_top5'] * 100).round(1)
+                    display['Top 15 %'] = (result['prob_top15'] * 100).round(1)
 
                 st.dataframe(
                     display,
                     hide_index=True,
                     width='stretch',
                 )
+
+                # Odds view in expander
+                if has_probs:
+                    with st.expander("Decimal Odds"):
+                        odds_cols = ['predicted_rank', 'rider_name', 'team',
+                                     'odds_win', 'odds_podium', 'odds_top5',
+                                     'odds_top15', 'odds_top30']
+                        odds_rename = {
+                            'predicted_rank': 'Rank',
+                            'rider_name': 'Rider',
+                            'team': 'Team',
+                            'odds_win': 'Win',
+                            'odds_podium': 'Podium',
+                            'odds_top5': 'Top 5',
+                            'odds_top15': 'Top 15',
+                            'odds_top30': 'Top 30',
+                        }
+                        available_odds = [c for c in odds_cols if c in result.columns]
+                        odds_display = result[available_odds].copy().rename(columns=odds_rename)
+                        st.dataframe(
+                            odds_display,
+                            hide_index=True,
+                            width='stretch',
+                        )
 
 
 # ── Step 4: Compare with Actual Results ──────────────────────────────────

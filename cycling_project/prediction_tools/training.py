@@ -20,6 +20,7 @@ import numpy as np
 from .data_pipeline import CyclingDataPipeline, DataConfig
 from .bucket_predictor import OrdinalBucketPredictor, BucketPredictorConfig
 from .time_gap_predictor import TimeGapPredictor, TimeGapPredictorConfig
+from .probability_predictor import ProbabilityPredictor, ProbabilityPredictorConfig
 from .race_ranking_predictor import RaceRankingPredictor, RaceRankingConfig
 from .evaluation import (
     evaluate_full_system,
@@ -44,8 +45,13 @@ class TrainingConfig:
     time_gap_n_estimators: int = 500
     time_gap_early_stopping: int = 50
 
+    # Probability model settings
+    probability_n_estimators: int = 500
+    probability_early_stopping: int = 50
+
     # Training options
     train_time_gap: bool = True
+    train_probability: bool = True
     ranking_method: Literal['expected_bucket', 'time_gap', 'ensemble'] = 'expected_bucket'
 
     # Hyperparameter tuning (optional)
@@ -77,6 +83,7 @@ class ModelTrainer:
 
         self.bucket_predictor: Optional[OrdinalBucketPredictor] = None
         self.time_gap_predictor: Optional[TimeGapPredictor] = None
+        self.probability_predictor: Optional[ProbabilityPredictor] = None
         self.race_ranker: Optional[RaceRankingPredictor] = None
 
     def load_and_split_data(self):
@@ -143,6 +150,33 @@ class ModelTrainer:
         info = model.train(train_df, val_df, verbose=self.config.verbose)
 
         self.time_gap_predictor = model
+
+        return model, info
+
+    def train_probability_predictor(
+        self,
+        train_df,
+        val_df
+    ) -> Tuple[ProbabilityPredictor, Dict[str, Any]]:
+        """Train probability prediction model."""
+        if self.config.verbose:
+            print("\n--- Training Probability Predictor ---")
+
+        config = ProbabilityPredictorConfig(
+            n_estimators=self.config.probability_n_estimators,
+            early_stopping_rounds=self.config.probability_early_stopping
+        )
+
+        model = ProbabilityPredictor(config)
+        info = model.train(train_df, val_df, verbose=self.config.verbose)
+
+        # Calibrate temperature on validation set
+        if val_df is not None:
+            temp = model.calibrate_temperature(val_df)
+            if self.config.verbose:
+                print(f"  Calibrated temperature: {temp:.3f}")
+
+        self.probability_predictor = model
 
         return model, info
 
@@ -233,10 +267,19 @@ class ModelTrainer:
                 train, val
             )
 
+        # Train probability predictor (optional)
+        probability_model = None
+        probability_info = None
+        if self.config.train_probability:
+            probability_model, probability_info = self.train_probability_predictor(
+                train, val
+            )
+
         # Create race ranking predictor
         race_ranker = RaceRankingPredictor(
             bucket_predictor=bucket_model,
             time_gap_predictor=time_gap_model,
+            probability_predictor=probability_model,
             config=RaceRankingConfig(ranking_method=self.config.ranking_method)
         )
         self.race_ranker = race_ranker
@@ -250,7 +293,8 @@ class ModelTrainer:
             time_gap_model,
             race_ranker,
             test,
-            n_sample_races=100
+            n_sample_races=100,
+            probability_predictor=probability_model
         )
 
         if self.config.verbose:
@@ -258,7 +302,9 @@ class ModelTrainer:
 
         # Save models (optional)
         if self.config.model_save_dir:
-            self._save_models(bucket_model, time_gap_model, evaluation)
+            self._save_models(
+                bucket_model, time_gap_model, probability_model, evaluation
+            )
 
         # Training metadata
         training_info = {
@@ -280,12 +326,16 @@ class ModelTrainer:
             training_info['time_gap_best_iteration'] = time_gap_info['best_iteration']
             training_info['time_gap_train_samples'] = time_gap_info['train_samples']
 
+        if probability_info:
+            training_info['probability_best_iteration'] = probability_info['best_iteration']
+
         if best_params:
             training_info['tuned_params'] = best_params
 
         return {
             'bucket_predictor': bucket_model,
             'time_gap_predictor': time_gap_model,
+            'probability_predictor': probability_model,
             'race_ranker': race_ranker,
             'evaluation': evaluation,
             'training_info': training_info,
@@ -295,41 +345,22 @@ class ModelTrainer:
         self,
         bucket_model: OrdinalBucketPredictor,
         time_gap_model: Optional[TimeGapPredictor],
+        probability_model: Optional[ProbabilityPredictor],
         evaluation: Dict
     ):
         """Save trained models and metadata."""
+        from .model_registry import ModelRegistry
+
         if self.config.verbose:
             print(f"\nSaving models to {self.config.model_save_dir}...")
 
-        os.makedirs(self.config.model_save_dir, exist_ok=True)
-
-        # Save bucket model
-        bucket_path = os.path.join(self.config.model_save_dir, 'bucket_model.txt')
-        bucket_model.save(bucket_path)
-
-        # Save time gap model
-        if time_gap_model:
-            time_gap_path = os.path.join(self.config.model_save_dir, 'time_gap_model.txt')
-            time_gap_model.save(time_gap_path)
-
-        # Save metadata
-        metadata = {
-            'evaluation': evaluation,
-            'timestamp': datetime.now().isoformat(),
-            'config': self.config.__dict__,
-        }
-
-        # Convert non-serializable items
-        metadata_clean = json.loads(
-            json.dumps(metadata, default=str)
+        registry = ModelRegistry(self.config.model_save_dir)
+        registry.save(
+            bucket_predictor=bucket_model,
+            time_gap_predictor=time_gap_model,
+            probability_predictor=probability_model,
+            evaluation=evaluation,
         )
-
-        metadata_path = os.path.join(self.config.model_save_dir, 'metadata.json')
-        with open(metadata_path, 'w') as f:
-            json.dump(metadata_clean, f, indent=2)
-
-        if self.config.verbose:
-            print(f"Models saved successfully")
 
 
 def train_prediction_system(

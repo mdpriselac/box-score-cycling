@@ -23,6 +23,7 @@ import numpy as np
 from .data_pipeline import CyclingDataPipeline, DataConfig
 from .bucket_predictor import OrdinalBucketPredictor
 from .time_gap_predictor import TimeGapPredictor
+from .probability_predictor import ProbabilityPredictor, CUMULATIVE_LABELS, MAX_ODDS
 from .race_ranking_predictor import RaceRankingPredictor, RaceRankingConfig
 from .model_registry import ModelRegistry
 
@@ -46,15 +47,18 @@ class RacePredictionAPI:
         self,
         bucket_predictor: OrdinalBucketPredictor,
         time_gap_predictor: Optional[TimeGapPredictor] = None,
+        probability_predictor: Optional[ProbabilityPredictor] = None,
         race_ranker: Optional[RaceRankingPredictor] = None,
         data_pipeline: Optional[CyclingDataPipeline] = None
     ):
         self.bucket_predictor = bucket_predictor
         self.time_gap_predictor = time_gap_predictor
+        self.probability_predictor = probability_predictor
 
         self.race_ranker = race_ranker or RaceRankingPredictor(
             bucket_predictor=bucket_predictor,
-            time_gap_predictor=time_gap_predictor
+            time_gap_predictor=time_gap_predictor,
+            probability_predictor=probability_predictor
         )
 
         self.data_pipeline = data_pipeline or CyclingDataPipeline()
@@ -85,6 +89,7 @@ class RacePredictionAPI:
         return cls(
             bucket_predictor=bucket_pred,
             time_gap_predictor=time_gap_pred,
+            probability_predictor=race_ranker.probability_predictor,
             race_ranker=race_ranker,
             data_pipeline=data_pipeline
         )
@@ -148,7 +153,12 @@ class RacePredictionAPI:
 
         bucket_pred = self.bucket_predictor.predict(rider_df)[0]
         expected_bucket = self.bucket_predictor.predict_continuous(rider_df)[0]
-        bucket_proba = self.bucket_predictor.predict_proba(rider_df)[0]
+
+        # Use probability predictor if available, else fall back to Gaussian heuristic
+        if self.probability_predictor is not None:
+            bucket_proba = self.probability_predictor.predict_proba(rider_df)[0]
+        else:
+            bucket_proba = self.bucket_predictor.predict_proba(rider_df)[0]
 
         result = {
             'rider_id': int(rider_id),
@@ -158,6 +168,16 @@ class RacePredictionAPI:
             'bucket_probabilities': bucket_proba.tolist(),
             'confidence': float(np.max(bucket_proba)),
         }
+
+        # Cumulative probabilities and odds
+        cumulative = {}
+        odds = {}
+        for label, buckets in CUMULATIVE_LABELS.items():
+            cum_prob = float(bucket_proba[buckets].sum())
+            cumulative[label] = cum_prob
+            odds[label] = float(min(round(1.0 / cum_prob, 2), MAX_ODDS)) if cum_prob > 0 else MAX_ODDS
+        result['cumulative_probabilities'] = cumulative
+        result['odds'] = odds
 
         if self.time_gap_predictor is not None:
             time_gap = self.time_gap_predictor.predict(rider_df)[0]
