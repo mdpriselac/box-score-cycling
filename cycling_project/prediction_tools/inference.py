@@ -48,17 +48,23 @@ class RacePredictionAPI:
         bucket_predictor: OrdinalBucketPredictor,
         time_gap_predictor: Optional[TimeGapPredictor] = None,
         probability_predictor: Optional[ProbabilityPredictor] = None,
+        calibrated_predictor: Optional[ProbabilityPredictor] = None,
+        contender_predictor: Optional[ProbabilityPredictor] = None,
         race_ranker: Optional[RaceRankingPredictor] = None,
         data_pipeline: Optional[CyclingDataPipeline] = None
     ):
         self.bucket_predictor = bucket_predictor
         self.time_gap_predictor = time_gap_predictor
         self.probability_predictor = probability_predictor
+        self.calibrated_predictor = calibrated_predictor
+        self.contender_predictor = contender_predictor
 
         self.race_ranker = race_ranker or RaceRankingPredictor(
             bucket_predictor=bucket_predictor,
             time_gap_predictor=time_gap_predictor,
-            probability_predictor=probability_predictor
+            probability_predictor=probability_predictor,
+            calibrated_predictor=calibrated_predictor,
+            contender_predictor=contender_predictor,
         )
 
         self.data_pipeline = data_pipeline or CyclingDataPipeline()
@@ -90,6 +96,8 @@ class RacePredictionAPI:
             bucket_predictor=bucket_pred,
             time_gap_predictor=time_gap_pred,
             probability_predictor=race_ranker.probability_predictor,
+            calibrated_predictor=race_ranker.calibrated_predictor,
+            contender_predictor=race_ranker.contender_predictor,
             race_ranker=race_ranker,
             data_pipeline=data_pipeline
         )
@@ -154,9 +162,12 @@ class RacePredictionAPI:
         bucket_pred = self.bucket_predictor.predict(rider_df)[0]
         expected_bucket = self.bucket_predictor.predict_continuous(rider_df)[0]
 
-        # Use probability predictor if available, else fall back to Gaussian heuristic
-        if self.probability_predictor is not None:
-            bucket_proba = self.probability_predictor.predict_proba(rider_df)[0]
+        # Use best available probability model for display
+        # (calibrated preferred for honest odds, contender not used here since
+        # it requires full race context for filtering)
+        display_predictor = self.calibrated_predictor or self.probability_predictor
+        if display_predictor is not None:
+            bucket_proba = display_predictor.predict_proba(rider_df)[0]
         else:
             bucket_proba = self.bucket_predictor.predict_proba(rider_df)[0]
 

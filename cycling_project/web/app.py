@@ -403,6 +403,10 @@ if (
                     'ranking_derived_bucket': 'Predicted Bucket',
                 }
 
+                if 'is_contender' in result.columns:
+                    cols_to_show.append('is_contender')
+                    col_rename['is_contender'] = 'Contender'
+
                 if 'predicted_time_gap' in result.columns:
                     cols_to_show.append('predicted_time_gap')
                     col_rename['predicted_time_gap'] = 'Time Gap (s)'
@@ -420,6 +424,8 @@ if (
 
                 display = result[cols_to_show].copy().rename(columns=col_rename)
                 display['Expected Bucket'] = display['Expected Bucket'].round(2)
+                if 'Contender' in display.columns:
+                    display['Contender'] = display['Contender'].map({True: 'Yes', False: ''})
                 if 'Time Gap (s)' in display.columns:
                     display['Time Gap (s)'] = display['Time Gap (s)'].round(0).astype(int)
                 if has_probs:
@@ -437,21 +443,28 @@ if (
                 # Odds view in expander
                 if has_probs:
                     with st.expander("Decimal Odds"):
-                        odds_cols = ['predicted_rank', 'rider_name', 'team',
-                                     'odds_win', 'odds_podium', 'odds_top5',
-                                     'odds_top15', 'odds_top30']
+                        odds_cols = ['predicted_rank', 'rider_name', 'team']
                         odds_rename = {
                             'predicted_rank': 'Rank',
                             'rider_name': 'Rider',
                             'team': 'Team',
+                        }
+                        if 'is_contender' in result.columns:
+                            odds_cols.append('is_contender')
+                            odds_rename['is_contender'] = 'Contender'
+                        odds_cols.extend(['odds_win', 'odds_podium', 'odds_top5',
+                                          'odds_top15', 'odds_top30'])
+                        odds_rename.update({
                             'odds_win': 'Win',
                             'odds_podium': 'Podium',
                             'odds_top5': 'Top 5',
                             'odds_top15': 'Top 15',
                             'odds_top30': 'Top 30',
-                        }
+                        })
                         available_odds = [c for c in odds_cols if c in result.columns]
                         odds_display = result[available_odds].copy().rename(columns=odds_rename)
+                        if 'Contender' in odds_display.columns:
+                            odds_display['Contender'] = odds_display['Contender'].map({True: 'Yes', False: ''})
                         st.dataframe(
                             odds_display,
                             hide_index=True,

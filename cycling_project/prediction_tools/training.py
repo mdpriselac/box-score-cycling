@@ -52,6 +52,9 @@ class TrainingConfig:
     # Training options
     train_time_gap: bool = True
     train_probability: bool = True
+    train_calibrated_probability: bool = True
+    train_contender_probability: bool = True
+    contender_top_n: int = 25
     ranking_method: Literal['expected_bucket', 'time_gap', 'ensemble'] = 'expected_bucket'
 
     # Hyperparameter tuning (optional)
@@ -84,6 +87,8 @@ class ModelTrainer:
         self.bucket_predictor: Optional[OrdinalBucketPredictor] = None
         self.time_gap_predictor: Optional[TimeGapPredictor] = None
         self.probability_predictor: Optional[ProbabilityPredictor] = None
+        self.calibrated_predictor: Optional[ProbabilityPredictor] = None
+        self.contender_predictor: Optional[ProbabilityPredictor] = None
         self.race_ranker: Optional[RaceRankingPredictor] = None
 
     def load_and_split_data(self):
@@ -180,6 +185,107 @@ class ModelTrainer:
 
         return model, info
 
+    def train_calibrated_predictor(
+        self,
+        train_df,
+        val_df
+    ) -> Tuple[ProbabilityPredictor, Dict[str, Any]]:
+        """Train calibrated (unweighted) probability prediction model."""
+        if self.config.verbose:
+            print("\n--- Training Calibrated Probability Predictor (no sample weights) ---")
+
+        config = ProbabilityPredictorConfig(
+            n_estimators=self.config.probability_n_estimators,
+            early_stopping_rounds=self.config.probability_early_stopping,
+            use_sample_weights=False,
+        )
+
+        model = ProbabilityPredictor(config)
+        info = model.train(train_df, val_df, verbose=self.config.verbose)
+
+        # Calibrate temperature on validation set
+        if val_df is not None:
+            temp = model.calibrate_temperature(val_df)
+            if self.config.verbose:
+                print(f"  Calibrated temperature: {temp:.3f}")
+
+        self.calibrated_predictor = model
+
+        return model, info
+
+    def train_contender_predictor(
+        self,
+        train_df,
+        val_df,
+        bucket_predictor: OrdinalBucketPredictor
+    ) -> Tuple[ProbabilityPredictor, Dict[str, Any]]:
+        """
+        Train contender probability model on filtered data with classifier feature.
+
+        Filters training data to top N riders per race (by classifier's expected bucket),
+        adds the classifier's prediction as a feature, and trains an unweighted
+        probability model on this more balanced subset.
+        """
+        import pandas as pd
+
+        if self.config.verbose:
+            print("\n--- Training Contender Probability Predictor (filtered + classifier feature) ---")
+
+        top_n = self.config.contender_top_n
+
+        # Add classifier predictions and filter training data
+        train_filtered = self._filter_to_contenders(train_df, bucket_predictor, top_n)
+        if self.config.verbose:
+            print(f"  Filtered train: {len(train_filtered):,} from {len(train_df):,} "
+                  f"({len(train_filtered)/len(train_df):.1%})")
+            # Show class distribution
+            dist = train_filtered['place_bucket'].value_counts().sort_index()
+            for bucket, count in dist.items():
+                print(f"    Bucket {bucket}: {count:,} ({count/len(train_filtered):.1%})")
+
+        # Filter validation data
+        val_filtered = None
+        if val_df is not None:
+            val_filtered = self._filter_to_contenders(val_df, bucket_predictor, top_n)
+            if self.config.verbose:
+                print(f"  Filtered val: {len(val_filtered):,} from {len(val_df):,}")
+
+        config = ProbabilityPredictorConfig(
+            n_estimators=self.config.probability_n_estimators,
+            early_stopping_rounds=self.config.probability_early_stopping,
+            use_sample_weights=False,
+        )
+
+        model = ProbabilityPredictor(config)
+        info = model.train(train_filtered, val_filtered, verbose=self.config.verbose)
+
+        # Calibrate temperature on filtered validation set
+        if val_filtered is not None:
+            temp = model.calibrate_temperature(val_filtered)
+            if self.config.verbose:
+                print(f"  Calibrated temperature: {temp:.3f}")
+
+        self.contender_predictor = model
+
+        return model, info
+
+    @staticmethod
+    def _filter_to_contenders(
+        df, bucket_predictor: OrdinalBucketPredictor, top_n: int
+    ):
+        """Filter DataFrame to top N riders per race, adding classifier prediction as feature."""
+        import pandas as pd
+
+        df = df.copy()
+        expected = bucket_predictor.predict_continuous(df)
+        df['classifier_expected_bucket'] = expected
+
+        # Keep top N per race (lowest expected_bucket = best predicted)
+        df['_rank'] = df.groupby('competition_id')['classifier_expected_bucket'].rank()
+        filtered = df[df['_rank'] <= top_n].drop(columns=['_rank'])
+
+        return filtered
+
     def tune_bucket_hyperparameters(
         self,
         train_df,
@@ -267,7 +373,7 @@ class ModelTrainer:
                 train, val
             )
 
-        # Train probability predictor (optional)
+        # Train probability predictor (optional) — weighted
         probability_model = None
         probability_info = None
         if self.config.train_probability:
@@ -275,11 +381,29 @@ class ModelTrainer:
                 train, val
             )
 
+        # Train calibrated probability predictor (optional) — unweighted
+        calibrated_model = None
+        calibrated_info = None
+        if self.config.train_calibrated_probability:
+            calibrated_model, calibrated_info = self.train_calibrated_predictor(
+                train, val
+            )
+
+        # Train contender probability predictor (optional) — filtered + classifier feature
+        contender_model = None
+        contender_info = None
+        if self.config.train_contender_probability:
+            contender_model, contender_info = self.train_contender_predictor(
+                train, val, bucket_model
+            )
+
         # Create race ranking predictor
         race_ranker = RaceRankingPredictor(
             bucket_predictor=bucket_model,
             time_gap_predictor=time_gap_model,
             probability_predictor=probability_model,
+            calibrated_predictor=calibrated_model,
+            contender_predictor=contender_model,
             config=RaceRankingConfig(ranking_method=self.config.ranking_method)
         )
         self.race_ranker = race_ranker
@@ -294,7 +418,10 @@ class ModelTrainer:
             race_ranker,
             test,
             n_sample_races=100,
-            probability_predictor=probability_model
+            probability_predictor=probability_model,
+            calibrated_predictor=calibrated_model,
+            contender_predictor=contender_model,
+            contender_top_n=self.config.contender_top_n,
         )
 
         if self.config.verbose:
@@ -303,7 +430,8 @@ class ModelTrainer:
         # Save models (optional)
         if self.config.model_save_dir:
             self._save_models(
-                bucket_model, time_gap_model, probability_model, evaluation
+                bucket_model, time_gap_model, probability_model,
+                calibrated_model, contender_model, evaluation
             )
 
         # Training metadata
@@ -329,6 +457,12 @@ class ModelTrainer:
         if probability_info:
             training_info['probability_best_iteration'] = probability_info['best_iteration']
 
+        if calibrated_info:
+            training_info['calibrated_best_iteration'] = calibrated_info['best_iteration']
+
+        if contender_info:
+            training_info['contender_best_iteration'] = contender_info['best_iteration']
+
         if best_params:
             training_info['tuned_params'] = best_params
 
@@ -336,6 +470,8 @@ class ModelTrainer:
             'bucket_predictor': bucket_model,
             'time_gap_predictor': time_gap_model,
             'probability_predictor': probability_model,
+            'calibrated_predictor': calibrated_model,
+            'contender_predictor': contender_model,
             'race_ranker': race_ranker,
             'evaluation': evaluation,
             'training_info': training_info,
@@ -346,6 +482,8 @@ class ModelTrainer:
         bucket_model: OrdinalBucketPredictor,
         time_gap_model: Optional[TimeGapPredictor],
         probability_model: Optional[ProbabilityPredictor],
+        calibrated_model: Optional[ProbabilityPredictor],
+        contender_model: Optional[ProbabilityPredictor],
         evaluation: Dict
     ):
         """Save trained models and metadata."""
@@ -359,6 +497,8 @@ class ModelTrainer:
             bucket_predictor=bucket_model,
             time_gap_predictor=time_gap_model,
             probability_predictor=probability_model,
+            calibrated_predictor=calibrated_model,
+            contender_predictor=contender_model,
             evaluation=evaluation,
         )
 

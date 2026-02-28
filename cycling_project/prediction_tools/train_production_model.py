@@ -138,6 +138,80 @@ def main():
     temp = probability_predictor.calibrate_temperature(early_stop)
     print(f"Calibrated temperature: {temp:.3f}")
 
+    # --- Train Calibrated Probability Predictor ---
+    print("\n" + "=" * 70)
+    print("TRAINING CALIBRATED PROBABILITY PREDICTOR (no sample weights)")
+    print("=" * 70)
+
+    calibrated_config = ProbabilityPredictorConfig(
+        n_estimators=1000,
+        early_stopping_rounds=100,
+        use_sample_weights=False,
+    )
+    calibrated_config.lgb_params.update({
+        'num_leaves': 63,
+        'learning_rate': 0.05,
+        'feature_fraction': 0.8,
+        'bagging_fraction': 0.8,
+        'bagging_freq': 5,
+        'min_child_samples': 50,
+    })
+
+    calibrated_predictor = ProbabilityPredictor(calibrated_config)
+    calibrated_info = calibrated_predictor.train(train, early_stop, verbose=True)
+    print(f"Best iteration: {calibrated_info['best_iteration']}")
+
+    cal_temp = calibrated_predictor.calibrate_temperature(early_stop)
+    print(f"Calibrated temperature: {cal_temp:.3f}")
+
+    # --- Train Contender Probability Predictor ---
+    print("\n" + "=" * 70)
+    print("TRAINING CONTENDER PROBABILITY PREDICTOR (filtered + classifier feature)")
+    print("=" * 70)
+
+    contender_top_n = 25
+
+    # Add classifier predictions and filter to top N per race
+    train_contender = train.copy()
+    train_contender['classifier_expected_bucket'] = bucket_predictor.predict_continuous(train)
+    train_contender['_rank'] = train_contender.groupby('competition_id')['classifier_expected_bucket'].rank()
+    train_contender = train_contender[train_contender['_rank'] <= contender_top_n].drop(columns=['_rank'])
+
+    early_stop_contender = early_stop.copy()
+    early_stop_contender['classifier_expected_bucket'] = bucket_predictor.predict_continuous(early_stop)
+    early_stop_contender['_rank'] = early_stop_contender.groupby('competition_id')['classifier_expected_bucket'].rank()
+    early_stop_contender = early_stop_contender[early_stop_contender['_rank'] <= contender_top_n].drop(columns=['_rank'])
+
+    print(f"Filtered train: {len(train_contender):,} from {len(train):,} ({len(train_contender)/len(train):.1%})")
+    print(f"Filtered early-stop: {len(early_stop_contender):,} from {len(early_stop):,}")
+
+    # Class distribution of filtered set
+    dist = train_contender['place_bucket'].value_counts().sort_index()
+    print("\nFiltered training set class distribution:")
+    for bucket, count in dist.items():
+        print(f"  Bucket {bucket}: {count:,} ({count/len(train_contender):.1%})")
+
+    contender_config = ProbabilityPredictorConfig(
+        n_estimators=1000,
+        early_stopping_rounds=100,
+        use_sample_weights=False,
+    )
+    contender_config.lgb_params.update({
+        'num_leaves': 63,
+        'learning_rate': 0.05,
+        'feature_fraction': 0.8,
+        'bagging_fraction': 0.8,
+        'bagging_freq': 5,
+        'min_child_samples': 50,
+    })
+
+    contender_predictor = ProbabilityPredictor(contender_config)
+    contender_info = contender_predictor.train(train_contender, early_stop_contender, verbose=True)
+    print(f"Best iteration: {contender_info['best_iteration']}")
+
+    cont_temp = contender_predictor.calibrate_temperature(early_stop_contender)
+    print(f"Calibrated temperature: {cont_temp:.3f}")
+
     # --- Save via ModelRegistry ---
     print("\n" + "=" * 70)
     print("SAVING PRODUCTION MODEL")
@@ -149,6 +223,8 @@ def main():
         bucket_predictor=bucket_predictor,
         time_gap_predictor=time_gap_predictor,
         probability_predictor=probability_predictor,
+        calibrated_predictor=calibrated_predictor,
+        contender_predictor=contender_predictor,
         training_info={
             'mode': 'production',
             'total_samples': len(df),
@@ -163,6 +239,12 @@ def main():
             'time_gap_train_samples': time_gap_info['train_samples'],
             'probability_best_iteration': probability_info['best_iteration'],
             'probability_temperature': temp,
+            'calibrated_best_iteration': calibrated_info['best_iteration'],
+            'calibrated_temperature': cal_temp,
+            'contender_best_iteration': contender_info['best_iteration'],
+            'contender_temperature': cont_temp,
+            'contender_top_n': contender_top_n,
+            'contender_train_samples': len(train_contender),
             'min_races_career': 10,
             'start_date': '2018-01-01',
             'timestamp': datetime.now().isoformat(),
@@ -184,14 +266,35 @@ def main():
     print(f"Accuracy:      {accuracy:.1%}")
     print(f"Within-1:      {within_1:.1%}")
 
-    # Probability metrics
+    # Probability metrics — weighted
     prob_metrics = probability_predictor.evaluate(early_stop)
-    print(f"\nProbability Log Loss:  {prob_metrics['log_loss']:.4f}")
-    print(f"Probability Accuracy:  {prob_metrics['accuracy']:.1%}")
-    print(f"Brier Score:           {prob_metrics['brier_score']:.4f}")
-    print(f"Mean Cal Error:        {prob_metrics['mean_calibration_error']:.4f}")
-    print(f"ECE:                   {prob_metrics['ece']:.4f}")
-    print(f"Sharpness:             {prob_metrics['sharpness']:.3f}")
+    print(f"\nWeighted Probability:")
+    print(f"  Log Loss:       {prob_metrics['log_loss']:.4f}")
+    print(f"  Accuracy:       {prob_metrics['accuracy']:.1%}")
+    print(f"  Brier Score:    {prob_metrics['brier_score']:.4f}")
+    print(f"  Mean Cal Error: {prob_metrics['mean_calibration_error']:.4f}")
+    print(f"  ECE:            {prob_metrics['ece']:.4f}")
+    print(f"  Sharpness:      {prob_metrics['sharpness']:.3f}")
+
+    # Probability metrics — calibrated
+    cal_metrics = calibrated_predictor.evaluate(early_stop)
+    print(f"\nCalibrated Probability:")
+    print(f"  Log Loss:       {cal_metrics['log_loss']:.4f}")
+    print(f"  Accuracy:       {cal_metrics['accuracy']:.1%}")
+    print(f"  Brier Score:    {cal_metrics['brier_score']:.4f}")
+    print(f"  Mean Cal Error: {cal_metrics['mean_calibration_error']:.4f}")
+    print(f"  ECE:            {cal_metrics['ece']:.4f}")
+    print(f"  Sharpness:      {cal_metrics['sharpness']:.3f}")
+
+    # Probability metrics — contender
+    cont_metrics = contender_predictor.evaluate(early_stop_contender)
+    print(f"\nContender Probability (on filtered set):")
+    print(f"  Log Loss:       {cont_metrics['log_loss']:.4f}")
+    print(f"  Accuracy:       {cont_metrics['accuracy']:.1%}")
+    print(f"  Brier Score:    {cont_metrics['brier_score']:.4f}")
+    print(f"  Mean Cal Error: {cont_metrics['mean_calibration_error']:.4f}")
+    print(f"  ECE:            {cont_metrics['ece']:.4f}")
+    print(f"  Sharpness:      {cont_metrics['sharpness']:.3f}")
 
     print(f"\nCompleted: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 

@@ -321,6 +321,149 @@ class ProbabilityEvaluator:
         return metrics
 
 
+class Top4ProbabilityEvaluator:
+    """
+    Evaluation metrics focused on top-4 buckets (0-3: Winner, Podium, Top 5, Top 15).
+
+    Metrics:
+    - Top-4 filtered: log loss, accuracy, Brier on samples where actual bucket ∈ {0,1,2,3}
+    - Cumulative calibration: predicted vs actual frequency for Win, Podium, Top 5, Top 15
+    - Top-K precision: among top K riders by predicted prob, what fraction achieved threshold
+    - Race-level: winner/podium capture rates per race
+    """
+
+    CUMULATIVE_CATS = {
+        'win': [0],
+        'podium': [0, 1],
+        'top5': [0, 1, 2],
+        'top15': [0, 1, 2, 3],
+    }
+
+    @staticmethod
+    def evaluate(
+        y_true: np.ndarray,
+        y_proba: np.ndarray,
+        competition_ids: Optional[np.ndarray] = None,
+        n_bins: int = 10
+    ) -> Dict[str, float]:
+        """
+        Top-4 focused probability evaluation.
+
+        Args:
+            y_true: True bucket values (0-7)
+            y_proba: Predicted probabilities, shape (n_samples, n_buckets)
+            competition_ids: Optional race IDs for race-level evaluation
+            n_bins: Number of bins for calibration analysis
+
+        Returns:
+            Dictionary of top-4 focused metrics
+        """
+        y_true = np.asarray(y_true, dtype=int)
+        y_proba = np.asarray(y_proba)
+        metrics: Dict[str, float] = {}
+
+        # --- 1. Top-4 filtered metrics ---
+        top4_mask = y_true <= 3
+        if top4_mask.sum() > 0:
+            top4_true = y_true[top4_mask]
+            top4_proba = y_proba[top4_mask]
+            top4_pred = np.argmax(top4_proba, axis=1)
+
+            # Log loss on top-4 samples
+            log_probs = np.log(top4_proba[np.arange(len(top4_true)), top4_true] + 1e-12)
+            metrics['top4_log_loss'] = float(-np.mean(log_probs))
+
+            # Accuracy on top-4 samples
+            metrics['top4_accuracy'] = float(np.mean(top4_pred == top4_true))
+
+            # Brier on top-4 samples
+            n_buckets = top4_proba.shape[1]
+            one_hot = np.zeros((len(top4_true), n_buckets))
+            one_hot[np.arange(len(top4_true)), top4_true] = 1.0
+            metrics['top4_brier'] = float(np.mean(np.sum((one_hot - top4_proba) ** 2, axis=1)))
+
+            metrics['top4_n_samples'] = int(top4_mask.sum())
+
+        # --- 2. Cumulative calibration ---
+        for cat_name, cat_buckets in Top4ProbabilityEvaluator.CUMULATIVE_CATS.items():
+            cum_prob = y_proba[:, cat_buckets].sum(axis=1)
+            actual = np.isin(y_true, cat_buckets).astype(float)
+
+            # Binned calibration error
+            bin_boundaries = np.linspace(0, 1, n_bins + 1)
+            cal_errors = []
+            for i in range(n_bins):
+                mask = (cum_prob > bin_boundaries[i]) & (cum_prob <= bin_boundaries[i + 1])
+                if mask.sum() >= 10:
+                    pred_mean = cum_prob[mask].mean()
+                    actual_mean = actual[mask].mean()
+                    cal_errors.append(abs(pred_mean - actual_mean))
+
+            if cal_errors:
+                metrics[f'{cat_name}_cumulative_cal_error'] = float(np.mean(cal_errors))
+
+            # Overall calibration
+            metrics[f'{cat_name}_mean_predicted'] = float(cum_prob.mean())
+            metrics[f'{cat_name}_actual_frequency'] = float(actual.mean())
+            actual_freq = actual.mean()
+            metrics[f'{cat_name}_cal_ratio'] = (
+                float(cum_prob.mean() / actual_freq) if actual_freq > 0 else float('inf')
+            )
+
+        # --- 3. Top-K precision ---
+        for cat_name, cat_buckets in Top4ProbabilityEvaluator.CUMULATIVE_CATS.items():
+            cum_prob = y_proba[:, cat_buckets].sum(axis=1)
+            actual = np.isin(y_true, cat_buckets)
+            sorted_idx = np.argsort(-cum_prob)
+
+            for k in [5, 10, 20, 50]:
+                if len(sorted_idx) >= k:
+                    top_k_idx = sorted_idx[:k]
+                    precision = float(actual[top_k_idx].mean())
+                    metrics[f'{cat_name}_precision_at_{k}'] = precision
+
+        # --- 4. Race-level evaluation ---
+        if competition_ids is not None:
+            competition_ids = np.asarray(competition_ids)
+            unique_races = np.unique(competition_ids)
+
+            win_prob = y_proba[:, 0]
+            podium_prob = y_proba[:, [0, 1]].sum(axis=1)
+
+            winner_captured = []
+            podium_captured = []
+
+            for race_id in unique_races:
+                race_mask = competition_ids == race_id
+                if race_mask.sum() < 5:
+                    continue
+
+                race_true = y_true[race_mask]
+                race_win_prob = win_prob[race_mask]
+                race_podium_prob = podium_prob[race_mask]
+
+                # Best predicted winner: did they actually win?
+                best_win_idx = np.argmax(race_win_prob)
+                winner_captured.append(1.0 if race_true[best_win_idx] == 0 else 0.0)
+
+                # Top 3 by podium prob: how many actual podium finishers captured?
+                top3_idx = np.argsort(-race_podium_prob)[:3]
+                actual_podium_in_top3 = np.isin(race_true[top3_idx], [0, 1]).sum()
+                actual_podium_count = np.sum(np.isin(race_true, [0, 1]))
+                if actual_podium_count > 0:
+                    podium_captured.append(
+                        float(actual_podium_in_top3) / min(3, actual_podium_count)
+                    )
+
+            if winner_captured:
+                metrics['race_winner_capture_rate'] = float(np.mean(winner_captured))
+                metrics['race_winner_n_races'] = len(winner_captured)
+            if podium_captured:
+                metrics['race_podium_capture_rate'] = float(np.mean(podium_captured))
+
+        return metrics
+
+
 class RankingEvaluator:
     """
     Evaluation metrics for race ranking prediction.
@@ -431,7 +574,10 @@ def evaluate_full_system(
     race_ranker,
     test_df: pd.DataFrame,
     n_sample_races: int = 100,
-    probability_predictor=None
+    probability_predictor=None,
+    calibrated_predictor=None,
+    contender_predictor=None,
+    contender_top_n: int = 25,
 ) -> Dict[str, Dict[str, float]]:
     """
     Comprehensive evaluation of the full prediction system.
@@ -442,10 +588,13 @@ def evaluate_full_system(
         race_ranker: Configured RaceRankingPredictor
         test_df: Test data with all features and targets
         n_sample_races: Number of races to sample for ranking evaluation
-        probability_predictor: Optional trained ProbabilityPredictor
+        probability_predictor: Optional weighted ProbabilityPredictor
+        calibrated_predictor: Optional calibrated (unweighted) ProbabilityPredictor
+        contender_predictor: Optional contender (filtered + classifier feature) ProbabilityPredictor
+        contender_top_n: Top N riders per race for contender evaluation
 
     Returns:
-        Dictionary with 'bucket', 'time_gap', 'ranking', and optionally 'probability' metrics
+        Dictionary with evaluation results keyed by model/metric type
     """
     results = {}
 
@@ -466,10 +615,45 @@ def evaluate_full_system(
             y_true_time, y_pred_time, test_time_gap['place_bucket'].values
         ).to_dict('records')
 
-    # Probability evaluation
+    comp_ids = test_df['competition_id'].values if 'competition_id' in test_df.columns else None
+
+    # Weighted probability evaluation
     if probability_predictor is not None:
         y_proba = probability_predictor.predict_proba(test_df)
         results['probability'] = ProbabilityEvaluator.evaluate(y_true_bucket, y_proba)
+        results['probability_weighted'] = results['probability']
+        results['probability_weighted_top4'] = Top4ProbabilityEvaluator.evaluate(
+            y_true_bucket, y_proba, competition_ids=comp_ids
+        )
+
+    # Calibrated probability evaluation
+    if calibrated_predictor is not None:
+        y_proba_cal = calibrated_predictor.predict_proba(test_df)
+        results['probability_calibrated'] = ProbabilityEvaluator.evaluate(y_true_bucket, y_proba_cal)
+        results['probability_calibrated_top4'] = Top4ProbabilityEvaluator.evaluate(
+            y_true_bucket, y_proba_cal, competition_ids=comp_ids
+        )
+
+    # Contender probability evaluation (filtered to top N per race)
+    if contender_predictor is not None and comp_ids is not None:
+        expected_buckets = bucket_predictor.predict_continuous(test_df)
+        test_df_with_cls = test_df.copy()
+        test_df_with_cls['classifier_expected_bucket'] = expected_buckets
+
+        # Filter to top N per race
+        test_df_with_cls['_rank'] = test_df_with_cls.groupby('competition_id')['classifier_expected_bucket'].rank()
+        contender_mask = test_df_with_cls['_rank'] <= contender_top_n
+        contender_df = test_df_with_cls[contender_mask]
+
+        if len(contender_df) > 0:
+            y_proba_cont = contender_predictor.predict_proba(contender_df)
+            y_true_cont = contender_df['place_bucket'].values
+            comp_ids_cont = contender_df['competition_id'].values
+
+            results['probability_contender'] = ProbabilityEvaluator.evaluate(y_true_cont, y_proba_cont)
+            results['probability_contender_top4'] = Top4ProbabilityEvaluator.evaluate(
+                y_true_cont, y_proba_cont, competition_ids=comp_ids_cont
+            )
 
     # Race ranking evaluation
     if 'competition_id' in test_df.columns:
@@ -520,16 +704,45 @@ def print_evaluation_report(results: Dict[str, Dict[str, float]]):
         print(f"  R²:             {tg['r2']:.3f}")
         print(f"  Samples:        {tg['n_samples']:,}")
 
-    if 'probability' in results:
-        print("\n--- Probability Prediction ---")
-        prob = results['probability']
-        print(f"  Log loss:       {prob['log_loss']:.4f}")
-        print(f"  Brier score:    {prob['brier_score']:.4f}")
-        print(f"  Accuracy:       {prob['accuracy']:.1%}")
-        print(f"  Sharpness:      {prob['sharpness']:.3f}")
-        print(f"  Mean cal error: {prob['mean_calibration_error']:.4f}")
-        print(f"  ECE:            {prob['ece']:.4f}")
-        print(f"  Samples:        {prob['n_samples']:,}")
+    # Probability models: print all available
+    for model_label, base_key in [
+        ('Weighted', 'probability_weighted'),
+        ('Calibrated', 'probability_calibrated'),
+        ('Contender', 'probability_contender'),
+    ]:
+        if base_key in results:
+            print(f"\n--- {model_label} Probability ---")
+            prob = results[base_key]
+            print(f"  Log loss:       {prob['log_loss']:.4f}")
+            print(f"  Brier score:    {prob['brier_score']:.4f}")
+            print(f"  Accuracy:       {prob['accuracy']:.1%}")
+            print(f"  Sharpness:      {prob['sharpness']:.3f}")
+            print(f"  Mean cal error: {prob['mean_calibration_error']:.4f}")
+            print(f"  ECE:            {prob['ece']:.4f}")
+            print(f"  Samples:        {prob['n_samples']:,}")
+
+        top4_key = f'{base_key}_top4'
+        if top4_key in results:
+            t4 = results[top4_key]
+            print(f"\n  Top-4 Focus ({model_label}):")
+            if 'top4_log_loss' in t4:
+                print(f"    Log loss:     {t4['top4_log_loss']:.4f}")
+                print(f"    Accuracy:     {t4['top4_accuracy']:.1%}")
+                print(f"    Brier:        {t4['top4_brier']:.4f}")
+                print(f"    Samples:      {t4['top4_n_samples']:,}")
+
+            print(f"  Calibration ratios ({model_label}):")
+            for cat in ['win', 'podium', 'top5', 'top15']:
+                ratio_key = f'{cat}_cal_ratio'
+                if ratio_key in t4:
+                    print(f"    {cat.title():10s} {t4[ratio_key]:.2f}x "
+                          f"(pred {t4[f'{cat}_mean_predicted']:.4f} vs actual {t4[f'{cat}_actual_frequency']:.4f})")
+
+            if 'race_winner_capture_rate' in t4:
+                print(f"  Race winner capture: {t4['race_winner_capture_rate']:.1%} "
+                      f"({t4['race_winner_n_races']} races)")
+            if 'race_podium_capture_rate' in t4:
+                print(f"  Race podium capture: {t4['race_podium_capture_rate']:.1%}")
 
     if 'ranking' in results:
         print("\n--- Race Ranking ---")

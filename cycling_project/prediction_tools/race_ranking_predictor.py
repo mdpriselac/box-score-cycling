@@ -53,6 +53,9 @@ class RaceRankingConfig:
     # Weights for ensemble method (bucket_weight, time_gap_weight)
     ensemble_weights: tuple = (0.7, 0.3)
 
+    # Number of top riders per race for contender model
+    contender_top_n: int = 25
+
 
 class RaceRankingPredictor:
     """
@@ -71,11 +74,15 @@ class RaceRankingPredictor:
         bucket_predictor: OrdinalBucketPredictor,
         time_gap_predictor: Optional[TimeGapPredictor] = None,
         probability_predictor: Optional[ProbabilityPredictor] = None,
+        calibrated_predictor: Optional[ProbabilityPredictor] = None,
+        contender_predictor: Optional[ProbabilityPredictor] = None,
         config: Optional[RaceRankingConfig] = None
     ):
         self.bucket_predictor = bucket_predictor
         self.time_gap_predictor = time_gap_predictor
-        self.probability_predictor = probability_predictor
+        self.probability_predictor = probability_predictor  # weighted, for classification
+        self.calibrated_predictor = calibrated_predictor    # unweighted, for calibrated odds
+        self.contender_predictor = contender_predictor      # filtered two-stage + classifier feature
         self.config = config or RaceRankingConfig()
 
         # Validate config
@@ -160,8 +167,37 @@ class RaceRankingPredictor:
 
         # Add probability distribution if requested
         if return_details:
-            # Use probability predictor if available, else fall back to Gaussian heuristic
-            if self.probability_predictor is not None:
+            # Determine probability source with cascade:
+            # contender (top N) > calibrated > weighted > Gaussian heuristic
+            if self.contender_predictor is not None:
+                # Add classifier prediction as feature for contender model
+                race_df_with_cls = race_df.copy()
+                race_df_with_cls['classifier_expected_bucket'] = expected_buckets
+
+                # Determine contender set (top N by expected bucket)
+                contender_mask_orig = pd.Series(expected_buckets).rank().values <= self.config.contender_top_n
+
+                # Get contender probs for top N
+                contender_proba = self.contender_predictor.predict_proba(
+                    race_df_with_cls[contender_mask_orig]
+                )
+
+                # Get fallback probs for all riders
+                fallback = self.calibrated_predictor or self.probability_predictor
+                if fallback is not None:
+                    all_proba = fallback.predict_proba(race_df)
+                else:
+                    all_proba = self.bucket_predictor.predict_proba(race_df)
+
+                # Merge: contender probs for top N, fallback for rest
+                all_proba[contender_mask_orig] = contender_proba
+                proba = all_proba
+
+                # Flag which riders used the contender model
+                results['is_contender'] = contender_mask_orig[results.index]
+            elif self.calibrated_predictor is not None:
+                proba = self.calibrated_predictor.predict_proba(race_df)
+            elif self.probability_predictor is not None:
                 proba = self.probability_predictor.predict_proba(race_df)
             else:
                 proba = self.bucket_predictor.predict_proba(race_df)
@@ -188,6 +224,8 @@ class RaceRankingPredictor:
         if 'rider_name' in results.columns:
             cols.append('rider_name')
         cols.extend(['predicted_rank', 'ranking_derived_bucket', 'model_predicted_bucket', 'expected_bucket'])
+        if 'is_contender' in results.columns:
+            cols.append('is_contender')
         if 'predicted_time_gap' in results.columns:
             cols.append('predicted_time_gap')
         cols.append('ranking_score')
@@ -324,6 +362,8 @@ def create_race_ranker(
     bucket_predictor: OrdinalBucketPredictor,
     time_gap_predictor: Optional[TimeGapPredictor] = None,
     probability_predictor: Optional[ProbabilityPredictor] = None,
+    calibrated_predictor: Optional[ProbabilityPredictor] = None,
+    contender_predictor: Optional[ProbabilityPredictor] = None,
     ranking_method: str = 'expected_bucket'
 ) -> RaceRankingPredictor:
     """
@@ -332,7 +372,9 @@ def create_race_ranker(
     Args:
         bucket_predictor: Trained bucket prediction model
         time_gap_predictor: Optional trained time gap model
-        probability_predictor: Optional trained probability model
+        probability_predictor: Optional weighted probability model
+        calibrated_predictor: Optional calibrated (unweighted) probability model
+        contender_predictor: Optional contender (filtered + classifier feature) probability model
         ranking_method: Method for ranking ('expected_bucket', 'time_gap', 'ensemble')
 
     Returns:
@@ -340,7 +382,8 @@ def create_race_ranker(
     """
     config = RaceRankingConfig(ranking_method=ranking_method)
     return RaceRankingPredictor(
-        bucket_predictor, time_gap_predictor, probability_predictor, config
+        bucket_predictor, time_gap_predictor, probability_predictor,
+        calibrated_predictor, contender_predictor, config
     )
 
 
