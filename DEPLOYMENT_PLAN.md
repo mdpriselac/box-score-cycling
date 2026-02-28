@@ -2,22 +2,29 @@
 
 ## Context
 
-The web app (`cycling_project/web/app.py`) is a cycling race prediction tool that scrapes start lists from FirstCycling, matches riders against a historical database, and generates predictions using LightGBM models. The main deployment challenge is the **2.9 GB SQLite database** — too large for Git or Streamlit Cloud's 1 GB RAM limit.
+The web app (`cycling_project/web/app.py`) is a cycling race prediction tool that scrapes start lists from FirstCycling, matches riders against a historical database, and generates predictions using LightGBM models. The main deployment challenge is the **3.1 GB SQLite database** — too large for Git or Streamlit Cloud's 1 GB RAM limit.
 
 ## Strategy: Turso (hosted SQLite-compatible database)
 
-Use **Turso** (free tier: 5 GB storage, 500M reads/month) to host a slim export of only the 5 tables the web app actually queries. This avoids downloading a large file on every cold start and keeps memory usage low.
+Use **Turso** (free tier: 5 GB storage, 500M reads+writes/month) to host a slim export of only the tables the web app queries. This avoids downloading a large file on every cold start and keeps memory usage low.
 
 ---
 
 ## Step 1: Create slim database export script
 
-Write a script that extracts only the 5 tables the app queries into a new SQLite file (~150-250 MB estimated):
-- `riders` — rider lookup by `fc_rider_id`
-- `rider_competition_snapshots` — latest rider stats
-- `competition_field_features` — race profiles
-- `competitions` — race metadata
-- `races` — parent race info
+Write a script that extracts the 7 tables the app queries into a new SQLite file:
+
+| Table | Used by |
+|-------|---------|
+| `riders` | `match_riders_to_db`, `get_cached_results`, result scraping |
+| `rider_competition_snapshots` | `get_latest_rider_snapshots` |
+| `competition_field_features` | `get_reference_race_profile`, `search_historical_races`, `get_selected_race_details` |
+| `competitions` | Joins throughout |
+| `races` | `get_race_name`, joins throughout |
+| `race_features_50` | `get_race_finishing_characteristics`, `get_selected_race_details` |
+| `rider_results` | `_get_results_from_rider_results` (checked before scraping) |
+
+The app also creates 2 cache tables (`cached_start_lists`, `cached_race_results`) via `_ensure_cache_tables` at runtime — these don't need exporting.
 
 **File:** `scripts/export_slim_db.py`
 
@@ -31,10 +38,12 @@ Write a script that extracts only the 5 tables the app queries into a new SQLite
 
 **File:** `cycling_project/prediction_tools/future_race_loader.py`
 
-Add a `get_connection()` factory function that checks for Turso credentials (via `st.secrets` or env vars). Falls back to local SQLite for development:
+Add a `get_connection()` factory function that checks for Turso credentials (via `st.secrets` or env vars). Falls back to local SQLite for development. Preserves the `db_path` parameter for non-web callers (e.g. `update_pipeline.py`):
 
 ```python
-def get_connection():
+def get_connection(db_path: str = None):
+    if db_path:  # Explicit path = local SQLite (for update_pipeline, etc.)
+        return sqlite3.connect(db_path)
     try:
         import streamlit as st
         url = st.secrets["turso"]["database_url"]
@@ -49,55 +58,68 @@ def get_connection():
     return sqlite3.connect(str(_DEFAULT_DB))
 ```
 
-Update the 4 DB-querying functions (`match_riders_to_db`, `get_latest_rider_snapshots`, `get_reference_race_profile`, `search_historical_races`) to use `get_connection()` instead of `sqlite3.connect(db_path)`.
+Replace all **16 `sqlite3.connect()` call sites** across these functions:
 
-**Note:** `pd.read_sql_query()` may not work with `libsql` connections. If not, use `conn.execute()` + manual DataFrame construction.
+| Function | Access | Uses `pd.read_sql_query`? |
+|----------|--------|---------------------------|
+| `_ensure_cache_tables` | WRITE (CREATE TABLE) | No |
+| `get_cached_start_list` | READ | No |
+| `save_start_list_to_cache` | WRITE (INSERT OR REPLACE) | No |
+| `get_race_name` | READ | No |
+| `match_riders_to_db` | READ | No |
+| `get_latest_rider_snapshots` | READ | Yes |
+| `get_reference_race_profile` | READ | No |
+| `search_historical_races` | READ | Yes |
+| `get_race_finishing_characteristics` | READ | No |
+| `get_selected_race_details` | READ | Yes |
+| `get_cached_results` | READ | Yes |
+| `save_results_to_cache` | WRITE (INSERT OR REPLACE) | No |
+| `_get_results_from_rider_results` | READ | Yes |
 
-## Step 4: Fix `.gitignore` for model `.pkl` files
+**Note:** `pd.read_sql_query()` may not work with `libsql` connections (5 call sites). If not, use `conn.execute()` + manual DataFrame construction:
 
-**File:** `.gitignore`
-
-The `*.pkl` rule (line 100) blocks the model feature engineer files. Add an exception:
-
+```python
+cursor = conn.execute(query, params)
+columns = [desc[0] for desc in cursor.description]
+df = pd.DataFrame(cursor.fetchall(), columns=columns)
 ```
-!models/production/*.pkl
-```
 
-## Step 5: Guard `logging_config.py` against read-only filesystem
+**Note:** 3 functions write to the DB (cache operations). Turso supports writes, but `commit()` and `INSERT OR REPLACE` need testing with libsql. Fallback: use a separate local SQLite for cache tables.
+
+## Step 4: Guard `logging_config.py` against read-only filesystem
 
 **File:** `cycling_project/webscrape_tools/logging_config.py`
 
-Lines 11-12 create a log directory at import time, and the `FileHandler` will fail on Streamlit Cloud's read-only filesystem. Wrap in try/except:
+Two fixes needed — both the module-level `mkdir` (lines 11-12) and the `FileHandler` in `get_logger()` (line 51) will fail on Streamlit Cloud's read-only filesystem:
 
 ```python
+# Module level
 try:
     if not LOG_DIR.exists():
         LOG_DIR.mkdir(parents=True, exist_ok=True)
+    _FILE_LOGGING_AVAILABLE = True
 except OSError:
-    LOG_DIR = None  # Signal that file logging is unavailable
+    _FILE_LOGGING_AVAILABLE = False
+
+# In get_logger(), conditionally add file handler:
+if _FILE_LOGGING_AVAILABLE:
+    file_handler = logging.FileHandler(log_file)
+    file_handler.setLevel(DEFAULT_LEVEL)
+    file_handler.setFormatter(logging.Formatter(LOG_FORMAT, DATE_FORMAT))
+    logger.addHandler(file_handler)
 ```
 
-And in `get_logger()`, skip the file handler if `LOG_DIR is None`.
+This matters because 5 webscrape modules imported transitively by `future_race_loader.py` all use `get_logger` from this file: `scrape_client`, `get_startlist`, `get_race_results`, `create_race_data`, `start_list_parse_tools`.
 
-## Step 6: Create `requirements.txt`
+## Step 5: Add `libsql-experimental` to dependencies
 
-**File:** `requirements.txt` (repo root)
+**File:** `pyproject.toml`
 
-```
-streamlit>=1.30.0
-pandas>=2.1.0
-numpy>=1.26.0
-lightgbm>=4.1.0
-scikit-learn>=1.3.0
-scipy>=1.11.0
-beautifulsoup4>=4.14.3
-cloudscraper>=1.2.71
-httpx>=0.28.1
-python-dotenv>=1.2.1
-libsql-experimental>=0.0.34
-```
+Add `libsql-experimental>=0.0.34` to the dependencies list. The project already uses `pyproject.toml` with `uv` — no need to create a separate `requirements.txt` (Streamlit Cloud supports `pyproject.toml`).
 
-## Step 7: Create `packages.txt` for system dependencies
+**Python version note:** `pyproject.toml` currently requires `>=3.13`. Verify Streamlit Cloud supports this. If not, relax to `>=3.11` (codebase is compatible).
+
+## Step 6: Create `packages.txt` for system dependencies
 
 **File:** `packages.txt` (repo root)
 
@@ -107,23 +129,20 @@ libgomp1
 
 LightGBM needs this on Debian-based systems.
 
-## Step 8: Create `.streamlit/config.toml`
+## Step 7: Create `.streamlit/config.toml`
 
 **File:** `.streamlit/config.toml`
 
 Basic theme configuration for the app.
 
-## Step 9: Add `.streamlit/secrets.toml` to `.gitignore`
-
-Ensure Turso credentials are never committed.
-
-## Step 10: Deploy to Streamlit Cloud
+## Step 8: Deploy to Streamlit Cloud
 
 1. Commit and push to GitHub
 2. Connect repo at share.streamlit.io
 3. Set main file path: `cycling_project/web/app.py`
-4. Add Turso secrets via the Streamlit Cloud secrets UI
-5. Deploy and test the full flow
+4. Verify Python version compatibility (3.13)
+5. Add Turso secrets via the Streamlit Cloud secrets UI
+6. Deploy and test the full flow
 
 ---
 
@@ -131,28 +150,37 @@ Ensure Turso credentials are never committed.
 
 | File | Change |
 |------|--------|
-| `cycling_project/prediction_tools/future_race_loader.py` | Add `get_connection()`, update 4 DB functions |
-| `cycling_project/webscrape_tools/logging_config.py` | Guard against read-only filesystem |
-| `.gitignore` | Allow `models/production/*.pkl` |
+| `cycling_project/prediction_tools/future_race_loader.py` | Add `get_connection()`, replace 16 `sqlite3.connect()` calls |
+| `cycling_project/webscrape_tools/logging_config.py` | Guard `mkdir` and `FileHandler` against read-only filesystem |
+| `pyproject.toml` | Add `libsql-experimental` dependency |
 
 ## New Files
 
 | File | Purpose |
 |------|---------|
-| `scripts/export_slim_db.py` | Export 5 tables to slim SQLite file |
-| `requirements.txt` | Python dependencies for Streamlit Cloud |
+| `scripts/export_slim_db.py` | Export 7 tables to slim SQLite file |
 | `packages.txt` | System dependencies (libgomp1) |
 | `.streamlit/config.toml` | Streamlit theme config |
 
+## Already Complete
+
+- `.gitignore` lines 100-101: `*.pkl` with `!models/production/*.pkl` exception
+- `.gitignore` line 112: `.streamlit/secrets.toml` excluded
+
 ## Risks
 
-- **`cloudscraper` on Streamlit Cloud** — may fail if FirstCycling has aggressive Cloudflare. Fallback: use plain `httpx`.
-- **`libsql` + pandas compatibility** — `pd.read_sql_query()` may not accept `libsql` connections. Fallback: manual DataFrame construction from cursor results.
-- **`prediction_tools/__init__.py` eager imports** — imports many modules not needed by the web app. Should be safe (no module-level DB instantiation found), but if issues arise, switch to lazy imports.
+| Risk | Mitigation |
+|------|------------|
+| `pd.read_sql_query()` incompatible with libsql | Test early; 5 call sites need fallback to manual DataFrame construction |
+| Cache write operations fail on Turso | Test `CREATE TABLE IF NOT EXISTS`, `INSERT OR REPLACE`, `commit()` with libsql; fallback: separate local SQLite for caches |
+| `cloudscraper` on Streamlit Cloud | May fail with aggressive Cloudflare; fallback: plain `httpx` |
+| Python 3.13 unsupported on Streamlit Cloud | Relax to `>=3.11` in `pyproject.toml` |
+| Cold start latency from eager `__init__.py` imports | Optional: convert to lazy imports if measured as a problem |
 
 ## Verification
 
-1. Run the slim DB export script and verify table counts match the source
-2. Test locally with Turso credentials in `.streamlit/secrets.toml`
-3. Run `streamlit run cycling_project/web/app.py` locally with Turso connection
-4. After deploying: test scraping a FirstCycling URL, searching reference races, and generating predictions
+1. Run the slim DB export script and verify all 7 table row counts match the source
+2. Import to Turso and verify with `turso db shell`
+3. Test `libsql-experimental` locally: `get_connection()`, `pd.read_sql_query()` compatibility, write operations
+4. Run locally with Turso credentials in `.streamlit/secrets.toml`: `uv run streamlit run cycling_project/web/app.py`
+5. After deploying: test the full flow — scrape start list, search reference races, run predictions, compare with actuals
