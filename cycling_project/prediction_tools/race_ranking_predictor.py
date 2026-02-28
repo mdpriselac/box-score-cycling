@@ -155,17 +155,7 @@ class RaceRankingPredictor:
             w_bucket, w_gap = self.config.ensemble_weights
             results['ranking_score'] = w_bucket * bucket_norm + w_gap * gap_norm
 
-        # Sort by ranking score (lower is better)
-        results = results.sort_values('ranking_score').reset_index(drop=True)
-
-        # Assign predicted rank (1-indexed)
-        results['predicted_rank'] = range(1, len(results) + 1)
-
-        # Convert predicted rank to bucket (ranking-derived bucket)
-        # This uses the race position to assign buckets, avoiding the compression issue
-        results['ranking_derived_bucket'] = results['predicted_rank'].apply(place_bucketer)
-
-        # Add probability distribution if requested
+        # Add probability distribution BEFORE sorting so columns stay aligned
         if return_details:
             # Determine probability source with cascade:
             # contender (top N) > calibrated > weighted > Gaussian heuristic
@@ -175,11 +165,11 @@ class RaceRankingPredictor:
                 race_df_with_cls['classifier_expected_bucket'] = expected_buckets
 
                 # Determine contender set (top N by expected bucket)
-                contender_mask_orig = pd.Series(expected_buckets).rank().values <= self.config.contender_top_n
+                contender_mask = pd.Series(expected_buckets).rank().values <= self.config.contender_top_n
 
                 # Get contender probs for top N
                 contender_proba = self.contender_predictor.predict_proba(
-                    race_df_with_cls[contender_mask_orig]
+                    race_df_with_cls[contender_mask]
                 )
 
                 # Get fallback probs for all riders
@@ -190,11 +180,11 @@ class RaceRankingPredictor:
                     all_proba = self.bucket_predictor.predict_proba(race_df)
 
                 # Merge: contender probs for top N, fallback for rest
-                all_proba[contender_mask_orig] = contender_proba
+                all_proba[contender_mask] = contender_proba
                 proba = all_proba
 
                 # Flag which riders used the contender model
-                results['is_contender'] = contender_mask_orig[results.index]
+                results['is_contender'] = contender_mask
             elif self.calibrated_predictor is not None:
                 proba = self.calibrated_predictor.predict_proba(race_df)
             elif self.probability_predictor is not None:
@@ -202,22 +192,29 @@ class RaceRankingPredictor:
             else:
                 proba = self.bucket_predictor.predict_proba(race_df)
 
-            # Re-sort probabilities to match the ranking order
-            proba_sorted = proba[results.index]
-
             # Raw bucket probabilities
             for i in range(8):
-                results[f'prob_bucket_{i}'] = proba_sorted[:, i]
+                results[f'prob_bucket_{i}'] = proba[:, i]
 
             # Cumulative probabilities (Win, Podium, Top 5, etc.)
             for label, buckets in CUMULATIVE_LABELS.items():
-                results[f'prob_{label}'] = proba_sorted[:, buckets].sum(axis=1)
+                results[f'prob_{label}'] = proba[:, buckets].sum(axis=1)
 
             # Decimal odds from cumulative probabilities
             for label in CUMULATIVE_LABELS:
                 prob_col = results[f'prob_{label}'].values
                 odds = np.where(prob_col > 0, 1.0 / prob_col, MAX_ODDS)
                 results[f'odds_{label}'] = np.minimum(np.round(odds, 2), MAX_ODDS)
+
+        # Sort by ranking score (lower is better)
+        results = results.sort_values('ranking_score').reset_index(drop=True)
+
+        # Assign predicted rank (1-indexed)
+        results['predicted_rank'] = range(1, len(results) + 1)
+
+        # Convert predicted rank to bucket (ranking-derived bucket)
+        # This uses the race position to assign buckets, avoiding the compression issue
+        results['ranking_derived_bucket'] = results['predicted_rank'].apply(place_bucketer)
 
         # Reorder columns for clarity
         cols = ['rider_id']
