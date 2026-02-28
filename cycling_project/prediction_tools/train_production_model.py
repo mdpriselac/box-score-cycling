@@ -1,8 +1,9 @@
 """
 Train Production Model on All Available Data
 
-Train: 2018-01-01 through 2025-05-31 (~496K samples)
-Val: 2025-06-01 onward (~23K samples, for early stopping only)
+Uses all data from 2018-01-01 onward for maximum training signal.
+A small chronological holdout (last 5%) is used only for LightGBM
+early stopping - this is NOT a true validation set.
 
 Saves to models/production/ via ModelRegistry.
 """
@@ -11,18 +12,18 @@ import sys
 from pathlib import Path
 from datetime import datetime
 
+import numpy as np
 import pandas as pd
 
 from cycling_project.prediction_tools.data_pipeline import CyclingDataPipeline, DataConfig
 from cycling_project.prediction_tools.bucket_predictor import OrdinalBucketPredictor, BucketPredictorConfig
 from cycling_project.prediction_tools.time_gap_predictor import TimeGapPredictor, TimeGapPredictorConfig
-from cycling_project.prediction_tools.race_ranking_predictor import RaceRankingPredictor, RaceRankingConfig
 from cycling_project.prediction_tools.model_registry import ModelRegistry
 
 
 def main():
     print("=" * 70)
-    print("PRODUCTION MODEL TRAINING")
+    print("PRODUCTION MODEL TRAINING (ALL DATA)")
     print("=" * 70)
     print(f"Started: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 
@@ -39,13 +40,25 @@ def main():
 
     print(f"Total samples: {len(df):,}")
     print(f"Date range: {df['competition_date'].min().date()} to {df['competition_date'].max().date()}")
+    print(f"Competitions: {df['competition_id'].nunique():,}")
 
-    # --- Split: train on everything before June 2025, val on the rest ---
-    train = df[df['competition_date'] < '2025-06-01'].copy()
-    val = df[df['competition_date'] >= '2025-06-01'].copy()
+    # --- Split: use last 5% chronologically for early stopping only ---
+    # This is NOT a validation set - it's just to prevent LightGBM from
+    # overfitting on boosting rounds. All data trains the model.
+    n_comps = df['competition_id'].nunique()
+    comp_dates = df.groupby('competition_id')['competition_date'].first().sort_values()
+    cutoff_idx = int(len(comp_dates) * 0.95)
+    cutoff_comp = comp_dates.iloc[cutoff_idx]
+    cutoff_date = cutoff_comp
 
-    print(f"\nTrain (2018 - May 2025): {len(train):>8,} samples, {train['competition_id'].nunique():,} competitions")
-    print(f"Val   (Jun 2025+):       {len(val):>8,} samples, {val['competition_id'].nunique():,} competitions")
+    train = df[df['competition_date'] < cutoff_date].copy()
+    early_stop = df[df['competition_date'] >= cutoff_date].copy()
+
+    print(f"\nTrain:       {len(train):>8,} samples, {train['competition_id'].nunique():,} competitions")
+    print(f"             {train['competition_date'].min().date()} to {train['competition_date'].max().date()}")
+    print(f"Early-stop:  {len(early_stop):>8,} samples, {early_stop['competition_id'].nunique():,} competitions")
+    print(f"             {early_stop['competition_date'].min().date()} to {early_stop['competition_date'].max().date()}")
+    print(f"(Early-stop set is used only to determine optimal boosting rounds)")
 
     # --- Train Bucket Predictor ---
     print("\n" + "=" * 70)
@@ -67,7 +80,7 @@ def main():
     })
 
     bucket_predictor = OrdinalBucketPredictor(bucket_config)
-    bucket_info = bucket_predictor.train(train, val, verbose=True)
+    bucket_info = bucket_predictor.train(train, early_stop, verbose=True)
     print(f"Best iteration: {bucket_info['best_iteration']}")
     print(f"Features: {bucket_info['n_features']}")
 
@@ -93,7 +106,7 @@ def main():
     })
 
     time_gap_predictor = TimeGapPredictor(time_gap_config)
-    time_gap_info = time_gap_predictor.train(train, val, verbose=True)
+    time_gap_info = time_gap_predictor.train(train, early_stop, verbose=True)
     print(f"Best iteration: {time_gap_info['best_iteration']}")
     print(f"Training samples: {time_gap_info['train_samples']:,}")
 
@@ -108,10 +121,13 @@ def main():
         bucket_predictor=bucket_predictor,
         time_gap_predictor=time_gap_predictor,
         training_info={
+            'mode': 'production',
+            'total_samples': len(df),
+            'total_competitions': int(df['competition_id'].nunique()),
             'train_samples': len(train),
-            'val_samples': len(val),
-            'train_date_range': f"{train['competition_date'].min().date()} to {train['competition_date'].max().date()}",
-            'val_date_range': f"{val['competition_date'].min().date()} to {val['competition_date'].max().date()}",
+            'early_stop_samples': len(early_stop),
+            'date_range': f"{df['competition_date'].min().date()} to {df['competition_date'].max().date()}",
+            'early_stop_cutoff': str(cutoff_date.date()),
             'bucket_best_iteration': bucket_info['best_iteration'],
             'bucket_n_features': bucket_info['n_features'],
             'time_gap_best_iteration': time_gap_info['best_iteration'],
@@ -123,14 +139,13 @@ def main():
     )
     print(f"Models saved to {model_dir}")
 
-    # --- Quick val metrics for reference ---
+    # --- Quick early-stop set metrics for reference ---
     print("\n" + "=" * 70)
-    print("VALIDATION METRICS (for reference)")
+    print("EARLY-STOP SET METRICS (for reference only)")
     print("=" * 70)
 
-    import numpy as np
-    bucket_preds = bucket_predictor.predict(val)
-    y_true = val['place_bucket'].values
+    bucket_preds = bucket_predictor.predict(early_stop)
+    y_true = early_stop['place_bucket'].values
     mae = np.mean(np.abs(bucket_preds - y_true))
     accuracy = np.mean(bucket_preds == y_true)
     within_1 = np.mean(np.abs(bucket_preds - y_true) <= 1)

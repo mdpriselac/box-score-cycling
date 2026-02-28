@@ -105,18 +105,21 @@
     "race_profile_sprint",
     "race_profile_time_trial"
   ],
-  "saved_at": "2026-02-16T16:48:13.034655",
+  "saved_at": "2026-02-28T13:16:02.562428",
   "training_info": {
-    "train_samples": 438636,
-    "val_samples": 21400,
-    "train_date_range": "2018-01-26 to 2025-05-31",
-    "val_date_range": "2025-06-01 to 2025-10-19",
-    "bucket_best_iteration": 438,
+    "mode": "production",
+    "total_samples": 467981,
+    "total_competitions": 4307,
+    "train_samples": 443960,
+    "early_stop_samples": 24021,
+    "date_range": "2018-01-26 to 2026-02-28",
+    "early_stop_cutoff": "2025-07-05",
+    "bucket_best_iteration": 486,
     "bucket_n_features": 103,
-    "time_gap_best_iteration": 869,
-    "time_gap_train_samples": 334475,
+    "time_gap_best_iteration": 405,
+    "time_gap_train_samples": 338318,
     "min_races_career": 10,
     "start_date": "2018-01-01",
-    "timestamp": "2026-02-16T16:48:13.012576"
+    "timestamp": "2026-02-28T13:16:02.548270"
   }
 }

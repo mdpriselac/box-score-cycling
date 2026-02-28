@@ -248,7 +248,7 @@ class FeaturePrecomputer:
         if HAS_DOTENV:
             load_dotenv()
             db_path = os.getenv('DB_PATH')
-            if db_path and os.path.exists(db_path):
+            if db_path and os.path.isfile(db_path):
                 return db_path
 
         from pathlib import Path

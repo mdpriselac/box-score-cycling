@@ -19,6 +19,7 @@ import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..')))
 
 from cycling_project.webscrape_tools.create_race_data import Race, Stage
+from cycling_project.engineering_tools.place_handling import place_bucketer
 
 # Configure logging
 logging.basicConfig(
@@ -334,11 +335,15 @@ class RaceMigrator:
                 else:
                     time_gap = None
                 
+                # Compute place bucket
+                bucket = place_bucketer(place)
+
                 # Insert result
                 self.cursor.execute("""
-                    INSERT INTO rider_results (competition_id, rider_id, team_id, place, 
-                                             time_gap, bib_number, rider_age, percentile)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    INSERT INTO rider_results (competition_id, rider_id, team_id, place,
+                                             time_gap, bib_number, rider_age, percentile,
+                                             place_bucket)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """, (
                     competition_id,
                     rider_id,
@@ -347,7 +352,8 @@ class RaceMigrator:
                     time_gap,
                     result.get('bib_number'),
                     rider_age,
-                    round(percentile, 2)
+                    round(percentile, 2),
+                    bucket
                 ))
                 
                 self.stats['results_created'] += 1
@@ -462,11 +468,14 @@ def main():
             category_dir = year_dir / args.category
             if category_dir.exists():
                 migrator.migrate_category(category_dir, args.category)
+                migrator.conn.commit()
             else:
                 logger.error(f"Category directory not found: {category_dir}")
         else:
             # Migrate all categories in year
             migrator.migrate_year(year_dir)
+            migrator.conn.commit()
+        migrator.print_statistics()
         migrator.disconnect()
     else:
         # Migrate everything
