@@ -37,6 +37,28 @@ from cycling_project.prediction_tools.model_registry import ModelRegistry
 
 MODEL_DIR = str(Path(__file__).parent.parent.parent / "models" / "production")
 
+
+def _decimal_to_american(d: float) -> str:
+    """Convert decimal odds to American moneyline format."""
+    if d >= 2.0:
+        return f"+{round((d - 1) * 100)}"
+    if d > 1.0:
+        return f"-{round(100 / (d - 1))}"
+    return "—"
+
+
+def _decimal_to_fractional(d: float) -> str:
+    """Convert decimal odds to fractional (British) format."""
+    from fractions import Fraction
+    profit = d - 1
+    if profit >= 10:
+        # Long shots: round to X/1
+        return f"{round(profit)}/1"
+    if profit <= 0:
+        return "—"
+    frac = Fraction(profit).limit_denominator(10)
+    return str(frac)
+
 st.set_page_config(page_title="Cycling Race Predictor", layout="wide")
 st.title("Cycling Race Predictor")
 
@@ -442,29 +464,57 @@ if (
 
                 # Odds view in expander
                 if has_probs:
-                    with st.expander("Decimal Odds"):
-                        odds_cols = ['predicted_rank', 'rider_name', 'team']
-                        odds_rename = {
+                    with st.expander("Odds"):
+                        odds_format = st.radio(
+                            "Format",
+                            ["Decimal", "American", "Fractional"],
+                            horizontal=True,
+                            key=f"odds_fmt_{label}",
+                        )
+
+                        id_cols = ['predicted_rank', 'rider_name', 'team']
+                        id_rename = {
                             'predicted_rank': 'Rank',
                             'rider_name': 'Rider',
                             'team': 'Team',
                         }
                         if 'is_contender' in result.columns:
-                            odds_cols.append('is_contender')
-                            odds_rename['is_contender'] = 'Contender'
-                        odds_cols.extend(['odds_win', 'odds_podium', 'odds_top5',
-                                          'odds_top15', 'odds_top30'])
-                        odds_rename.update({
+                            id_cols.append('is_contender')
+                            id_rename['is_contender'] = 'Contender'
+
+                        decimal_cols = ['odds_win', 'odds_podium', 'odds_top5',
+                                        'odds_top15', 'odds_top30']
+                        market_names = {
                             'odds_win': 'Win',
                             'odds_podium': 'Podium',
                             'odds_top5': 'Top 5',
                             'odds_top15': 'Top 15',
                             'odds_top30': 'Top 30',
-                        })
-                        available_odds = [c for c in odds_cols if c in result.columns]
-                        odds_display = result[available_odds].copy().rename(columns=odds_rename)
+                        }
+
+                        available_id = [c for c in id_cols if c in result.columns]
+                        available_dec = [c for c in decimal_cols if c in result.columns]
+                        odds_display = result[available_id + available_dec].copy()
+                        odds_display = odds_display.rename(columns=id_rename)
+
                         if 'Contender' in odds_display.columns:
                             odds_display['Contender'] = odds_display['Contender'].map({True: 'Yes', False: ''})
+
+                        if odds_format == "Decimal":
+                            odds_display = odds_display.rename(columns=market_names)
+
+                        elif odds_format == "American":
+                            for col, name in market_names.items():
+                                if col in odds_display.columns:
+                                    odds_display[name] = odds_display[col].apply(_decimal_to_american)
+                                    odds_display = odds_display.drop(columns=[col])
+
+                        elif odds_format == "Fractional":
+                            for col, name in market_names.items():
+                                if col in odds_display.columns:
+                                    odds_display[name] = odds_display[col].apply(_decimal_to_fractional)
+                                    odds_display = odds_display.drop(columns=[col])
+
                         st.dataframe(
                             odds_display,
                             hide_index=True,
