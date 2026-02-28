@@ -98,5 +98,15 @@ venv.bak/
 *.h5
 *.hdf5
 *.pkl
+!models/production/*.pkl
 *.joblib
 *.parquet
+
+# Log directories
+**/webscrape_logs/
+
+# Git artifacts
+.git-rewrite/
+
+# Streamlit secrets
+.streamlit/secrets.toml
