@@ -81,3 +81,17 @@ The pipeline resolves paths automatically from the project root. Scraped data de
 **Train models manually**: `uv run python -m cycling_project.prediction_tools.train_production_model`
 
 See `DEPLOYMENT_PLAN.md` for Streamlit Cloud deployment instructions.
+
+## Claude Code Integration
+
+This project includes configuration for [Claude Code](https://claude.com/claude-code) to assist with development.
+
+**`CLAUDE.md`** — Project instructions loaded automatically into every Claude session. Documents architecture, conventions, key paths, and testing patterns so Claude can work effectively with the codebase.
+
+**Slash commands** (defined in `.claude/commands/`):
+
+| Command | Description |
+|---------|-------------|
+| `/update` | Run the weekly update pipeline. Accepts flags like `--dry-run`, `--skip-scrape`, `--only train`. Reports step results and analyzes failures. |
+| `/test` | Run pytest. Accepts a marker (`unit`, `integration`), file path, or any pytest flags. Analyzes failing tests and suggests fixes. |
+| `/db-status` | Check database health — row counts, data freshness, NULL place_buckets, feature computation coverage. Recommends corrective actions. |
