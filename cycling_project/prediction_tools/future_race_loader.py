@@ -16,10 +16,31 @@ from urllib.parse import parse_qs, urlparse
 import numpy as np
 import pandas as pd
 
+from bs4 import BeautifulSoup
+
 from cycling_project.prediction_tools.data_pipeline import CyclingDataPipeline
 from cycling_project.prediction_tools.model_registry import ModelRegistry
+from cycling_project.prediction_tools.evaluation import (
+    BucketEvaluator, TimeGapEvaluator, RankingEvaluator,
+)
 from cycling_project.webscrape_tools.get_startlist import get_start_list
-from cycling_project.webscrape_tools.start_list_parse_tools import Team
+from cycling_project.webscrape_tools.start_list_parse_tools import Team, Rider
+from cycling_project.webscrape_tools.scrape_client import WebClient
+from cycling_project.webscrape_tools.get_race_results import extract_results, extract_race_time
+from cycling_project.webscrape_tools.create_race_data import extract_stages_with_links
+from cycling_project.webscrape_tools.database.engineered_metrics import (
+    identify_groups,
+    calculate_biggest_group_metric,
+    calculate_time_gap_evenness,
+    calculate_clumpiness_score,
+    calculate_selection_metric,
+)
+from cycling_project.webscrape_tools.database.statistical_measures import (
+    calculate_gini_coefficient,
+    calculate_variance_and_std,
+    calculate_skewness,
+)
+from cycling_project.engineering_tools.place_handling import place_bucketer
 
 
 # Default database path
@@ -33,6 +54,139 @@ RIDER_FEATURE_COLS = CyclingDataPipeline.RIDER_FEATURE_COLS
 FIELD_FEATURE_COLS = CyclingDataPipeline.FIELD_FEATURE_COLS
 RACE_PROFILE_COLS = CyclingDataPipeline.RACE_PROFILE_COLS
 METADATA_COLS = CyclingDataPipeline.METADATA_COLS
+
+
+def _ensure_cache_tables(db_path: str = None) -> None:
+    """Create cache tables if they don't exist."""
+    db_path = db_path or str(_DEFAULT_DB)
+    with sqlite3.connect(db_path) as conn:
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS cached_start_lists (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                fc_race_id TEXT NOT NULL,
+                year INTEGER NOT NULL,
+                rider_fc_id TEXT NOT NULL,
+                rider_name TEXT,
+                team_name TEXT,
+                team_fc_id TEXT,
+                bib_number TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(fc_race_id, year, rider_fc_id)
+            )
+        """)
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS cached_race_results (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                fc_race_id TEXT NOT NULL,
+                year INTEGER NOT NULL,
+                stage_id TEXT,
+                stage_name TEXT,
+                rider_fc_id TEXT,
+                rider_name TEXT,
+                team_name TEXT,
+                place INTEGER,
+                time_gap REAL,
+                place_bucket INTEGER,
+                winning_time REAL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(fc_race_id, year, stage_id, rider_fc_id)
+            )
+        """)
+        conn.commit()
+
+
+def get_cached_start_list(
+    fc_race_id: int,
+    year: int,
+    db_path: str = None,
+) -> Optional[List[Team]]:
+    """
+    Load a start list from the cache.
+
+    Returns List[Team] if cached, None if not found.
+    """
+    db_path = db_path or str(_DEFAULT_DB)
+    _ensure_cache_tables(db_path)
+
+    with sqlite3.connect(db_path) as conn:
+        rows = conn.execute(
+            "SELECT rider_fc_id, rider_name, team_name, team_fc_id, bib_number "
+            "FROM cached_start_lists WHERE fc_race_id = ? AND year = ?",
+            (str(fc_race_id), int(year)),
+        ).fetchall()
+
+    if not rows:
+        return None
+
+    # Group by (team_name, team_fc_id) to reconstruct Team objects
+    teams_dict: Dict[Tuple[str, str], List[Rider]] = {}
+    for rider_fc_id, rider_name, team_name, team_fc_id, bib_number in rows:
+        key = (team_name or '', team_fc_id or '')
+        if key not in teams_dict:
+            teams_dict[key] = []
+        teams_dict[key].append(Rider(
+            name=rider_name or '',
+            rider_id=rider_fc_id,
+            number=bib_number or '',
+            team_name=team_name or '',
+            team_id=team_fc_id,
+        ))
+
+    return [
+        Team(name=team_name, team_id=team_fc_id, riders=riders)
+        for (team_name, team_fc_id), riders in teams_dict.items()
+    ]
+
+
+def save_start_list_to_cache(
+    fc_race_id: int,
+    year: int,
+    teams: List[Team],
+    db_path: str = None,
+) -> None:
+    """Save a scraped start list to the cache."""
+    db_path = db_path or str(_DEFAULT_DB)
+    _ensure_cache_tables(db_path)
+
+    rows = []
+    for team in teams:
+        for rider in team.riders:
+            rows.append((
+                str(fc_race_id), int(year),
+                rider.rider_id, rider.name,
+                team.name, team.team_id, rider.number,
+            ))
+
+    with sqlite3.connect(db_path) as conn:
+        conn.executemany(
+            "INSERT OR REPLACE INTO cached_start_lists "
+            "(fc_race_id, year, rider_fc_id, rider_name, team_name, team_fc_id, bib_number) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?)",
+            rows,
+        )
+        conn.commit()
+
+
+def scrape_or_load_startlist(
+    race_id: int,
+    year: int,
+    force_refresh: bool = False,
+    db_path: str = None,
+) -> Tuple[List[Team], bool]:
+    """
+    Load start list from cache, or scrape and cache it.
+
+    Returns:
+        (teams, from_cache) — the list of Team objects and whether it came from cache.
+    """
+    if not force_refresh:
+        cached = get_cached_start_list(race_id, year, db_path)
+        if cached:
+            return cached, True
+
+    teams = scrape_startlist(race_id, year)
+    save_start_list_to_cache(race_id, year, teams, db_path)
+    return teams, False
 
 
 def parse_firstcycling_url(url: str) -> Tuple[int, int]:
@@ -508,3 +662,575 @@ def predict_future_race(
         'field_features': field_features,
         'reference_profiles': reference_profiles,
     }
+
+
+# ── Group B: Enhanced Historical Race Details ────────────────────────────
+
+_FINISHING_CHAR_COLS = [
+    'biggest_group_metric', 'time_gap_evenness_metric', 'clumpiness_score',
+    'selection_metric', 'total_race_duration', 'variance_normalized',
+    'skewness_normalized', 'gini_coefficient', 'total_finishers',
+    'abandon_ratio', 'largest_group_size', 'proportion_in_groups',
+]
+
+
+def get_race_finishing_characteristics(
+    competition_id: int,
+    db_path: str = None,
+) -> Optional[dict]:
+    """
+    Get finishing time distribution characteristics from race_features_50.
+
+    Returns dict with 12 key metrics, or None if no data exists.
+    """
+    db_path = db_path or str(_DEFAULT_DB)
+    cols = ', '.join(_FINISHING_CHAR_COLS)
+    query = f"SELECT {cols} FROM race_features_50 WHERE competition_id = ?"
+
+    with sqlite3.connect(db_path) as conn:
+        row = conn.execute(query, (int(competition_id),)).fetchone()
+
+    if row is None:
+        return None
+
+    return dict(zip(_FINISHING_CHAR_COLS, row))
+
+
+def get_selected_race_details(
+    competition_ids: List[int],
+    db_path: str = None,
+) -> pd.DataFrame:
+    """
+    Get enriched data for selected reference races.
+
+    Joins competition_field_features with race_features_50 to provide
+    profile scores, field composition, and finishing characteristics.
+    """
+    db_path = db_path or str(_DEFAULT_DB)
+    if not competition_ids:
+        return pd.DataFrame()
+
+    placeholders = ','.join(['?'] * len(competition_ids))
+    rf_cols = ', '.join([f'rf.{c}' for c in _FINISHING_CHAR_COLS])
+
+    query = f"""
+    SELECT
+        cff.competition_id,
+        r.name || ' - ' || cff.competition_name as display_name,
+        cff.competition_date,
+        cff.competition_type,
+        cff.race_dominant_profile,
+        cff.race_sprint_score, cff.race_mountain_score, cff.race_hilly_score,
+        cff.race_rolling_score, cff.race_breakaway_score, cff.race_time_trial_score,
+        cff.field_size, cff.experience_mean, cff.bucket_mean,
+        cff.sprinter_count, cff.climber_count, cff.hilly_specialist_count,
+        cff.rolling_specialist_count, cff.breakaway_specialist_count,
+        cff.time_trialist_count,
+        {rf_cols}
+    FROM competition_field_features cff
+    JOIN competitions c ON cff.competition_id = c.id
+    JOIN races r ON c.race_id = r.id
+    LEFT JOIN race_features_50 rf ON rf.competition_id = cff.competition_id
+    WHERE cff.competition_id IN ({placeholders})
+    """
+
+    with sqlite3.connect(db_path) as conn:
+        return pd.read_sql_query(query, conn, params=[int(c) for c in competition_ids])
+
+
+# ── Group C: Stage Detection & Results Loading ───────────────────────────
+
+_BASE_URL = "https://firstcycling.com"
+
+
+def detect_race_stages(
+    fc_race_id: int,
+    year: int,
+) -> Tuple[bool, List[dict]]:
+    """
+    Detect whether a race is a stage race and extract stage list.
+
+    Returns:
+        (is_stage_race, stages) where stages is a list of
+        {'name': str, 'url_param': str} dicts.
+    """
+    client = WebClient(_BASE_URL)
+    try:
+        url = f"{_BASE_URL}/race.php?r={fc_race_id}&y={year}"
+        response = client.get(url)
+        soup = BeautifulSoup(response.text, 'html.parser')
+        stages_dict = extract_stages_with_links(soup)
+    except Exception:
+        return False, []
+    finally:
+        client.close()
+
+    if not stages_dict:
+        return False, []
+
+    stages = [
+        {'name': name, 'url_param': value}
+        for name, value in stages_dict.items()
+    ]
+    return True, stages
+
+
+def get_cached_results(
+    fc_race_id: int,
+    year: int,
+    stage_id: str = None,
+    db_path: str = None,
+) -> Optional[pd.DataFrame]:
+    """Load results from the cache table."""
+    db_path = db_path or str(_DEFAULT_DB)
+    _ensure_cache_tables(db_path)
+
+    if stage_id is not None:
+        query = (
+            "SELECT rider_fc_id, rider_name, team_name, place, time_gap, "
+            "place_bucket, winning_time "
+            "FROM cached_race_results "
+            "WHERE fc_race_id = ? AND year = ? AND stage_id = ?"
+        )
+        params = (str(fc_race_id), int(year), str(stage_id))
+    else:
+        query = (
+            "SELECT rider_fc_id, rider_name, team_name, place, time_gap, "
+            "place_bucket, winning_time "
+            "FROM cached_race_results "
+            "WHERE fc_race_id = ? AND year = ? AND stage_id IS NULL"
+        )
+        params = (str(fc_race_id), int(year))
+
+    with sqlite3.connect(db_path) as conn:
+        df = pd.read_sql_query(query, conn, params=params)
+
+    if df.empty:
+        return None
+
+    # Match riders to DB to get internal rider_id
+    fc_ids = df['rider_fc_id'].dropna().tolist()
+    if fc_ids:
+        placeholders = ','.join(['?'] * len(fc_ids))
+        with sqlite3.connect(db_path) as conn:
+            id_rows = conn.execute(
+                f"SELECT id, fc_rider_id FROM riders WHERE fc_rider_id IN ({placeholders})",
+                fc_ids,
+            ).fetchall()
+        id_map = {str(row[1]): row[0] for row in id_rows}
+        df['rider_id'] = df['rider_fc_id'].map(lambda x: id_map.get(str(x)))
+
+    winning_time = df['winning_time'].iloc[0] if 'winning_time' in df.columns else None
+    return df
+
+
+def save_results_to_cache(
+    fc_race_id: int,
+    year: int,
+    results_df: pd.DataFrame,
+    winning_time: Optional[float],
+    stage_id: str = None,
+    stage_name: str = None,
+    db_path: str = None,
+) -> None:
+    """Save scraped results to the cache table."""
+    db_path = db_path or str(_DEFAULT_DB)
+    _ensure_cache_tables(db_path)
+
+    rows = []
+    for _, row in results_df.iterrows():
+        rows.append((
+            str(fc_race_id), int(year),
+            str(stage_id) if stage_id is not None else None,
+            stage_name,
+            str(row.get('rider_fc_id', row.get('fc_rider_id', ''))),
+            row.get('rider_name', row.get('name', '')),
+            row.get('team_name', row.get('team', '')),
+            int(row['place']) if pd.notna(row.get('place')) else None,
+            float(row['time_gap']) if pd.notna(row.get('time_gap')) and isinstance(row.get('time_gap'), (int, float)) else None,
+            int(row['place_bucket']) if pd.notna(row.get('place_bucket')) else None,
+            float(winning_time) if winning_time is not None else None,
+        ))
+
+    with sqlite3.connect(db_path) as conn:
+        conn.executemany(
+            "INSERT OR REPLACE INTO cached_race_results "
+            "(fc_race_id, year, stage_id, stage_name, rider_fc_id, rider_name, "
+            "team_name, place, time_gap, place_bucket, winning_time) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            rows,
+        )
+        conn.commit()
+
+
+def scrape_race_results(
+    fc_race_id: int,
+    year: int,
+    stage_url_param: str = None,
+    db_path: str = None,
+) -> Tuple[Optional[pd.DataFrame], Optional[float]]:
+    """
+    Scrape race results from FirstCycling.
+
+    Returns:
+        (results_df, winning_time) or (None, None) if no results found.
+        results_df has columns: rider_fc_id, rider_name, team_name, place,
+        time_gap, place_bucket, rider_id (internal DB id if matched).
+    """
+    db_path = db_path or str(_DEFAULT_DB)
+    url = f"{_BASE_URL}/race.php?r={fc_race_id}&y={year}"
+    if stage_url_param:
+        url += f"&e={stage_url_param}"
+
+    client = WebClient(_BASE_URL)
+    try:
+        response = client.get(url)
+        soup = BeautifulSoup(response.text, 'html.parser')
+        raw_results = extract_results(soup)
+        winning_time = extract_race_time(soup)
+    except Exception:
+        return None, None
+    finally:
+        client.close()
+
+    if not raw_results:
+        return None, None
+
+    # Build DataFrame from raw results
+    rows = []
+    for r in raw_results:
+        place_val = r.get('place')
+        gap_val = r.get('gap')
+        try:
+            place_int = int(str(place_val).strip())
+        except (ValueError, TypeError):
+            place_int = None
+        bucket = place_bucketer(place_val) if place_val is not None else None
+
+        rows.append({
+            'rider_fc_id': r.get('rider_id'),
+            'rider_name': r.get('name', ''),
+            'team_name': r.get('team', ''),
+            'place': place_int,
+            'time_gap': gap_val if isinstance(gap_val, (int, float)) else None,
+            'place_bucket': bucket,
+        })
+
+    df = pd.DataFrame(rows)
+
+    # Match riders to DB
+    fc_ids = df['rider_fc_id'].dropna().tolist()
+    if fc_ids:
+        placeholders = ','.join(['?'] * len(fc_ids))
+        with sqlite3.connect(db_path) as conn:
+            id_rows = conn.execute(
+                f"SELECT id, fc_rider_id FROM riders WHERE fc_rider_id IN ({placeholders})",
+                [str(x) for x in fc_ids],
+            ).fetchall()
+        id_map = {str(row[1]): row[0] for row in id_rows}
+        df['rider_id'] = df['rider_fc_id'].map(lambda x: id_map.get(str(x)))
+    else:
+        df['rider_id'] = None
+
+    return df, winning_time
+
+
+def _get_results_from_rider_results(
+    fc_race_id: int,
+    year: int,
+    db_path: str = None,
+) -> Tuple[Optional[pd.DataFrame], Optional[float]]:
+    """Check the main rider_results table for existing results."""
+    db_path = db_path or str(_DEFAULT_DB)
+
+    query = """
+    SELECT
+        c.id as competition_id,
+        c.winning_time
+    FROM competitions c
+    JOIN races r ON c.race_id = r.id
+    WHERE r.fc_race_id = ? AND r.year = ?
+    LIMIT 1
+    """
+    with sqlite3.connect(db_path) as conn:
+        row = conn.execute(query, (str(fc_race_id), int(year))).fetchone()
+
+    if row is None:
+        return None, None
+
+    comp_id, winning_time = row
+
+    results_query = """
+    SELECT
+        rr.rider_id,
+        rd.fc_rider_id as rider_fc_id,
+        rd.name as rider_name,
+        rr.place,
+        rr.time_gap,
+        rr.place_bucket
+    FROM rider_results rr
+    JOIN riders rd ON rr.rider_id = rd.id
+    WHERE rr.competition_id = ?
+    ORDER BY rr.place
+    """
+    with sqlite3.connect(db_path) as conn:
+        df = pd.read_sql_query(results_query, conn, params=[comp_id])
+
+    if df.empty:
+        return None, None
+
+    return df, winning_time
+
+
+def scrape_or_load_results(
+    fc_race_id: int,
+    year: int,
+    stage_id: str = None,
+    stage_url_param: str = None,
+    force_refresh: bool = False,
+    db_path: str = None,
+) -> Tuple[Optional[pd.DataFrame], Optional[float]]:
+    """
+    Load results from DB/cache, or scrape and cache them.
+
+    Checks in order: rider_results table, cached_race_results, then scrapes.
+    """
+    db_path = db_path or str(_DEFAULT_DB)
+
+    if not force_refresh:
+        # Check main DB first (only for non-stage or when we can map stages)
+        if stage_id is None:
+            df, wt = _get_results_from_rider_results(fc_race_id, year, db_path)
+            if df is not None:
+                return df, wt
+
+        # Check cache
+        cached = get_cached_results(fc_race_id, year, stage_id, db_path)
+        if cached is not None:
+            wt = cached['winning_time'].iloc[0] if 'winning_time' in cached.columns else None
+            return cached, wt
+
+    # Scrape
+    df, wt = scrape_race_results(fc_race_id, year, stage_url_param, db_path)
+    if df is not None:
+        save_results_to_cache(
+            fc_race_id, year, df, wt,
+            stage_id=stage_id,
+            stage_name=stage_id,
+            db_path=db_path,
+        )
+    return df, wt
+
+
+# ── Group D: Race Characteristics from Results ───────────────────────────
+
+def compute_characteristics_from_results(
+    results_df: pd.DataFrame,
+    winning_time: Optional[float],
+) -> Optional[dict]:
+    """
+    Compute finishing time distribution characteristics from a results DataFrame.
+
+    Returns dict with same keys as get_race_finishing_characteristics().
+    """
+    if winning_time is None or winning_time <= 0:
+        return None
+
+    # Extract valid numeric time gaps
+    valid = results_df[results_df['time_gap'].notna()].copy()
+    time_gaps = valid['time_gap'].astype(float).tolist()
+
+    total_starters = len(results_df)
+    total_finishers = len(valid)
+
+    if total_finishers < 10:
+        return None
+
+    # Sort time gaps
+    time_gaps_sorted = sorted(time_gaps)
+
+    # Finishing times for statistical measures
+    finishing_times = [winning_time + g for g in time_gaps_sorted]
+
+    # Group analysis
+    group_info = identify_groups(time_gaps_sorted)
+    biggest_group = calculate_biggest_group_metric(group_info, total_finishers)
+    evenness = calculate_time_gap_evenness(time_gaps_sorted)
+    clumpiness = calculate_clumpiness_score(group_info, total_finishers, time_gaps_sorted)
+    selection = calculate_selection_metric(time_gaps_sorted, winning_time)
+
+    # Statistical measures
+    variance_norm, _ = calculate_variance_and_std(finishing_times, normalize_by=winning_time)
+    skewness_norm = calculate_skewness(finishing_times, normalize_by=winning_time)
+    gini = calculate_gini_coefficient(time_gaps_sorted)
+
+    # Duration
+    total_duration = time_gaps_sorted[-1] if time_gaps_sorted else 0
+
+    return {
+        'biggest_group_metric': biggest_group,
+        'time_gap_evenness_metric': evenness,
+        'clumpiness_score': clumpiness,
+        'selection_metric': selection,
+        'total_race_duration': total_duration,
+        'variance_normalized': variance_norm,
+        'skewness_normalized': skewness_norm,
+        'gini_coefficient': gini,
+        'total_finishers': total_finishers,
+        'abandon_ratio': 1 - (total_finishers / total_starters) if total_starters > 0 else 0,
+        'largest_group_size': group_info['largest_group_size'],
+        'proportion_in_groups': group_info['proportion_in_groups'],
+    }
+
+
+# ── Group E: Comparison & Evaluation ─────────────────────────────────────
+
+_COMPARABLE_METRICS = [
+    'biggest_group_metric', 'time_gap_evenness_metric', 'clumpiness_score',
+    'selection_metric', 'variance_normalized', 'skewness_normalized',
+    'gini_coefficient', 'total_race_duration',
+]
+
+
+def compare_race_characteristics(
+    actual_chars: dict,
+    reference_chars_list: List[dict],
+) -> pd.DataFrame:
+    """
+    Compare actual race characteristics against reference races.
+
+    Returns DataFrame with one row per reference, including similarity scores.
+    The most similar reference is flagged with most_similar=True.
+    """
+    if not actual_chars or not reference_chars_list:
+        return pd.DataFrame()
+
+    # Collect all values for normalization
+    all_values = {m: [actual_chars.get(m, 0)] for m in _COMPARABLE_METRICS}
+    for ref in reference_chars_list:
+        for m in _COMPARABLE_METRICS:
+            all_values[m].append(ref.get(m, 0))
+
+    # Compute ranges for normalization
+    ranges = {}
+    for m in _COMPARABLE_METRICS:
+        vals = [v for v in all_values[m] if v is not None]
+        r = max(vals) - min(vals) if vals else 0
+        ranges[m] = r if r > 0 else 1.0
+
+    rows = []
+    for ref in reference_chars_list:
+        diffs = {}
+        sum_sq = 0.0
+        for m in _COMPARABLE_METRICS:
+            actual_val = actual_chars.get(m, 0) or 0
+            ref_val = ref.get(m, 0) or 0
+            norm_diff = abs(actual_val - ref_val) / ranges[m]
+            diffs[f'{m}_diff'] = norm_diff
+            sum_sq += norm_diff ** 2
+
+        distance = sum_sq ** 0.5
+        similarity = 1.0 / (1.0 + distance)
+
+        row = {'label': ref.get('label', ''), 'similarity': similarity, 'distance': distance}
+        # Add actual and reference values for display
+        for m in _COMPARABLE_METRICS:
+            row[f'ref_{m}'] = ref.get(m)
+            row[f'actual_{m}'] = actual_chars.get(m)
+        rows.append(row)
+
+    df = pd.DataFrame(rows)
+    if not df.empty:
+        df['most_similar'] = df['similarity'] == df['similarity'].max()
+
+    return df
+
+
+def evaluate_predictions_against_actual(
+    predictions_dict: dict,
+    actual_results_df: pd.DataFrame,
+) -> dict:
+    """
+    Evaluate each prediction against actual race results.
+
+    Args:
+        predictions_dict: {label: prediction_df} from session state
+        actual_results_df: DataFrame with rider_id, place, time_gap, place_bucket
+
+    Returns:
+        dict with per-prediction metrics and best-prediction flags.
+    """
+    results = {}
+
+    for label, pred_df in predictions_dict.items():
+        if 'rider_id' not in pred_df.columns or 'rider_id' not in actual_results_df.columns:
+            continue
+
+        # Join on rider_id
+        merged = pred_df.merge(
+            actual_results_df[['rider_id', 'place', 'time_gap', 'place_bucket']].rename(
+                columns={'place': 'actual_place', 'time_gap': 'actual_time_gap',
+                         'place_bucket': 'actual_bucket'}
+            ),
+            on='rider_id',
+            how='inner',
+        )
+
+        if merged.empty:
+            continue
+
+        metrics = {}
+
+        # Bucket evaluation
+        valid_buckets = merged.dropna(subset=['actual_bucket', 'ranking_derived_bucket'])
+        if not valid_buckets.empty:
+            bucket_metrics = BucketEvaluator.evaluate(
+                valid_buckets['actual_bucket'].values.astype(int),
+                valid_buckets['ranking_derived_bucket'].values.astype(int),
+            )
+            metrics['bucket'] = bucket_metrics
+
+        # Time gap evaluation
+        if 'predicted_time_gap' in merged.columns:
+            valid_tg = merged.dropna(subset=['actual_time_gap', 'predicted_time_gap'])
+            valid_tg = valid_tg[valid_tg['actual_time_gap'].apply(lambda x: isinstance(x, (int, float)))]
+            if len(valid_tg) >= 5:
+                tg_metrics = TimeGapEvaluator.evaluate(
+                    valid_tg['actual_time_gap'].values.astype(float),
+                    valid_tg['predicted_time_gap'].values.astype(float),
+                )
+                metrics['time_gap'] = tg_metrics
+
+        # Ranking evaluation
+        valid_ranks = merged.dropna(subset=['actual_place', 'predicted_rank'])
+        if len(valid_ranks) >= 10:
+            ranking_metrics = RankingEvaluator.evaluate(
+                valid_ranks['predicted_rank'].values.astype(int),
+                valid_ranks['actual_place'].values.astype(int),
+            )
+            metrics['ranking'] = ranking_metrics
+
+        metrics['n_matched'] = len(merged)
+        results[label] = metrics
+
+    # Identify best predictions
+    if results:
+        # Best ranking (highest kendall_tau)
+        taus = {l: m['ranking']['kendall_tau'] for l, m in results.items() if 'ranking' in m}
+        if taus:
+            best_ranking = max(taus, key=taus.get)
+            results[best_ranking].setdefault('best_for', []).append('ranking')
+
+        # Best bucket (lowest MAE)
+        maes = {l: m['bucket']['mae'] for l, m in results.items() if 'bucket' in m}
+        if maes:
+            best_bucket = min(maes, key=maes.get)
+            results[best_bucket].setdefault('best_for', []).append('bucket')
+
+        # Best time gap (lowest MAE)
+        tg_maes = {l: m['time_gap']['mae'] for l, m in results.items() if 'time_gap' in m}
+        if tg_maes:
+            best_tg = min(tg_maes, key=tg_maes.get)
+            results[best_tg].setdefault('best_for', []).append('time_gap')
+
+    return results
