@@ -31,6 +31,9 @@ from cycling_project.prediction_tools.future_race_loader import (
     compare_race_characteristics,
     evaluate_predictions_against_actual,
     get_race_finishing_characteristics,
+    detect_stage_race_from_db,
+    get_available_stages,
+    get_default_references,
 )
 from cycling_project.prediction_tools.model_registry import ModelRegistry
 
@@ -80,7 +83,7 @@ force_refresh_startlist = st.checkbox("Force refresh start list", value=False)
 
 if st.button("Get Start List") and url:
     try:
-        race_id, year = parse_firstcycling_url(url)
+        race_id, year, stage_hint = parse_firstcycling_url(url)
         with st.spinner(f"Loading start list for race {race_id}, year {year}..."):
             teams, from_cache = scrape_or_load_startlist(race_id, year, force_refresh=force_refresh_startlist)
             matched, unmatched = match_riders_to_db(teams)
@@ -102,7 +105,11 @@ if st.button("Get Start List") and url:
         st.session_state['race_name'] = get_race_name(race_id)
         st.session_state['race_year'] = year
         st.session_state['startlist_from_cache'] = from_cache
-        # Clear old predictions and results when new start list is loaded
+        st.session_state['is_stage_race'] = detect_stage_race_from_db(race_id)
+        st.session_state['stage_hint'] = stage_hint
+        # Clear old selections, predictions, and results when new start list is loaded
+        st.session_state['selected_refs'] = {}
+        st.session_state.pop('defaults_loaded', None)
         st.session_state.pop('all_predictions', None)
         st.session_state.pop('actual_results', None)
         st.session_state.pop('race_stages', None)
@@ -145,7 +152,78 @@ if 'matched' in st.session_state and not st.session_state['matched'].empty:
 if 'matched' in st.session_state and not st.session_state['matched'].empty:
     st.header("2. Select Reference Races")
 
-    # ── 2a. Currently selected races (always visible at top) ──
+    fc_race_id = st.session_state['fc_race_id']
+    is_stage_race = st.session_state.get('is_stage_race', False)
+
+    # ── 2a. Stage/GC selector and auto-populate defaults ──
+    selected_comp_type = 'one_day'
+    selected_stage_num = None
+
+    if is_stage_race:
+        available_stages = get_available_stages(fc_race_id)
+        if available_stages:
+            stage_labels = [s['label'] for s in available_stages]
+            stage_hint = st.session_state.get('stage_hint')
+
+            default_idx = 0
+            if stage_hint is not None:
+                for i, s in enumerate(available_stages):
+                    if s['stage_number'] == stage_hint:
+                        default_idx = i
+                        break
+
+            selected_label = st.selectbox(
+                "Competition to predict",
+                stage_labels,
+                index=default_idx,
+                key="stage_selector",
+            )
+            selected_stage_info = next(s for s in available_stages if s['label'] == selected_label)
+            selected_comp_type = selected_stage_info['competition_type']
+            selected_stage_num = selected_stage_info['stage_number']
+        else:
+            st.warning("No historical stage data found for this race.")
+
+    # Detect stage selector change and reset defaults
+    prev_comp_type = st.session_state.get('_prev_comp_type')
+    prev_stage_num = st.session_state.get('_prev_stage_num')
+    if prev_comp_type is not None and (
+        selected_comp_type != prev_comp_type or selected_stage_num != prev_stage_num
+    ):
+        st.session_state['selected_refs'] = {}
+        st.session_state.pop('defaults_loaded', None)
+    st.session_state['_prev_comp_type'] = selected_comp_type
+    st.session_state['_prev_stage_num'] = selected_stage_num
+
+    # Auto-populate defaults (runs once per stage selection)
+    if not st.session_state.get('defaults_loaded'):
+        defaults = get_default_references(
+            fc_race_id=fc_race_id,
+            competition_type=selected_comp_type,
+            stage_number=selected_stage_num,
+            exclude_year=st.session_state['race_year'],
+            max_results=5,
+        )
+        if not defaults.empty:
+            for _, row in defaults.iterrows():
+                comp_id = int(row['competition_id'])
+                st.session_state['selected_refs'][comp_id] = row.to_dict()
+            n = len(defaults)
+            if n < 5:
+                st.info(
+                    f"Auto-selected {n} historical edition{'s' if n != 1 else ''} "
+                    f"(only {n} available with profile data)"
+                )
+            else:
+                st.success("Auto-selected 5 most recent editions")
+        else:
+            st.warning(
+                "No historical editions found with profile data. "
+                "Search manually below."
+            )
+        st.session_state['defaults_loaded'] = True
+
+    # ── 2b. Currently selected races (always visible at top) ──
     selected_refs = st.session_state['selected_refs']
 
     if selected_refs:
@@ -240,110 +318,110 @@ if 'matched' in st.session_state and not st.session_state['matched'].empty:
 
     st.divider()
 
-    # ── 2b. Search for races to add ──
-    st.subheader("Search Historical Races")
-    col1, col2, col3, col4 = st.columns(4)
-    with col1:
-        name_q = st.text_input("Race name", placeholder="Tour de France")
-    with col2:
-        year_q = st.number_input("Year", min_value=2010, max_value=2025, value=2024, step=1)
-    with col3:
-        cat_q = st.selectbox("Category", ["All", "wt", "pro", "d1"])
-    with col4:
-        type_q = st.selectbox("Type", ["All", "stage", "one_day", "gc"])
+    # ── 2c. Search for races to add ──
+    with st.expander("Search Historical Races", expanded=not bool(selected_refs)):
+        col1, col2, col3, col4 = st.columns(4)
+        with col1:
+            name_q = st.text_input("Race name", placeholder="Tour de France")
+        with col2:
+            year_q = st.number_input("Year", min_value=2010, max_value=2025, value=2024, step=1)
+        with col3:
+            cat_q = st.selectbox("Category", ["All", "wt", "pro", "d1"])
+        with col4:
+            type_q = st.selectbox("Type", ["All", "stage", "one_day", "gc"])
 
-    if st.button("Search"):
-        results = search_historical_races(
-            name_filter=name_q if name_q else None,
-            year_filter=int(year_q) if year_q else None,
-            category_filter=cat_q if cat_q != "All" else None,
-            type_filter=type_q if type_q != "All" else None,
-            limit=200,
-        )
-        st.session_state['search_results'] = results
-        st.session_state['search_counter'] += 1
-
-    if 'search_results' in st.session_state and not st.session_state['search_results'].empty:
-        results = st.session_state['search_results']
-
-        # Show results with add checkboxes
-        st.caption(f"{len(results)} results found")
-
-        # Multi-select from search results
-        already_selected = set(st.session_state['selected_refs'].keys())
-        available = results[~results['competition_id'].isin(already_selected)].reset_index(drop=True)
-
-        if available.empty:
-            st.info("All search results are already selected.")
-        else:
-            display_df = available[[
-                'competition_id', 'display_name', 'competition_date',
-                'competition_type', 'race_category', 'field_size',
-                'race_dominant_profile',
-            ]].copy()
-            display_df.columns = ['ID', 'Name', 'Date', 'Type', 'Category', 'Field Size', 'Profile']
-            event = st.dataframe(
-                display_df,
-                hide_index=True,
-                width='stretch',
-                on_select="rerun",
-                selection_mode="multi-row",
-                key=f"search_results_table_{st.session_state['search_counter']}",
+        if st.button("Search"):
+            results = search_historical_races(
+                name_filter=name_q if name_q else None,
+                year_filter=int(year_q) if year_q else None,
+                category_filter=cat_q if cat_q != "All" else None,
+                type_filter=type_q if type_q != "All" else None,
+                limit=200,
             )
+            st.session_state['search_results'] = results
+            st.session_state['search_counter'] += 1
 
-            # ── Click-to-add from dataframe selection ──
-            selected_rows = event.selection.rows
-            if selected_rows:
-                spots_left = 5 - len(st.session_state['selected_refs'])
-                if spots_left <= 0:
-                    st.warning("5/5 reference races selected. Remove one to add more.")
-                else:
-                    rows_to_add = selected_rows[:spots_left]
-                    n_selected = len(selected_rows)
-                    label = f"Add {len(rows_to_add)} selected race{'s' if len(rows_to_add) != 1 else ''}"
-                    if n_selected > spots_left:
-                        label += f" (only {spots_left} spot{'s' if spots_left != 1 else ''} left)"
-                    if st.button(label, key="add_from_dataframe"):
-                        for row_idx in rows_to_add:
-                            comp_id = int(available.iloc[row_idx]['competition_id'])
-                            if comp_id not in st.session_state['selected_refs']:
-                                row = results[results['competition_id'] == comp_id]
-                                if not row.empty:
-                                    st.session_state['selected_refs'][comp_id] = row.iloc[0].to_dict()
-                        st.rerun()
+        if 'search_results' in st.session_state and not st.session_state['search_results'].empty:
+            results = st.session_state['search_results']
 
-            st.divider()
+            # Show results with add checkboxes
+            st.caption(f"{len(results)} results found")
 
-            # Add by ID input
-            spots_left = 5 - len(st.session_state['selected_refs'])
-            if spots_left > 0:
-                add_input = st.text_input(
-                    f"Enter competition ID(s) to add (comma-separated, {spots_left} spot{'s' if spots_left != 1 else ''} left)",
-                    placeholder="e.g. 141, 142, 10",
-                    key="add_ids",
-                )
-                if st.button("Add to selection"):
-                    if add_input:
-                        try:
-                            ids_to_add = [int(x.strip()) for x in add_input.split(',') if x.strip()]
-                            added = 0
-                            for cid in ids_to_add:
-                                if added >= spots_left:
-                                    break
-                                if cid in st.session_state['selected_refs']:
-                                    continue
-                                row = results[results['competition_id'] == cid]
-                                if not row.empty:
-                                    st.session_state['selected_refs'][cid] = row.iloc[0].to_dict()
-                                    added += 1
-                                else:
-                                    st.warning(f"ID {cid} not in current search results")
-                            if added:
-                                st.rerun()
-                        except ValueError:
-                            st.error("Enter valid comma-separated numbers")
+            # Multi-select from search results
+            already_selected = set(st.session_state['selected_refs'].keys())
+            available = results[~results['competition_id'].isin(already_selected)].reset_index(drop=True)
+
+            if available.empty:
+                st.info("All search results are already selected.")
             else:
-                st.warning("5/5 reference races selected. Remove one to add more.")
+                display_df = available[[
+                    'competition_id', 'display_name', 'competition_date',
+                    'competition_type', 'race_category', 'field_size',
+                    'race_dominant_profile',
+                ]].copy()
+                display_df.columns = ['ID', 'Name', 'Date', 'Type', 'Category', 'Field Size', 'Profile']
+                event = st.dataframe(
+                    display_df,
+                    hide_index=True,
+                    width='stretch',
+                    on_select="rerun",
+                    selection_mode="multi-row",
+                    key=f"search_results_table_{st.session_state['search_counter']}",
+                )
+
+                # ── Click-to-add from dataframe selection ──
+                selected_rows = event.selection.rows
+                if selected_rows:
+                    spots_left = 5 - len(st.session_state['selected_refs'])
+                    if spots_left <= 0:
+                        st.warning("5/5 reference races selected. Remove one to add more.")
+                    else:
+                        rows_to_add = selected_rows[:spots_left]
+                        n_selected = len(selected_rows)
+                        label = f"Add {len(rows_to_add)} selected race{'s' if len(rows_to_add) != 1 else ''}"
+                        if n_selected > spots_left:
+                            label += f" (only {spots_left} spot{'s' if spots_left != 1 else ''} left)"
+                        if st.button(label, key="add_from_dataframe"):
+                            for row_idx in rows_to_add:
+                                comp_id = int(available.iloc[row_idx]['competition_id'])
+                                if comp_id not in st.session_state['selected_refs']:
+                                    row = results[results['competition_id'] == comp_id]
+                                    if not row.empty:
+                                        st.session_state['selected_refs'][comp_id] = row.iloc[0].to_dict()
+                            st.rerun()
+
+                st.divider()
+
+                # Add by ID input
+                spots_left = 5 - len(st.session_state['selected_refs'])
+                if spots_left > 0:
+                    add_input = st.text_input(
+                        f"Enter competition ID(s) to add (comma-separated, {spots_left} spot{'s' if spots_left != 1 else ''} left)",
+                        placeholder="e.g. 141, 142, 10",
+                        key="add_ids",
+                    )
+                    if st.button("Add to selection"):
+                        if add_input:
+                            try:
+                                ids_to_add = [int(x.strip()) for x in add_input.split(',') if x.strip()]
+                                added = 0
+                                for cid in ids_to_add:
+                                    if added >= spots_left:
+                                        break
+                                    if cid in st.session_state['selected_refs']:
+                                        continue
+                                    row = results[results['competition_id'] == cid]
+                                    if not row.empty:
+                                        st.session_state['selected_refs'][cid] = row.iloc[0].to_dict()
+                                        added += 1
+                                    else:
+                                        st.warning(f"ID {cid} not in current search results")
+                                if added:
+                                    st.rerun()
+                            except ValueError:
+                                st.error("Enter valid comma-separated numbers")
+                else:
+                    st.warning("5/5 reference races selected. Remove one to add more.")
 
 
 # ── Step 3: Run Predictions ───────────────────────────────────────────────

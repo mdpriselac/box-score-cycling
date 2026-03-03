@@ -189,13 +189,18 @@ def scrape_or_load_startlist(
     return teams, False
 
 
-def parse_firstcycling_url(url: str) -> Tuple[int, int]:
+def parse_firstcycling_url(url: str) -> Tuple[int, int, Optional[int]]:
     """
-    Extract race_id and year from a FirstCycling URL.
+    Extract race_id, year, and optional stage number from a FirstCycling URL.
 
     Handles formats like:
         https://firstcycling.com/race.php?r=9&y=2026
         https://firstcycling.com/race.php?r=9&y=2026&k=8
+        https://firstcycling.com/race.php?r=17&y=2026&e=01
+
+    Returns:
+        (race_id, year, stage_number) where stage_number is None when not
+        specified in the URL.
     """
     parsed = urlparse(url)
     params = parse_qs(parsed.query)
@@ -207,7 +212,8 @@ def parse_firstcycling_url(url: str) -> Tuple[int, int]:
 
     race_id = int(params['r'][0])
     year = int(params['y'][0])
-    return race_id, year
+    stage_number = int(params['e'][0]) if 'e' in params else None
+    return race_id, year, stage_number
 
 
 def get_race_name(fc_race_id: int, db_path: str = None) -> str:
@@ -220,6 +226,137 @@ def get_race_name(fc_race_id: int, db_path: str = None) -> str:
     ).fetchone()
     conn.close()
     return row[0] if row else f"Race {fc_race_id}"
+
+
+def detect_stage_race_from_db(fc_race_id: int, db_path: str = None) -> bool:
+    """Check if a race is a stage race based on the most recent DB entry."""
+    db_path = db_path or str(_DEFAULT_DB)
+    with sqlite3.connect(db_path) as conn:
+        row = conn.execute(
+            "SELECT is_stage_race FROM races "
+            "WHERE fc_race_id = ? ORDER BY year DESC LIMIT 1",
+            (str(fc_race_id),),
+        ).fetchone()
+    return bool(row[0]) if row else False
+
+
+def get_available_stages(fc_race_id: int, db_path: str = None) -> List[dict]:
+    """
+    Get distinct stages available for a race from DB data.
+
+    Only includes stages that have competition_field_features data in at
+    least one year. Returns list of dicts with label/competition_type/
+    stage_number, ordered GC first then stages by number.
+    """
+    db_path = db_path or str(_DEFAULT_DB)
+    query = """
+    SELECT DISTINCT c.competition_type, c.stage_number
+    FROM races r
+    JOIN competitions c ON c.race_id = r.id
+    JOIN competition_field_features cff ON cff.competition_id = c.id
+    WHERE r.fc_race_id = ?
+      AND cff.race_sprint_score IS NOT NULL
+    ORDER BY
+        CASE c.competition_type WHEN 'gc' THEN 0 WHEN 'one_day' THEN 0 ELSE 1 END,
+        c.stage_number
+    """
+    with sqlite3.connect(db_path) as conn:
+        rows = conn.execute(query, (str(fc_race_id),)).fetchall()
+
+    stages = []
+    for comp_type, stage_num in rows:
+        if comp_type == 'gc':
+            stages.append({
+                'label': 'GC',
+                'competition_type': 'gc',
+                'stage_number': None,
+            })
+        elif comp_type == 'one_day':
+            stages.append({
+                'label': 'Race',
+                'competition_type': 'one_day',
+                'stage_number': None,
+            })
+        elif comp_type == 'stage' and stage_num is not None:
+            stages.append({
+                'label': f'Stage {stage_num}',
+                'competition_type': 'stage',
+                'stage_number': int(stage_num),
+            })
+    return stages
+
+
+def get_default_references(
+    fc_race_id: int,
+    competition_type: str = 'one_day',
+    stage_number: Optional[int] = None,
+    exclude_year: Optional[int] = None,
+    max_results: int = 5,
+    db_path: str = None,
+) -> pd.DataFrame:
+    """
+    Find the most recent historical competitions for a given race.
+
+    Handles duplicate entries per year by picking MIN(c.id). Only returns
+    competitions with competition_field_features data (race profile scores).
+
+    Returns DataFrame with the same columns as search_historical_races().
+    """
+    db_path = db_path or str(_DEFAULT_DB)
+
+    conditions = [
+        "r.fc_race_id = ?",
+        "c.competition_type = ?",
+        "cff.race_sprint_score IS NOT NULL",
+    ]
+    params: list = [str(fc_race_id), competition_type]
+
+    if competition_type == 'stage' and stage_number is not None:
+        conditions.append("c.stage_number = ?")
+        params.append(stage_number)
+
+    if exclude_year is not None:
+        conditions.append("r.year != ?")
+        params.append(exclude_year)
+
+    where = " AND ".join(conditions)
+
+    query = f"""
+    SELECT
+        sub.competition_id,
+        r.name || ' - ' || cff.competition_name as display_name,
+        r.name as race_name,
+        cff.competition_name,
+        cff.competition_date,
+        cff.competition_type,
+        cff.race_category,
+        cff.field_size,
+        cff.race_sprint_score,
+        cff.race_mountain_score,
+        cff.race_hilly_score,
+        cff.race_rolling_score,
+        cff.race_breakaway_score,
+        cff.race_time_trial_score,
+        cff.race_dominant_profile
+    FROM (
+        SELECT MIN(c.id) as competition_id
+        FROM races r
+        JOIN competitions c ON c.race_id = r.id
+        JOIN competition_field_features cff ON cff.competition_id = c.id
+        WHERE {where}
+        GROUP BY r.year
+        ORDER BY r.year DESC
+        LIMIT ?
+    ) sub
+    JOIN competition_field_features cff ON cff.competition_id = sub.competition_id
+    JOIN competitions c ON c.id = sub.competition_id
+    JOIN races r ON c.race_id = r.id
+    ORDER BY cff.competition_date DESC
+    """
+    params.append(max_results)
+
+    with sqlite3.connect(db_path) as conn:
+        return pd.read_sql_query(query, conn, params=params)
 
 
 def scrape_startlist(race_id: int, year: int) -> List[Team]:
