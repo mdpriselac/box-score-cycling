@@ -109,10 +109,12 @@ if st.button("Get Start List") and url:
         st.session_state['stage_hint'] = stage_hint
         # Clear old selections, predictions, and results when new start list is loaded
         st.session_state['selected_refs'] = {}
+        st.session_state['removed_rider_ids'] = set()
         st.session_state.pop('defaults_loaded', None)
         st.session_state.pop('all_predictions', None)
         st.session_state.pop('actual_results', None)
         st.session_state.pop('race_stages', None)
+        st.session_state.pop('_predictions_removed_set', None)
     except Exception as e:
         st.error(f"Error: {e}")
 
@@ -126,11 +128,47 @@ if 'matched' in st.session_state and not st.session_state['matched'].empty:
     matched = st.session_state['matched']
     unmatched = st.session_state['unmatched']
 
+    # ── Edit Start List (remove DNS riders) ──
+    rider_options = {
+        row['rider_id']: f"{row['rider_name']} ({row['team_name']})"
+        for _, row in matched.iterrows()
+    }
+    current_removed = st.session_state.get('removed_rider_ids', set())
+
+    removed_ids = st.multiselect(
+        "Remove riders (DNS / late withdrawals)",
+        options=list(rider_options.keys()),
+        default=[rid for rid in current_removed if rid in rider_options],
+        format_func=lambda rid: rider_options[rid],
+        placeholder="Search and select riders to remove...",
+    )
+    st.session_state['removed_rider_ids'] = set(removed_ids)
+
+    # Derive active (filtered) data
+    removed = st.session_state['removed_rider_ids']
+    full_snapshots = st.session_state['snapshots']
+
+    if removed:
+        active_matched = matched[~matched['rider_id'].isin(removed)]
+        active_snapshots = full_snapshots[~full_snapshots['rider_id'].isin(removed)]
+        active_field_features = compute_field_features(active_snapshots)
+    else:
+        active_matched = matched
+        active_snapshots = full_snapshots
+        active_field_features = st.session_state['field_features']
+
+    st.session_state['active_matched'] = active_matched
+    st.session_state['active_snapshots'] = active_snapshots
+    st.session_state['active_field_features'] = active_field_features
+
     col1, col2 = st.columns(2)
     with col1:
-        st.success(f"Matched {len(matched)} riders in database")
+        if removed:
+            st.success(f"{len(active_matched)} riders in prediction field ({len(removed)} removed)")
+        else:
+            st.success(f"Matched {len(matched)} riders in database")
         st.dataframe(
-            matched[['rider_name', 'team_name', 'bib_number']].rename(
+            active_matched[['rider_name', 'team_name', 'bib_number']].rename(
                 columns={'rider_name': 'Rider', 'team_name': 'Team', 'bib_number': 'Bib'}
             ),
             hide_index=True,
@@ -428,16 +466,23 @@ if 'matched' in st.session_state and not st.session_state['matched'].empty:
 
 if (
     st.session_state.get('selected_refs')
-    and 'snapshots' in st.session_state
-    and not st.session_state['snapshots'].empty
+    and 'active_snapshots' in st.session_state
+    and not st.session_state['active_snapshots'].empty
 ):
     st.header("3. Predictions")
 
+    # Warn if startlist changed since last prediction run
+    if 'all_predictions' in st.session_state:
+        current_removed = st.session_state.get('removed_rider_ids', set())
+        prev_removed = st.session_state.get('_predictions_removed_set', set())
+        if current_removed != prev_removed:
+            st.warning("Start list has changed since predictions were run. Re-run predictions to update.")
+
     if st.button("Run Predictions", type="primary"):
         selected_refs = st.session_state['selected_refs']
-        snapshots = st.session_state['snapshots']
-        matched = st.session_state['matched']
-        field_features = st.session_state['field_features']
+        snapshots = st.session_state['active_snapshots']
+        matched = st.session_state['active_matched']
+        field_features = st.session_state['active_field_features']
 
         with st.spinner("Loading model and running predictions..."):
             try:
@@ -477,6 +522,9 @@ if (
 
                 st.session_state['all_predictions'] = all_predictions
                 st.session_state['reference_profiles'] = reference_profiles
+                st.session_state['_predictions_removed_set'] = set(
+                    st.session_state.get('removed_rider_ids', set())
+                )
                 # Clear old actual results when new predictions are run
                 st.session_state.pop('actual_results', None)
                 st.session_state.pop('eval_results', None)
