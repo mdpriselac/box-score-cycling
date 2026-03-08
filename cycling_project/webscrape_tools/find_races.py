@@ -267,11 +267,24 @@ def _process_tour_level_by_months(client: WebClient, year: str, tour_name: str,
         except Exception as e:
             logger.error(f"Error processing {tour_name} month {month} for {year}: {e}")
 
+    # Merge with existing race list entries (from previous months)
+    filepath = os.path.join(tour_dir, filename)
+    if os.path.exists(filepath):
+        try:
+            with open(filepath, 'r') as f:
+                for line in f:
+                    parts = line.strip().split(',', 1)
+                    if len(parts) == 2 and parts[1] not in seen_urls:
+                        all_races.append((parts[0], parts[1]))
+                        seen_urls.add(parts[1])
+        except Exception as e:
+            logger.warning(f"Error reading existing race list {filepath}: {e}")
+
     if not all_races:
         logger.warning(f"No {tour_name} Races found for {year} months {months}")
         return
 
-    with open(os.path.join(tour_dir, filename), 'w') as tour_file:
+    with open(filepath, 'w') as tour_file:
         for race, url in all_races:
             tour_file.write(f"{race},{url}\n")
 

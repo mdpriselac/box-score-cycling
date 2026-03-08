@@ -20,7 +20,7 @@ import traceback
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Set, Tuple
 
@@ -108,7 +108,13 @@ def run_step(name: str, func: Callable, *args, **kwargs) -> StepResult:
 # ---------------------------------------------------------------------------
 
 def determine_scrape_targets(config: PipelineConfig) -> List[Tuple[str, List[int]]]:
-    """Figure out which (year, months) need scraping based on DB state."""
+    """Figure out which (year, months) need scraping.
+
+    Uses a 45-day lookback from today to ensure recent races from prior
+    months are always re-checked, regardless of what's already in the DB.
+    """
+    today = date.today()
+
     conn = sqlite3.connect(str(config.db_path))
     cursor = conn.execute(
         "SELECT MAX(c.date) FROM competitions c JOIN races r ON c.race_id = r.id"
@@ -116,17 +122,16 @@ def determine_scrape_targets(config: PipelineConfig) -> List[Tuple[str, List[int
     latest_str = cursor.fetchone()[0]
     conn.close()
 
-    today = date.today()
-
     if latest_str is None:
         return [(str(today.year), None)]
 
-    latest = date.fromisoformat(latest_str)
-
-    # Build month list from latest_date's month through today's month
-    year_months: List[Tuple[int, int]] = []
-    current = date(latest.year, latest.month, 1)
+    # Start from 45 days ago to catch missed races from prior months
+    lookback = today - timedelta(days=45)
+    start = date(lookback.year, lookback.month, 1)
     end = date(today.year, today.month, 1)
+
+    year_months: List[Tuple[int, int]] = []
+    current = start
     while current <= end:
         year_months.append((current.year, current.month))
         if current.month == 12:
@@ -213,6 +218,73 @@ def _get_existing_race_keys(db_path: str) -> Set[Tuple[str, int, str]]:
     return keys
 
 
+def _get_incomplete_race_keys(
+    db_path: str, years: List[int]
+) -> Set[Tuple[str, int, str]]:
+    """Get race keys where at least one competition has zero rider results.
+
+    Only checks the specified years to avoid touching historical data where
+    empty competitions may be legitimate (e.g. GC classifications).
+    """
+    if not years:
+        return set()
+    conn = sqlite3.connect(db_path)
+    placeholders = ",".join("?" for _ in years)
+    cursor = conn.execute(f"""
+        SELECT DISTINCT r.fc_race_id, r.year, r.category
+        FROM races r
+        JOIN competitions c ON c.race_id = r.id
+        LEFT JOIN rider_results rr ON rr.competition_id = c.id
+        WHERE rr.id IS NULL AND r.year IN ({placeholders})
+    """, years)
+    keys = {(str(row[0]), row[1], row[2]) for row in cursor.fetchall()}
+    conn.close()
+    return keys
+
+
+_COMPETITION_DEPENDENT_TABLES = [
+    "rider_results",
+    "race_feature_gradients",
+    "rider_competition_snapshots",
+    "competition_field_features",
+    "correlation_data_quality",
+    "rider_correlations_blob",
+    "processing_checkpoint",
+    "feature_computation_checkpoint",
+    "form_team_backfill_checkpoint",
+] + [f"race_features_{p}" for p in range(10, 105, 5)]
+
+
+def _delete_race_by_key(db_path: str, fc_race_id: str, year: int, category: str) -> None:
+    """Delete a race and all its related data from all dependent tables."""
+    conn = sqlite3.connect(db_path)
+    # Disable FK checks — we handle deletion order ourselves
+    conn.execute("PRAGMA foreign_keys = OFF")
+    try:
+        cursor = conn.execute(
+            "SELECT id FROM races WHERE fc_race_id = ? AND year = ? AND category = ?",
+            (fc_race_id, year, category),
+        )
+        race_ids = [row[0] for row in cursor.fetchall()]
+        for race_id in race_ids:
+            comp_ids_q = "SELECT id FROM competitions WHERE race_id = ?"
+            # Delete from all tables that reference competition_id
+            for table in _COMPETITION_DEPENDENT_TABLES:
+                try:
+                    conn.execute(
+                        f"DELETE FROM {table} WHERE competition_id IN ({comp_ids_q})",
+                        (race_id,),
+                    )
+                except sqlite3.OperationalError:
+                    pass  # Table may not exist or have different schema
+            conn.execute("DELETE FROM competitions WHERE race_id = ?", (race_id,))
+            conn.execute("DELETE FROM races WHERE id = ?", (race_id,))
+        conn.commit()
+        logger.info(f"Deleted incomplete race {fc_race_id}/{year}/{category} ({len(race_ids)} entries)")
+    finally:
+        conn.close()
+
+
 def migrate_new_races(
     config: PipelineConfig, targets: List[Tuple[str, List[int]]]
 ) -> str:
@@ -221,7 +293,14 @@ def migrate_new_races(
 
     db_path_str = str(config.db_path)
     existing_keys = _get_existing_race_keys(db_path_str)
-    logger.info(f"Found {len(existing_keys)} existing races in DB")
+    target_years = [int(y) for y, _ in targets]
+    incomplete_keys = _get_incomplete_race_keys(db_path_str, target_years)
+    logger.info(f"Found {len(existing_keys)} existing races in DB, {len(incomplete_keys)} incomplete in target years")
+
+    # Delete incomplete races so they can be re-migrated with full data
+    for key in incomplete_keys:
+        _delete_race_by_key(db_path_str, *key)
+        existing_keys.discard(key)
 
     migrator = RaceMigrator(str(config.scraped_data_dir), db_path_str)
     migrator.connect()
@@ -271,7 +350,24 @@ def migrate_new_races(
         migrator.print_statistics()
         migrator.disconnect()
 
-    return f"{new_races} new, {skipped} skipped, {empty} empty"
+    # Clean up empty future competitions (stages with no results)
+    conn = sqlite3.connect(db_path_str)
+    try:
+        cursor = conn.execute("""
+            DELETE FROM competitions WHERE id IN (
+                SELECT c.id FROM competitions c
+                LEFT JOIN rider_results rr ON rr.competition_id = c.id
+                WHERE c.date > date('now') AND rr.id IS NULL
+            )
+        """)
+        future_deleted = cursor.rowcount
+        if future_deleted:
+            conn.commit()
+            logger.info(f"Cleaned up {future_deleted} empty future competition entries")
+    finally:
+        conn.close()
+
+    return f"{new_races} new, {skipped} skipped, {empty} empty, {future_deleted} future cleaned"
 
 
 # ---------------------------------------------------------------------------

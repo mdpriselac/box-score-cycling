@@ -14,9 +14,14 @@ Directory structure:
 import os
 import json
 import pickle
+import shutil
 from datetime import datetime
 from typing import Dict, Any, Optional, Tuple
 from pathlib import Path
+
+import logging
+
+logger = logging.getLogger(__name__)
 
 from .bucket_predictor import OrdinalBucketPredictor, BucketPredictorConfig
 from .time_gap_predictor import TimeGapPredictor, TimeGapPredictorConfig
@@ -48,6 +53,43 @@ class ModelRegistry:
     def __init__(self, base_dir: str = 'models/prediction_system'):
         self.base_dir = Path(base_dir)
 
+    def _archive_existing(self) -> Optional[Path]:
+        """Archive the current model directory before overwriting.
+
+        Copies all files to models/history/<timestamp>_<label>/ where the
+        label comes from existing metadata (date range, sample count).
+        Returns the archive path, or None if nothing to archive.
+        """
+        metadata_path = self.base_dir / 'metadata.json'
+        if not metadata_path.exists():
+            return None
+
+        # Build a descriptive label from existing metadata
+        try:
+            with open(metadata_path) as f:
+                meta = json.load(f)
+            saved_at = meta.get('saved_at', '')[:10]  # YYYY-MM-DD
+            training_info = meta.get('training_info', {})
+            date_range = training_info.get('date_range', '')
+            # Use the end date of the training range as the label
+            train_end = date_range.split(' to ')[-1] if ' to ' in date_range else saved_at
+            label = train_end
+        except Exception:
+            label = 'unknown'
+
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        archive_dir = self.base_dir.parent / 'history' / f"{timestamp}_{label}"
+        archive_dir.mkdir(parents=True, exist_ok=True)
+
+        # Copy all model files to the archive
+        for item in self.base_dir.iterdir():
+            if item.is_file():
+                shutil.copy2(item, archive_dir / item.name)
+
+        logger.info(f"Archived previous model to {archive_dir}")
+        print(f"Archived previous model to {archive_dir}")
+        return archive_dir
+
     def save(
         self,
         bucket_predictor: OrdinalBucketPredictor,
@@ -70,6 +112,9 @@ class ModelRegistry:
             evaluation: Optional evaluation metrics
             training_info: Optional training metadata
         """
+        # Archive existing models before overwriting
+        self._archive_existing()
+
         self.base_dir.mkdir(parents=True, exist_ok=True)
 
         # Save bucket model

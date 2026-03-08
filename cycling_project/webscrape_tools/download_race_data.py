@@ -1,4 +1,5 @@
 import os
+from datetime import date, datetime
 from random import randint
 from time import sleep
 import pickle
@@ -18,8 +19,24 @@ logger.info(f"Database path: {DB_PATH}")
 
 # Constants
 TOURS = ['wt', 'pro', 'd1']
-SLEEP_MIN = 2
-SLEEP_MAX = 5
+SLEEP_MIN = 3
+SLEEP_MAX = 8
+
+
+def _parse_race_date(raw_date) -> Optional[date]:
+    """Normalize a race date to a date object, handling str/datetime/date."""
+    if raw_date is None:
+        return None
+    if isinstance(raw_date, datetime):
+        return raw_date.date()
+    if isinstance(raw_date, date):
+        return raw_date
+    if isinstance(raw_date, str):
+        try:
+            return date.fromisoformat(raw_date)
+        except ValueError:
+            return None
+    return None
 
 def read_race_list(tour_folder_path: str) -> List[Tuple[str, str]]:
     """
@@ -69,27 +86,53 @@ def read_race_list(tour_folder_path: str) -> List[Tuple[str, str]]:
 def create_to_scrape_list_tour(tour_folder_path: str) -> List[Tuple[str, str]]:
     """
     Creates a list of races that still need to be scraped in a tour folder.
-    
+
+    Races are included if they have no .pkl file, or if they have a .pkl file
+    with no results and the race date is in the past (stale empty pkl).
+
     Args:
         tour_folder_path: Path to a tour level folder
-        
+
     Returns:
         List of (race_name, race_url) tuples for races that need to be scraped
     """
     logger.debug(f"Creating to-scrape list for {tour_folder_path}")
-    
+
     # Get all the races in the tour folder
     races_to_scrape = read_race_list(tour_folder_path)
-    
+
     # Get a list of .pkl files in the tour folder
     try:
         scraped_races = [f for f in os.listdir(tour_folder_path) if f.endswith('.pkl')]
-        scraped_race_names = [f.split('.')[0] for f in scraped_races]
-        
-        # Return races that haven't been scraped yet
-        to_scrape = [(race_name, url) for race_name, url in races_to_scrape 
+        scraped_race_names = set(f.split('.')[0] for f in scraped_races)
+
+        # Check existing pkls for stale data (past races with no results)
+        stale_names = set()
+        for pkl_name in list(scraped_race_names):
+            pkl_path = os.path.join(tour_folder_path, f"{pkl_name}.pkl")
+            try:
+                with open(pkl_path, "rb") as f:
+                    race = pickle.load(f)
+                has_results = bool(race.results) or (
+                    hasattr(race, 'stages') and
+                    any(getattr(s, 'results', None) for s in race.stages)
+                )
+                if not has_results:
+                    race_date = _parse_race_date(race.date)
+                    if race_date and race_date <= date.today():
+                        logger.info(f"Stale pkl found: {pkl_name} (date {race_date}, no results) — will re-scrape")
+                        os.remove(pkl_path)
+                        stale_names.add(pkl_name)
+            except Exception as e:
+                logger.warning(f"Error checking pkl {pkl_name}: {e}")
+
+        # Remove stale names from the exclusion set
+        scraped_race_names -= stale_names
+
+        # Return races that haven't been scraped yet (or were stale)
+        to_scrape = [(race_name, url) for race_name, url in races_to_scrape
                      if race_name not in scraped_race_names]
-        
+
         logger.info(f"{len(to_scrape)}/{len(races_to_scrape)} races need to be scraped in {tour_folder_path}")
         return to_scrape
     except Exception as e:
@@ -247,16 +290,30 @@ def update_tour_folder(tour_folder_dir: str) -> None:
     # Loop through the lists to scrape, create a race object, call populate_race on it, and save it as a pkl
     for i, (race_name, url) in enumerate(to_scrape, 1):
         logger.info(f"Scraping race {i}/{len(to_scrape)}: {race_name}")
-        
+
         try:
             # Create and populate race object
             race_obj = Race(name=race_name, url=url)
             race_obj.populate_race()
-            
+
             # Set the tour category for the race
             race_obj.category = os.path.basename(tour_folder_dir)
             logger.debug(f"Set race category to {race_obj.category}")
-            
+
+            # Skip future races — don't create empty pkls
+            race_date = _parse_race_date(race_obj.date)
+            if race_date and race_date > date.today():
+                logger.info(f"Skipping {race_name} — race date {race_date} is in the future")
+                continue
+
+            # Skip races with no results (fallback for unparseable dates)
+            has_results = bool(race_obj.results) or (
+                race_obj.stages and any(getattr(s, 'results', None) for s in race_obj.stages)
+            )
+            if not has_results:
+                logger.info(f"Skipping {race_name} — no results found")
+                continue
+
             # Check for bib numbers
             try:
                 logger.debug(f"Attempting to add bib numbers to {race_name}")
@@ -264,19 +321,19 @@ def update_tour_folder(tour_folder_dir: str) -> None:
             except Exception as e:
                 logger.warning(f"Error adding bib numbers to {race_name}: {e}")
                 race_obj_w_bib_check = race_obj
-                
+
             # Save the race_obj as a pickle in this tour folder
             output_path = os.path.join(tour_folder_dir, f"{race_name}.pkl")
             with open(output_path, 'wb') as f:
                 pickle.dump(race_obj_w_bib_check, f)
-                
+
             logger.info(f"Successfully saved {race_name} to {output_path}")
-            
+
             # Sleep to avoid overwhelming the server
             sleep_time = randint(SLEEP_MIN, SLEEP_MAX)
             logger.debug(f"Sleeping for {sleep_time} seconds before next race")
             sleep(sleep_time)
-            
+
         except Exception as e:
             logger.error(f"Error processing race {race_name}: {e}")
             

@@ -110,3 +110,9 @@ venv.bak/
 
 # Streamlit secrets
 .streamlit/secrets.toml
+
+# Model history (archived models)
+models/history/
+
+#performance evals
+performance_eval/

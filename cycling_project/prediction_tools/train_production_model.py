@@ -68,7 +68,7 @@ def main():
 
     bucket_config = BucketPredictorConfig(
         n_estimators=1000,
-        early_stopping_rounds=100,
+        early_stopping_rounds=300,
         use_sample_weights=True,
     )
     bucket_config.lgb_params.update({
@@ -92,7 +92,7 @@ def main():
 
     time_gap_config = TimeGapPredictorConfig(
         n_estimators=1000,
-        early_stopping_rounds=100,
+        early_stopping_rounds=300,
         log_transform_target=True,
         exclude_winners=True,
         max_time_gap=3600.0,
@@ -118,7 +118,7 @@ def main():
 
     probability_config = ProbabilityPredictorConfig(
         n_estimators=1000,
-        early_stopping_rounds=100,
+        early_stopping_rounds=300,
         use_sample_weights=True,
     )
     probability_config.lgb_params.update({
@@ -145,7 +145,7 @@ def main():
 
     calibrated_config = ProbabilityPredictorConfig(
         n_estimators=1000,
-        early_stopping_rounds=100,
+        early_stopping_rounds=300,
         use_sample_weights=False,
     )
     calibrated_config.lgb_params.update({
@@ -193,7 +193,7 @@ def main():
 
     contender_config = ProbabilityPredictorConfig(
         n_estimators=1000,
-        early_stopping_rounds=100,
+        early_stopping_rounds=300,
         use_sample_weights=False,
     )
     contender_config.lgb_params.update({
