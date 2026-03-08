@@ -67,7 +67,7 @@ def main():
     print("=" * 70)
 
     bucket_config = BucketPredictorConfig(
-        n_estimators=1000,
+        n_estimators=2000,
         early_stopping_rounds=300,
         use_sample_weights=True,
     )
@@ -91,7 +91,7 @@ def main():
     print("=" * 70)
 
     time_gap_config = TimeGapPredictorConfig(
-        n_estimators=1000,
+        n_estimators=2000,
         early_stopping_rounds=300,
         log_transform_target=True,
         exclude_winners=True,
@@ -117,7 +117,7 @@ def main():
     print("=" * 70)
 
     probability_config = ProbabilityPredictorConfig(
-        n_estimators=1000,
+        n_estimators=2000,
         early_stopping_rounds=300,
         use_sample_weights=True,
     )
@@ -144,7 +144,7 @@ def main():
     print("=" * 70)
 
     calibrated_config = ProbabilityPredictorConfig(
-        n_estimators=1000,
+        n_estimators=2000,
         early_stopping_rounds=300,
         use_sample_weights=False,
     )
@@ -192,7 +192,7 @@ def main():
         print(f"  Bucket {bucket}: {count:,} ({count/len(train_contender):.1%})")
 
     contender_config = ProbabilityPredictorConfig(
-        n_estimators=1000,
+        n_estimators=2000,
         early_stopping_rounds=300,
         use_sample_weights=False,
     )
