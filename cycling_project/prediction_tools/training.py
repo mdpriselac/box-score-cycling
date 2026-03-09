@@ -57,6 +57,14 @@ class TrainingConfig:
     contender_top_n: int = 25
     ranking_method: Literal['expected_bucket', 'time_gap', 'ensemble'] = 'expected_bucket'
 
+    # Contender model tuning
+    contender_learning_rate: Optional[float] = None  # None = use same as probability LR
+    contender_use_oof: bool = False  # Use out-of-fold bucket predictions for filtering
+    contender_oof_folds: int = 5
+    contender_n_classes: Optional[int] = None  # None = auto (8), or e.g. 5 to merge buckets 4-6
+    contender_use_soft_weights: bool = False  # Soft weighting instead of hard filtering
+    contender_soft_weight_power: float = 2.0  # Exponent for soft weighting
+
     # Hyperparameter tuning (optional)
     tune_hyperparameters: bool = False
     n_tuning_trials: int = 50
@@ -222,42 +230,118 @@ class ModelTrainer:
         """
         Train contender probability model on filtered data with classifier feature.
 
-        Filters training data to top N riders per race (by classifier's expected bucket),
-        adds the classifier's prediction as a feature, and trains an unweighted
-        probability model on this more balanced subset.
+        Supports multiple modes via TrainingConfig:
+        - Hard filtering: top N riders per race (default)
+        - Soft weighting: all riders, weighted by predicted bucket
+        - OOF predictions: out-of-fold bucket predictions for filtering
+        - Class reduction: merge lower buckets into fewer classes
+        - Separate learning rate for the contender model
         """
         import pandas as pd
 
         if self.config.verbose:
-            print("\n--- Training Contender Probability Predictor (filtered + classifier feature) ---")
+            print("\n--- Training Contender Probability Predictor ---")
 
         top_n = self.config.contender_top_n
+        use_soft = self.config.contender_use_soft_weights
+        use_oof = self.config.contender_use_oof
+        n_classes = self.config.contender_n_classes
 
-        # Add classifier predictions and filter training data
-        train_filtered = self._filter_to_contenders(train_df, bucket_predictor, top_n)
+        # Step 1: Get classifier predictions (OOF or direct)
+        if use_oof:
+            if self.config.verbose:
+                print("  Using out-of-fold bucket predictions...")
+            oof_predictions = self._generate_oof_bucket_predictions(
+                train_df, val_df, bucket_predictor
+            )
+            train_with_cls = train_df.copy()
+            train_with_cls['classifier_expected_bucket'] = oof_predictions
+        else:
+            train_with_cls = train_df.copy()
+            train_with_cls['classifier_expected_bucket'] = (
+                bucket_predictor.predict_continuous(train_df)
+            )
+
+        # Step 2: Filter or weight
+        external_weights = None
+        if use_soft:
+            # Soft weighting: all riders, weighted by predicted bucket
+            power = self.config.contender_soft_weight_power
+            expected = train_with_cls['classifier_expected_bucket'].values
+            # Exponential decay: exp(-power * expected_bucket)
+            # power=2: bucket 0 → 1.0, bucket 1 → 0.14, bucket 3 → 0.002, bucket 6 → 0.000006
+            external_weights = np.exp(-power * expected)
+            # Normalize to mean 1
+            external_weights = external_weights / external_weights.mean()
+
+            train_filtered = train_with_cls
+            if self.config.verbose:
+                print(f"  Soft weighting (power={power}): all {len(train_filtered):,} samples")
+                print(f"    Weight range: {external_weights.min():.6f} to {external_weights.max():.4f}")
+                print(f"    Effective samples (sum weights): {external_weights.sum():.0f}")
+        else:
+            # Hard filtering to top N per race
+            train_with_cls['_rank'] = train_with_cls.groupby(
+                'competition_id'
+            )['classifier_expected_bucket'].rank()
+            train_filtered = train_with_cls[
+                train_with_cls['_rank'] <= top_n
+            ].drop(columns=['_rank'])
+
+            if self.config.verbose:
+                print(f"  Hard filter top-{top_n}: {len(train_filtered):,} from "
+                      f"{len(train_with_cls):,} ({len(train_filtered)/len(train_with_cls):.1%})")
+
+        # Step 3: Class reduction (merge lower buckets)
+        if n_classes is not None and n_classes < 8:
+            max_bucket = n_classes - 1
+            original_dist = train_filtered['place_bucket'].value_counts().sort_index()
+            train_filtered = train_filtered.copy()
+            train_filtered['place_bucket'] = train_filtered['place_bucket'].clip(upper=max_bucket)
+            if self.config.verbose:
+                print(f"  Class reduction: 8 → {n_classes} classes (merge buckets {max_bucket}+)")
+
+        # Show class distribution
         if self.config.verbose:
-            print(f"  Filtered train: {len(train_filtered):,} from {len(train_df):,} "
-                  f"({len(train_filtered)/len(train_df):.1%})")
-            # Show class distribution
             dist = train_filtered['place_bucket'].value_counts().sort_index()
             for bucket, count in dist.items():
                 print(f"    Bucket {bucket}: {count:,} ({count/len(train_filtered):.1%})")
 
-        # Filter validation data
+        # Step 4: Prepare validation data (always hard-filter val for clean evaluation)
         val_filtered = None
         if val_df is not None:
             val_filtered = self._filter_to_contenders(val_df, bucket_predictor, top_n)
+            if n_classes is not None and n_classes < 8:
+                val_filtered = val_filtered.copy()
+                val_filtered['place_bucket'] = val_filtered['place_bucket'].clip(
+                    upper=n_classes - 1
+                )
             if self.config.verbose:
                 print(f"  Filtered val: {len(val_filtered):,} from {len(val_df):,}")
+
+        # Step 5: Build model config with optional separate learning rate
+        lr = self.config.contender_learning_rate or self.config.probability_n_estimators
+        # Fix: use the probability LR from the lgb_params default if no override
+        contender_lr = self.config.contender_learning_rate
 
         config = ProbabilityPredictorConfig(
             n_estimators=self.config.probability_n_estimators,
             early_stopping_rounds=self.config.probability_early_stopping,
-            use_sample_weights=False,
+            use_sample_weights=False,  # We handle weights externally
         )
 
+        if contender_lr is not None:
+            config.lgb_params['learning_rate'] = contender_lr
+
+        if n_classes is not None:
+            config.lgb_params['num_class'] = n_classes
+
         model = ProbabilityPredictor(config)
-        info = model.train(train_filtered, val_filtered, verbose=self.config.verbose)
+        info = model.train(
+            train_filtered, val_filtered,
+            verbose=self.config.verbose,
+            external_weights=external_weights,
+        )
 
         # Calibrate temperature on filtered validation set
         if val_filtered is not None:
@@ -268,6 +352,73 @@ class ModelTrainer:
         self.contender_predictor = model
 
         return model, info
+
+    def _generate_oof_bucket_predictions(
+        self, train_df, val_df, bucket_predictor: OrdinalBucketPredictor
+    ) -> np.ndarray:
+        """Generate out-of-fold bucket predictions to avoid leakage in contender filtering."""
+        import pandas as pd
+
+        n_folds = self.config.contender_oof_folds
+        train_df = train_df.copy()
+
+        # Sort by date for temporal folds
+        if 'competition_date' not in train_df.columns:
+            # Fall back to direct predictions if no date column
+            return bucket_predictor.predict_continuous(train_df)
+
+        dates = pd.to_datetime(train_df['competition_date'])
+        train_df['_oof_date'] = dates
+
+        # Create temporal fold boundaries
+        date_quantiles = [dates.quantile(i / n_folds) for i in range(1, n_folds)]
+
+        oof_predictions = np.full(len(train_df), np.nan)
+
+        for fold_idx in range(n_folds):
+            # Define fold boundaries
+            if fold_idx == 0:
+                fold_mask = train_df['_oof_date'] <= date_quantiles[0]
+            elif fold_idx == n_folds - 1:
+                fold_mask = train_df['_oof_date'] > date_quantiles[-1]
+            else:
+                fold_mask = (
+                    (train_df['_oof_date'] > date_quantiles[fold_idx - 1]) &
+                    (train_df['_oof_date'] <= date_quantiles[fold_idx])
+                )
+
+            fold_train = train_df[~fold_mask]
+            fold_predict = train_df[fold_mask]
+
+            if len(fold_predict) == 0:
+                continue
+
+            # Train a temporary bucket predictor on the non-fold data
+            temp_config = BucketPredictorConfig(
+                n_estimators=self.config.bucket_n_estimators,
+                early_stopping_rounds=self.config.bucket_early_stopping,
+            )
+            temp_model = OrdinalBucketPredictor(temp_config)
+            temp_model.train(fold_train, val_df, verbose=False)
+
+            # Predict on the held-out fold
+            fold_preds = temp_model.predict_continuous(fold_predict)
+            oof_predictions[fold_mask.values] = fold_preds
+
+            if self.config.verbose:
+                print(f"    OOF fold {fold_idx + 1}/{n_folds}: "
+                      f"trained on {len(fold_train):,}, predicted {len(fold_predict):,}")
+
+        train_df.drop(columns=['_oof_date'], inplace=True)
+
+        # Fill any remaining NaN with direct predictions (shouldn't happen)
+        nan_mask = np.isnan(oof_predictions)
+        if nan_mask.any():
+            oof_predictions[nan_mask] = bucket_predictor.predict_continuous(
+                train_df[nan_mask]
+            )
+
+        return oof_predictions
 
     @staticmethod
     def _filter_to_contenders(

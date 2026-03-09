@@ -650,6 +650,11 @@ def evaluate_full_system(
             y_true_cont = contender_df['place_bucket'].values
             comp_ids_cont = contender_df['competition_id'].values
 
+            # Handle reduced-class contender models: clip true values to match
+            n_model_classes = contender_predictor.config.lgb_params.get('num_class', 8)
+            if n_model_classes < 8:
+                y_true_cont = np.clip(y_true_cont, 0, n_model_classes - 1)
+
             results['probability_contender'] = ProbabilityEvaluator.evaluate(y_true_cont, y_proba_cont)
             results['probability_contender_top4'] = Top4ProbabilityEvaluator.evaluate(
                 y_true_cont, y_proba_cont, competition_ids=comp_ids_cont

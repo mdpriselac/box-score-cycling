@@ -280,7 +280,31 @@ class FeatureEngineer:
         # Form confidence (based on recent race count)
         df['form_confidence'] = df['form_recent_count'].fillna(0) / 5.0
 
-        # 12. Team-based derived features
+        # 12. Competition-type specialization features
+
+        # 12a. Type experience ratio: what fraction of career in this race type?
+        # Normalized to account for stage races generating many more competitions
+        # than GC (5-21 stages per 1 GC). Use sqrt to compress the stage inflation.
+        stage_ct = df['stage_count'].fillna(0)
+        oneday_ct = df['one_day_count'].fillna(0)
+        gc_ct = df['gc_count'].fillna(0)
+        relevant_type_ct = np.where(
+            df['competition_type'] == 'stage', stage_ct,
+            np.where(df['competition_type'] == 'one_day', oneday_ct, gc_ct)
+        )
+        career = df['races_career'].fillna(1).clip(lower=1)
+        df['type_experience_ratio'] = np.sqrt(relevant_type_ct) / np.sqrt(career)
+
+        # 12b. GC specialist score: gc_avg shrunk toward neutral (5.0) based on
+        # sample size. With few GC races, stays near 5.0; with many, reflects true avg.
+        gc_avg = df['gc_avg_bucket'].fillna(5.0)
+        shrinkage_k = 10.0
+        df['gc_specialist_score'] = (
+            gc_ct / (gc_ct + shrinkage_k) * gc_avg +
+            shrinkage_k / (gc_ct + shrinkage_k) * 5.0
+        )
+
+        # 13. Team-based derived features
         # Is best on team by quality
         df['is_team_best'] = (
             df['stage_avg_bucket'].fillna(5.0) <= df['team_quality_min'].fillna(5.0)

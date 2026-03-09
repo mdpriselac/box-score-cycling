@@ -167,7 +167,8 @@ class ProbabilityPredictor:
         self,
         train_df: pd.DataFrame,
         val_df: Optional[pd.DataFrame] = None,
-        verbose: bool = True
+        verbose: bool = True,
+        external_weights: Optional[np.ndarray] = None,
     ) -> Dict[str, Any]:
         """
         Train the probability prediction model.
@@ -176,6 +177,8 @@ class ProbabilityPredictor:
             train_df: Training data with features and place_bucket
             val_df: Validation data for early stopping
             verbose: Print training progress
+            external_weights: Optional pre-computed sample weights (overrides
+                use_sample_weights config if provided)
 
         Returns:
             Training history/metrics dict
@@ -188,7 +191,9 @@ class ProbabilityPredictor:
 
         # Compute sample weights
         sample_weights = None
-        if self.config.use_sample_weights:
+        if external_weights is not None:
+            sample_weights = external_weights
+        elif self.config.use_sample_weights:
             sample_weights = self.compute_sample_weights(y_train)
 
         # Create LightGBM datasets
@@ -273,6 +278,13 @@ class ProbabilityPredictor:
         else:
             # Standard softmax output from LightGBM
             proba = self.model.predict(X)
+
+        # Pad to 8 columns if trained with fewer classes (class reduction)
+        n_classes = proba.shape[1] if proba.ndim > 1 else 1
+        if n_classes < 8:
+            padded = np.zeros((len(proba), 8))
+            padded[:, :n_classes] = proba
+            proba = padded
 
         return proba
 
