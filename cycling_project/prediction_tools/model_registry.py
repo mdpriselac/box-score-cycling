@@ -314,13 +314,21 @@ class ModelRegistry:
         """
         bucket_pred, time_gap_pred, weighted_prob, calibrated_prob, contender_prob = self.load()
 
+        # Read contender_top_n from model metadata so inference matches training
+        metadata = self.get_metadata()
+        training_info = metadata.get('training_info', {})
+        contender_top_n = training_info.get('contender_top_n', RaceRankingConfig.contender_top_n)
+
         race_ranker = RaceRankingPredictor(
             bucket_predictor=bucket_pred,
             time_gap_predictor=time_gap_pred,
             probability_predictor=weighted_prob,
             calibrated_predictor=calibrated_prob,
             contender_predictor=contender_prob,
-            config=RaceRankingConfig(ranking_method=ranking_method)
+            config=RaceRankingConfig(
+                ranking_method=ranking_method,
+                contender_top_n=contender_top_n,
+            )
         )
 
         return bucket_pred, time_gap_pred, race_ranker

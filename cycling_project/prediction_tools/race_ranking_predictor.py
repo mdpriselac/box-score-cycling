@@ -11,7 +11,7 @@ Ranking methods:
 The predicted ranking can then be converted to buckets using place_bucketer.
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Dict, Any, Optional, List, Literal
 import numpy as np
 import pandas as pd
@@ -54,7 +54,7 @@ class RaceRankingConfig:
     ensemble_weights: tuple = (0.7, 0.3)
 
     # Number of top riders per race for contender model
-    contender_top_n: int = 25
+    contender_top_n: int = 15
 
 
 class RaceRankingPredictor:
@@ -159,16 +159,16 @@ class RaceRankingPredictor:
         if return_details:
             # Determine probability source with cascade:
             # contender (top N) > calibrated > weighted > Gaussian heuristic
-            if self.contender_predictor is not None:
+            contender = self.contender_predictor
+            contender_mask = pd.Series(expected_buckets).rank().values <= self.config.contender_top_n
+
+            if contender is not None:
                 # Add classifier prediction as feature for contender model
                 race_df_with_cls = race_df.copy()
                 race_df_with_cls['classifier_expected_bucket'] = expected_buckets
 
-                # Determine contender set (top N by expected bucket)
-                contender_mask = pd.Series(expected_buckets).rank().values <= self.config.contender_top_n
-
-                # Get contender probs for top N
-                contender_proba = self.contender_predictor.predict_proba(
+                # Get contender probs for selected riders
+                contender_proba = contender.predict_proba(
                     race_df_with_cls[contender_mask]
                 )
 
@@ -179,7 +179,7 @@ class RaceRankingPredictor:
                 else:
                     all_proba = self.bucket_predictor.predict_proba(race_df)
 
-                # Merge: contender probs for top N, fallback for rest
+                # Merge: contender probs for selected riders, fallback for rest
                 all_proba[contender_mask] = contender_proba
                 proba = all_proba
 

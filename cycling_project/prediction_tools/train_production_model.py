@@ -22,6 +22,74 @@ from cycling_project.prediction_tools.probability_predictor import ProbabilityPr
 from cycling_project.prediction_tools.model_registry import ModelRegistry
 
 
+def generate_oof_bucket_predictions(
+    train_df: pd.DataFrame,
+    val_df: pd.DataFrame,
+    bucket_config: BucketPredictorConfig,
+    n_folds: int = 5,
+) -> np.ndarray:
+    """Generate out-of-fold bucket predictions to avoid leakage in contender filtering.
+
+    Splits training data into temporal folds, trains a temporary bucket predictor
+    on each fold's complement, and predicts on the held-out fold. This produces
+    leak-free classifier_expected_bucket values for the full training set.
+
+    Args:
+        train_df: Training data (must have competition_date column)
+        val_df: Validation/early-stop set (used for early stopping in each fold model)
+        bucket_config: Config for the temporary bucket predictors
+        n_folds: Number of temporal folds
+
+    Returns:
+        Array of OOF continuous bucket predictions, same length as train_df
+    """
+    dates = pd.to_datetime(train_df['competition_date'])
+
+    # Create temporal fold boundaries using date quantiles
+    date_quantiles = [dates.quantile(i / n_folds) for i in range(1, n_folds)]
+
+    oof_predictions = np.full(len(train_df), np.nan)
+
+    for fold_idx in range(n_folds):
+        # Define fold boundaries
+        if fold_idx == 0:
+            fold_mask = dates <= date_quantiles[0]
+        elif fold_idx == n_folds - 1:
+            fold_mask = dates > date_quantiles[-1]
+        else:
+            fold_mask = (
+                (dates > date_quantiles[fold_idx - 1]) &
+                (dates <= date_quantiles[fold_idx])
+            )
+
+        fold_train = train_df[~fold_mask]
+        fold_predict = train_df[fold_mask]
+
+        if len(fold_predict) == 0:
+            continue
+
+        # Train a temporary bucket predictor on the non-fold data
+        temp_model = OrdinalBucketPredictor(bucket_config)
+        temp_model.train(fold_train, val_df, verbose=False)
+
+        # Predict on the held-out fold
+        fold_preds = temp_model.predict_continuous(fold_predict)
+        oof_predictions[fold_mask.values] = fold_preds
+
+        print(f"    OOF fold {fold_idx + 1}/{n_folds}: "
+              f"trained on {len(fold_train):,}, predicted {len(fold_predict):,}")
+
+    # Fill any remaining NaN with direct predictions (shouldn't happen)
+    nan_mask = np.isnan(oof_predictions)
+    if nan_mask.any():
+        print(f"    Warning: {nan_mask.sum()} NaN OOF predictions filled with direct predictions")
+        temp_model = OrdinalBucketPredictor(bucket_config)
+        temp_model.train(train_df, val_df, verbose=False)
+        oof_predictions[nan_mask] = temp_model.predict_continuous(train_df[nan_mask])
+
+    return oof_predictions
+
+
 def main():
     print("=" * 70)
     print("PRODUCTION MODEL TRAINING (ALL DATA)")
@@ -169,25 +237,40 @@ def main():
     print("TRAINING CONTENDER PROBABILITY PREDICTOR (filtered + classifier feature)")
     print("=" * 70)
 
-    contender_top_n = 25
+    contender_top_n = 15
+    contender_n_classes = 5
 
-    # Add classifier predictions and filter to top N per race
+    # Generate OOF bucket predictions (leak-free) for training set
+    print("\nGenerating out-of-fold bucket predictions...")
+    oof_bucket_preds = generate_oof_bucket_predictions(
+        train_df=train,
+        val_df=early_stop,
+        bucket_config=bucket_config,
+        n_folds=5,
+    )
+
+    # Add OOF predictions and filter to top N per race
     train_contender = train.copy()
-    train_contender['classifier_expected_bucket'] = bucket_predictor.predict_continuous(train)
+    train_contender['classifier_expected_bucket'] = oof_bucket_preds
     train_contender['_rank'] = train_contender.groupby('competition_id')['classifier_expected_bucket'].rank()
     train_contender = train_contender[train_contender['_rank'] <= contender_top_n].drop(columns=['_rank'])
 
+    # Early-stop set uses direct predictions (no leakage — not used to train bucket model)
     early_stop_contender = early_stop.copy()
     early_stop_contender['classifier_expected_bucket'] = bucket_predictor.predict_continuous(early_stop)
     early_stop_contender['_rank'] = early_stop_contender.groupby('competition_id')['classifier_expected_bucket'].rank()
     early_stop_contender = early_stop_contender[early_stop_contender['_rank'] <= contender_top_n].drop(columns=['_rank'])
+
+    # 5-class reduction: merge buckets 4-6 into class 4
+    train_contender['place_bucket'] = train_contender['place_bucket'].clip(upper=contender_n_classes - 1)
+    early_stop_contender['place_bucket'] = early_stop_contender['place_bucket'].clip(upper=contender_n_classes - 1)
 
     print(f"Filtered train: {len(train_contender):,} from {len(train):,} ({len(train_contender)/len(train):.1%})")
     print(f"Filtered early-stop: {len(early_stop_contender):,} from {len(early_stop):,}")
 
     # Class distribution of filtered set
     dist = train_contender['place_bucket'].value_counts().sort_index()
-    print("\nFiltered training set class distribution:")
+    print(f"\nFiltered training set class distribution ({contender_n_classes} classes):")
     for bucket, count in dist.items():
         print(f"  Bucket {bucket}: {count:,} ({count/len(train_contender):.1%})")
 
@@ -198,11 +281,12 @@ def main():
     )
     contender_config.lgb_params.update({
         'num_leaves': 63,
-        'learning_rate': 0.05,
+        'learning_rate': 0.01,
         'feature_fraction': 0.8,
         'bagging_fraction': 0.8,
         'bagging_freq': 5,
         'min_child_samples': 50,
+        'num_class': contender_n_classes,
     })
 
     contender_predictor = ProbabilityPredictor(contender_config)
@@ -219,36 +303,40 @@ def main():
 
     model_dir = Path(__file__).parent.parent.parent / "models" / "production"
     registry = ModelRegistry(str(model_dir))
+    training_info_dict = {
+        'mode': 'production',
+        'total_samples': len(df),
+        'total_competitions': int(df['competition_id'].nunique()),
+        'train_samples': len(train),
+        'early_stop_samples': len(early_stop),
+        'date_range': f"{df['competition_date'].min().date()} to {df['competition_date'].max().date()}",
+        'early_stop_cutoff': str(cutoff_date.date()),
+        'bucket_best_iteration': bucket_info['best_iteration'],
+        'bucket_n_features': bucket_info['n_features'],
+        'time_gap_best_iteration': time_gap_info['best_iteration'],
+        'time_gap_train_samples': time_gap_info['train_samples'],
+        'probability_best_iteration': probability_info['best_iteration'],
+        'probability_temperature': temp,
+        'calibrated_best_iteration': calibrated_info['best_iteration'],
+        'calibrated_temperature': cal_temp,
+        'contender_best_iteration': contender_info['best_iteration'],
+        'contender_temperature': cont_temp,
+        'contender_top_n': contender_top_n,
+        'contender_learning_rate': 0.01,
+        'contender_n_classes': contender_n_classes,
+        'contender_use_oof': True,
+        'contender_train_samples': len(train_contender),
+        'min_races_career': 10,
+        'start_date': '2018-01-01',
+        'timestamp': datetime.now().isoformat(),
+    }
     registry.save(
         bucket_predictor=bucket_predictor,
         time_gap_predictor=time_gap_predictor,
         probability_predictor=probability_predictor,
         calibrated_predictor=calibrated_predictor,
         contender_predictor=contender_predictor,
-        training_info={
-            'mode': 'production',
-            'total_samples': len(df),
-            'total_competitions': int(df['competition_id'].nunique()),
-            'train_samples': len(train),
-            'early_stop_samples': len(early_stop),
-            'date_range': f"{df['competition_date'].min().date()} to {df['competition_date'].max().date()}",
-            'early_stop_cutoff': str(cutoff_date.date()),
-            'bucket_best_iteration': bucket_info['best_iteration'],
-            'bucket_n_features': bucket_info['n_features'],
-            'time_gap_best_iteration': time_gap_info['best_iteration'],
-            'time_gap_train_samples': time_gap_info['train_samples'],
-            'probability_best_iteration': probability_info['best_iteration'],
-            'probability_temperature': temp,
-            'calibrated_best_iteration': calibrated_info['best_iteration'],
-            'calibrated_temperature': cal_temp,
-            'contender_best_iteration': contender_info['best_iteration'],
-            'contender_temperature': cont_temp,
-            'contender_top_n': contender_top_n,
-            'contender_train_samples': len(train_contender),
-            'min_races_career': 10,
-            'start_date': '2018-01-01',
-            'timestamp': datetime.now().isoformat(),
-        },
+        training_info=training_info_dict,
     )
     print(f"Models saved to {model_dir}")
 

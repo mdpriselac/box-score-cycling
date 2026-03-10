@@ -54,14 +54,14 @@ class TrainingConfig:
     train_probability: bool = True
     train_calibrated_probability: bool = True
     train_contender_probability: bool = True
-    contender_top_n: int = 25
+    contender_top_n: int = 15
     ranking_method: Literal['expected_bucket', 'time_gap', 'ensemble'] = 'expected_bucket'
 
     # Contender model tuning
-    contender_learning_rate: Optional[float] = None  # None = use same as probability LR
-    contender_use_oof: bool = False  # Use out-of-fold bucket predictions for filtering
+    contender_learning_rate: Optional[float] = 0.01  # Lower LR for longer training (~380+ iterations)
+    contender_use_oof: bool = True  # Use out-of-fold bucket predictions for filtering
     contender_oof_folds: int = 5
-    contender_n_classes: Optional[int] = None  # None = auto (8), or e.g. 5 to merge buckets 4-6
+    contender_n_classes: Optional[int] = 5  # Merge buckets 4-6 into class 4
     contender_use_soft_weights: bool = False  # Soft weighting instead of hard filtering
     contender_soft_weight_power: float = 2.0  # Exponent for soft weighting
 

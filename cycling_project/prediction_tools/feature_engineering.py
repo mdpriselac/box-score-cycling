@@ -304,6 +304,13 @@ class FeatureEngineer:
             shrinkage_k / (gc_ct + shrinkage_k) * 5.0
         )
 
+        # 12c. Specialization gap features: how good at X relative to own career avg?
+        # Negative = specialist (better than their own baseline in that domain)
+        mountain_avg = df['mountain_avg_bucket'].fillna(5.0)
+        career_avg = df['stage_avg_bucket'].fillna(5.0)  # stage_avg as career proxy (most common type)
+        df['gc_vs_career_gap'] = gc_avg - career_avg
+        df['mountain_vs_career_gap'] = mountain_avg - career_avg
+
         # 13. Team-based derived features
         # Is best on team by quality
         df['is_team_best'] = (
