@@ -31,13 +31,11 @@ from cycling_project.webscrape_tools.logging_config import get_logger
 logger = get_logger(__name__)
 
 
-# Default 5-fold expanding window
+# Default 3-fold expanding window (full-year val/test to avoid seasonal bias)
 DEFAULT_FOLDS = [
-    {'train_end': '2020-12-31', 'val_end': '2021-06-30', 'label': '2021H2'},
-    {'train_end': '2021-12-31', 'val_end': '2022-06-30', 'label': '2022H2'},
-    {'train_end': '2022-12-31', 'val_end': '2023-06-30', 'label': '2023H2'},
-    {'train_end': '2023-12-31', 'val_end': '2024-06-30', 'label': '2024H2'},
-    {'train_end': '2024-12-31', 'val_end': '2025-06-30', 'label': '2025H2'},
+    {'train_end': '2021-12-31', 'val_end': '2022-12-31', 'label': '2023'},
+    {'train_end': '2022-12-31', 'val_end': '2023-12-31', 'label': '2024'},
+    {'train_end': '2023-12-31', 'val_end': '2024-12-31', 'label': '2025'},
 ]
 
 # Primary metrics we track for comparison (metric_group, metric_key)
