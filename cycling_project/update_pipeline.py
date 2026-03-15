@@ -221,7 +221,7 @@ def _get_existing_race_keys(db_path: str) -> Set[Tuple[str, int, str]]:
 def _get_incomplete_race_keys(
     db_path: str, years: List[int]
 ) -> Set[Tuple[str, int, str]]:
-    """Get race keys where at least one competition has zero rider results.
+    """Get race keys where competitions are missing or have zero rider results.
 
     Only checks the specified years to avoid touching historical data where
     empty competitions may be legitimate (e.g. GC classifications).
@@ -236,7 +236,12 @@ def _get_incomplete_race_keys(
         JOIN competitions c ON c.race_id = r.id
         LEFT JOIN rider_results rr ON rr.competition_id = c.id
         WHERE rr.id IS NULL AND r.year IN ({placeholders})
-    """, years)
+        UNION
+        SELECT r.fc_race_id, r.year, r.category
+        FROM races r
+        LEFT JOIN competitions c ON c.race_id = r.id
+        WHERE c.id IS NULL AND r.year IN ({placeholders})
+    """, years + years)
     keys = {(str(row[0]), row[1], row[2]) for row in cursor.fetchall()}
     conn.close()
     return keys
