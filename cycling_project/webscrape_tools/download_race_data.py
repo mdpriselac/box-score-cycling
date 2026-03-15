@@ -113,16 +113,25 @@ def create_to_scrape_list_tour(tour_folder_path: str) -> List[Tuple[str, str]]:
             try:
                 with open(pkl_path, "rb") as f:
                     race = pickle.load(f)
-                has_results = bool(race.results) or (
-                    hasattr(race, 'stages') and
-                    any(getattr(s, 'results', None) for s in race.stages)
-                )
-                if not has_results:
-                    race_date = _parse_race_date(race.date)
-                    if race_date and race_date <= date.today():
-                        logger.info(f"Stale pkl found: {pkl_name} (date {race_date}, no results) — will re-scrape")
-                        os.remove(pkl_path)
-                        stale_names.add(pkl_name)
+                is_stale = False
+                if hasattr(race, 'stages') and race.stages:
+                    # Stage race: stale if any past stage is missing results
+                    for stage in race.stages:
+                        stage_date = _parse_race_date(stage.date)
+                        if stage_date and stage_date <= date.today() and not getattr(stage, 'results', None):
+                            is_stale = True
+                            break
+                else:
+                    # One-day race: stale if past date and no results
+                    if not bool(race.results):
+                        race_date = _parse_race_date(race.date)
+                        if race_date and race_date <= date.today():
+                            is_stale = True
+
+                if is_stale:
+                    logger.info(f"Stale pkl found: {pkl_name} — will re-scrape")
+                    os.remove(pkl_path)
+                    stale_names.add(pkl_name)
             except Exception as e:
                 logger.warning(f"Error checking pkl {pkl_name}: {e}")
 
