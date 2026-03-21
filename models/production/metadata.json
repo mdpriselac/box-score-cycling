@@ -112,7 +112,7 @@
     "race_profile_sprint",
     "race_profile_time_trial"
   ],
-  "saved_at": "2026-03-15T13:45:44.329231",
+  "saved_at": "2026-03-19T15:58:57.726919",
   "training_info": {
     "mode": "production",
     "total_samples": 467234,
@@ -138,6 +138,6 @@
     "contender_train_samples": 60855,
     "min_races_career": 10,
     "start_date": "2018-01-01",
-    "timestamp": "2026-03-15T13:45:44.161317"
+    "timestamp": "2026-03-19T15:58:57.556683"
   }
 }

@@ -31,6 +31,7 @@ from cycling_project.prediction_tools.future_race_loader import (
     compare_race_characteristics,
     evaluate_predictions_against_actual,
     get_race_finishing_characteristics,
+    compute_profile_scores_from_results,
     detect_stage_race_from_db,
     get_available_stages,
     get_default_references,
@@ -282,13 +283,86 @@ if 'matched' in st.session_state and not st.session_state['matched'].empty:
         ]].copy()
         sel_df.columns = ['ID', 'Name', 'Date', 'Type', 'Profile',
                           'Sprint', 'Mtn', 'Hilly', 'Rolling', 'Breakaway', 'TT']
-        for col in ['Sprint', 'Mtn', 'Hilly', 'Rolling', 'Breakaway', 'TT']:
-            sel_df[col] = sel_df[col].apply(lambda v: f"{v:.2f}" if v is not None else "")
-        st.dataframe(sel_df, hide_index=True, width='stretch')
+        score_cols = ['Sprint', 'Mtn', 'Hilly', 'Rolling', 'Breakaway', 'TT']
+        for col in score_cols:
+            sel_df[col] = sel_df[col].apply(lambda v: float(v) if v is not None else 0.0)
+        score_col_config = {
+            col: st.column_config.ProgressColumn(
+                min_value=0, max_value=1, format="%.2f"
+            ) for col in score_cols
+        }
+        st.dataframe(sel_df, hide_index=True, width='stretch',
+                      column_config=score_col_config)
+
+        # Understanding Race Profiles expander
+        with st.expander("Understanding Race Profiles"):
+            st.markdown("""
+Race profiles are derived from how finishing time distributions change as you look
+deeper into the results — from the top 10% of finishers down to the full field.
+This captures the *outcome* of a race, not the course terrain. Each race gets a
+score (0-1) for each profile type, and the six scores sum to 1.0.
+
+We track four statistical gradients across finishing percentiles:
+
+- **Breakdown percentile**: The point at which finishing times lose enough variance
+  to compute statistics — a 50% breakdown means the top 50% all recorded essentially
+  the same time. No breakdown means gaps exist throughout.
+- **Variance slope**: How quickly the spread of finishing times grows as you include
+  lower-placed finishers. Steep = gaps widen rapidly. Flat = times stay tight.
+- **Clumpiness slope**: Whether riders increasingly form distinct finishing groups
+  as you look deeper. Positive = more clustering into packs.
+- **Biggest group slope**: How the largest finishing group changes in relative size.
+  Negative = the main group fragments as you include more finishers.
+
+---
+
+**Sprint** — *Bunch sprint finish. Flat stages controlled by sprint teams.*
+97% of sprint-classified races have a breakdown point, typically 55-90% — meaning
+the top 55-90% of finishers all recorded the same time. Near-zero variance slope:
+time gaps barely grow because so many riders are in the same bunch.
+Hallmark: massive group finishing together + flat variance growth.
+
+**Mountain** — *Selective summit finish. Alpine/Pyrenean summit finishes.*
+100% have no breakdown point — there's variance in finishing times at every
+percentile, even the top 10%. Highest variance slope of all types (~3.3e-05, 6x
+rolling) — gaps widen steeply the deeper you look.
+Hallmark: no bunch at any level + the steepest variance growth.
+
+**Hilly** — *Moderately selective. Ardennes classics, punchy finishes.*
+100% have a breakdown point, typically 25-50% — the top quarter to half finishes
+together, then gaps appear. Highest clumpiness slope of all types (0.007, 2-3x
+others) — riders cluster into distinct groups below the bunch.
+Hallmark: mid-range bunching + strong group formation.
+
+**Rolling** — *Gradual, steady selection. Wind-affected stages, medium terrain.*
+99% have no breakdown point — like mountain stages, there's variance throughout.
+But variance slope is moderate (~5.7e-06, about 1/6th of mountain). Gaps grow
+steadily, not steeply. This is the most common profile (52% of all races).
+Hallmark: no big bunch + moderate, consistent gap growth.
+
+**Breakaway** — *Early selection with fragmentation.*
+99% have a breakdown in the 10-20% range — only a small group at the very top
+finishes together. Most negative biggest group slope of all types (-0.008, 2x
+others) — the largest group gets progressively smaller.
+Hallmark: small initial bunch + the most aggressive group fragmentation.
+
+**TT** — *Individual or team time trial.*
+Identified by winning time < 70 minutes rather than gradient patterns. Each rider
+races alone, so 99% have no breakdown point — variance exists throughout.
+""")
 
         # Finishing Time Distributions expander
         if not details_df.empty and 'biggest_group_metric' in details_df.columns:
             with st.expander("Finishing Time Distributions"):
+                st.caption(
+                    "Raw statistical characteristics measured at the 50th percentile "
+                    "(top half of finishers). These feed into the profile scoring model. "
+                    "Biggest Group: size/position influence of the largest finishing group (0-1). "
+                    "Evenness: how uniformly spaced time gaps are (1=even, 0=bunchy). "
+                    "Clumpiness: degree of group clustering (higher=more groups). "
+                    "Selection: how selective the race was (spread + gap progression). "
+                    "Gini: inequality in time gaps (0=equal, 1=max inequality)."
+                )
                 char_cols = {
                     'display_name': 'Race',
                     'biggest_group_metric': 'Biggest Group',
@@ -857,13 +931,22 @@ if 'all_predictions' in st.session_state and 'fc_race_id' in st.session_state:
             if actual_chars:
                 st.subheader("Race Characteristics Comparison")
 
-                # Get reference characteristics
+                # Compute profile scores for actual race
+                actual_profile = compute_profile_scores_from_results(actual_df, winning_time)
+
+                # Get reference characteristics + profile scores
                 ref_chars_list = []
                 selected_refs = st.session_state.get('selected_refs', {})
                 for comp_id, ref_info in selected_refs.items():
                     chars = get_race_finishing_characteristics(comp_id)
                     if chars:
                         chars['label'] = ref_info.get('display_name', str(comp_id))
+                        # Attach profile scores from selected_refs
+                        for pkey in ['race_sprint_score', 'race_mountain_score',
+                                     'race_hilly_score', 'race_rolling_score',
+                                     'race_breakaway_score', 'race_time_trial_score',
+                                     'race_dominant_profile']:
+                            chars[pkey] = ref_info.get(pkey)
                         ref_chars_list.append(chars)
 
                 # Add averaged profile characteristics if available
@@ -872,6 +955,13 @@ if 'all_predictions' in st.session_state and 'fc_race_id' in st.session_state:
                     for key in actual_chars:
                         vals = [c[key] for c in ref_chars_list if c.get(key) is not None]
                         avg_chars[key] = sum(vals) / len(vals) if vals else 0
+                    # Average profile scores too
+                    for pkey in ['race_sprint_score', 'race_mountain_score',
+                                 'race_hilly_score', 'race_rolling_score',
+                                 'race_breakaway_score', 'race_time_trial_score']:
+                        vals = [c[pkey] for c in ref_chars_list
+                                if c.get(pkey) is not None]
+                        avg_chars[pkey] = sum(vals) / len(vals) if vals else 0
                     avg_chars['label'] = 'Averaged Reference Races'
                     ref_chars_list.append(avg_chars)
 
@@ -909,6 +999,37 @@ if 'all_predictions' in st.session_state and 'fc_race_id' in st.session_state:
                                 label = ref.get('label', '')[:25]
                                 for i, m in enumerate(display_metrics):
                                     comp_rows[i][label] = f"{ref.get(m, 0):.3f}" if ref.get(m) is not None else ''
+
+                            # Add profile scores section
+                            profile_keys = [
+                                ('race_sprint_score', 'Sprint'),
+                                ('race_mountain_score', 'Mountain'),
+                                ('race_hilly_score', 'Hilly'),
+                                ('race_rolling_score', 'Rolling'),
+                                ('race_breakaway_score', 'Breakaway'),
+                                ('race_time_trial_score', 'TT'),
+                            ]
+                            for pkey, plabel in profile_keys:
+                                row = {'Metric': plabel}
+                                if actual_profile:
+                                    # Map race_sprint_score -> sprint
+                                    score_key = pkey.replace('race_', '').replace('_score', '')
+                                    row['Actual'] = f"{actual_profile.get(score_key, 0):.3f}"
+                                else:
+                                    row['Actual'] = ''
+                                for ref in ref_chars_list:
+                                    label = ref.get('label', '')[:25]
+                                    val = ref.get(pkey)
+                                    row[label] = f"{val:.3f}" if val is not None else ''
+                                comp_rows.append(row)
+
+                            # Add dominant profile row
+                            dom_row = {'Metric': 'Dominant Profile'}
+                            dom_row['Actual'] = actual_profile.get('dominant_profile', '') if actual_profile else ''
+                            for ref in ref_chars_list:
+                                label = ref.get('label', '')[:25]
+                                dom_row[label] = ref.get('race_dominant_profile', '')
+                            comp_rows.append(dom_row)
 
                             comp_table = pd.DataFrame(comp_rows)
                             st.dataframe(comp_table, hide_index=True, width='stretch')

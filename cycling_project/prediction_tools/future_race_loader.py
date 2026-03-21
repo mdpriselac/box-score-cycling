@@ -39,6 +39,10 @@ from cycling_project.webscrape_tools.database.statistical_measures import (
     calculate_gini_coefficient,
     calculate_variance_and_std,
     calculate_skewness,
+    calculate_kurtosis,
+)
+from cycling_project.engineering_tools.race_profile_scoring import (
+    calculate_race_profile_scores,
 )
 from cycling_project.engineering_tools.place_handling import place_bucketer
 
@@ -1218,6 +1222,94 @@ def compute_characteristics_from_results(
         'largest_group_size': group_info['largest_group_size'],
         'proportion_in_groups': group_info['proportion_in_groups'],
     }
+
+
+def compute_profile_scores_from_results(
+    results_df: pd.DataFrame,
+    winning_time: Optional[float],
+) -> Optional[dict]:
+    """
+    Compute race profile scores from a results DataFrame.
+
+    Calculates statistics at multiple percentile levels, fits gradient slopes,
+    and feeds them into the profile scoring model.
+
+    Returns dict with keys: sprint, mountain, hilly, rolling, breakaway,
+    time_trial, dominant_profile — or None if insufficient data.
+    """
+    if winning_time is None or winning_time <= 0:
+        return None
+
+    valid = results_df[results_df['time_gap'].notna()].copy()
+    time_gaps = sorted(valid['time_gap'].astype(float).tolist())
+    total_finishers = len(time_gaps)
+
+    if total_finishers < 10:
+        return None
+
+    # Compute metrics at each percentile level
+    percentiles = [10, 15, 20, 25, 30, 35, 40, 45, 50,
+                   55, 60, 65, 70, 75, 80, 85, 90, 95, 100]
+    variance_values = []
+    clumpiness_values = []
+    biggest_group_values = []
+    kurtosis_null_percentile = None
+    valid_percentiles = []
+
+    for pct in percentiles:
+        n = max(1, int(total_finishers * pct / 100))
+        subset_gaps = time_gaps[:n]
+        if len(subset_gaps) < 3:
+            continue
+
+        finishing_times = [winning_time + g for g in subset_gaps]
+
+        # Variance
+        var_norm, _ = calculate_variance_and_std(finishing_times, normalize_by=winning_time)
+
+        # Kurtosis — check for breakdown
+        try:
+            kurt = calculate_kurtosis(finishing_times, normalize_by=winning_time)
+        except Exception:
+            kurt = None
+
+        # Track breakdown point (highest percentile where kurtosis is null/incalculable)
+        if kurt is None or (var_norm is not None and var_norm == 0):
+            if kurtosis_null_percentile is None or pct > kurtosis_null_percentile:
+                kurtosis_null_percentile = pct
+
+        # Group metrics
+        group_info = identify_groups(subset_gaps)
+        bg = calculate_biggest_group_metric(group_info, n)
+        clump = calculate_clumpiness_score(group_info, n, subset_gaps)
+
+        valid_percentiles.append(pct)
+        variance_values.append(var_norm if var_norm is not None else 0.0)
+        clumpiness_values.append(clump)
+        biggest_group_values.append(bg)
+
+    if len(valid_percentiles) < 3:
+        return None
+
+    # Fit linear regression slopes
+    pcts = np.array(valid_percentiles, dtype=float)
+    var_slope = float(np.polyfit(pcts, variance_values, 1)[0])
+    clump_slope = float(np.polyfit(pcts, clumpiness_values, 1)[0])
+    bg_slope = float(np.polyfit(pcts, biggest_group_values, 1)[0])
+
+    breakdown = kurtosis_null_percentile or 0
+
+    scores = calculate_race_profile_scores(
+        breakdown_percentile=breakdown,
+        variance_slope=var_slope,
+        clumpiness_slope=clump_slope,
+        biggest_group_slope=bg_slope,
+        winning_time=winning_time,
+    )
+
+    result = scores.to_dict()
+    result['dominant_profile'] = scores.dominant_type()
+    return result
 
 
 # ── Group E: Comparison & Evaluation ─────────────────────────────────────
