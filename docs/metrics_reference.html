@@ -1,0 +1,1124 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Cycling Prediction — Metrics Reference</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+:root {
+  --bg: #0f1419;
+  --panel: #151c24;
+  --panel-2: #1c252f;
+  --border: #2a3642;
+  --text: #e5edf5;
+  --text-dim: #94a3b8;
+  --text-faint: #64748b;
+  --accent: #60a5fa;
+  --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Monaco, Consolas, monospace;
+
+  /* Metric family colors */
+  --m-raw:     #f59e0b;  /* amber  — raw/scraped */
+  --m-target:  #fb7185;  /* rose   — target vars */
+  --m-rider:   #34d399;  /* green  — rider state */
+  --m-form:    #a78bfa;  /* violet — form/time */
+  --m-team:    #22d3ee;  /* cyan   — team */
+  --m-field:   #38bdf8;  /* sky    — field aggregates */
+  --m-race:    #f472b6;  /* pink   — race profile */
+  --m-derived: #fbbf24;  /* yellow — derived / engineered */
+  --m-model:   #4ade80;  /* emerald — model outputs */
+}
+
+* { box-sizing: border-box; }
+html, body {
+  margin: 0; padding: 0;
+  background: var(--bg); color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  font-size: 15px; line-height: 1.55;
+}
+body { padding: 28px 36px 80px; max-width: 1400px; margin: 0 auto; }
+
+h1 { margin: 0 0 4px; font-size: 28px; font-weight: 700; letter-spacing: -0.02em; }
+h2 { margin: 44px 0 14px; font-size: 20px; font-weight: 700; letter-spacing: -0.01em;
+     padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+h3 { margin: 0 0 2px; font-size: 15px; font-weight: 700; }
+h4 { margin: 14px 0 4px; font-size: 11px; font-weight: 700;
+     text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-dim); }
+p  { margin: 6px 0; }
+code, .mono { font-family: var(--mono); font-size: 12.5px; color: #e2e8f0;
+              background: #0b1118; padding: 1px 6px; border-radius: 4px;
+              border: 1px solid var(--border); }
+ul { margin: 6px 0 10px; padding-left: 20px; }
+li { margin: 3px 0; }
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+.subtitle { color: var(--text-dim); font-size: 13px; margin: 0 0 18px; }
+
+/* Table of contents */
+.toc { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0 22px;
+       padding: 12px 14px; background: var(--panel);
+       border: 1px solid var(--border); border-radius: 8px; }
+.toc a { font-size: 12px; padding: 4px 10px; border-radius: 4px;
+         background: var(--panel-2); border: 1px solid var(--border);
+         color: var(--text-dim); }
+.toc a:hover { background: var(--panel); color: var(--text); text-decoration: none; }
+.toc a::before { content: ""; display: inline-block; width: 8px; height: 8px;
+                 border-radius: 2px; margin-right: 6px; vertical-align: middle; }
+.toc a.t-raw::before     { background: var(--m-raw); }
+.toc a.t-target::before  { background: var(--m-target); }
+.toc a.t-rider::before   { background: var(--m-rider); }
+.toc a.t-form::before    { background: var(--m-form); }
+.toc a.t-team::before    { background: var(--m-team); }
+.toc a.t-field::before   { background: var(--m-field); }
+.toc a.t-race::before    { background: var(--m-race); }
+.toc a.t-derived::before { background: var(--m-derived); }
+.toc a.t-model::before   { background: var(--m-model); }
+
+/* Metric entry */
+.metric {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--accent);
+  border-radius: 8px;
+  padding: 14px 18px 16px;
+  margin: 10px 0;
+}
+.metric.t-raw     { border-left-color: var(--m-raw); }
+.metric.t-target  { border-left-color: var(--m-target); }
+.metric.t-rider   { border-left-color: var(--m-rider); }
+.metric.t-form    { border-left-color: var(--m-form); }
+.metric.t-team    { border-left-color: var(--m-team); }
+.metric.t-field   { border-left-color: var(--m-field); }
+.metric.t-race    { border-left-color: var(--m-race); }
+.metric.t-derived { border-left-color: var(--m-derived); }
+.metric.t-model   { border-left-color: var(--m-model); }
+
+.metric-head { display: flex; flex-wrap: wrap; align-items: baseline;
+               gap: 10px; margin-bottom: 2px; }
+.metric-head h3 { font-family: var(--mono); font-size: 14px; color: #e5edf5; }
+.metric-head .type {
+  font-size: 10px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.08em; padding: 1px 6px; border-radius: 3px;
+  color: #0b1118; background: var(--text-faint);
+}
+.metric-head .range { font-family: var(--mono); font-size: 11px;
+                      color: var(--text-faint); margin-left: auto; }
+.metric .desc { color: var(--text-dim); font-size: 13px; margin: 4px 0 8px; }
+
+.formula {
+  background: #0b1118;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 10px 12px;
+  font-family: var(--mono);
+  font-size: 12px;
+  color: #cbd5e1;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  margin: 8px 0;
+  overflow-x: auto;
+}
+.formula .kw { color: #c084fc; }
+.formula .fn { color: #60a5fa; }
+.formula .num { color: #fbbf24; }
+.formula .str { color: #34d399; }
+.formula .cmt { color: var(--text-faint); font-style: italic; }
+
+.meta-line {
+  font-size: 11.5px; color: var(--text-faint);
+  font-family: var(--mono); margin-top: 6px;
+}
+.meta-line .lbl { color: #64748b; }
+.meta-line .dep { color: #94a3b8; }
+
+.note {
+  font-size: 12px; color: var(--text-dim);
+  background: #11161c;
+  border-left: 2px solid var(--text-faint);
+  padding: 6px 10px; margin: 8px 0 0;
+  border-radius: 0 4px 4px 0;
+}
+
+.section-intro {
+  color: var(--text-dim); font-size: 13px;
+  margin: 6px 0 14px; padding: 10px 14px;
+  background: var(--panel-2); border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+/* Lineage diagram */
+.lineage {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px;
+  margin: 14px 0 20px;
+}
+.lineage-col {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 14px;
+}
+.lineage-col h4 { margin: 0 0 6px; font-size: 11px; color: var(--text-dim); }
+.lineage-col ul { padding-left: 14px; margin: 0; }
+.lineage-col li { font-size: 12px; margin: 2px 0; }
+.lineage-col .arrow-note { font-size: 11px; color: var(--text-faint);
+                           margin-top: 6px; font-style: italic; }
+
+/* Bucket viz */
+.bucket-scale {
+  display: grid; grid-template-columns: repeat(8, 1fr);
+  gap: 4px; margin: 10px 0;
+}
+.bucket-cell {
+  background: var(--panel); border: 1px solid var(--border);
+  border-radius: 6px; padding: 10px 6px; text-align: center;
+}
+.bucket-cell .b-num { font-family: var(--mono); font-size: 18px;
+                      font-weight: 700; color: var(--accent); }
+.bucket-cell .b-rule { font-size: 11px; color: var(--text-dim); margin-top: 2px; }
+.bucket-cell .b-label { font-size: 10px; color: var(--text-faint); margin-top: 2px; }
+
+hr { border: none; border-top: 1px solid var(--border); margin: 14px 0; }
+
+@media (max-width: 900px) {
+  .lineage { grid-template-columns: 1fr; }
+  .bucket-scale { grid-template-columns: repeat(4, 1fr); }
+}
+@media print {
+  body { background: white; color: black; padding: 0.4in; }
+  .metric, .toc, .lineage-col, .section-intro { background: white; color: black;
+    border-color: #bbb; }
+  .formula, code, .mono { background: #f2f2f2; color: #222; border-color: #ddd; }
+  .note { background: #f8f8f8; color: #333; }
+  h2 { border-color: #bbb; }
+  a { color: #1a4fb8; }
+}
+</style>
+</head>
+<body>
+
+<h1>Metrics Reference</h1>
+<p class="subtitle">
+  Exact formulas and derivations for every feature, metric, and output in the
+  cycling prediction system. Each entry shows how the value is computed from
+  its inputs, the output range, and the source location.<br>
+  Branch: <span class="mono">webscrape-refactor</span> @ <span class="mono">7e0b167</span> — complements <a href="pipeline_overview.html">pipeline_overview.html</a> (code flow).
+</p>
+
+<!-- =========================== TOC =========================== -->
+<div class="toc">
+  <a class="t-raw"     href="#raw">0. Raw ingredients</a>
+  <a class="t-target"  href="#target">1. Target variables</a>
+  <a class="t-rider"   href="#rider">2. Rider running state</a>
+  <a class="t-form"    href="#form">3. Form &amp; recency</a>
+  <a class="t-team"    href="#team">4. Team context</a>
+  <a class="t-field"   href="#field">5. Field aggregates</a>
+  <a class="t-race"    href="#race">6. Race profile scores</a>
+  <a class="t-derived" href="#derived">7. Derived features</a>
+  <a class="t-model"   href="#model">8. Model outputs &amp; odds</a>
+</div>
+
+<!-- Lineage overview -->
+<div class="lineage">
+  <div class="lineage-col">
+    <h4>Raw inputs</h4>
+    <ul>
+      <li><code>place</code></li>
+      <li><code>time_gap</code></li>
+      <li><code>bib</code></li>
+      <li><code>team_id</code></li>
+      <li><code>gradient / elevation</code></li>
+      <li><code>winning_time</code></li>
+    </ul>
+    <div class="arrow-note">→ place_bucketer, parse</div>
+  </div>
+  <div class="lineage-col">
+    <h4>Targets &amp; state</h4>
+    <ul>
+      <li><code>place_bucket ∈ [0,7]</code></li>
+      <li><code>RiderRunningState</code> sums</li>
+      <li><code>race_profile_scores</code></li>
+    </ul>
+    <div class="arrow-note">→ get_snapshot(), update()</div>
+  </div>
+  <div class="lineage-col">
+    <h4>Snapshots per race</h4>
+    <ul>
+      <li><code>rider_competition_snapshots</code></li>
+      <li><code>competition_field_features</code></li>
+      <li>Form features (90-day window)</li>
+      <li>Team features (two-pass)</li>
+    </ul>
+    <div class="arrow-note">→ FeatureEngineer.transform()</div>
+  </div>
+  <div class="lineage-col">
+    <h4>Derived &amp; model-ready</h4>
+    <ul>
+      <li>Interaction features</li>
+      <li>Bayesian shrinkage, √-compression</li>
+      <li>Imputation</li>
+    </ul>
+    <div class="arrow-note">→ LightGBM → probs/odds</div>
+  </div>
+</div>
+
+<!-- =========================================================== -->
+<!-- SECTION 0: RAW INGREDIENTS -->
+<!-- =========================================================== -->
+
+<h2 id="raw">0. Raw Ingredients (from scrape)</h2>
+<p class="section-intro">
+  These are the base quantities extracted from FirstCycling pages. Everything
+  downstream is computed from them. Each is pickled as part of a
+  <span class="mono">Race</span> or <span class="mono">Stage</span> object, then
+  migrated into SQLite during Stage 02 of the pipeline.
+</p>
+
+<div class="metric t-raw">
+  <div class="metric-head">
+    <h3>place</h3>
+    <span class="type" style="background:var(--m-raw)">raw</span>
+    <span class="range">int | "DNF" | "DNS" | "OTL" | …</span>
+  </div>
+  <p class="desc">Finishing position as displayed on FirstCycling, or a non-numeric status string for non-finishers.</p>
+  <p class="meta-line"><span class="lbl">source:</span> <span class="dep">Race.populate_race() (scrape)</span></p>
+</div>
+
+<div class="metric t-raw">
+  <div class="metric-head">
+    <h3>time_gap</h3>
+    <span class="type" style="background:var(--m-raw)">raw</span>
+    <span class="range">float seconds ≥ 0, winner = 0</span>
+  </div>
+  <p class="desc">Seconds behind the stage/race winner, parsed from FirstCycling's gap column. Missing for DNFs.</p>
+</div>
+
+<div class="metric t-raw">
+  <div class="metric-head">
+    <h3>bib (→ team_bib, personal_bib)</h3>
+    <span class="type" style="background:var(--m-raw)">raw</span>
+    <span class="range">int, e.g. 137 → team 13, personal 7</span>
+  </div>
+  <p class="desc">Race number split into team number (all but last digit) and personal number (last digit) via <span class="mono">migrate_bib_number_columns()</span>. Used for team-role features (<span class="mono">personal_bib == 1</span> means team leader).</p>
+</div>
+
+<div class="metric t-raw">
+  <div class="metric-head">
+    <h3>Gradient feature inputs</h3>
+    <span class="type" style="background:var(--m-raw)">raw</span>
+    <span class="range">4 floats + winning_time</span>
+  </div>
+  <p class="desc">Used only by race-profile scoring (Section 6). Extracted by the <span class="mono">gradients</span> pipeline step from elevation data and finishing-time distributions.</p>
+  <div class="formula">breakdown_percentile  <span class="cmt"># kurtosis_null_percentile, 0–100</span>
+variance_slope       <span class="cmt"># 1e-8 to 1e-4 range</span>
+clumpiness_slope     <span class="cmt"># ≈ -0.008 to 0.011</span>
+biggest_group_slope  <span class="cmt"># ≈ -0.015 to 0.008</span>
+winning_time         <span class="cmt"># seconds; &lt; 4200 → time trial</span></div>
+</div>
+
+<!-- =========================================================== -->
+<!-- SECTION 1: TARGET VARIABLES -->
+<!-- =========================================================== -->
+
+<h2 id="target">1. Target Variables</h2>
+
+<div class="metric t-target">
+  <div class="metric-head">
+    <h3>place_bucket</h3>
+    <span class="type" style="background:var(--m-target)">target</span>
+    <span class="range">int ∈ {0, 1, 2, 3, 4, 5, 6, 7}</span>
+  </div>
+  <p class="desc">The primary classification target: a coarse ordinal binning of finishing place inspired by UCI points jumps. Lower is better.</p>
+  <div class="bucket-scale">
+    <div class="bucket-cell"><div class="b-num">0</div><div class="b-rule">place = 1</div><div class="b-label">Winner</div></div>
+    <div class="bucket-cell"><div class="b-num">1</div><div class="b-rule">2 ≤ p ≤ 3</div><div class="b-label">Podium</div></div>
+    <div class="bucket-cell"><div class="b-num">2</div><div class="b-rule">4 ≤ p ≤ 5</div><div class="b-label">Top 5</div></div>
+    <div class="bucket-cell"><div class="b-num">3</div><div class="b-rule">6 ≤ p ≤ 15</div><div class="b-label">Top 15</div></div>
+    <div class="bucket-cell"><div class="b-num">4</div><div class="b-rule">16 ≤ p ≤ 30</div><div class="b-label">Top 30</div></div>
+    <div class="bucket-cell"><div class="b-num">5</div><div class="b-rule">31 ≤ p ≤ 50</div><div class="b-label">Top 50</div></div>
+    <div class="bucket-cell"><div class="b-num">6</div><div class="b-rule">p &gt; 50</div><div class="b-label">Finisher</div></div>
+    <div class="bucket-cell"><div class="b-num">7</div><div class="b-rule">non-int</div><div class="b-label">DNF/DNS/OTL</div></div>
+  </div>
+  <div class="formula"><span class="kw">def</span> <span class="fn">place_bucketer</span>(place):
+    <span class="kw">if</span> place <span class="kw">is None</span>:          <span class="kw">return None</span>        <span class="cmt"># skip row entirely</span>
+    <span class="kw">if</span> <span class="fn">isinstance</span>(place, str):
+        <span class="kw">try</span>: place = <span class="fn">int</span>(place.strip())
+        <span class="kw">except</span>: <span class="kw">return</span> <span class="num">7</span>                       <span class="cmt"># "DNF","OTL",…</span>
+    <span class="kw">if</span> place == <span class="num">1</span>:    <span class="kw">return</span> <span class="num">0</span>
+    <span class="kw">elif</span> place &lt;= <span class="num">3</span>:  <span class="kw">return</span> <span class="num">1</span>
+    <span class="kw">elif</span> place &lt;= <span class="num">5</span>:  <span class="kw">return</span> <span class="num">2</span>
+    <span class="kw">elif</span> place &lt;= <span class="num">15</span>: <span class="kw">return</span> <span class="num">3</span>
+    <span class="kw">elif</span> place &lt;= <span class="num">30</span>: <span class="kw">return</span> <span class="num">4</span>
+    <span class="kw">elif</span> place &lt;= <span class="num">50</span>: <span class="kw">return</span> <span class="num">5</span>
+    <span class="kw">else</span>:             <span class="kw">return</span> <span class="num">6</span></div>
+  <p class="meta-line"><span class="lbl">src:</span> <span class="dep">engineering_tools/place_handling.py → place_bucketer()</span></p>
+  <div class="note">Bucket 7 rows are <em>excluded</em> from bucket-predictor and time-gap training sets (their place isn't meaningful). The probability models keep class 7 to learn P(DNF).</div>
+</div>
+
+<div class="metric t-target">
+  <div class="metric-head">
+    <h3>time_gap (training target, log-transformed)</h3>
+    <span class="type" style="background:var(--m-target)">target</span>
+    <span class="range">float ∈ [0, 3600] s → log1p</span>
+  </div>
+  <p class="desc">Seconds behind the winner, filtered, capped, and log-transformed before feeding to the time-gap regression model.</p>
+  <div class="formula"><span class="cmt"># Filter (TimeGapPredictor.filter_for_training)</span>
+df = df[df.place_bucket != <span class="num">7</span>]              <span class="cmt"># drop DNFs</span>
+df = df[df.time_gap.notna()]
+<span class="kw">if</span> exclude_winners: df = df[df.time_gap &gt; <span class="num">0</span>]
+df.time_gap = df.time_gap.clip(upper=<span class="num">3600</span>)  <span class="cmt"># 1h cap</span>
+
+<span class="cmt"># Transform</span>
+y_train = <span class="fn">np.log1p</span>(time_gap)                <span class="cmt"># ln(1 + time_gap)</span>
+
+<span class="cmt"># Inverse at inference</span>
+prediction_sec = <span class="fn">np.expm1</span>(model.predict(X))  <span class="cmt"># = e^x − 1</span>
+prediction_sec = <span class="fn">max</span>(prediction_sec, <span class="num">0</span>)</div>
+  <p class="meta-line"><span class="lbl">src:</span> <span class="dep">time_gap_predictor.py — filter_for_training, prepare_features, predict</span></p>
+</div>
+
+<!-- =========================================================== -->
+<!-- SECTION 2: RIDER RUNNING STATE -->
+<!-- =========================================================== -->
+
+<h2 id="rider">2. Rider Running State (<span class="mono">rider_competition_snapshots</span>)</h2>
+<p class="section-intro">
+  All rider history features are computed by walking competitions chronologically
+  and maintaining running sums/counts per rider in a
+  <span class="mono">RiderRunningState</span>. At each race start, the current
+  state is frozen as a snapshot — so the rider's features as of 2020-07-01 only
+  use races dated strictly before 2020-07-01. This is the key anti-leakage
+  guarantee of the entire system.
+</p>
+
+<p class="section-intro">
+  <strong>Universal defaults:</strong>
+  <span class="mono">safe_avg(s, c) = round(s/c, 2) if c &gt; 0 else 4.0</span> —
+  a rider with no history in a given category gets a neutral 4.0 (mid-field).
+  Bucket 7 (DNF) results are <em>skipped entirely</em> by
+  <span class="mono">RiderRunningState.update()</span> and do not increment any
+  sum or count.
+</p>
+
+<div class="metric t-rider">
+  <div class="metric-head">
+    <h3>stage_avg_bucket, stage_count (and one_day, gc)</h3>
+    <span class="type" style="background:var(--m-rider)">rider</span>
+    <span class="range">avg ∈ [0, 6]; count ∈ ℕ</span>
+  </div>
+  <p class="desc">Incremental mean and count of finishing buckets across prior competitions of each type.</p>
+  <div class="formula"><span class="cmt"># RiderRunningState.update(bucket, comp_type, …)</span>
+<span class="kw">if</span> bucket == <span class="num">7</span>: <span class="kw">return</span>                       <span class="cmt"># DNFs skipped</span>
+<span class="kw">if</span> comp_type == <span class="str">'stage'</span>:
+    stage_bucket_sum += bucket
+    stage_count     += <span class="num">1</span>
+
+<span class="cmt"># Snapshot</span>
+stage_avg_bucket = stage_bucket_sum / stage_count   <span class="cmt"># or 4.0 if count=0</span></div>
+  <p class="meta-line"><span class="lbl">same formula for:</span> <span class="dep">one_day_avg_bucket / one_day_count, gc_avg_bucket / gc_count</span></p>
+  <p class="meta-line"><span class="lbl">src:</span> <span class="dep">engineering_tools/feature_precomputation.py → RiderRunningState.update() / get_snapshot()</span></p>
+</div>
+
+<div class="metric t-rider">
+  <div class="metric-head">
+    <h3>wt_avg_bucket, pro_avg_bucket, d1_avg_bucket</h3>
+    <span class="type" style="background:var(--m-rider)">rider</span>
+    <span class="range">avg ∈ [0, 6]; count ∈ ℕ</span>
+  </div>
+  <p class="desc">Same incremental mean/count pattern, bucketed instead by tour category (World Tour, Pro, Division 1). Tells the model "how does this rider fare at each level of competition".</p>
+  <div class="formula"><span class="kw">if</span> race_category == <span class="str">'wt'</span>:
+    wt_bucket_sum += bucket
+    wt_count     += <span class="num">1</span>
+<span class="cmt"># …same for 'pro', 'd1'</span>
+wt_avg_bucket = wt_bucket_sum / wt_count    <span class="cmt"># or 4.0</span></div>
+</div>
+
+<div class="metric t-rider">
+  <div class="metric-head">
+    <h3>sprint_avg_bucket, mountain_avg_bucket, … (profile-weighted)</h3>
+    <span class="type" style="background:var(--m-rider)">rider</span>
+    <span class="range">∈ [0, 6], weighted</span>
+  </div>
+  <p class="desc">
+    The six profile averages use <strong>continuous weighting by race profile scores</strong>:
+    instead of assigning each race to a single profile bucket, each race contributes
+    to <em>every</em> profile average proportionally to how "sprinty" / "mountainy" /
+    etc. it was. A rider's sprint bucket ends up reflecting both their performance
+    <em>and</em> how sprinter-friendly their races actually were.
+  </p>
+  <div class="formula"><span class="cmt"># For every prior race (with its race_profile scores):</span>
+sprint_weighted_sum += bucket * race_profile.sprint
+sprint_weight_sum   += race_profile.sprint
+<span class="cmt"># …repeat for mountain, hilly, rolling, breakaway, time_trial</span>
+
+<span class="cmt"># Snapshot</span>
+<span class="kw">def</span> <span class="fn">safe_weighted_avg</span>(ws, w):
+    <span class="kw">return</span> <span class="fn">round</span>(ws / w, <span class="num">2</span>) <span class="kw">if</span> w &gt; <span class="num">0.1</span> <span class="kw">else</span> <span class="num">4.0</span>
+
+sprint_avg_bucket = safe_weighted_avg(sprint_weighted_sum, sprint_weight_sum)</div>
+  <p class="meta-line"><span class="lbl">note:</span> <span class="dep">race_profile.sprint + mountain + … = 1.0 (non-TT), so each race contributes a total weight of 1 across all six averages combined.</span></p>
+  <p class="meta-line"><span class="lbl">floor:</span> <span class="dep">weight_sum must exceed 0.1 to produce a real average — otherwise defaults to 4.0.</span></p>
+</div>
+
+<div class="metric t-rider">
+  <div class="metric-head">
+    <h3>best_profile</h3>
+    <span class="type" style="background:var(--m-rider)">rider</span>
+    <span class="range">∈ {sprint, mountain, hilly, rolling, breakaway, time_trial, unknown}</span>
+  </div>
+  <p class="desc">The profile where the rider's weighted-average bucket is <em>lowest</em> (= best performance). Falls back to <span class="mono">"unknown"</span> if <em>every</em> weight sum is ≤ 0.1 (the rider has no meaningful profile data yet).</p>
+  <div class="formula">profile_avgs = {
+    <span class="str">'sprint'</span>:     safe_weighted_avg(sprint_ws,  sprint_w),
+    <span class="str">'mountain'</span>:   safe_weighted_avg(mountain_ws,mountain_w),
+    <span class="cmt"># … etc</span>
+}
+best_profile = <span class="fn">min</span>(profile_avgs, key=profile_avgs.get)   <span class="cmt"># argmin</span>
+    <span class="kw">if</span> <span class="fn">any</span>(w &gt; <span class="num">0.1</span> <span class="kw">for</span> w <span class="kw">in</span> weight_sums)
+    <span class="kw">else</span> <span class="str">'unknown'</span></div>
+</div>
+
+<div class="metric t-rider">
+  <div class="metric-head">
+    <h3>races_career, races_this_year</h3>
+    <span class="type" style="background:var(--m-rider)">rider</span>
+    <span class="range">int ≥ 0</span>
+  </div>
+  <p class="desc">Total competitions the rider has entered prior to the current race (both exclude DNFs). <span class="mono">races_this_year</span> resets each calendar year.</p>
+  <div class="formula">total_races += <span class="num">1</span>                                 <span class="cmt"># on every update()</span>
+races_by_year[race_year] = races_by_year.get(race_year, <span class="num">0</span>) + <span class="num">1</span>
+
+<span class="cmt"># Snapshot</span>
+races_career     = total_races
+races_this_year  = races_by_year.get(race_year, <span class="num">0</span>)</div>
+  <div class="note">Only riders with <span class="mono">races_career ≥ 10</span> enter the training set (<span class="mono">DataConfig.min_races_career</span>) — keeps training signal tied to rest-of-career rather than noisy newcomers.</div>
+</div>
+
+<!-- =========================================================== -->
+<!-- SECTION 3: FORM & RECENCY -->
+<!-- =========================================================== -->
+
+<h2 id="form">3. Form &amp; Recency</h2>
+<p class="section-intro">
+  Form features use a separate, time-windowed buffer
+  (<span class="mono">RiderFormHistory</span>, up to 50 most-recent entries) —
+  not the cumulative running state. A qualifying race must be strictly before
+  the target date, within the last 90 days, and within the same calendar year.
+  For GC targets, stages from the same race are excluded to avoid trivial
+  self-reference.
+</p>
+
+<div class="metric t-form">
+  <div class="metric-head">
+    <h3>Qualifying window</h3>
+    <span class="type" style="background:var(--m-form)">form</span>
+  </div>
+  <div class="formula">effective_date = race_start_date <span class="kw">if</span> comp_type == <span class="str">'gc'</span> <span class="kw">else</span> target_date
+min_dt = <span class="fn">max</span>(effective_date − <span class="num">90</span> days,
+              datetime(target_year, <span class="num">1</span>, <span class="num">1</span>))
+
+qualifying = [e <span class="kw">for</span> e <span class="kw">in</span> history
+              <span class="kw">if</span> min_dt ≤ e.date &lt; effective_date
+              <span class="kw">and not</span> (comp_type == <span class="str">'gc'</span>
+                       <span class="kw">and</span> e.race_id == target_race_id
+                       <span class="kw">and</span> e.race_year == target_year)]
+
+recent_5 = qualifying[-<span class="num">5</span>:]   <span class="cmt"># last up to 5 qualifying entries</span></div>
+  <p class="meta-line"><span class="lbl">src:</span> <span class="dep">engineering_tools/form_team_features.py → RiderFormHistory.get_form_features()</span></p>
+</div>
+
+<div class="metric t-form">
+  <div class="metric-head">
+    <h3>form_recent_avg_bucket</h3>
+    <span class="type" style="background:var(--m-form)">form</span>
+    <span class="range">∈ [0, 6], default 4.0</span>
+  </div>
+  <div class="formula">form_recent_avg_bucket = <span class="fn">sum</span>(e.bucket <span class="kw">for</span> e <span class="kw">in</span> recent_5) / <span class="fn">len</span>(recent_5)</div>
+</div>
+
+<div class="metric t-form">
+  <div class="metric-head">
+    <h3>form_recent_best_bucket, form_recent_count</h3>
+    <span class="type" style="background:var(--m-form)">form</span>
+  </div>
+  <div class="formula">form_recent_best_bucket = <span class="fn">min</span>(e.bucket <span class="kw">for</span> e <span class="kw">in</span> recent_5)   <span class="cmt"># best result</span>
+form_recent_count      = <span class="fn">len</span>(recent_5)                        <span class="cmt"># 0 to 5</span></div>
+</div>
+
+<div class="metric t-form">
+  <div class="metric-head">
+    <h3>form_delta</h3>
+    <span class="type" style="background:var(--m-form)">form</span>
+    <span class="range">typically [−3, +3]; negative = improving</span>
+  </div>
+  <p class="desc">Difference between recent form and the rider's career average. <strong>Negative = rider is currently doing better than their long-term baseline.</strong></p>
+  <div class="formula">form_delta = form_recent_avg_bucket − career_avg_bucket
+<span class="cmt"># where career_avg_bucket is passed in from the running-state snapshot</span></div>
+  <p class="meta-line"><span class="lbl">derived flag:</span> <span class="dep">is_improving_form = (form_delta &lt; −0.5)</span></p>
+</div>
+
+<div class="metric t-form">
+  <div class="metric-head">
+    <h3>form_profile_recent_avg</h3>
+    <span class="type" style="background:var(--m-form)">form</span>
+    <span class="range">∈ [0, 6], default 4.0</span>
+  </div>
+  <p class="desc">Mean bucket of the subset of recent races whose dominant profile <em>matches</em> the upcoming race's dominant profile. Answers "how has this rider been doing in <em>this kind</em> of race lately?".</p>
+  <div class="formula">profile_buckets = [e.bucket <span class="kw">for</span> e <span class="kw">in</span> recent_5
+                   <span class="kw">if</span> e.profile == target_profile]
+form_profile_recent_avg = <span class="fn">mean</span>(profile_buckets) <span class="kw">if</span> profile_buckets <span class="kw">else</span> <span class="num">4.0</span></div>
+</div>
+
+<div class="metric t-form">
+  <div class="metric-head">
+    <h3>days_since_last_race</h3>
+    <span class="type" style="background:var(--m-form)">form</span>
+    <span class="range">int ∈ [0, 365], capped</span>
+  </div>
+  <div class="formula">days_since = (effective_date − recent_5[-<span class="num">1</span>].date).days
+days_since_last_race = <span class="fn">min</span>(days_since, <span class="num">365</span>)   <span class="cmt"># cap at 365</span>
+
+<span class="cmt"># default when no recent race: 90</span></div>
+  <p class="meta-line"><span class="lbl">derived flags:</span> <span class="dep">is_fresh = (days &lt; 14), is_rusty = (days &gt; 45)</span></p>
+</div>
+
+<!-- =========================================================== -->
+<!-- SECTION 4: TEAM CONTEXT -->
+<!-- =========================================================== -->
+
+<h2 id="team">4. Team Context</h2>
+<p class="section-intro">
+  Team features use a two-pass algorithm per competition: first collect every
+  rider's snapshot into a team-indexed dict, then compute stats over each
+  rider's <em>teammates</em> (self is excluded). "Quality" is defined
+  concretely as each teammate's weighted career average bucket.
+</p>
+
+<div class="metric t-team">
+  <div class="metric-head">
+    <h3>Teammate career average (per-rider input)</h3>
+    <span class="type" style="background:var(--m-team)">team</span>
+    <span class="range">∈ [0, 6], default 4.0</span>
+  </div>
+  <div class="formula">stage_sum    = stage_avg_bucket    * stage_count
+one_day_sum  = one_day_avg_bucket  * one_day_count
+gc_sum       = gc_avg_bucket       * gc_count
+total_count  = stage_count + one_day_count + gc_count
+
+career_avg = (stage_sum + one_day_sum + gc_sum) / total_count
+             <span class="kw">if</span> total_count &gt; <span class="num">0</span> <span class="kw">else</span> <span class="num">4.0</span></div>
+  <p class="meta-line"><span class="lbl">src:</span> <span class="dep">TeamFeatureComputer._compute_career_avg()</span></p>
+</div>
+
+<div class="metric t-team">
+  <div class="metric-head">
+    <h3>team_quality_mean/median/std/min/max/p25/p75</h3>
+    <span class="type" style="background:var(--m-team)">team</span>
+    <span class="range">7 floats, ∈ [0, 6]</span>
+  </div>
+  <p class="desc">Distribution statistics over the career averages of the rider's teammates at this race. Percentiles use linear interpolation over the sorted list.</p>
+  <div class="formula">teammate_avgs = [_compute_career_avg(snap) <span class="kw">for</span> teammate <span class="kw">in</span> team]
+team_quality_mean   = <span class="fn">mean</span>(teammate_avgs)
+team_quality_median = <span class="fn">percentile</span>(sorted(teammate_avgs), <span class="num">50</span>)
+team_quality_std    = <span class="fn">stdev</span>(teammate_avgs, team_quality_mean)
+team_quality_min    = <span class="fn">min</span>(teammate_avgs)
+team_quality_max    = <span class="fn">max</span>(teammate_avgs)
+team_quality_p25    = <span class="fn">percentile</span>(sorted(teammate_avgs), <span class="num">25</span>)
+team_quality_p75    = <span class="fn">percentile</span>(sorted(teammate_avgs), <span class="num">75</span>)</div>
+</div>
+
+<div class="metric t-team">
+  <div class="metric-head">
+    <h3>team_size, team_depth</h3>
+    <span class="type" style="background:var(--m-team)">team</span>
+    <span class="range">int ≥ 0</span>
+  </div>
+  <div class="formula">team_size  = <span class="fn">len</span>(teammate_avgs)                           <span class="cmt"># excludes self</span>
+team_depth = <span class="fn">sum</span>(<span class="num">1</span> <span class="kw">for</span> v <span class="kw">in</span> teammate_avgs <span class="kw">if</span> v &lt; <span class="num">4.0</span>)    <span class="cmt"># "above-average" count</span></div>
+  <p class="meta-line"><span class="lbl">defaults (lone rider):</span> <span class="dep">all quality stats = 4.0, std = 0.0, size = 0, depth = 0</span></p>
+</div>
+
+<!-- =========================================================== -->
+<!-- SECTION 5: FIELD AGGREGATES -->
+<!-- =========================================================== -->
+
+<h2 id="field">5. Field Aggregates (<span class="mono">competition_field_features</span>)</h2>
+<p class="section-intro">
+  One row per competition. Computed from the set of rider snapshots at the
+  start line — so these describe <em>how strong and experienced the rest of
+  the field is</em>, before the race is run.
+</p>
+
+<div class="metric t-field">
+  <div class="metric-head">
+    <h3>field_size</h3>
+    <span class="type" style="background:var(--m-field)">field</span>
+    <span class="range">int</span>
+  </div>
+  <div class="formula">field_size = <span class="fn">len</span>(rider_snapshots)</div>
+</div>
+
+<div class="metric t-field">
+  <div class="metric-head">
+    <h3>experience_* (7 stats on races_career)</h3>
+    <span class="type" style="background:var(--m-field)">field</span>
+  </div>
+  <div class="formula">exp = [rider.races_career <span class="kw">for</span> rider <span class="kw">in</span> field]
+experience_mean, _median, _std, _min, _max, _p25, _p75
+    = <span class="fn">distribution_stats</span>(exp)</div>
+  <p class="meta-line"><span class="lbl">defaults if empty:</span> <span class="dep">mean=50, median=40, std=30, min=0, max=200, p25=20, p75=80</span></p>
+</div>
+
+<div class="metric t-field">
+  <div class="metric-head">
+    <h3>bucket_* (7 stats on overall rider quality)</h3>
+    <span class="type" style="background:var(--m-field)">field</span>
+    <span class="range">∈ [0, 6]</span>
+  </div>
+  <p class="desc">Built from a per-rider "overall bucket" that combines every type-specific sum and count — a weighted career average, identical in spirit to what <span class="mono">TeamFeatureComputer</span> uses.</p>
+  <div class="formula"><span class="cmt"># Per rider in the field</span>
+overall_bucket = (
+    stage_avg_bucket   * stage_count   +
+    one_day_avg_bucket * one_day_count +
+    gc_avg_bucket      * gc_count
+) / (stage_count + one_day_count + gc_count)
+<span class="cmt"># or 4.0 if the rider has zero career races</span>
+
+<span class="cmt"># Then over the field</span>
+bucket_mean, _median, _std, _min, _max, _p25, _p75
+    = <span class="fn">distribution_stats</span>([overall_bucket per rider])</div>
+  <p class="meta-line"><span class="lbl">defaults if empty:</span> <span class="dep">bucket_mean=5.0, median=5.0, std=1.5</span></p>
+</div>
+
+<div class="metric t-field">
+  <div class="metric-head">
+    <h3>sprinter_count, climber_count, … (specialist counts)</h3>
+    <span class="type" style="background:var(--m-field)">field</span>
+    <span class="range">int ≥ 0, sums to field_size</span>
+  </div>
+  <p class="desc">Counts of riders whose precomputed <span class="mono">best_profile</span> matches each category. <em>Every</em> rider falls into exactly one bucket, including <span class="mono">unknown_profile_count</span>.</p>
+  <div class="formula">sprinter_count             = <span class="fn">count</span>(best_profile == <span class="str">'sprint'</span>)
+climber_count              = <span class="fn">count</span>(best_profile == <span class="str">'mountain'</span>)
+hilly_specialist_count     = <span class="fn">count</span>(best_profile == <span class="str">'hilly'</span>)
+rolling_specialist_count   = <span class="fn">count</span>(best_profile == <span class="str">'rolling'</span>)
+breakaway_specialist_count = <span class="fn">count</span>(best_profile == <span class="str">'breakaway'</span>)
+time_trialist_count        = <span class="fn">count</span>(best_profile == <span class="str">'time_trial'</span>)
+unknown_profile_count      = <span class="fn">count</span>(best_profile == <span class="str">'unknown'</span>)</div>
+  <p class="meta-line"><span class="lbl">src:</span> <span class="dep">engineering_tools/feature_precomputation.py → compute_field_features()</span></p>
+</div>
+
+<!-- =========================================================== -->
+<!-- SECTION 6: RACE PROFILE SCORES -->
+<!-- =========================================================== -->
+
+<h2 id="race">6. Race Profile Scores</h2>
+<p class="section-intro">
+  The 6 race profile scores drive both training-time weighting of
+  <span class="mono">sprint_avg_bucket</span>/etc. and inference-time interaction
+  features. They're derived from four slope/distribution statistics of the
+  race's finishing-time profile, combined via sigmoids and Gaussians, then
+  normalized to sum to 1. Short (&lt; 70 min) races are hard-classified as
+  time trials.
+</p>
+
+<div class="metric t-race">
+  <div class="metric-head">
+    <h3>Basis functions</h3>
+    <span class="type" style="background:var(--m-race)">race</span>
+  </div>
+  <div class="formula"><span class="fn">sigmoid</span>(x, center, steep)  = <span class="num">1</span> / (<span class="num">1</span> + <span class="fn">exp</span>(−steep * (x − center)))
+<span class="fn">gaussian</span>(x, center, width) = <span class="fn">exp</span>(−width * (x − center)**<span class="num">2</span>)
+log_var_slope = <span class="fn">log10</span>(variance_slope)</div>
+</div>
+
+<div class="metric t-race">
+  <div class="metric-head">
+    <h3>TT short-circuit</h3>
+    <span class="type" style="background:var(--m-race)">race</span>
+  </div>
+  <div class="formula"><span class="kw">if</span> winning_time &lt; <span class="num">4200</span>:   <span class="cmt"># &lt; 70 minutes</span>
+    <span class="kw">return</span> RaceProfileScores(
+        sprint=<span class="num">0</span>, mountain=<span class="num">0</span>, hilly=<span class="num">0</span>,
+        rolling=<span class="num">0</span>, breakaway=<span class="num">0</span>,
+        time_trial=<span class="num">1.0</span>)</div>
+  <p class="meta-line"><span class="lbl">note:</span> <span class="dep">time_trial is always 0 for non-TT races; the other five sum to 1.</span></p>
+</div>
+
+<div class="metric t-race">
+  <div class="metric-head">
+    <h3>sprint_raw</h3>
+    <span class="type" style="background:var(--m-race)">race</span>
+  </div>
+  <p class="desc">High field coherence (half the field together) + low variance slope → classic bunch sprint.</p>
+  <div class="formula">sprint_raw = <span class="fn">sigmoid</span>(breakdown,         center=<span class="num">50</span>,    steep=<span class="num">0.1</span>)
+           * <span class="fn">sigmoid</span>(−log_var_slope,    center=<span class="num">6</span>,     steep=<span class="num">2.0</span>)</div>
+</div>
+
+<div class="metric t-race">
+  <div class="metric-head">
+    <h3>mountain_raw</h3>
+    <span class="type" style="background:var(--m-race)">race</span>
+  </div>
+  <p class="desc">No breakdown of field structure (gradual selection) + high variance slope → big GC days / mountain stages.</p>
+  <div class="formula">breakdown_penalty = <span class="num">1.0</span> <span class="kw">if</span> breakdown == <span class="num">0</span> <span class="kw">else</span> <span class="fn">exp</span>(−<span class="num">0.05</span> * breakdown)
+mountain_raw      = breakdown_penalty
+                  * <span class="fn">sigmoid</span>(log_var_slope,    center=−<span class="num">5</span>,    steep=<span class="num">2.0</span>)</div>
+</div>
+
+<div class="metric t-race">
+  <div class="metric-head">
+    <h3>hilly_raw</h3>
+    <span class="type" style="background:var(--m-race)">race</span>
+  </div>
+  <p class="desc">Moderate breakdown (~35%) and field clumping → puncheur-style finish.</p>
+  <div class="formula">hilly_raw = <span class="fn">gaussian</span>(breakdown,        center=<span class="num">35</span>,    width=<span class="num">0.005</span>)
+          * <span class="fn">sigmoid</span>(clumpiness_slope, center=<span class="num">0.004</span>, steep=<span class="num">400</span>)</div>
+</div>
+
+<div class="metric t-race">
+  <div class="metric-head">
+    <h3>rolling_raw</h3>
+    <span class="type" style="background:var(--m-race)">race</span>
+  </div>
+  <p class="desc">Moderate variance slope without field fracture → rolling terrain.</p>
+  <div class="formula">breakdown_penalty = <span class="num">1.0</span> <span class="kw">if</span> breakdown == <span class="num">0</span> <span class="kw">else</span> <span class="fn">exp</span>(−<span class="num">0.1</span> * breakdown)
+rolling_raw       = breakdown_penalty
+                  * <span class="fn">gaussian</span>(log_var_slope,  center=−<span class="num">5.5</span>, width=<span class="num">0.5</span>)</div>
+</div>
+
+<div class="metric t-race">
+  <div class="metric-head">
+    <h3>breakaway_raw</h3>
+    <span class="type" style="background:var(--m-race)">race</span>
+  </div>
+  <p class="desc">Early selection (~18% breakdown) plus a shrinking lead group (negative biggest-group slope) → successful breakaway.</p>
+  <div class="formula">breakaway_raw = <span class="fn">gaussian</span>(breakdown,             center=<span class="num">18</span>,    width=<span class="num">0.01</span>)
+              * <span class="fn">sigmoid</span>(−biggest_group_slope, center=<span class="num">0.005</span>, steep=<span class="num">500</span>)</div>
+</div>
+
+<div class="metric t-race">
+  <div class="metric-head">
+    <h3>Normalization</h3>
+    <span class="type" style="background:var(--m-race)">race</span>
+    <span class="range">each score ∈ [0, 1], sum = 1</span>
+  </div>
+  <div class="formula">total = sprint_raw + mountain_raw + hilly_raw
+      + rolling_raw + breakaway_raw + <span class="num">1e-10</span>
+
+race_sprint_score     = <span class="fn">round</span>(sprint_raw    / total, <span class="num">4</span>)
+race_mountain_score   = <span class="fn">round</span>(mountain_raw  / total, <span class="num">4</span>)
+race_hilly_score      = <span class="fn">round</span>(hilly_raw     / total, <span class="num">4</span>)
+race_rolling_score    = <span class="fn">round</span>(rolling_raw   / total, <span class="num">4</span>)
+race_breakaway_score  = <span class="fn">round</span>(breakaway_raw / total, <span class="num">4</span>)
+race_time_trial_score = <span class="num">0.0</span>              <span class="cmt"># non-TT races</span>
+
+race_dominant_profile = <span class="fn">argmax</span>(all six scores)</div>
+  <p class="meta-line"><span class="lbl">src:</span> <span class="dep">engineering_tools/race_profile_scoring.py → calculate_race_profile_scores()</span></p>
+</div>
+
+<!-- =========================================================== -->
+<!-- SECTION 7: DERIVED FEATURES -->
+<!-- =========================================================== -->
+
+<h2 id="derived">7. Derived Features (<span class="mono">FeatureEngineer.create_derived_features</span>)</h2>
+<p class="section-intro">
+  Row-wise features created at the very end of training-data assembly. They
+  combine the rider, field, and race-profile columns into interaction terms
+  the model couldn't easily learn from scratch. Every NaN uses a stable
+  fallback (usually 5.0 for bucket values, 0 for counts).
+</p>
+
+<div class="metric t-derived">
+  <div class="metric-head">
+    <h3>rider_vs_field_bucket_gap</h3>
+    <span class="type" style="background:var(--m-derived)">derived</span>
+  </div>
+  <div class="formula">rider_vs_field_bucket_gap = stage_avg_bucket.fillna(<span class="num">5</span>)
+                          − bucket_mean.fillna(<span class="num">5</span>)
+<span class="cmt"># negative → rider is better than the field average</span></div>
+</div>
+
+<div class="metric t-derived">
+  <div class="metric-head">
+    <h3>rider_vs_field_experience_ratio</h3>
+    <span class="type" style="background:var(--m-derived)">derived</span>
+  </div>
+  <div class="formula">rider_vs_field_experience_ratio = races_career.fillna(<span class="num">0</span>)
+                                / (experience_mean.fillna(<span class="num">50</span>) + <span class="num">1</span>)</div>
+</div>
+
+<div class="metric t-derived">
+  <div class="metric-head">
+    <h3>profile_match, profile_weighted_expected</h3>
+    <span class="type" style="background:var(--m-derived)">derived</span>
+  </div>
+  <div class="formula">profile_match = (best_profile == race_dominant_profile).<span class="fn">astype</span>(int)
+
+profile_weighted_expected =
+    sprint_avg_bucket     * race_sprint_score
+  + mountain_avg_bucket   * race_mountain_score
+  + hilly_avg_bucket      * race_hilly_score
+  + rolling_avg_bucket    * race_rolling_score
+  + breakaway_avg_bucket  * race_breakaway_score
+  + time_trial_avg_bucket * race_time_trial_score
+<span class="cmt"># all NaN rider values filled with 5.0, race scores with 0.0</span></div>
+  <p class="meta-line"><span class="lbl">note:</span> <span class="dep">a "double dot-product": rider profile vector · race profile vector. The model's single best "expected performance in this race" estimate before any other signal.</span></p>
+</div>
+
+<div class="metric t-derived">
+  <div class="metric-head">
+    <h3>relevant_type_avg_bucket, relevant_category_avg_bucket</h3>
+    <span class="type" style="background:var(--m-derived)">derived</span>
+  </div>
+  <div class="formula">relevant_type_avg_bucket = <span class="fn">where</span>(
+    competition_type == <span class="str">'stage'</span>,   stage_avg_bucket,
+  <span class="fn">where</span>(competition_type == <span class="str">'one_day'</span>, one_day_avg_bucket,
+                                     gc_avg_bucket))
+
+relevant_category_avg_bucket = <span class="fn">where</span>(
+    race_category == <span class="str">'wt'</span>,  wt_avg_bucket,
+  <span class="fn">where</span>(race_category == <span class="str">'pro'</span>, pro_avg_bucket,
+                                d1_avg_bucket))</div>
+</div>
+
+<div class="metric t-derived">
+  <div class="metric-head">
+    <h3>is_team_leader, is_protected_rider, experience_tier</h3>
+    <span class="type" style="background:var(--m-derived)">derived</span>
+  </div>
+  <div class="formula">is_team_leader     = (personal_bib == <span class="num">1</span>).<span class="fn">astype</span>(int)
+is_protected_rider = personal_bib.<span class="fn">isin</span>([<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>]).<span class="fn">astype</span>(int)
+
+experience_tier = <span class="fn">pd.cut</span>(races_career.fillna(<span class="num">0</span>),
+    bins=[−<span class="num">1</span>, <span class="num">30</span>, <span class="num">100</span>, <span class="num">300</span>, ∞],
+    labels=[<span class="num">0</span>, <span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>])   <span class="cmt"># novice / developing / experienced / veteran</span></div>
+</div>
+
+<div class="metric t-derived">
+  <div class="metric-head">
+    <h3>field_quality_score</h3>
+    <span class="type" style="background:var(--m-derived)">derived</span>
+  </div>
+  <div class="formula">field_quality_score = (<span class="num">5.0</span> − bucket_mean.fillna(<span class="num">5</span>)) / <span class="num">2.0</span>
+<span class="cmt"># higher = stronger field; rides in [0, 2.5] for realistic bucket_mean</span></div>
+</div>
+
+<div class="metric t-derived">
+  <div class="metric-head">
+    <h3>type_experience_ratio</h3>
+    <span class="type" style="background:var(--m-derived)">derived</span>
+    <span class="range">∈ [0, 1]</span>
+  </div>
+  <p class="desc">Sqrt-compressed so stage races (which generate 5–21 stage rows per GC row) don't dominate. Answers: of this rider's √-career, what fraction has been in the relevant competition type?</p>
+  <div class="formula">relevant_type_ct = <span class="fn">where</span>(
+    competition_type == <span class="str">'stage'</span>,   stage_count,
+  <span class="fn">where</span>(competition_type == <span class="str">'one_day'</span>, one_day_count,
+                                     gc_count))
+type_experience_ratio = <span class="fn">sqrt</span>(relevant_type_ct)
+                      / <span class="fn">sqrt</span>(races_career.clip(lower=<span class="num">1</span>))</div>
+</div>
+
+<div class="metric t-derived">
+  <div class="metric-head">
+    <h3>gc_specialist_score (Bayesian shrinkage, k=10)</h3>
+    <span class="type" style="background:var(--m-derived)">derived</span>
+    <span class="range">∈ [0, 6]</span>
+  </div>
+  <p class="desc">Shrinks <span class="mono">gc_avg_bucket</span> toward the neutral 5.0 by a prior of 10 pseudo-races. With few GC results, stays near 5.0; with many, approaches the real average. Prevents one-lucky-result specialists from getting credit.</p>
+  <div class="formula">k = <span class="num">10.0</span>
+gc_specialist_score = gc_count / (gc_count + k) * gc_avg_bucket
+                    +        k / (gc_count + k) * <span class="num">5.0</span>
+<span class="cmt"># equivalent to: weighted blend of observed and prior (= 5.0)</span></div>
+</div>
+
+<div class="metric t-derived">
+  <div class="metric-head">
+    <h3>gc_vs_career_gap, mountain_vs_career_gap</h3>
+    <span class="type" style="background:var(--m-derived)">derived</span>
+  </div>
+  <p class="desc">How much better is this rider in that domain than their own baseline? Negative values indicate a real specialist — a rider who is better at mountains/GCs than they are on average.</p>
+  <div class="formula">career_proxy = stage_avg_bucket.fillna(<span class="num">5</span>)   <span class="cmt"># stage = most common type</span>
+gc_vs_career_gap       = gc_avg_bucket.fillna(<span class="num">5</span>)       − career_proxy
+mountain_vs_career_gap = mountain_avg_bucket.fillna(<span class="num">5</span>) − career_proxy</div>
+  <p class="meta-line"><span class="lbl">validated:</span> <span class="dep">+19.3% winner capture, +25.3% podium capture, −6.2% log-loss vs baseline (3-fold full-year CV)</span></p>
+</div>
+
+<div class="metric t-derived">
+  <div class="metric-head">
+    <h3>matching_specialists_in_field</h3>
+    <span class="type" style="background:var(--m-derived)">derived</span>
+  </div>
+  <p class="desc">Field crowding for the race's dominant profile — how many riders in the startlist have that profile as their <span class="mono">best_profile</span>.</p>
+  <div class="formula">specialist_map = {<span class="str">'sprint'</span>:     sprinter_count,
+                  <span class="str">'mountain'</span>:   climber_count,
+                  <span class="str">'hilly'</span>:      hilly_specialist_count,
+                  <span class="str">'rolling'</span>:    rolling_specialist_count,
+                  <span class="str">'breakaway'</span>:  breakaway_specialist_count,
+                  <span class="str">'time_trial'</span>: time_trialist_count}
+
+matching_specialists_in_field = specialist_map[race_dominant_profile]</div>
+</div>
+
+<div class="metric t-derived">
+  <div class="metric-head">
+    <h3>Form-derived flags</h3>
+    <span class="type" style="background:var(--m-derived)">derived</span>
+  </div>
+  <div class="formula">form_vs_field_gap  = form_recent_avg_bucket.fillna(<span class="num">4</span>)
+                   − bucket_mean.fillna(<span class="num">4</span>)
+is_improving_form  = (form_delta.fillna(<span class="num">0</span>) &lt; −<span class="num">0.5</span>).<span class="fn">astype</span>(int)
+is_fresh           = (days_since_last_race.fillna(<span class="num">90</span>) &lt; <span class="num">14</span>).<span class="fn">astype</span>(int)
+is_rusty           = (days_since_last_race.fillna(<span class="num">90</span>) &gt; <span class="num">45</span>).<span class="fn">astype</span>(int)
+form_confidence    = form_recent_count.fillna(<span class="num">0</span>) / <span class="num">5.0</span>   <span class="cmt"># 0..1</span></div>
+</div>
+
+<div class="metric t-derived">
+  <div class="metric-head">
+    <h3>Team-derived features</h3>
+    <span class="type" style="background:var(--m-derived)">derived</span>
+  </div>
+  <div class="formula">is_team_best       = (stage_avg_bucket.fillna(<span class="num">5</span>)
+                    &lt;= team_quality_min.fillna(<span class="num">5</span>)).<span class="fn">astype</span>(int)
+team_support_ratio = team_depth.fillna(<span class="num">0</span>) / (team_size.fillna(<span class="num">1</span>) + <span class="num">1</span>)
+rider_vs_team_gap  = stage_avg_bucket.fillna(<span class="num">4</span>)
+                   − team_quality_mean.fillna(<span class="num">4</span>)</div>
+</div>
+
+<div class="metric t-derived">
+  <div class="metric-head">
+    <h3>Imputation</h3>
+    <span class="type" style="background:var(--m-derived)">derived</span>
+  </div>
+  <div class="formula"><span class="cmt"># Age: tour-level median, then global default</span>
+age[missing <span class="kw">and</span> category == <span class="str">'wt'</span>]  = <span class="num">28</span>
+age[missing <span class="kw">and</span> category == <span class="str">'pro'</span>] = <span class="num">26</span>
+age[missing <span class="kw">and</span> category == <span class="str">'d1'</span>]  = <span class="num">24</span>
+age[remaining missing <span class="kw">or</span> ≤ <span class="num">0</span>]     = <span class="num">27</span>
+
+<span class="cmt"># Generic fills</span>
+*_avg_bucket.fillna(<span class="num">5.0</span>)       <span class="cmt"># neutral mid-field</span>
+*_count.fillna(<span class="num">0</span>)
+races_career.fillna(<span class="num">0</span>)
+races_this_year.fillna(<span class="num">0</span>)
+
+<span class="cmt"># Field fallbacks when competition_field_features row missing</span>
+field_size=<span class="num">100</span>, experience_mean=<span class="num">50</span>, experience_median=<span class="num">40</span>,
+experience_std=<span class="num">30</span>, experience_p25=<span class="num">20</span>, experience_p75=<span class="num">80</span>,
+bucket_mean=<span class="num">5.0</span>, bucket_median=<span class="num">5.0</span>, bucket_std=<span class="num">1.5</span> …</div>
+</div>
+
+<!-- =========================================================== -->
+<!-- SECTION 8: MODEL OUTPUTS & ODDS -->
+<!-- =========================================================== -->
+
+<h2 id="model">8. Model Outputs &amp; Odds</h2>
+
+<div class="metric t-model">
+  <div class="metric-head">
+    <h3>classifier_expected_bucket (OOF feed for contender model)</h3>
+    <span class="type" style="background:var(--m-model)">model</span>
+    <span class="range">continuous, clamped to [0, 7]</span>
+  </div>
+  <p class="desc">Bucket-model output used as an <em>input</em> feature to the contender probability model. Generated out-of-fold on training data to avoid leakage: 5 temporal folds cut by competition-date quantiles.</p>
+  <div class="formula">dates = <span class="fn">pd.to_datetime</span>(df.competition_date)
+q     = [dates.<span class="fn">quantile</span>(i / <span class="num">5</span>) <span class="kw">for</span> i <span class="kw">in</span> <span class="fn">range</span>(<span class="num">1</span>, <span class="num">5</span>)]
+
+<span class="kw">for</span> fold <span class="kw">in</span> <span class="num">0</span>..<span class="num">4</span>:
+    fold_mask = select fold's date range using q
+    temp_model.<span class="fn">train</span>(df[~fold_mask], early_stop)
+    oof[fold_mask] = temp_model.<span class="fn">predict_continuous</span>(df[fold_mask])
+
+<span class="cmt"># predict_continuous() is just LightGBM regression output clamped:</span>
+predictions = <span class="fn">clip</span>(model.predict(X), <span class="num">0.0</span>, <span class="num">7.0</span>)</div>
+  <p class="meta-line"><span class="lbl">filter:</span> <span class="dep">top_n = 15 by OOF rank per competition → only top-15 rows enter contender training</span></p>
+</div>
+
+<div class="metric t-model">
+  <div class="metric-head">
+    <h3>Temperature calibration</h3>
+    <span class="type" style="background:var(--m-model)">model</span>
+  </div>
+  <p class="desc">Post-hoc calibration fit on the early-stop set. When <span class="mono">T ≠ 1</span>, probabilities are re-softmaxed from raw logits divided by temperature. <span class="mono">T &gt; 1</span> flattens; <span class="mono">T &lt; 1</span> sharpens.</p>
+  <div class="formula"><span class="kw">if</span> temperature ≠ <span class="num">1.0</span>:
+    raw_scores = model.<span class="fn">predict</span>(X, raw_score=<span class="kw">True</span>)        <span class="cmt"># logits</span>
+    scaled     = raw_scores / temperature
+    <span class="cmt"># numerically-stable softmax</span>
+    exp_scaled = <span class="fn">np.exp</span>(scaled − scaled.<span class="fn">max</span>(axis=<span class="num">1</span>, keepdims=<span class="kw">True</span>))
+    proba      = exp_scaled / exp_scaled.<span class="fn">sum</span>(axis=<span class="num">1</span>, keepdims=<span class="kw">True</span>)
+<span class="kw">else</span>:
+    proba = model.<span class="fn">predict</span>(X)                              <span class="cmt"># native LGBM softmax</span></div>
+  <p class="meta-line"><span class="lbl">src:</span> <span class="dep">probability_predictor.py → predict_proba(), calibrate_temperature()</span></p>
+</div>
+
+<div class="metric t-model">
+  <div class="metric-head">
+    <h3>Cumulative probabilities</h3>
+    <span class="type" style="background:var(--m-model)">model</span>
+    <span class="range">each ∈ [0, 1]</span>
+  </div>
+  <p class="desc">Sum the per-bucket softmax probabilities over the cumulative bucket set for each sportsbook label. DNF is standalone (not cumulative with finishes).</p>
+  <div class="formula">CUMULATIVE_LABELS = {
+    <span class="str">'win'</span>:    [<span class="num">0</span>],                        <span class="cmt"># P(bucket 0)</span>
+    <span class="str">'podium'</span>: [<span class="num">0</span>, <span class="num">1</span>],                     <span class="cmt"># P(top 3)</span>
+    <span class="str">'top5'</span>:   [<span class="num">0</span>, <span class="num">1</span>, <span class="num">2</span>],                  <span class="cmt"># P(top 5)</span>
+    <span class="str">'top15'</span>:  [<span class="num">0</span>, <span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>],
+    <span class="str">'top30'</span>:  [<span class="num">0</span>, <span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>, <span class="num">4</span>],
+    <span class="str">'top50'</span>:  [<span class="num">0</span>, <span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>, <span class="num">4</span>, <span class="num">5</span>],
+    <span class="str">'finish'</span>: [<span class="num">0</span>, <span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>, <span class="num">4</span>, <span class="num">5</span>, <span class="num">6</span>],
+    <span class="str">'dnf'</span>:    [<span class="num">7</span>],                        <span class="cmt"># standalone</span>
+}
+
+prob_&lt;label&gt; = proba[:, CUMULATIVE_LABELS[label]].<span class="fn">sum</span>(axis=<span class="num">1</span>)</div>
+</div>
+
+<div class="metric t-model">
+  <div class="metric-head">
+    <h3>Decimal, fractional, and American odds</h3>
+    <span class="type" style="background:var(--m-model)">model</span>
+    <span class="range">decimal ∈ [1, 999]</span>
+  </div>
+  <div class="formula"><span class="cmt"># decimal (base)</span>
+decimal_odds = <span class="num">1</span> / prob         <span class="kw">if</span> prob &gt; <span class="num">0</span> <span class="kw">else</span> MAX_ODDS
+decimal_odds = <span class="fn">min</span>(decimal_odds, MAX_ODDS)   <span class="cmt"># MAX_ODDS = 999.0</span>
+decimal_odds = <span class="fn">round</span>(decimal_odds, <span class="num">2</span>)
+
+<span class="cmt"># American moneyline (web/app.py::_decimal_to_american)</span>
+<span class="kw">if</span> decimal &gt;= <span class="num">2.0</span>:  american = f<span class="str">"+{round((decimal − 1) * 100)}"</span>
+<span class="kw">elif</span> decimal &gt; <span class="num">1.0</span>: american = f<span class="str">"-{round(100 / (decimal − 1))}"</span>
+<span class="kw">else</span>:              american = <span class="str">"—"</span>
+
+<span class="cmt"># Fractional / British (web/app.py::_decimal_to_fractional)</span>
+profit = decimal − <span class="num">1</span>
+<span class="kw">if</span> profit &gt;= <span class="num">10</span>: fractional = f<span class="str">"{round(profit)}/1"</span>
+<span class="kw">elif</span> profit &lt;= <span class="num">0</span>: fractional = <span class="str">"—"</span>
+<span class="kw">else</span>:            fractional = <span class="fn">Fraction</span>(profit).<span class="fn">limit_denominator</span>(<span class="num">10</span>)</div>
+  <p class="meta-line"><span class="lbl">src:</span> <span class="dep">probability_predictor.py → predict_odds(); web/app.py → _decimal_to_american, _decimal_to_fractional</span></p>
+</div>
+
+<div class="metric t-model">
+  <div class="metric-head">
+    <h3>Ranking sort key</h3>
+    <span class="type" style="background:var(--m-model)">model</span>
+    <span class="range">continuous ∈ [0, 7]</span>
+  </div>
+  <p class="desc">The bucket predictor's continuous regression output — <em>not</em> <span class="mono">argmax</span> of the probability model — drives the final ranking in <span class="mono">RaceRankingPredictor</span>. Lower is better.</p>
+  <div class="formula">expected_bucket = bucket_predictor.<span class="fn">predict_continuous</span>(X)
+predicted_rank  = <span class="fn">rank</span>(expected_bucket, ascending=<span class="kw">True</span>)   <span class="cmt"># 1 = winner</span></div>
+</div>
+
+<hr>
+
+<p class="subtitle">
+  Sources (all read from <span class="mono">webscrape-refactor @ 7e0b167</span>):
+  <span class="mono">engineering_tools/feature_precomputation.py</span> (RiderRunningState, compute_field_features),
+  <span class="mono">engineering_tools/form_team_features.py</span> (RiderFormHistory, TeamFeatureComputer),
+  <span class="mono">engineering_tools/race_profile_scoring.py</span> (calculate_race_profile_scores),
+  <span class="mono">engineering_tools/place_handling.py</span> (place_bucketer),
+  <span class="mono">prediction_tools/feature_engineering.py</span> (create_derived_features, apply_imputation),
+  <span class="mono">prediction_tools/{bucket,time_gap,probability}_predictor.py</span>,
+  <span class="mono">prediction_tools/train_production_model.py</span> (OOF folds),
+  <span class="mono">web/app.py</span> (odds formatting).
+</p>
+
+</body>
+</html>

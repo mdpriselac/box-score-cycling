@@ -1,0 +1,954 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Cycling Prediction — Race Feature Reference</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+:root {
+  --bg: #0f1419;
+  --panel: #151c24;
+  --panel-2: #1c252f;
+  --border: #2a3642;
+  --text: #e5edf5;
+  --text-dim: #94a3b8;
+  --text-faint: #64748b;
+  --accent: #60a5fa;
+  --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Monaco, Consolas, monospace;
+
+  /* Stage colors */
+  --s-raw:      #f59e0b;  /* amber  */
+  --s-trim:     #a78bfa;  /* violet */
+  --s-stat:     #34d399;  /* green  */
+  --s-engr:     #22d3ee;  /* cyan   */
+  --s-tables:   #38bdf8;  /* sky    */
+  --s-gradient: #fbbf24;  /* yellow */
+  --s-score:    #f472b6;  /* pink   */
+  --s-output:   #4ade80;  /* emerald*/
+}
+
+* { box-sizing: border-box; }
+html, body {
+  margin: 0; padding: 0;
+  background: var(--bg); color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  font-size: 15px; line-height: 1.55;
+}
+body { padding: 28px 36px 80px; max-width: 1400px; margin: 0 auto; }
+
+h1 { margin: 0 0 4px; font-size: 28px; font-weight: 700; letter-spacing: -0.02em; }
+h2 { margin: 40px 0 14px; font-size: 20px; font-weight: 700; letter-spacing: -0.01em;
+     padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+h3 { margin: 0 0 2px; font-size: 15px; font-weight: 700; }
+h4 { margin: 14px 0 4px; font-size: 11px; font-weight: 700;
+     text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-dim); }
+p  { margin: 6px 0; }
+
+code, .mono { font-family: var(--mono); font-size: 12.5px; color: #e2e8f0;
+              background: #0b1118; padding: 1px 6px; border-radius: 4px;
+              border: 1px solid var(--border); }
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+.subtitle { color: var(--text-dim); font-size: 13px; margin: 0 0 18px; }
+
+/* ---------- Top flow diagram ---------- */
+.pipeline {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+  margin: 20px 0 36px;
+}
+.p-card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--accent);
+  border-radius: 8px;
+  padding: 10px 12px 12px;
+  position: relative;
+  cursor: pointer;
+  transition: transform 0.12s ease, background 0.12s ease;
+}
+.p-card:hover { background: var(--panel-2); transform: translateY(-1px); }
+.p-card .num { font-family: var(--mono); font-size: 10px; color: var(--text-faint);
+               letter-spacing: 0.1em; }
+.p-card .title { font-size: 13px; font-weight: 700; margin: 3px 0 4px; }
+.p-card .line { font-size: 11px; color: var(--text-dim); line-height: 1.35; }
+.p-card::after {
+  content: "▸"; position: absolute; top: 50%; right: -14px;
+  transform: translateY(-50%); color: var(--text-faint); font-size: 14px;
+  pointer-events: none;
+}
+.p-card:last-child::after { display: none; }
+.p-card.s-raw      { border-left-color: var(--s-raw); }
+.p-card.s-trim     { border-left-color: var(--s-trim); }
+.p-card.s-stat     { border-left-color: var(--s-stat); }
+.p-card.s-engr     { border-left-color: var(--s-engr); }
+.p-card.s-tables   { border-left-color: var(--s-tables); }
+.p-card.s-gradient { border-left-color: var(--s-gradient); }
+.p-card.s-score    { border-left-color: var(--s-score); }
+
+/* ---------- Stage section ---------- */
+.stage {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--accent);
+  border-radius: 10px;
+  padding: 18px 22px 20px;
+  margin: 14px 0;
+}
+.stage.s-raw      { border-left-color: var(--s-raw); }
+.stage.s-trim     { border-left-color: var(--s-trim); }
+.stage.s-stat     { border-left-color: var(--s-stat); }
+.stage.s-engr     { border-left-color: var(--s-engr); }
+.stage.s-tables   { border-left-color: var(--s-tables); }
+.stage.s-gradient { border-left-color: var(--s-gradient); }
+.stage.s-score    { border-left-color: var(--s-score); }
+
+.stage-head { display: flex; align-items: baseline; gap: 12px; margin-bottom: 4px; }
+.stage-num  { font-family: var(--mono); font-size: 11px; color: var(--text-faint);
+              letter-spacing: 0.1em; padding: 2px 6px; border: 1px solid var(--border);
+              border-radius: 4px; }
+.stage-head h3 { font-size: 17px; }
+.stage-purpose { color: var(--text-dim); font-size: 13.5px; margin-bottom: 6px; }
+
+/* ---------- Metric entry ---------- */
+.metric {
+  background: #11171e;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 14px;
+  margin: 10px 0 10px;
+}
+.metric-head { display: flex; flex-wrap: wrap; align-items: baseline;
+               gap: 10px; margin-bottom: 2px; }
+.metric-head h4 { font-family: var(--mono); font-size: 13px; color: #e5edf5;
+                  margin: 0; text-transform: none; letter-spacing: 0; }
+.metric-head .range { font-family: var(--mono); font-size: 11px;
+                      color: var(--text-faint); margin-left: auto; }
+.metric .desc { color: var(--text-dim); font-size: 12.5px; margin: 3px 0 6px; }
+
+.formula {
+  background: #0b1118;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 10px 12px;
+  font-family: var(--mono);
+  font-size: 12px;
+  color: #cbd5e1;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  overflow-x: auto;
+  margin: 6px 0;
+}
+.formula .kw  { color: #c084fc; }
+.formula .fn  { color: #60a5fa; }
+.formula .num { color: #fbbf24; }
+.formula .str { color: #34d399; }
+.formula .cmt { color: var(--text-faint); font-style: italic; }
+
+.meta-line { font-size: 11px; color: var(--text-faint);
+             font-family: var(--mono); margin-top: 4px; }
+.meta-line .lbl { color: #64748b; }
+
+.note {
+  font-size: 12px; color: var(--text-dim);
+  background: #11161c;
+  border-left: 2px solid var(--text-faint);
+  padding: 6px 10px; margin: 6px 0;
+  border-radius: 0 4px 4px 0;
+}
+
+.section-intro {
+  color: var(--text-dim); font-size: 13px;
+  margin: 6px 0 14px; padding: 10px 14px;
+  background: var(--panel-2); border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+/* ---------- Percentile grid ---------- */
+.perc-grid {
+  display: grid;
+  grid-template-columns: repeat(19, 1fr);
+  gap: 3px;
+  margin: 10px 0;
+}
+.perc-cell {
+  background: var(--panel); border: 1px solid var(--border);
+  border-radius: 4px; padding: 8px 2px; text-align: center;
+  font-family: var(--mono); font-size: 10px; color: var(--accent);
+}
+
+/* ---------- Profile formula table ---------- */
+.profile-table {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  gap: 4px 10px;
+  margin: 6px 0;
+}
+.profile-table .pname {
+  font-family: var(--mono); font-size: 12px; font-weight: 700;
+  color: var(--s-score); padding: 6px 4px;
+}
+.profile-table .pform {
+  background: #0b1118; border: 1px solid var(--border);
+  border-radius: 4px; padding: 6px 10px;
+  font-family: var(--mono); font-size: 11.5px;
+  color: #cbd5e1; white-space: pre-wrap;
+}
+
+hr { border: none; border-top: 1px solid var(--border); margin: 14px 0; }
+
+.arrow-down { text-align: center; color: var(--text-faint);
+              font-size: 18px; margin: -4px 0; line-height: 1; }
+
+@media (max-width: 1200px) {
+  .pipeline { grid-template-columns: repeat(2, 1fr); }
+  .p-card::after { display: none; }
+  .perc-grid { grid-template-columns: repeat(10, 1fr); }
+}
+@media print {
+  body { background: white; color: black; padding: 0.4in; }
+  .stage, .metric, .p-card, .section-intro { background: white; color: black;
+    border-color: #bbb; }
+  .formula, code, .mono { background: #f2f2f2; color: #222; border-color: #ddd; }
+  .note { background: #f8f8f8; color: #333; }
+  h2 { border-color: #bbb; }
+  a { color: #1a4fb8; }
+}
+</style>
+</head>
+<body>
+
+<h1>Race Feature Reference</h1>
+<p class="subtitle">
+  From raw finishing-time distributions to the four gradient scalars that drive
+  race profile classification. Every transformation between
+  <span class="mono">rider_results.time_gap</span> and
+  <span class="mono">calculate_race_profile_scores()</span> is documented here
+  with exact formulas and source locations.<br>
+  Branch: <span class="mono">webscrape-refactor</span> @ <span class="mono">7e0b167</span> — sibling to
+  <a href="pipeline_overview.html">pipeline_overview.html</a> and
+  <a href="metrics_reference.html">metrics_reference.html</a>.
+</p>
+
+<!-- =========================================================== -->
+<!-- TOP-LEVEL PIPELINE -->
+<!-- =========================================================== -->
+
+<h2>1. The Race-Feature Pipeline</h2>
+
+<div class="pipeline">
+  <a class="p-card s-raw" href="#s1">
+    <div class="num">STAGE 01</div>
+    <div class="title">Raw time_gap</div>
+    <div class="line">Per-rider gap (sec) for all finishers in a race</div>
+  </a>
+  <a class="p-card s-trim" href="#s2">
+    <div class="num">STAGE 02</div>
+    <div class="title">Trim by percentile</div>
+    <div class="line">Keep top N% of finishers; 19 cut levels (10…100)</div>
+  </a>
+  <a class="p-card s-stat" href="#s3">
+    <div class="num">STAGE 03</div>
+    <div class="title">Statistical measures</div>
+    <div class="line">Variance, skew, kurtosis, Gini, entropy, percentile gaps</div>
+  </a>
+  <a class="p-card s-engr" href="#s4">
+    <div class="num">STAGE 04</div>
+    <div class="title">Engineered metrics</div>
+    <div class="line">Groups, clumpiness, biggest-group, selection, evenness</div>
+  </a>
+  <a class="p-card s-tables" href="#s5">
+    <div class="num">STAGE 05</div>
+    <div class="title">19 percentile tables</div>
+    <div class="line"><span class="mono">race_features_10</span> … <span class="mono">race_features_100</span></div>
+  </a>
+  <a class="p-card s-gradient" href="#s6">
+    <div class="num">STAGE 06</div>
+    <div class="title">Gradient extraction</div>
+    <div class="line">Slopes, volatility, null-percentiles → <span class="mono">race_feature_gradients</span></div>
+  </a>
+  <a class="p-card s-score" href="#s7">
+    <div class="num">STAGE 07</div>
+    <div class="title">Race profile scores</div>
+    <div class="line">Sprint / mountain / hilly / rolling / breakaway / TT</div>
+  </a>
+</div>
+
+<div class="section-intro">
+  <strong>The core trick:</strong> every statistical measure is computed not once, but
+  <strong>19 times</strong> — once for each percentile cutoff from 10% to 100% of the
+  finishers. Each cutoff tells a different story: at 10%, you're looking at the leaders;
+  at 100%, you're looking at the whole field. The way each metric <em>changes</em> across
+  those 19 levels (the slope, via linear regression) is what actually discriminates
+  sprint finishes from mountain stages from breakaways. A single-percentile snapshot
+  would miss that shape entirely.
+</div>
+
+<!-- =========================================================== -->
+<!-- STAGE 1: RAW -->
+<!-- =========================================================== -->
+
+<h2 id="s1">2. Raw Inputs</h2>
+
+<div class="stage s-raw">
+  <div class="stage-head">
+    <div class="stage-num">STAGE 01</div>
+    <h3>Raw ingredients from the database</h3>
+  </div>
+  <p class="stage-purpose">
+    Everything downstream is derived from two columns in
+    <span class="mono">rider_results</span> plus one column in
+    <span class="mono">competitions</span>. No scraping, no feature engineering,
+    no model needed to compute these.
+  </p>
+
+  <div class="metric">
+    <div class="metric-head"><h4>time_gap</h4><span class="range">float seconds, ≥ 0, winner = 0</span></div>
+    <p class="desc">Per-rider gap from the stage/race winner, in seconds. <span class="mono">NULL</span> for non-finishers — only <span class="mono">time_gap IS NOT NULL</span> rows are used.</p>
+  </div>
+
+  <div class="metric">
+    <div class="metric-head"><h4>place</h4><span class="range">int ≥ 1</span></div>
+    <p class="desc">Used only to order finishers before trimming. The row with the smallest place is the winner.</p>
+  </div>
+
+  <div class="metric">
+    <div class="metric-head"><h4>winning_time</h4><span class="range">float seconds</span></div>
+    <p class="desc">Winner's total ride duration in seconds, stored on <span class="mono">competitions</span>. Used both as the normalization constant for "variance/kurtosis normalized" and as the TT short-circuit threshold (&lt; 4200 s).</p>
+    <div class="formula">finishing_time[i] = winning_time + time_gap[i]   <span class="cmt"># reconstructed per rider</span></div>
+  </div>
+</div>
+
+<!-- =========================================================== -->
+<!-- STAGE 2: TRIM -->
+<!-- =========================================================== -->
+
+<div class="arrow-down">▼</div>
+
+<h2 id="s2">3. Trimming by Percentile</h2>
+
+<div class="stage s-trim">
+  <div class="stage-head">
+    <div class="stage-num">STAGE 02</div>
+    <h3>Trim to the top <em>N</em>% of finishers</h3>
+  </div>
+  <p class="stage-purpose">
+    The key design choice of the whole pipeline: rather than compute metrics
+    on the full finishing-time distribution once, compute them 19 times on
+    progressively-larger subsets of the field. Percentile cutoffs from 10% to 100%
+    in 5% steps.
+  </p>
+
+  <div class="perc-grid">
+    <div class="perc-cell">10</div><div class="perc-cell">15</div><div class="perc-cell">20</div>
+    <div class="perc-cell">25</div><div class="perc-cell">30</div><div class="perc-cell">35</div>
+    <div class="perc-cell">40</div><div class="perc-cell">45</div><div class="perc-cell">50</div>
+    <div class="perc-cell">55</div><div class="perc-cell">60</div><div class="perc-cell">65</div>
+    <div class="perc-cell">70</div><div class="perc-cell">75</div><div class="perc-cell">80</div>
+    <div class="perc-cell">85</div><div class="perc-cell">90</div><div class="perc-cell">95</div>
+    <div class="perc-cell">100</div>
+  </div>
+
+  <div class="metric">
+    <div class="metric-head"><h4>trim_race_results_by_percentile(competition_id, percentile)</h4></div>
+    <div class="formula"><span class="cmt"># SQL</span>
+<span class="kw">SELECT</span> place, time_gap
+<span class="kw">FROM</span>   rider_results
+<span class="kw">WHERE</span>  competition_id = ?
+       <span class="kw">AND</span> time_gap <span class="kw">IS NOT NULL</span>
+<span class="kw">ORDER BY</span> place
+
+<span class="cmt"># Python</span>
+total_finishers  = <span class="fn">len</span>(results_df)
+cutoff_position  = <span class="fn">int</span>(total_finishers * percentile)    <span class="cmt"># e.g. 0.5 → half</span>
+trimmed          = results_df.iloc[:cutoff_position]
+
+<span class="kw">for</span> row <span class="kw">in</span> trimmed:
+    finishing_times.append(winning_time + row.time_gap)
+    time_gaps.append(row.time_gap)
+
+<span class="kw">return</span> finishing_times, time_gaps, total_finishers, winning_time</div>
+    <p class="meta-line"><span class="lbl">src:</span> webscrape_tools/database/race_feature_extraction.py → trim_race_results_by_percentile()</p>
+  </div>
+
+  <div class="note">
+    Truncation is <strong>by rank, not by time</strong>. Keeping "top 50%" means the
+    best 50% of <em>finishers</em> — not the riders within 50% of the winner's time.
+    This is what makes the derived slopes meaningful: at each percentile step, you're
+    adding the next-slower tier of riders and watching how the distribution metrics
+    respond. A guard of <span class="mono">&lt; 10 finishers</span> after trimming
+    raises a <span class="mono">ValueError</span> so downstream stats remain valid.
+  </div>
+</div>
+
+<!-- =========================================================== -->
+<!-- STAGE 3: STATISTICAL MEASURES -->
+<!-- =========================================================== -->
+
+<div class="arrow-down">▼</div>
+
+<h2 id="s3">4. Statistical Measures</h2>
+
+<div class="stage s-stat">
+  <div class="stage-head">
+    <div class="stage-num">STAGE 03</div>
+    <h3>Classic distribution statistics (computed per trim level)</h3>
+  </div>
+  <p class="stage-purpose">
+    For each of the 19 trimmed subsets, compute a standard set of distribution
+    shape statistics. Each is computed in two forms: "absolute" (raw <span class="mono">time_gaps</span>)
+    and "normalized" (the rider's <span class="mono">finishing_time / winning_time</span>) —
+    the latter lets you compare shape across races of very different duration.
+  </p>
+
+  <div class="metric">
+    <div class="metric-head">
+      <h4>variance_absolute &amp; variance_normalized</h4>
+      <span class="range">≥ 0</span>
+    </div>
+    <p class="desc">How spread out finishing times are. The single most important input to the gradient pipeline: <strong>the rate of variance growth across percentiles is the main signal for mountain vs. sprint races</strong>.</p>
+    <div class="formula">variance_absolute   = <span class="fn">np.var</span>(time_gaps)                              <span class="cmt"># raw seconds²</span>
+variance_normalized = <span class="fn">np.var</span>(finishing_times / winning_time)     <span class="cmt"># unitless</span>
+std_dev_absolute    = <span class="fn">np.std</span>(time_gaps)
+std_dev_normalized  = <span class="fn">np.std</span>(finishing_times / winning_time)</div>
+    <p class="meta-line"><span class="lbl">src:</span> statistical_measures.py → calculate_variance_and_std()</p>
+  </div>
+
+  <div class="metric">
+    <div class="metric-head">
+      <h4>skewness_absolute &amp; skewness_normalized</h4>
+      <span class="range">ℝ, 0 = symmetric</span>
+    </div>
+    <p class="desc">Asymmetry of the distribution. Positive skew = long tail of slow riders; negative skew = tight bunch at front with a few stragglers. Returns 0 if variance is 0.</p>
+    <div class="formula">skewness_absolute   = <span class="fn">scipy.stats.skew</span>(time_gaps)
+skewness_normalized = <span class="fn">scipy.stats.skew</span>(finishing_times / winning_time)
+<span class="kw">if</span> <span class="fn">np.var</span>(values) == <span class="num">0</span>: <span class="kw">return</span> <span class="num">0.0</span>    <span class="cmt"># degenerate guard</span></div>
+  </div>
+
+  <div class="metric">
+    <div class="metric-head">
+      <h4>kurtosis_absolute &amp; kurtosis_normalized</h4>
+      <span class="range">ℝ (excess); normal = 0</span>
+    </div>
+    <p class="desc">Tailedness of the distribution. Using <strong>excess kurtosis</strong> (normal distribution = 0). Critical: this metric becomes undefined when variance ≈ 0 — those null positions are tracked as a data-quality signal (<span class="mono">kurtosis_null_percentile</span>, later becoming <span class="mono">breakdown_percentile</span>).</p>
+    <div class="formula">kurtosis_absolute   = <span class="fn">scipy.stats.kurtosis</span>(time_gaps)                 <span class="cmt"># excess (Fisher's)</span>
+kurtosis_normalized = <span class="fn">scipy.stats.kurtosis</span>(finishing_times / winning_time)</div>
+  </div>
+
+  <div class="metric">
+    <div class="metric-head">
+      <h4>gini_coefficient</h4>
+      <span class="range">∈ [0, 1]</span>
+    </div>
+    <p class="desc">Inequality of time gaps. 0 = every rider finishes the same; 1 = maximal concentration. Computed on the sorted non-negative gap list.</p>
+    <div class="formula">sorted_values = <span class="fn">np.sort</span>(values[values ≥ <span class="num">0</span>])
+n = <span class="fn">len</span>(sorted_values)
+i = <span class="fn">np.arange</span>(<span class="num">1</span>, n + <span class="num">1</span>)
+gini = (<span class="num">2</span> * <span class="fn">sum</span>(i * sorted_values)) / (n * <span class="fn">sum</span>(sorted_values))
+     − (n + <span class="num">1</span>) / n
+gini = <span class="fn">np.clip</span>(gini, <span class="num">0</span>, <span class="num">1</span>)</div>
+    <p class="meta-line"><span class="lbl">guard:</span> empty list or <span class="mono">sum == 0</span> → return 0.0</p>
+  </div>
+
+  <div class="metric">
+    <div class="metric-head">
+      <h4>shannon_entropy_absolute &amp; _normalized</h4>
+      <span class="range">absolute ≥ 0; normalized ∈ [0, 1]</span>
+    </div>
+    <p class="desc">Information content of the time-gap distribution after histogram binning. Bin width uses the Freedman–Diaconis rule; normalization divides by the theoretical max <span class="mono">log₂(n_bins)</span>.</p>
+    <div class="formula"><span class="cmt"># Freedman–Diaconis bin width (fallback: 10 bins if IQR=0)</span>
+q75, q25 = <span class="fn">np.percentile</span>(values, [<span class="num">75</span>, <span class="num">25</span>])
+iqr      = q75 − q25
+bin_width = <span class="num">2</span> * iqr * n**(−<span class="num">1</span>/<span class="num">3</span>)
+bins      = <span class="fn">max</span>(<span class="fn">int</span>((max − min) / bin_width), <span class="num">5</span>)
+
+<span class="cmt"># Entropy</span>
+hist, _     = <span class="fn">np.histogram</span>(values, bins=bins)
+probs       = hist / <span class="fn">sum</span>(hist)
+probs       = probs[probs &gt; <span class="num">0</span>]             <span class="cmt"># log(0) guard</span>
+entropy     = −<span class="fn">sum</span>(probs * <span class="fn">log2</span>(probs))
+normalized  = entropy / <span class="fn">log2</span>(<span class="fn">len</span>(probs))   <span class="cmt"># or 0 if denom = 0</span></div>
+  </div>
+
+  <div class="metric">
+    <div class="metric-head">
+      <h4>percentile gaps (5, 10, 15, …, 50)</h4>
+      <span class="range">≥ 0 seconds</span>
+    </div>
+    <p class="desc">Gap in seconds at each of 10 percentiles of the distribution. "What's the gap at the 25th percentile finisher?" Stored as named columns <span class="mono">5th_percentile_gap</span>, <span class="mono">10th_percentile_gap</span>, … <span class="mono">50th_percentile_gap</span>.</p>
+    <div class="formula"><span class="kw">for</span> p <span class="kw">in</span> [<span class="num">5</span>, <span class="num">10</span>, <span class="num">15</span>, <span class="num">20</span>, <span class="num">25</span>, <span class="num">30</span>, <span class="num">35</span>, <span class="num">40</span>, <span class="num">45</span>, <span class="num">50</span>]:
+    result[f<span class="str">'{p}th_percentile_gap'</span>] = <span class="fn">np.percentile</span>(time_gaps, p)</div>
+    <p class="meta-line"><span class="lbl">src:</span> statistical_measures.py → calculate_percentile_gaps()</p>
+  </div>
+</div>
+
+<!-- =========================================================== -->
+<!-- STAGE 4: ENGINEERED -->
+<!-- =========================================================== -->
+
+<div class="arrow-down">▼</div>
+
+<h2 id="s4">5. Engineered Race Metrics</h2>
+
+<div class="stage s-engr">
+  <div class="stage-head">
+    <div class="stage-num">STAGE 04</div>
+    <h3>Domain-specific metrics built on top of groups</h3>
+  </div>
+  <p class="stage-purpose">
+    These are cycling-specific: the concept of a "group" finishing together, the
+    size and position of the lead group, how clumpy the distribution is, how
+    selective the race was. Most of them go through a shared group-identification
+    step first.
+  </p>
+
+  <!-- Group identification -->
+  <div class="metric">
+    <div class="metric-head">
+      <h4>identify_groups(time_gaps, threshold=1.0s)</h4>
+    </div>
+    <p class="desc">Single-pass clustering: two adjacent finishers are in the same group if their gap difference is ≤ 1 second. Groups with only one rider are discarded (they're "solo finishes", not groups). Feeds all the metrics below.</p>
+    <div class="formula">current_group = [<span class="num">0</span>]   <span class="cmt"># start with winner</span>
+<span class="kw">for</span> i <span class="kw">in</span> <span class="num">1</span>..<span class="fn">len</span>(time_gaps):
+    gap_diff = time_gaps[i] − time_gaps[i−<span class="num">1</span>]
+    <span class="kw">if</span> gap_diff ≤ <span class="num">1.0</span>:
+        current_group.append(i)                    <span class="cmt"># extend current group</span>
+    <span class="kw">else</span>:
+        <span class="kw">if</span> <span class="fn">len</span>(current_group) &gt; <span class="num">1</span>:
+            groups.append(current_group)           <span class="cmt"># close it, 2+ riders only</span>
+        current_group = [i]                        <span class="cmt"># start new group</span>
+
+<span class="cmt"># Output dict fields:</span>
+total_groups, group_sizes, group_positions,
+riders_in_groups, largest_group_size, largest_group_position,
+proportion_in_groups = riders_in_groups / <span class="fn">len</span>(time_gaps)</div>
+    <p class="meta-line"><span class="lbl">src:</span> engineered_metrics.py → identify_groups()</p>
+  </div>
+
+  <div class="metric">
+    <div class="metric-head">
+      <h4>biggest_group_metric</h4>
+      <span class="range">∈ [0, 1]</span>
+    </div>
+    <p class="desc">How dominant is the biggest group <em>and</em> where is it in the race? A 30-rider lead group at the front is maximally meaningful; a 30-rider group of stragglers is nearly worthless. Combined via a weighted geometric mean.</p>
+    <div class="formula"><span class="kw">if</span> largest_group_size == <span class="num">0</span>: <span class="kw">return</span> <span class="num">0.0</span>
+
+size_score         = largest_group_size / total_riders
+position_percentile = (largest_group_position − <span class="num">1</span>) / total_riders
+
+<span class="cmt"># Influence = how far forward the largest group sits</span>
+<span class="kw">if</span> position_percentile ≤ <span class="num">0.01</span>:                          <span class="cmt"># contains winner</span>
+    influence_score = <span class="num">1.0</span>
+<span class="kw">elif</span> position_percentile ≤ <span class="num">0.10</span>:                         <span class="cmt"># top 10%</span>
+    influence_score = <span class="num">1.0</span> − (position_percentile / <span class="num">0.1</span>) * <span class="num">0.3</span>   <span class="cmt"># 1.0 → 0.7</span>
+<span class="kw">elif</span> position_percentile ≤ <span class="num">0.30</span>:                         <span class="cmt"># top 30%</span>
+    influence_score = <span class="num">0.7</span> − ((position_percentile − <span class="num">0.1</span>) / <span class="num">0.2</span>) * <span class="num">0.5</span>   <span class="cmt"># 0.7 → 0.2</span>
+<span class="kw">else</span>:
+    influence_score = <span class="num">0.2</span> * (<span class="num">1</span> − position_percentile)   <span class="cmt"># fade to 0</span>
+
+<span class="cmt"># Weighted geometric mean: influence dominates (0.7 vs 0.3)</span>
+final_score = size_score ** <span class="num">0.3</span> * influence_score ** <span class="num">0.7</span></div>
+  </div>
+
+  <div class="metric">
+    <div class="metric-head">
+      <h4>clumpiness_score</h4>
+      <span class="range">∈ [0, 1]</span>
+    </div>
+    <p class="desc">Rewards races that break into many distinct groups of moderate size — the "classics" or "hilly stage" shape. Weighted sum of four piecewise-linear components: group count, proportion in groups, average group size, and how spread-out the groups are across the race.</p>
+    <div class="formula"><span class="cmt"># Component 1: group count (ideal 5–15 groups) — weight 0.25</span>
+<span class="kw">if</span> group_count ≤ <span class="num">5</span>:      group_score = group_count / <span class="num">5</span>
+<span class="kw">elif</span> group_count ≤ <span class="num">15</span>:   group_score = <span class="num">1.0</span>
+<span class="kw">else</span>:                   group_score = <span class="fn">max</span>(<span class="num">0</span>, <span class="num">1</span> − (group_count − <span class="num">15</span>) / <span class="num">15</span>)
+
+<span class="cmt"># Component 2: proportion of riders in groups — weight 0.25</span>
+proportion_score = proportion_in_groups
+
+<span class="cmt"># Component 3: average group size (ideal 5–15 riders) — weight 0.35</span>
+<span class="kw">if</span> avg_group_size &lt; <span class="num">2</span>:    size_score = <span class="num">0.0</span>
+<span class="kw">elif</span> avg_group_size &lt; <span class="num">5</span>:   size_score = (avg_group_size − <span class="num">2</span>) / <span class="num">3</span>
+<span class="kw">elif</span> avg_group_size ≤ <span class="num">15</span>:  size_score = <span class="num">1.0</span>
+<span class="kw">elif</span> avg_group_size ≤ <span class="num">20</span>:  size_score = <span class="num">1</span> − (avg_group_size − <span class="num">15</span>) / <span class="num">5</span>
+<span class="kw">else</span>:                     size_score = <span class="num">0.0</span>
+
+<span class="cmt"># Component 4: group spread across the race — weight 0.15</span>
+positions_norm = [p / <span class="fn">len</span>(time_gaps) <span class="kw">for</span> p <span class="kw">in</span> group_positions]
+spread_score   = <span class="fn">min</span>(<span class="num">1.0</span>, <span class="fn">np.var</span>(positions_norm) * <span class="num">10</span>)
+
+clumpiness = (<span class="num">0.25</span>*group_score + <span class="num">0.25</span>*proportion_score +
+              <span class="num">0.35</span>*size_score   + <span class="num">0.15</span>*spread_score)</div>
+  </div>
+
+  <div class="metric">
+    <div class="metric-head">
+      <h4>time_gap_evenness_metric</h4>
+      <span class="range">∈ [0, 1]</span>
+    </div>
+    <p class="desc">How uniform are consecutive rider-to-rider gaps? Perfectly even spacing → 1.0. Uses coefficient of variation of consecutive diffs, plus a penalty for any diffs near zero (which mean bunching).</p>
+    <div class="formula">consecutive_gaps = [time_gaps[i] − time_gaps[i−<span class="num">1</span>] <span class="kw">for</span> i <span class="kw">in</span> <span class="num">1</span>..n]
+cv               = <span class="fn">np.std</span>(consecutive_gaps) / <span class="fn">np.mean</span>(consecutive_gaps)
+evenness         = <span class="num">1</span> / (<span class="num">1</span> + cv)
+
+<span class="cmt"># Penalty for near-zero diffs (evidence of groups)</span>
+zero_count   = <span class="fn">sum</span>(<span class="num">1</span> <span class="kw">for</span> g <span class="kw">in</span> consecutive_gaps <span class="kw">if</span> g &lt; <span class="num">0.1</span>)
+zero_penalty = zero_count / <span class="fn">len</span>(consecutive_gaps) * <span class="num">0.5</span>
+
+final_score = evenness * (<span class="num">1</span> − zero_penalty)</div>
+  </div>
+
+  <div class="metric">
+    <div class="metric-head">
+      <h4>selection_metric</h4>
+      <span class="range">∈ [0, 1]</span>
+    </div>
+    <p class="desc">How selective was the race? Combines (a) the relative spread of finishing times (last-gap / winning-time, capped at 10%) with (b) the progression of gaps at 10th / 50th / 90th percentiles. Steeper progression = higher selection.</p>
+    <div class="formula">last_gap         = time_gaps[−<span class="num">1</span>]
+relative_spread  = last_gap / winning_time
+spread_score     = <span class="fn">min</span>(<span class="num">1.0</span>, relative_spread / <span class="num">0.1</span>)   <span class="cmt"># 10% spread = max</span>
+
+<span class="kw">if</span> <span class="fn">len</span>(time_gaps) ≥ <span class="num">10</span>:
+    p10_gap = time_gaps[<span class="fn">int</span>(n * <span class="num">0.1</span>)]
+    p50_gap = time_gaps[<span class="fn">int</span>(n * <span class="num">0.5</span>)]
+    p90_gap = time_gaps[<span class="fn">int</span>(n * <span class="num">0.9</span>)]
+    early = p10_gap / p90_gap     <span class="cmt"># 0 = leaders far ahead of field</span>
+    mid   = p50_gap / p90_gap
+    progression_score = <span class="num">1</span> − (early * <span class="num">0.5</span> + mid * <span class="num">0.5</span>)
+<span class="kw">else</span>:
+    progression_score = <span class="num">0.0</span>
+
+selection = <span class="num">0.6</span> * spread_score + <span class="num">0.4</span> * progression_score</div>
+  </div>
+</div>
+
+<!-- =========================================================== -->
+<!-- STAGE 5: PERCENTILE TABLES -->
+<!-- =========================================================== -->
+
+<div class="arrow-down">▼</div>
+
+<h2 id="s5">6. Percentile Tables</h2>
+
+<div class="stage s-tables">
+  <div class="stage-head">
+    <div class="stage-num">STAGE 05</div>
+    <h3>19 materialized tables, one per trim level</h3>
+  </div>
+  <p class="stage-purpose">
+    For every competition, Stages 03 and 04 are run 19 times (once per percentile
+    cutoff), and each complete row is stored in its own table —
+    <span class="mono">race_features_10</span> for the 10% cutoff all the way up to
+    <span class="mono">race_features_100</span> for the full field. Keeping them
+    separate makes gradient extraction a simple multi-table read.
+  </p>
+
+  <div class="metric">
+    <div class="metric-head"><h4>Row schema (identical across 19 tables)</h4></div>
+    <div class="formula">competition_id, percentile_analyzed,
+
+<span class="cmt"># ─ metadata ─</span>
+competition_name, competition_type, race_id, race_name,
+race_category, race_year, race_date,
+total_finishers, included_finishers, abandon_ratio,
+winning_time, total_race_duration,
+
+<span class="cmt"># ─ from statistical_measures.py ─</span>
+variance_absolute,        variance_normalized,
+std_deviation_absolute,   std_deviation_normalized,
+skewness_absolute,        skewness_normalized,
+kurtosis_absolute,        kurtosis_normalized,
+gini_coefficient,
+shannon_entropy_absolute, shannon_entropy_normalized,
+5th_percentile_gap,  10th_percentile_gap, 15th_percentile_gap,
+20th_percentile_gap, 25th_percentile_gap, 30th_percentile_gap,
+35th_percentile_gap, 40th_percentile_gap, 45th_percentile_gap,
+50th_percentile_gap,
+
+<span class="cmt"># ─ from engineered_metrics.py ─</span>
+total_groups, riders_in_groups, proportion_in_groups,
+largest_group_size, largest_group_position,
+avg_group_size, std_group_size,
+biggest_group_metric, time_gap_evenness_metric,
+clumpiness_score, selection_metric</div>
+  </div>
+
+  <div class="metric">
+    <div class="metric-head"><h4>abandon_ratio</h4><span class="range">∈ [0, 1)</span></div>
+    <div class="formula">abandon_ratio = <span class="num">1</span> − (included_finishers / total_finishers)
+<span class="cmt"># "included" = after trimming to the target percentile</span></div>
+  </div>
+
+  <div class="note">
+    A competition with fewer than 10 finishers after trimming raises
+    <span class="mono">ValueError</span>. Those races are skipped and leave gaps
+    that the imputation step (Stage 06) handles.
+  </div>
+</div>
+
+<!-- =========================================================== -->
+<!-- STAGE 6: GRADIENT -->
+<!-- =========================================================== -->
+
+<div class="arrow-down">▼</div>
+
+<h2 id="s6">7. Gradient Extraction</h2>
+
+<div class="stage s-gradient">
+  <div class="stage-head">
+    <div class="stage-num">STAGE 06</div>
+    <h3>Linear regression over percentiles → 4 scalars per race</h3>
+  </div>
+  <p class="stage-purpose">
+    This is where the 19-percentile shape collapses back into a handful of scalars.
+    For each metric, the 19 values (one per table) are treated as points
+    <span class="mono">(percentile, value)</span> and fit with a single linear
+    regression. The slope of that line is the primary output; volatility,
+    monotonicity, and directional changes come along as secondary shape descriptors.
+  </p>
+
+  <div class="metric">
+    <div class="metric-head">
+      <h4>GradientCalculator.calculate_gradient_metrics(values, percentiles)</h4>
+    </div>
+    <div class="formula">percentiles = [<span class="num">10</span>, <span class="num">15</span>, <span class="num">20</span>, <span class="num">25</span>, <span class="num">30</span>, <span class="num">35</span>, <span class="num">40</span>, <span class="num">45</span>, <span class="num">50</span>,
+               <span class="num">55</span>, <span class="num">60</span>, <span class="num">65</span>, <span class="num">70</span>, <span class="num">75</span>, <span class="num">80</span>, <span class="num">85</span>, <span class="num">90</span>, <span class="num">95</span>, <span class="num">100</span>]
+
+<span class="cmt"># Drop None entries, need at least 3 valid points</span>
+valid_pairs = [(p, v) <span class="kw">for</span> p, v <span class="kw">in</span> <span class="fn">zip</span>(percentiles, values) <span class="kw">if</span> v <span class="kw">is not None</span>]
+<span class="kw">if</span> <span class="fn">len</span>(valid_pairs) &lt; <span class="num">3</span>: <span class="kw">return None</span>
+
+valid_percentiles, valid_values = <span class="fn">zip</span>(*valid_pairs)
+
+<span class="cmt"># PRIMARY: linear regression slope</span>
+slope, intercept = <span class="fn">np.polyfit</span>(valid_percentiles, valid_values, <span class="num">1</span>)
+
+<span class="cmt"># SECONDARY: step-to-step shape descriptors</span>
+steps      = <span class="fn">np.diff</span>(valid_values)
+volatility = <span class="fn">np.std</span>(steps)
+
+increasing   = <span class="fn">sum</span>(<span class="num">1</span> <span class="kw">for</span> s <span class="kw">in</span> steps <span class="kw">if</span> s &gt; <span class="num">0</span>)
+decreasing   = <span class="fn">sum</span>(<span class="num">1</span> <span class="kw">for</span> s <span class="kw">in</span> steps <span class="kw">if</span> s &lt; <span class="num">0</span>)
+monotonicity = (increasing − decreasing) / <span class="fn">len</span>(steps)    <span class="cmt"># ∈ [−1, +1]</span>
+
+directional_changes = <span class="fn">sum</span>(<span class="num">1</span> <span class="kw">for</span> i <span class="kw">in</span> <span class="num">1</span>..<span class="fn">len</span>(steps)
+    <span class="kw">if</span> <span class="fn">sign</span>(steps[i]) ≠ <span class="fn">sign</span>(steps[i−<span class="num">1</span>]))     <span class="cmt"># zig-zag count</span>
+
+<span class="kw">return</span> GradientMetrics(values, slope, volatility, monotonicity, directional_changes)</div>
+    <p class="meta-line"><span class="lbl">src:</span> webscrape_tools/database/gradient_calculator.py → calculate_gradient_metrics()</p>
+  </div>
+
+  <div class="metric">
+    <div class="metric-head"><h4>Imputation cascade for null values</h4></div>
+    <p class="desc">Kurtosis and occasionally other stats return null when the trimmed distribution is degenerate (e.g. variance ≈ 0). A four-level fallback chain fills them in so the regression can still run — with an <span class="mono">imputation_flags</span> list tracking which were synthetic.</p>
+    <div class="formula"><span class="kw">for</span> each missing value <span class="kw">at</span> position i:
+    <span class="num">1.</span> <span class="fn">_try_linear_interpolation</span>(prev valid, next valid)
+          val = prev_val + (i − prev_idx)/(next_idx − prev_idx) * (next_val − prev_val)
+    <span class="num">2.</span> <span class="fn">_get_similar_race_median</span>(feature, percentile, competition_id)
+          <span class="cmt"># currently returns None — placeholder for future lookup</span>
+    <span class="num">3.</span> <span class="fn">_endpoint_extension</span>(nearest valid value by search radius)
+    <span class="num">4.</span> <span class="num">0.0</span>                                <span class="cmt"># last-resort default</span></div>
+  </div>
+
+  <div class="metric">
+    <div class="metric-head">
+      <h4>Data quality indicators (raw, <em>pre</em>-imputation)</h4>
+    </div>
+    <p class="desc">Scanning percentiles from 100 down to 10, the <em>highest</em> percentile at which each of these conditions is first met is recorded. These are the "where did the field break down?" markers.</p>
+    <div class="formula"><span class="kw">for</span> p <span class="kw">in</span> sorted(percentiles, reverse=<span class="kw">True</span>):   <span class="cmt"># 100 → 10</span>
+    <span class="kw">if</span> data[p].variance_normalized == <span class="num">0</span>:
+        variance_zero_percentile = p    <span class="cmt"># first time var is flat</span>
+    <span class="kw">if</span> data[p].kurtosis_normalized <span class="kw">is None</span>:
+        kurtosis_null_percentile = p    <span class="cmt"># ★ becomes breakdown_percentile</span>
+    lowest_valid_percentile = p         <span class="cmt"># last loop pass = lowest with data</span></div>
+    <p class="meta-line"><span class="lbl">src:</span> gradient_calculator.py → find_data_quality_indicators()</p>
+  </div>
+
+  <div class="metric">
+    <div class="metric-head">
+      <h4>Per-race output → <span class="mono">race_feature_gradients</span> table</h4>
+    </div>
+    <p class="desc">One row per competition. For each metric listed below, the table stores the 19 raw values as JSON plus four shape descriptors (slope / volatility / monotonicity / directional_changes). Plus the null-percentile markers above.</p>
+    <div class="formula"><span class="cmt"># Per feature (variance_normalized, clumpiness_score, biggest_group_metric, …):</span>
+{feature}_values              <span class="cmt"># JSON list of 19 values</span>
+{feature}_slope               <span class="cmt"># ← the primary output</span>
+{feature}_volatility
+{feature}_monotonicity
+{feature}_directional_changes
+
+<span class="cmt"># Plus these data-quality columns:</span>
+valid_percentiles             <span class="cmt"># JSON list</span>
+missing_percentiles           <span class="cmt"># JSON list</span>
+percentile_coverage_ratio
+lowest_valid_percentile
+variance_zero_percentile
+kurtosis_null_percentile      <span class="cmt"># ← breakdown_percentile</span>
+
+<span class="cmt"># Written via INSERT OR REPLACE by SafeDatabaseWriter.insert_batch()</span></div>
+  </div>
+
+  <div class="note">
+    This stage is what pipeline step <span class="mono">gradients</span> (step 8) runs,
+    in parallel with <span class="mono">ThreadPoolExecutor(max_workers=8)</span>.
+    Each worker calls <span class="mono">calculate_gradients_for_competition()</span>
+    from <span class="mono">populate_all_gradients_safe.py</span>, which reads all 19
+    percentile rows, runs the regression for every metric, and writes one row.
+  </div>
+</div>
+
+<!-- =========================================================== -->
+<!-- STAGE 7: PROFILE SCORES -->
+<!-- =========================================================== -->
+
+<div class="arrow-down">▼</div>
+
+<h2 id="s7">8. Race Profile Scores (the final output)</h2>
+
+<div class="stage s-score">
+  <div class="stage-head">
+    <div class="stage-num">STAGE 07</div>
+    <h3>Four scalars → six profile probabilities</h3>
+  </div>
+  <p class="stage-purpose">
+    Only four of the values from Stage 06 make it into
+    <span class="mono">calculate_race_profile_scores()</span>. The function combines
+    them through sigmoids and Gaussians tuned to match cycling intuitions (big sprint
+    = field together → high breakdown + low variance growth, etc.) and normalizes to
+    a distribution over six profiles.
+  </p>
+
+  <div class="metric">
+    <div class="metric-head"><h4>The four inputs, traced back to Stage 06</h4></div>
+    <div class="formula">breakdown_percentile = <span class="fn">COALESCE</span>(kurtosis_null_percentile, <span class="num">0</span>)
+                       <span class="cmt"># ← Stage 06 quality indicator</span>
+variance_slope       = variance_normalized_slope
+                       <span class="cmt"># ← slope over 19 variance_normalized values</span>
+clumpiness_slope     = clumpiness_score_slope
+                       <span class="cmt"># ← slope over 19 clumpiness_score values</span>
+biggest_group_slope  = biggest_group_metric_slope
+                       <span class="cmt"># ← slope over 19 biggest_group_metric values</span>
+
+winning_time         = race_features_100.winning_time
+                       <span class="cmt"># ← from the 100% row; drives TT short-circuit</span></div>
+    <p class="meta-line"><span class="lbl">src:</span> race_profile_scoring.py → RaceProfileScorer.score_race() (SQL JOIN)</p>
+  </div>
+
+  <div class="metric">
+    <div class="metric-head"><h4>Basis functions</h4></div>
+    <div class="formula"><span class="fn">sigmoid</span>(x, center, steep)   = <span class="num">1</span> / (<span class="num">1</span> + <span class="fn">exp</span>(−steep * (x − center)))
+<span class="fn">gaussian</span>(x, center, width)  = <span class="fn">exp</span>(−width * (x − center)**<span class="num">2</span>)
+log_var_slope = <span class="fn">log10</span>(variance_slope)
+
+<span class="cmt"># Time-trial short-circuit</span>
+<span class="kw">if</span> winning_time &lt; <span class="num">4200</span>:           <span class="cmt"># &lt; 70 minutes</span>
+    <span class="kw">return</span> RaceProfileScores(time_trial=<span class="num">1.0</span>, rest=<span class="num">0</span>)</div>
+  </div>
+
+  <div class="metric">
+    <div class="metric-head"><h4>Raw profile scores (before normalization)</h4></div>
+    <div class="profile-table">
+      <div class="pname">sprint_raw</div>
+      <div class="pform">sigmoid(breakdown, center=50, steep=0.1)
+* sigmoid(−log_var_slope, center=6, steep=2.0)
+<span style="color:var(--text-faint)">// field still together + variance not growing</span></div>
+
+      <div class="pname">mountain_raw</div>
+      <div class="pform">breakdown_penalty = 1.0 if breakdown==0 else exp(−0.05*breakdown)
+breakdown_penalty * sigmoid(log_var_slope, center=−5, steep=2.0)
+<span style="color:var(--text-faint)">// no early breakdown + variance climbing fast</span></div>
+
+      <div class="pname">hilly_raw</div>
+      <div class="pform">gaussian(breakdown, center=35, width=0.005)
+* sigmoid(clumpiness_slope, center=0.004, steep=400)
+<span style="color:var(--text-faint)">// moderate breakdown + clumping increasing</span></div>
+
+      <div class="pname">rolling_raw</div>
+      <div class="pform">breakdown_penalty = 1.0 if breakdown==0 else exp(−0.1*breakdown)
+breakdown_penalty * gaussian(log_var_slope, center=−5.5, width=0.5)
+<span style="color:var(--text-faint)">// no breakdown + moderate variance growth</span></div>
+
+      <div class="pname">breakaway_raw</div>
+      <div class="pform">gaussian(breakdown, center=18, width=0.01)
+* sigmoid(−biggest_group_slope, center=0.005, steep=500)
+<span style="color:var(--text-faint)">// early breakdown + lead group shrinking</span></div>
+
+      <div class="pname">time_trial_raw</div>
+      <div class="pform">0.0   (non-TT races; TT races short-circuit above)</div>
+    </div>
+  </div>
+
+  <div class="metric">
+    <div class="metric-head">
+      <h4>Normalization to probability</h4>
+      <span class="range">each ∈ [0, 1], sum = 1</span>
+    </div>
+    <div class="formula">total = sprint_raw + mountain_raw + hilly_raw
+      + rolling_raw + breakaway_raw + <span class="num">1e-10</span>      <span class="cmt"># ε guard</span>
+
+race_sprint_score     = <span class="fn">round</span>(sprint_raw    / total, <span class="num">4</span>)
+race_mountain_score   = <span class="fn">round</span>(mountain_raw  / total, <span class="num">4</span>)
+race_hilly_score      = <span class="fn">round</span>(hilly_raw     / total, <span class="num">4</span>)
+race_rolling_score    = <span class="fn">round</span>(rolling_raw   / total, <span class="num">4</span>)
+race_breakaway_score  = <span class="fn">round</span>(breakaway_raw / total, <span class="num">4</span>)
+race_time_trial_score = <span class="num">0.0</span>
+
+race_dominant_profile = <span class="fn">argmax</span>(all six)</div>
+  </div>
+</div>
+
+<!-- =========================================================== -->
+<!-- SUMMARY -->
+<!-- =========================================================== -->
+
+<h2>9. One-line summary of the chain</h2>
+
+<div class="section-intro" style="font-family:var(--mono); font-size:12px; color:#cbd5e1;">
+rider_results.time_gap<br>
+&nbsp;&nbsp;↓ &nbsp;&nbsp; trim_race_results_by_percentile(c, p) &nbsp;&nbsp;—&nbsp;&nbsp; for p in {0.10, 0.15, …, 1.00}<br>
+&nbsp;&nbsp;↓<br>
+calculate_statistical_features() &nbsp;+&nbsp; calculate_engineered_features()<br>
+&nbsp;&nbsp;↓ &nbsp;&nbsp; insert into race_features_&lt;p&gt;<br>
+race_features_10 &nbsp;…&nbsp; race_features_100 &nbsp;&nbsp;(19 tables)<br>
+&nbsp;&nbsp;↓ &nbsp;&nbsp; GradientCalculator.calculate_gradient_metrics(values, percentiles)<br>
+&nbsp;&nbsp;↓ &nbsp;&nbsp; np.polyfit(percentiles, values, 1) &nbsp;&nbsp;—&nbsp;&nbsp; for every metric<br>
+race_feature_gradients &nbsp;(slope, volatility, monotonicity, directional_changes, null-percentile markers)<br>
+&nbsp;&nbsp;↓ &nbsp;&nbsp; SELECT kurtosis_null_percentile, variance_normalized_slope, clumpiness_score_slope, biggest_group_metric_slope<br>
+calculate_race_profile_scores(breakdown, variance_slope, clumpiness_slope, biggest_group_slope, winning_time)<br>
+&nbsp;&nbsp;↓<br>
+RaceProfileScores(sprint, mountain, hilly, rolling, breakaway, time_trial) &nbsp;→&nbsp; sum = 1.0
+</div>
+
+<hr>
+
+<p class="subtitle">
+  Sources (all read from <span class="mono">webscrape-refactor @ 7e0b167</span>):
+  <span class="mono">webscrape_tools/database/race_feature_extraction.py</span>
+  (trim, calculate_statistical_features, calculate_engineered_features),
+  <span class="mono">webscrape_tools/database/statistical_measures.py</span>
+  (Gini, entropy, variance, skew, kurtosis, percentile gaps),
+  <span class="mono">webscrape_tools/database/engineered_metrics.py</span>
+  (identify_groups, biggest_group_metric, clumpiness_score, time_gap_evenness, selection_metric),
+  <span class="mono">webscrape_tools/database/gradient_calculator.py</span>
+  (calculate_gradient_metrics, imputation cascade, find_data_quality_indicators),
+  <span class="mono">webscrape_tools/database/populate_all_gradients_safe.py</span>
+  (parallel worker entry, INSERT OR REPLACE),
+  <span class="mono">prediction_tools/race_profile_scoring.py</span>
+  (final scoring function).
+</p>
+
+<script>
+document.querySelectorAll('.p-card').forEach(card => {
+  card.addEventListener('click', (e) => {
+    const href = card.getAttribute('href');
+    if (!href || !href.startsWith('#')) return;
+    const target = document.querySelector(href);
+    if (target) {
+      e.preventDefault();
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  });
+});
+</script>
+
+</body>
+</html>

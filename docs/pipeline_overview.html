@@ -1,0 +1,1063 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Cycling Prediction Pipeline — Conceptual Overview</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+:root {
+  --bg: #0f1419;
+  --panel: #151c24;
+  --panel-2: #1c252f;
+  --border: #2a3642;
+  --text: #e5edf5;
+  --text-dim: #94a3b8;
+  --text-faint: #64748b;
+  --accent: #60a5fa;
+  --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Monaco, Consolas, monospace;
+
+  /* Stage colors (one per pipeline phase) */
+  --c-scrape:   #f59e0b;  /* amber */
+  --c-storage:  #a78bfa;  /* violet */
+  --c-feature:  #34d399;  /* emerald */
+  --c-assemble: #22d3ee;  /* cyan */
+  --c-train:    #f472b6;  /* pink */
+  --c-infer:    #fbbf24;  /* yellow */
+  --c-display:  #fb7185;  /* rose */
+}
+
+* { box-sizing: border-box; }
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  font-size: 15px;
+  line-height: 1.55;
+}
+body { padding: 28px 36px 80px; max-width: 1400px; margin: 0 auto; }
+
+h1 { margin: 0 0 4px; font-size: 28px; font-weight: 700; letter-spacing: -0.02em; }
+h2 { margin: 44px 0 16px; font-size: 20px; font-weight: 700; letter-spacing: -0.01em;
+     padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+h3 { margin: 0 0 6px; font-size: 16px; font-weight: 700; }
+h4 { margin: 14px 0 4px; font-size: 12px; font-weight: 700;
+     text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-dim); }
+p  { margin: 6px 0; }
+code, .mono { font-family: var(--mono); font-size: 12.5px; color: #e2e8f0;
+              background: #0b1118; padding: 1px 6px; border-radius: 4px;
+              border: 1px solid var(--border); }
+ul { margin: 6px 0 10px; padding-left: 20px; }
+li { margin: 3px 0; }
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+.subtitle { color: var(--text-dim); font-size: 13px; margin: 0 0 18px; }
+.subtitle .mono { font-size: 11.5px; }
+
+/* Legend */
+.legend { display: flex; flex-wrap: wrap; gap: 14px 22px; margin: 14px 0 18px;
+          padding: 10px 14px; background: var(--panel); border: 1px solid var(--border);
+          border-radius: 8px; font-size: 12px; }
+.legend-item { display: flex; align-items: center; gap: 8px; color: var(--text-dim); }
+.legend-dot { width: 11px; height: 11px; border-radius: 3px; flex-shrink: 0; }
+
+/* --------- Pipeline at a glance --------- */
+.flow {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+  margin: 22px 0 40px;
+}
+.flow-card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--accent);
+  border-radius: 8px;
+  padding: 12px 12px 14px;
+  position: relative;
+  cursor: pointer;
+  transition: transform 0.12s ease, background 0.12s ease;
+}
+.flow-card:hover { background: var(--panel-2); transform: translateY(-1px); }
+.flow-card .num { font-family: var(--mono); font-size: 10px; color: var(--text-faint);
+                  letter-spacing: 0.1em; }
+.flow-card .title { font-size: 13.5px; font-weight: 700; margin: 3px 0 4px; }
+.flow-card .line { font-size: 11px; color: var(--text-dim); line-height: 1.35; }
+.flow-card::after {
+  content: "▸"; position: absolute; top: 50%; right: -14px;
+  transform: translateY(-50%); color: var(--text-faint); font-size: 14px;
+  pointer-events: none;
+}
+.flow-card:last-child::after { display: none; }
+
+/* Stage-specific accents for flow cards */
+.flow-card.c-scrape   { border-left-color: var(--c-scrape); }
+.flow-card.c-storage  { border-left-color: var(--c-storage); }
+.flow-card.c-feature  { border-left-color: var(--c-feature); }
+.flow-card.c-assemble { border-left-color: var(--c-assemble); }
+.flow-card.c-train    { border-left-color: var(--c-train); }
+.flow-card.c-infer    { border-left-color: var(--c-infer); }
+.flow-card.c-display  { border-left-color: var(--c-display); }
+
+/* --------- Detail stage cards --------- */
+.stage {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--accent);
+  border-radius: 10px;
+  padding: 20px 24px 22px;
+  margin: 14px 0;
+}
+.stage.c-scrape   { border-left-color: var(--c-scrape); }
+.stage.c-storage  { border-left-color: var(--c-storage); }
+.stage.c-feature  { border-left-color: var(--c-feature); }
+.stage.c-assemble { border-left-color: var(--c-assemble); }
+.stage.c-train    { border-left-color: var(--c-train); }
+.stage.c-infer    { border-left-color: var(--c-infer); }
+.stage.c-display  { border-left-color: var(--c-display); }
+
+.stage-head { display: flex; align-items: baseline; gap: 12px; margin-bottom: 4px; }
+.stage-num  { font-family: var(--mono); font-size: 11px; color: var(--text-faint);
+              letter-spacing: 0.1em; padding: 2px 6px; border: 1px solid var(--border);
+              border-radius: 4px; }
+.stage-head h3 { font-size: 18px; }
+.stage-purpose { color: var(--text-dim); font-size: 13.5px; margin-bottom: 6px; }
+
+.stage-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr) minmax(0, 1fr);
+  gap: 20px;
+  margin-top: 14px;
+}
+.stage-col h4 { margin-top: 0; }
+
+.io-box {
+  background: #0b1118;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 10px;
+  font-family: var(--mono);
+  font-size: 11.5px;
+  color: #cbd5e1;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.gotcha { background: #1a1510; border: 1px solid #3a2d15; color: #fbcf8f;
+          border-radius: 6px; padding: 8px 12px; margin-top: 10px;
+          font-size: 12.5px; }
+.gotcha::before { content: "⚠ "; color: #f59e0b; font-weight: 700; }
+
+.files {
+  font-family: var(--mono); font-size: 11.5px; color: var(--text-dim);
+  margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--border);
+}
+.files .file-line { display: block; margin: 2px 0; color: #cbd5e1; }
+.files .file-line .annot { color: var(--text-faint); }
+
+/* --------- Feature taxonomy --------- */
+.feat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 12px;
+}
+.feat-card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px 16px;
+}
+.feat-card h4 { margin-top: 0; color: var(--c-feature); }
+.feat-card .tag-list { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; }
+.tag { background: #0b1118; border: 1px solid var(--border); border-radius: 4px;
+       padding: 2px 7px; font-family: var(--mono); font-size: 10.5px; color: #cbd5e1; }
+.feat-card .note { font-size: 11.5px; color: var(--text-faint); margin-top: 8px;
+                   line-height: 1.45; }
+
+/* --------- Model table --------- */
+table.models {
+  width: 100%; border-collapse: collapse; font-size: 12.5px;
+  background: var(--panel); border: 1px solid var(--border);
+  border-radius: 8px; overflow: hidden;
+}
+table.models th, table.models td {
+  text-align: left; padding: 9px 12px;
+  border-bottom: 1px solid var(--border); vertical-align: top;
+}
+table.models th { background: var(--panel-2); color: var(--text-dim);
+                  font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; }
+table.models tr:last-child td { border-bottom: none; }
+table.models td .mono { font-size: 11px; }
+table.models .mname { color: var(--c-train); font-weight: 700; white-space: nowrap; }
+
+/* --------- Bucket scale --------- */
+.bucket-scale {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 4px;
+  margin: 10px 0 6px;
+}
+.bucket-cell {
+  background: var(--panel); border: 1px solid var(--border); border-radius: 6px;
+  padding: 10px 8px; text-align: center;
+}
+.bucket-cell .b-num { font-family: var(--mono); font-size: 18px; font-weight: 700;
+                      color: var(--accent); }
+.bucket-cell .b-name { font-size: 11px; color: var(--text-dim); margin-top: 2px; }
+.bucket-cell .b-pct  { font-size: 10px; color: var(--text-faint); margin-top: 2px; }
+
+/* --------- Misc --------- */
+details { margin-top: 12px; }
+details summary {
+  cursor: pointer; font-size: 13px; color: var(--text-dim);
+  padding: 6px 0; user-select: none;
+}
+details summary:hover { color: var(--text); }
+details[open] summary { color: var(--text); margin-bottom: 8px; }
+
+hr { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
+
+.arrow-down {
+  text-align: center; color: var(--text-faint); font-size: 18px;
+  margin: -4px 0; line-height: 1;
+}
+
+@media (max-width: 1100px) {
+  .flow { grid-template-columns: repeat(2, 1fr); }
+  .flow-card::after { display: none; }
+  .stage-grid { grid-template-columns: 1fr; }
+}
+@media print {
+  body { background: white; color: black; padding: 0.4in; }
+  .stage, .flow-card, .feat-card, table.models { background: white; color: black;
+    border-color: #bbb; }
+  .io-box { background: #f6f6f6; color: #222; border-color: #ddd; }
+  code, .mono { background: #f2f2f2; color: #222; border-color: #ddd; }
+  .legend, .gotcha { background: #f6f6f6; color: #333; }
+  h2 { border-color: #bbb; }
+  a { color: #1a4fb8; }
+  details { open: true; }
+}
+</style>
+</head>
+<body>
+
+<h1>Cycling Prediction Pipeline</h1>
+<p class="subtitle">
+  Conceptual overview of data flow from web scrape → SQLite → features → LightGBM models → race prediction → web display.<br>
+  Branch: <span class="mono">webscrape-refactor</span> @ <span class="mono">7e0b167</span> (2026-03-20) — <em>production pipeline</em>
+</p>
+
+<div class="legend">
+  <div class="legend-item"><div class="legend-dot" style="background:var(--c-scrape)"></div>Scrape</div>
+  <div class="legend-item"><div class="legend-dot" style="background:var(--c-storage)"></div>Storage / Migration</div>
+  <div class="legend-item"><div class="legend-dot" style="background:var(--c-feature)"></div>Feature Precomputation</div>
+  <div class="legend-item"><div class="legend-dot" style="background:var(--c-assemble)"></div>Training Assembly</div>
+  <div class="legend-item"><div class="legend-dot" style="background:var(--c-train)"></div>Model Training</div>
+  <div class="legend-item"><div class="legend-dot" style="background:var(--c-infer)"></div>Inference</div>
+  <div class="legend-item"><div class="legend-dot" style="background:var(--c-display)"></div>Display</div>
+</div>
+
+<!-- =========================================================== -->
+<!-- SECTION 1: FLOW AT A GLANCE -->
+<!-- =========================================================== -->
+
+<h2>1. Pipeline at a Glance</h2>
+
+<div class="flow">
+  <a class="flow-card c-scrape" href="#stage1">
+    <div class="num">STAGE 01</div>
+    <div class="title">Scrape</div>
+    <div class="line">FirstCycling HTML → pickled <span class="mono">Race</span> objects</div>
+  </a>
+  <a class="flow-card c-storage" href="#stage2">
+    <div class="num">STAGE 02</div>
+    <div class="title">Migrate → SQLite</div>
+    <div class="line">Pickles → normalized tables; bucket labels backfilled</div>
+  </a>
+  <a class="flow-card c-feature" href="#stage3">
+    <div class="num">STAGE 03</div>
+    <div class="title">Precompute Features</div>
+    <div class="line">Experience, percentiles, gradients, rider/field snapshots</div>
+  </a>
+  <a class="flow-card c-assemble" href="#stage4">
+    <div class="num">STAGE 04</div>
+    <div class="title">Assemble Train Set</div>
+    <div class="line">Join snapshots+field+results; 95/5 time split; OOF side-run</div>
+  </a>
+  <a class="flow-card c-train" href="#stage5">
+    <div class="num">STAGE 05</div>
+    <div class="title">Train 5 LGBM</div>
+    <div class="line">Bucket / Gap / 3× Probability → <span class="mono">models/production/</span></div>
+  </a>
+  <a class="flow-card c-infer" href="#stage6">
+    <div class="num">STAGE 06</div>
+    <div class="title">Race Inference</div>
+    <div class="line">Startlist → features → 3 predictors → ranked odds</div>
+  </a>
+  <a class="flow-card c-display" href="#stage7">
+    <div class="num">STAGE 07</div>
+    <div class="title">Web App</div>
+    <div class="line">Streamlit: URL in → tabs (ranks, odds, gaps, actuals)</div>
+  </a>
+</div>
+
+<!-- =========================================================== -->
+<!-- SECTION 2: STAGE DETAIL CARDS -->
+<!-- =========================================================== -->
+
+<h2>2. Stage Details</h2>
+
+<!-- ============== STAGE 1: SCRAPE ============== -->
+<div class="stage c-scrape" id="stage1">
+  <div class="stage-head">
+    <div class="stage-num">STAGE 01</div>
+    <h3>Scrape — pull raw race pages from FirstCycling</h3>
+  </div>
+  <p class="stage-purpose">
+    Fetch race results, startlists, and bib numbers from
+    <span class="mono">firstcycling.com</span> at a controlled rate and preserve
+    them as typed Python objects on disk. This is the only stage that reaches
+    the public internet; everything downstream works from the pickles.
+  </p>
+
+  <div class="stage-grid">
+    <div class="stage-col">
+      <h4>Inputs</h4>
+      <div class="io-box">Race URLs per tour/year
+(wt / pro / d1, rolling 45-day lookback)
+
+Tour levels: wt, pro, d1
+Scraper: cloudscraper session
+Rate limit: 3-8 s between requests</div>
+    </div>
+    <div class="stage-col">
+      <h4>Key Transformations</h4>
+      <ul>
+        <li><span class="mono">WebClient.get()</span> — cloudscraper-based GET with min 3 s spacing + jitter, handles Cloudflare challenges.</li>
+        <li><span class="mono">Race.populate_race()</span> walks the race page, pulls per-rider rows: <span class="mono">place</span>, <span class="mono">time_gap</span>, <span class="mono">rider_id</span>, <span class="mono">rider_name</span>, <span class="mono">team</span>.</li>
+        <li><span class="mono">scrape_and_add_bib_numbers_to_race()</span> merges startlist bib numbers onto the Race object so <span class="mono">team_bib</span> / <span class="mono">personal_bib</span> are available downstream.</li>
+        <li>Stage races recurse: a <span class="mono">Race</span> holds a list of <span class="mono">Stage</span> children with their own results.</li>
+      </ul>
+    </div>
+    <div class="stage-col">
+      <h4>Outputs</h4>
+      <div class="io-box">scraped_data/&lt;year&gt;/&lt;tour&gt;/&lt;race&gt;.pkl
+
+Race {
+  name, category, date,
+  results: [{place, gap,
+    rider_id, rider_name,
+    team, bib}...],
+  stages: [Stage, ...]  # opt.
+}</div>
+    </div>
+  </div>
+
+  <div class="gotcha">
+    Scraping is the slowest and most failure-prone step. The pipeline
+    supports <span class="mono">--skip-scrape</span> and resumes from
+    pickle state on crash — nothing downstream needs live network.
+  </div>
+
+  <div class="files">
+    <span class="file-line">cycling_project/webscrape_tools/download_race_data.py <span class="annot"># download orchestration, TOURS, sleep bounds</span></span>
+    <span class="file-line">cycling_project/webscrape_tools/scrape_client.py <span class="annot"># WebClient, rate limiting, cloudscraper session</span></span>
+    <span class="file-line">cycling_project/webscrape_tools/create_race_data.py <span class="annot"># Race / Stage dataclasses</span></span>
+    <span class="file-line">cycling_project/webscrape_tools/scrape_startlists.py <span class="annot"># scrape_and_add_bib_numbers_to_race()</span></span>
+  </div>
+</div>
+
+<div class="arrow-down">▼</div>
+
+<!-- ============== STAGE 2: MIGRATE ============== -->
+<div class="stage c-storage" id="stage2">
+  <div class="stage-head">
+    <div class="stage-num">STAGE 02</div>
+    <h3>Migrate to SQLite — normalize pickles into relational tables</h3>
+  </div>
+  <p class="stage-purpose">
+    Collapse the nested <span class="mono">Race → Stage → results</span> object
+    graph into a SQLite database with stable integer IDs, then backfill the
+    ordinal <span class="mono">place_bucket</span> label and bib-number columns.
+    After this stage, the source-of-truth for everything downstream is the DB,
+    not the pickles.
+  </p>
+
+  <div class="stage-grid">
+    <div class="stage-col">
+      <h4>Inputs</h4>
+      <div class="io-box">Pickled Race/Stage objects
+SQLite DB:
+  webscrape_tools/database/
+    database/cycling_races.db</div>
+    </div>
+    <div class="stage-col">
+      <h4>Pipeline Steps (1–5)</h4>
+      <ul>
+        <li><strong>scrape-lists</strong> — fetch race lists for the rolling window.</li>
+        <li><strong>scrape-data</strong> — download individual race pages (incremental: dedupes by fc_race_id+year+category; deletes incomplete races before re-ingest).</li>
+        <li><strong>migrate</strong> — insert new races into <span class="mono">competitions</span>, <span class="mono">rider_results</span>, and related tables.</li>
+        <li><strong>place-bucket</strong> — backfill nullable <span class="mono">place_bucket</span> via 7 bulk UPDATEs using the bucketing rule (see table below).</li>
+        <li><strong>bib</strong> — run <span class="mono">migrate_bib_number_columns()</span> to populate team/personal bib splits.</li>
+      </ul>
+    </div>
+    <div class="stage-col">
+      <h4>Outputs</h4>
+      <div class="io-box">SQLite tables (key):
+  competitions
+  rider_results
+    (+ place_bucket, bibs)
+  + startlist tables
+
+place_bucket rule:
+  1        → 0  Winner
+  2–3      → 1  Podium
+  4–5      → 2  Top 5
+  6–15     → 3  Top 15
+  16–30    → 4  Top 30
+  31–50    → 5  Top 50
+  51+      → 6  Finisher
+  DNF/DNS  → 7</div>
+    </div>
+  </div>
+
+  <div class="gotcha">
+    Bucket 7 (DNF/DNS/OTL) is generated by the place-bucket backfill but is
+    filtered out of the bucket and time-gap training sets downstream because
+    the "place" for a DNF is noise. The probability model still learns
+    P(DNF) as its 8th class.
+  </div>
+
+  <div class="files">
+    <span class="file-line">cycling_project/update_pipeline.py<span class="annot"> :382</span> <span class="annot"># backfill_place_bucket()</span></span>
+    <span class="file-line">cycling_project/update_pipeline.py<span class="annot"> :293</span> <span class="annot"># migrate_new_races()</span></span>
+    <span class="file-line">cycling_project/update_pipeline.py<span class="annot"> :428</span> <span class="annot"># run_bib_migration()</span></span>
+    <span class="file-line">cycling_project/webscrape_tools/database/migrate_bib_number_columns.py</span>
+  </div>
+</div>
+
+<div class="arrow-down">▼</div>
+
+<!-- ============== STAGE 3: FEATURES ============== -->
+<div class="stage c-feature" id="stage3">
+  <div class="stage-head">
+    <div class="stage-num">STAGE 03</div>
+    <h3>Precompute Features — build rider + field snapshots</h3>
+  </div>
+  <p class="stage-purpose">
+    Every rider's state is precomputed <em>as of</em> every competition they entered
+    (experience, recent form, profile specialization, team quality) and stored in
+    <span class="mono">rider_competition_snapshots</span>. Per-race field aggregates
+    (size, bucket distribution, specialist counts, race profile scores) are stored
+    in <span class="mono">competition_field_features</span>. This materialization
+    is what makes later training and inference fast.
+  </p>
+
+  <div class="stage-grid">
+    <div class="stage-col">
+      <h4>Inputs</h4>
+      <div class="io-box">rider_results (all history)
+competitions
+race profile metadata</div>
+    </div>
+    <div class="stage-col">
+      <h4>Pipeline Steps (6–9)</h4>
+      <ul>
+        <li><strong>experience</strong> — per-rider career/yearly race counts, average buckets by race type (stage/one-day/gc) and category (wt/pro/d1), profile averages (sprint/mountain/hilly/rolling/breakaway/tt), recent form (avg, best, delta, days-since-last), team-quality stats.</li>
+        <li><strong>percentiles</strong> — build lookup tables used by field-level statistics.</li>
+        <li><strong>gradients</strong> — parallel elevation/gradient extraction (8 worker threads) → race profile scores.</li>
+        <li><strong>features</strong> — batched (100/commit, resumable) writer that materializes <span class="mono">rider_competition_snapshots</span> + <span class="mono">competition_field_features</span>.</li>
+      </ul>
+    </div>
+    <div class="stage-col">
+      <h4>Outputs</h4>
+      <div class="io-box">rider_competition_snapshots
+  (rider × competition → ~40
+   rider features frozen
+   at that race's start date)
+
+competition_field_features
+  (one row per competition
+   with field stats + race
+   profile scores)</div>
+    </div>
+  </div>
+
+  <div class="gotcha">
+    Snapshots are frozen at the moment of the race, so loading training data
+    for a 2020 race gives you the rider's stats as of 2020 — no look-ahead
+    leakage from later races bleeds in. The same snapshot table is read by
+    both training <em>and</em> inference.
+  </div>
+
+  <div class="files">
+    <span class="file-line">cycling_project/update_pipeline.py<span class="annot"> :440</span> <span class="annot"># run_experience_migration()</span></span>
+    <span class="file-line">cycling_project/update_pipeline.py<span class="annot"> :452</span> <span class="annot"># run_percentile_tables()</span></span>
+    <span class="file-line">cycling_project/update_pipeline.py<span class="annot"> :471</span> <span class="annot"># run_gradient_calculation() — ThreadPoolExecutor(8)</span></span>
+    <span class="file-line">cycling_project/update_pipeline.py<span class="annot"> :535</span> <span class="annot"># run_feature_precomputation() — batch=100</span></span>
+  </div>
+</div>
+
+<div class="arrow-down">▼</div>
+
+<!-- ============== STAGE 4: TRAINING ASSEMBLY ============== -->
+<div class="stage c-assemble" id="stage4">
+  <div class="stage-head">
+    <div class="stage-num">STAGE 04</div>
+    <h3>Assemble Training Data — join snapshots + field + targets</h3>
+  </div>
+  <p class="stage-purpose">
+    Pull the precomputed snapshots out of SQLite, join them to per-race field
+    features and actual results, run derived feature engineering, and split
+    chronologically for early stopping. A separate OOF side-pipeline produces
+    leak-free bucket predictions for the contender model.
+  </p>
+
+  <div class="stage-grid">
+    <div class="stage-col">
+      <h4>Load + Filter</h4>
+      <div class="io-box">CyclingDataPipeline(DataConfig(
+  start_date='2018-01-01',
+  min_races_career=10,
+  competition_types=
+    [stage, one_day, gc],
+  race_categories=[wt,pro,d1],
+))
+
+# joins
+rider_competition_snapshots
+  ⨝ competition_field_features
+  ⨝ rider_results
+    (place_bucket, time_gap)</div>
+    </div>
+    <div class="stage-col">
+      <h4>Derived feature engineering (<span class="mono">FeatureEngineer</span>)</h4>
+      <ul>
+        <li><span class="mono">rider_vs_field_bucket_gap</span>, <span class="mono">rider_vs_field_experience_ratio</span></li>
+        <li><span class="mono">profile_match</span> (rider best profile == race dominant profile)</li>
+        <li><span class="mono">profile_weighted_expected</span> — Σ (rider profile avg × race profile score)</li>
+        <li><span class="mono">relevant_type_avg_bucket</span>, <span class="mono">relevant_category_avg_bucket</span></li>
+        <li><span class="mono">is_team_leader</span>, <span class="mono">is_protected_rider</span>, <span class="mono">experience_tier</span></li>
+        <li><span class="mono">field_quality_score</span>, <span class="mono">matching_specialists_in_field</span></li>
+        <li><span class="mono">form_vs_field_gap</span>, <span class="mono">is_improving_form</span>, <span class="mono">is_fresh</span>, <span class="mono">is_rusty</span>, <span class="mono">form_confidence</span></li>
+        <li><span class="mono">type_experience_ratio</span> (√-compressed), <span class="mono">gc_specialist_score</span> (Bayesian shrinkage k=10), <span class="mono">gc_vs_career_gap</span>, <span class="mono">mountain_vs_career_gap</span></li>
+        <li><span class="mono">is_team_best</span>, <span class="mono">team_support_ratio</span>, <span class="mono">rider_vs_team_gap</span></li>
+        <li>Type-aware imputation: <span class="mono">age</span> by tour level (wt=28, pro=26, d1=24, default=27), <span class="mono">*_avg_bucket</span> → 5.0, <span class="mono">*_count</span> → 0</li>
+        <li>Encode: <span class="mono">competition_type</span> one-hot, <span class="mono">race_category</span> ordinal (wt=0, pro=1, d1=2), <span class="mono">best_profile</span> / <span class="mono">race_dominant_profile</span> one-hot</li>
+      </ul>
+    </div>
+    <div class="stage-col">
+      <h4>Splits + OOF</h4>
+      <div class="io-box">Split by competition date:
+  train      = &lt; 95th pct date
+  early_stop = ≥ 95th pct date
+
+(early_stop is NOT a val set —
+ used only for LightGBM
+ early stopping + temp
+ calibration)
+
+OOF bucket predictions
+  (contender model only):
+  5 temporal folds on train
+  → classifier_expected_bucket
+  leak-free, used as feature
+  in contender training</div>
+    </div>
+  </div>
+
+  <div class="gotcha">
+    The 95/5 split is chronological, not random — last 5% of competitions by
+    date. Because all 100% of data eventually trains the final model, this
+    avoids wasting signal on a held-out val set while still giving LightGBM
+    a stopping criterion. True model evaluation lives in the experiment
+    framework, not here.
+  </div>
+
+  <div class="files">
+    <span class="file-line">cycling_project/prediction_tools/data_pipeline.py <span class="annot"># CyclingDataPipeline.load_training_data()</span></span>
+    <span class="file-line">cycling_project/prediction_tools/feature_engineering.py<span class="annot"> :162</span> <span class="annot"># create_derived_features() — 13 derivation groups</span></span>
+    <span class="file-line">cycling_project/prediction_tools/feature_engineering.py<span class="annot"> :351</span> <span class="annot"># apply_imputation() — type-aware</span></span>
+    <span class="file-line">cycling_project/prediction_tools/train_production_model.py<span class="annot"> :25</span> <span class="annot"># generate_oof_bucket_predictions() — 5 temporal folds</span></span>
+  </div>
+</div>
+
+<div class="arrow-down">▼</div>
+
+<!-- ============== STAGE 5: TRAIN ============== -->
+<div class="stage c-train" id="stage5">
+  <div class="stage-head">
+    <div class="stage-num">STAGE 05</div>
+    <h3>Train Five LightGBM Models</h3>
+  </div>
+  <p class="stage-purpose">
+    One call to <span class="mono">train_production_model.main()</span> trains five models
+    on the same feature matrix, each with a different objective/filter, and hands the
+    whole bundle (plus metadata) to <span class="mono">ModelRegistry</span>. All five
+    share boosting hyperparameters — the differences are objective, class/sample filter,
+    and (for contender) an extra OOF input feature.
+  </p>
+
+  <div class="stage-grid">
+    <div class="stage-col">
+      <h4>Shared config</h4>
+      <div class="io-box">n_estimators          2000
+early_stopping_rounds  300
+num_leaves              63
+learning_rate         0.05
+feature_fraction       0.8
+bagging_fraction       0.8
+bagging_freq             5
+min_child_samples       50
+seed                    42</div>
+    </div>
+    <div class="stage-col">
+      <h4>Training sequence</h4>
+      <ul>
+        <li><strong>Bucket</strong> — regression objective on <span class="mono">place_bucket</span> (0–7 treated as continuous). Sample-weighted for imbalance. Also produces <span class="mono">predict_continuous()</span> (used as the ranking signal) and <span class="mono">predict_proba()</span>.</li>
+        <li><strong>Time Gap</strong> — regression on <span class="mono">log(time_gap + ε)</span>. Trained only on finishers; <span class="mono">exclude_winners=True</span> and <span class="mono">max_time_gap=3600</span> s cap. Bucket 7 (DNF) rows dropped.</li>
+        <li><strong>Probability (weighted)</strong> — 8-class multiclass softmax over all buckets, with balanced sample weights. Temperature calibrated on the early-stop set.</li>
+        <li><strong>Probability (calibrated)</strong> — 8-class softmax, <em>no</em> sample weights, also temperature-calibrated. Produces better-calibrated probabilities at the cost of winner capture.</li>
+        <li><strong>Probability (contender)</strong> — 5-class softmax (buckets 4–6 merged), trained only on top-15 riders per race ranked by OOF <span class="mono">classifier_expected_bucket</span>. Lower learning rate (0.01), uses the OOF bucket value as an <em>input</em> feature.</li>
+      </ul>
+    </div>
+    <div class="stage-col">
+      <h4>Saved artifact</h4>
+      <div class="io-box">models/production/
+  bucket_model.txt
+  bucket_feature_engineer.pkl
+  time_gap_model.txt
+  time_gap_feature_engineer.pkl
+  probability_model_weighted.txt
+  probability_model_calibrated.txt
+  probability_model_contender.txt
+  *_feature_engineer.pkl
+  metadata.json
+    (temperatures, iters,
+     sample counts, date range)
+  history/&lt;ts&gt;_...
+    (archived previous model)</div>
+    </div>
+  </div>
+
+  <div class="gotcha">
+    The contender model uses OOF predictions <em>from a side-run of the bucket
+    model</em> as an input feature — this is why step order matters. 5 temporal
+    folds train mini bucket models on 4/5 of the data to score the held-out
+    fold, then the top-15 filter is applied to those leak-free scores before
+    reducing the target to 5 classes.
+  </div>
+
+  <div class="files">
+    <span class="file-line">cycling_project/prediction_tools/train_production_model.py <span class="annot"># full orchestration (main())</span></span>
+    <span class="file-line">cycling_project/prediction_tools/bucket_predictor.py <span class="annot"># OrdinalBucketPredictor (regression, ordinal)</span></span>
+    <span class="file-line">cycling_project/prediction_tools/time_gap_predictor.py <span class="annot"># TimeGapPredictor (log, finishers only)</span></span>
+    <span class="file-line">cycling_project/prediction_tools/probability_predictor.py <span class="annot"># ProbabilityPredictor (multiclass softmax)</span></span>
+    <span class="file-line">cycling_project/prediction_tools/model_registry.py <span class="annot"># save/load all 5 + metadata</span></span>
+  </div>
+</div>
+
+<div class="arrow-down">▼</div>
+
+<!-- ============== STAGE 6: INFERENCE ============== -->
+<div class="stage c-infer" id="stage6">
+  <div class="stage-head">
+    <div class="stage-num">STAGE 06</div>
+    <h3>Inference — predict a race</h3>
+  </div>
+  <p class="stage-purpose">
+    Given a competition ID, the API pulls each starter's most recent snapshot,
+    rebuilds field features from that startlist, runs the same
+    <span class="mono">FeatureEngineer.transform()</span> used at training, invokes
+    all three predictor families, and hands results to the
+    <span class="mono">RaceRankingPredictor</span> for final ordering.
+  </p>
+
+  <div class="stage-grid">
+    <div class="stage-col">
+      <h4>Inputs</h4>
+      <div class="io-box">competition_id  (known race)
+  OR
+FirstCycling URL + startlist
+  (future race — see Stage 7)
+
+Loaded from DB:
+  rider_competition_snapshots
+  competition_field_features
+  (or computed on-the-fly)</div>
+    </div>
+    <div class="stage-col">
+      <h4>Flow</h4>
+      <ul>
+        <li><span class="mono">RacePredictionAPI.load(model_dir)</span> → pulls all 5 predictors + <span class="mono">RaceRankingPredictor</span> via <span class="mono">ModelRegistry.load_with_ranker()</span>.</li>
+        <li><span class="mono">predict_race(competition_id)</span> → loads startlist DF via <span class="mono">data_pipeline.load_race_startlist()</span>.</li>
+        <li><span class="mono">FeatureEngineer.transform()</span> reuses the fitted column set (guarantees identical schema vs training).</li>
+        <li><strong>Bucket predictor</strong> → continuous score used for ranking sort.</li>
+        <li><strong>Probability predictors</strong> → 8-class / 5-class softmax → cumulative labels (<span class="mono">win, podium, top5, top15, top30, top50, finish, dnf</span>) → decimal / fractional / American odds (capped at <span class="mono">MAX_ODDS=999.0</span>).</li>
+        <li><strong>Time-gap predictor</strong> → seconds behind winner (finishers only; winners get 0; DNFs get NaN).</li>
+        <li><span class="mono">RaceRankingPredictor</span> combines all signals into one ranked DataFrame.</li>
+      </ul>
+    </div>
+    <div class="stage-col">
+      <h4>Output DataFrame</h4>
+      <div class="io-box">rider_id, rider_name
+predicted_rank (1 = winner)
+predicted_bucket  (int)
+expected_bucket   (continuous)
+predicted_time_gap (sec)
+P(win), P(podium), P(top5),
+P(top15), ..., P(dnf)
+decimal_odds / american_odds
+  per cumulative label</div>
+    </div>
+  </div>
+
+  <div class="files">
+    <span class="file-line">cycling_project/prediction_tools/inference.py <span class="annot"># RacePredictionAPI.load / predict_race / predict_rider</span></span>
+    <span class="file-line">cycling_project/prediction_tools/race_ranking_predictor.py <span class="annot"># merges 3 model outputs into ranked DF</span></span>
+    <span class="file-line">cycling_project/prediction_tools/probability_predictor.py <span class="annot"># CUMULATIVE_LABELS, MAX_ODDS, odds conversions</span></span>
+  </div>
+</div>
+
+<div class="arrow-down">▼</div>
+
+<!-- ============== STAGE 7: WEB APP ============== -->
+<div class="stage c-display" id="stage7">
+  <div class="stage-head">
+    <div class="stage-num">STAGE 07</div>
+    <h3>Web App — Streamlit frontend</h3>
+  </div>
+  <p class="stage-purpose">
+    The interactive surface: paste a FirstCycling URL, the app matches riders to
+    the DB, rebuilds field features on the fly, runs prediction, and displays
+    ranked tables plus odds. Optionally scrapes actual results post-race and
+    compares them to the predicted ranking.
+  </p>
+
+  <div class="stage-grid">
+    <div class="stage-col">
+      <h4>User flow</h4>
+      <ul>
+        <li>Paste FirstCycling race URL (optionally with a stage hint).</li>
+        <li><span class="mono">parse_firstcycling_url()</span> → race_id / year / stage.</li>
+        <li><span class="mono">scrape_or_load_startlist()</span> → riders at the start line.</li>
+        <li><span class="mono">match_riders_to_db()</span> joins them to internal <span class="mono">rider_id</span>s.</li>
+        <li><span class="mono">get_latest_rider_snapshots()</span> pulls most-recent precomputed features.</li>
+        <li><span class="mono">compute_field_features()</span> + <span class="mono">get_reference_race_profile()</span> assemble the race context.</li>
+        <li><span class="mono">assemble_prediction_df()</span> → hand to <span class="mono">ModelRegistry.load_with_ranker()</span>.</li>
+      </ul>
+    </div>
+    <div class="stage-col">
+      <h4>What's displayed</h4>
+      <ul>
+        <li>Ranked rider table (by expected bucket).</li>
+        <li>Cumulative probability columns (win / podium / top5 / top15 / top30 / top50 / finish / dnf).</li>
+        <li>Sportsbook-style odds in decimal, fractional, and American.</li>
+        <li>Expected time gap column for fitted finishers.</li>
+        <li>Field quality stats + race profile breakdown.</li>
+        <li>Optional: actual-vs-predicted evaluation once results are scraped.</li>
+      </ul>
+    </div>
+    <div class="stage-col">
+      <h4>Downstream hooks</h4>
+      <div class="io-box">Model loader:
+  MODEL_DIR = models/production
+  ModelRegistry.load_with_ranker()
+
+Odds format:
+  _decimal_to_american(d)
+
+Reference race profiles:
+  default / auto-detected /
+  manual stage picker</div>
+    </div>
+  </div>
+
+  <div class="files">
+    <span class="file-line">cycling_project/web/app.py <span class="annot"># Streamlit entry — MODEL_DIR = models/production</span></span>
+    <span class="file-line">cycling_project/prediction_tools/future_race_loader.py <span class="annot"># all the *_startlist / match / compute helpers</span></span>
+  </div>
+</div>
+
+<!-- =========================================================== -->
+<!-- SECTION 3: FEATURE TAXONOMY -->
+<!-- =========================================================== -->
+
+<h2>3. Feature Taxonomy</h2>
+<p class="subtitle">
+  What the model actually "knows" about each (rider × race) pair, grouped by
+  semantic role. All features come from <span class="mono">feature_engineering.py</span>
+  (base groups lines 52–98, derived features lines 162–332).
+</p>
+
+<div class="feat-grid">
+
+  <div class="feat-card">
+    <h4>Rider — History</h4>
+    <div class="tag-list">
+      <span class="tag">age</span><span class="tag">races_career</span><span class="tag">races_this_year</span>
+      <span class="tag">stage_avg_bucket</span><span class="tag">stage_count</span>
+      <span class="tag">one_day_avg_bucket</span><span class="tag">one_day_count</span>
+      <span class="tag">gc_avg_bucket</span><span class="tag">gc_count</span>
+      <span class="tag">wt_avg_bucket</span><span class="tag">wt_count</span>
+      <span class="tag">pro_avg_bucket</span><span class="tag">pro_count</span>
+      <span class="tag">d1_avg_bucket</span><span class="tag">d1_count</span>
+    </div>
+    <p class="note">Career volume + average bucket by race type (stage / one-day / gc) and by tour category (wt / pro / d1). Frozen at the start date of each race — no lookahead.</p>
+  </div>
+
+  <div class="feat-card">
+    <h4>Rider — Profile Specialization</h4>
+    <div class="tag-list">
+      <span class="tag">sprint_avg_bucket</span><span class="tag">mountain_avg_bucket</span>
+      <span class="tag">hilly_avg_bucket</span><span class="tag">rolling_avg_bucket</span>
+      <span class="tag">breakaway_avg_bucket</span><span class="tag">time_trial_avg_bucket</span>
+      <span class="tag">best_profile</span>
+    </div>
+    <p class="note">Per-profile average buckets ⇒ the 6-way specialization vector. <span class="mono">best_profile</span> is the argmin over the six. Combined with race profile scores via <span class="mono">profile_weighted_expected</span>.</p>
+  </div>
+
+  <div class="feat-card">
+    <h4>Rider — Form</h4>
+    <div class="tag-list">
+      <span class="tag">form_recent_avg_bucket</span><span class="tag">form_recent_best_bucket</span>
+      <span class="tag">form_recent_count</span><span class="tag">form_delta</span>
+      <span class="tag">form_profile_recent_avg</span><span class="tag">days_since_last_race</span>
+    </div>
+    <p class="note">Short-window recency signals. Derived features add <span class="mono">is_improving_form</span>, <span class="mono">is_fresh</span> (&lt;14 days), <span class="mono">is_rusty</span> (&gt;45 days), <span class="mono">form_confidence</span> (= form_recent_count / 5).</p>
+  </div>
+
+  <div class="feat-card">
+    <h4>Rider — Team Context</h4>
+    <div class="tag-list">
+      <span class="tag">team_bib</span><span class="tag">personal_bib</span>
+      <span class="tag">team_quality_mean</span><span class="tag">team_quality_median</span>
+      <span class="tag">team_quality_std</span><span class="tag">team_quality_min</span>
+      <span class="tag">team_quality_max</span><span class="tag">team_quality_p25</span>
+      <span class="tag">team_quality_p75</span><span class="tag">team_size</span>
+      <span class="tag">team_depth</span>
+    </div>
+    <p class="note">Derived: <span class="mono">is_team_leader</span> (personal_bib==1), <span class="mono">is_protected_rider</span> (∈{1,2,3}), <span class="mono">is_team_best</span>, <span class="mono">team_support_ratio</span>, <span class="mono">rider_vs_team_gap</span>.</p>
+  </div>
+
+  <div class="feat-card">
+    <h4>Field — Aggregates</h4>
+    <div class="tag-list">
+      <span class="tag">field_size</span>
+      <span class="tag">experience_mean</span><span class="tag">experience_median</span>
+      <span class="tag">experience_std</span><span class="tag">experience_min</span>
+      <span class="tag">experience_max</span><span class="tag">experience_p25</span>
+      <span class="tag">experience_p75</span>
+      <span class="tag">bucket_mean</span><span class="tag">bucket_median</span>
+      <span class="tag">bucket_std</span><span class="tag">bucket_min</span>
+      <span class="tag">bucket_max</span><span class="tag">bucket_p25</span>
+      <span class="tag">bucket_p75</span>
+    </div>
+    <p class="note">Precomputed once per competition. Derived: <span class="mono">field_quality_score</span> = (5 − bucket_mean)/2, plus <span class="mono">rider_vs_field_bucket_gap</span> and <span class="mono">rider_vs_field_experience_ratio</span>.</p>
+  </div>
+
+  <div class="feat-card">
+    <h4>Field — Specialist Counts</h4>
+    <div class="tag-list">
+      <span class="tag">sprinter_count</span><span class="tag">climber_count</span>
+      <span class="tag">hilly_specialist_count</span><span class="tag">rolling_specialist_count</span>
+      <span class="tag">breakaway_specialist_count</span><span class="tag">time_trialist_count</span>
+      <span class="tag">unknown_profile_count</span>
+    </div>
+    <p class="note"><span class="mono">matching_specialists_in_field</span> picks the count that matches the race's dominant profile, so the model sees "how crowded is this specialty at this race?"</p>
+  </div>
+
+  <div class="feat-card">
+    <h4>Race — Profile + Category</h4>
+    <div class="tag-list">
+      <span class="tag">race_sprint_score</span><span class="tag">race_mountain_score</span>
+      <span class="tag">race_hilly_score</span><span class="tag">race_rolling_score</span>
+      <span class="tag">race_breakaway_score</span><span class="tag">race_time_trial_score</span>
+      <span class="tag">race_dominant_profile</span>
+      <span class="tag">competition_type</span><span class="tag">race_category</span>
+    </div>
+    <p class="note">6 real-valued profile scores computed from gradients + finishing patterns. Encoding: <span class="mono">competition_type</span> one-hot; <span class="mono">race_category</span> ordinal (wt=0, pro=1, d1=2); <span class="mono">race_dominant_profile</span> one-hot.</p>
+  </div>
+
+  <div class="feat-card">
+    <h4>Derived — Interaction + Specialization</h4>
+    <div class="tag-list">
+      <span class="tag">profile_match</span>
+      <span class="tag">profile_weighted_expected</span>
+      <span class="tag">relevant_type_avg_bucket</span>
+      <span class="tag">relevant_category_avg_bucket</span>
+      <span class="tag">best_profile_bucket</span>
+      <span class="tag">type_experience_ratio</span>
+      <span class="tag">gc_specialist_score</span>
+      <span class="tag">gc_vs_career_gap</span>
+      <span class="tag">mountain_vs_career_gap</span>
+      <span class="tag">experience_tier</span>
+    </div>
+    <p class="note">The most predictive engineered signals. <span class="mono">gc_specialist_score</span> Bayesian-shrinks gc_avg toward 5.0 with k=10 (handles small samples). <span class="mono">type_experience_ratio</span> √-compresses to undo stage-race inflation. Gap features were validated as +19.3% winner / +25.3% podium capture vs baseline.</p>
+  </div>
+
+  <div class="feat-card">
+    <h4>Imputation Strategy</h4>
+    <p class="note" style="margin-top:4px">
+      Age: tour-level medians (<span class="mono">wt=28, pro=26, d1=24</span>, default 27) when missing or ≤ 0.<br>
+      Bucket averages: fill with <strong>5.0</strong> (mid-field expectation).<br>
+      Counts (<span class="mono">*_count</span>, <span class="mono">races_career</span>, <span class="mono">races_this_year</span>): fill with <strong>0</strong>.<br>
+      Field stats: fixed defaults (<span class="mono">field_size=100, bucket_mean=5.0, bucket_std=1.5</span>…).<br>
+      Applied in <span class="mono">FeatureEngineer.apply_imputation()</span> after derived-feature creation.
+    </p>
+  </div>
+
+</div>
+
+<!-- =========================================================== -->
+<!-- SECTION 4: MODEL TABLE -->
+<!-- =========================================================== -->
+
+<h2>4. Models — Targets &amp; Outputs</h2>
+
+<table class="models">
+  <thead>
+    <tr>
+      <th style="width: 15%">Model</th>
+      <th style="width: 18%">Objective</th>
+      <th style="width: 22%">Target / Filter</th>
+      <th style="width: 20%">Output</th>
+      <th style="width: 25%">Consumed by</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td class="mname">Bucket</td>
+      <td><span class="mono">regression</span><br>LightGBM, MAE</td>
+      <td><span class="mono">place_bucket ∈ [0,7]</span> as continuous<br>Sample-weighted for imbalance</td>
+      <td>Continuous score 0–7<br>(clamped)</td>
+      <td>Ranking sort key (<span class="mono">expected_bucket</span>). Also produces the OOF feed for the contender model.</td>
+    </tr>
+    <tr>
+      <td class="mname">Time Gap</td>
+      <td><span class="mono">regression</span><br>LightGBM, MAE</td>
+      <td><span class="mono">log(time_gap)</span>, finishers only<br>excludes winners &amp; bucket 7; cap 3600 s</td>
+      <td>Seconds behind winner</td>
+      <td>Time-gap column in the display; shown only for riders expected to finish.</td>
+    </tr>
+    <tr>
+      <td class="mname">Probability<br>(weighted)</td>
+      <td><span class="mono">multiclass</span> (8)<br>softmax, <span class="mono">multi_logloss</span></td>
+      <td>One row per rider, target = <span class="mono">place_bucket</span><br>balanced class weights<br>+ temperature calibration</td>
+      <td>8-class distribution<br>→ cumulative labels</td>
+      <td>Sportsbook odds display — prioritizes winner/podium discrimination over perfect calibration.</td>
+    </tr>
+    <tr>
+      <td class="mname">Probability<br>(calibrated)</td>
+      <td><span class="mono">multiclass</span> (8)<br>softmax, <span class="mono">multi_logloss</span></td>
+      <td>Same target, <em>no</em> sample weights<br>+ temperature calibration</td>
+      <td>8-class distribution</td>
+      <td>When calibrated probabilities matter more than ranking sharpness (e.g. rider-level probability widgets).</td>
+    </tr>
+    <tr>
+      <td class="mname">Probability<br>(contender)</td>
+      <td><span class="mono">multiclass</span> (5)<br>softmax, <span class="mono">lr=0.01</span></td>
+      <td>Top-15 per race by OOF bucket<br>Buckets 4–6 merged → class 4<br>Uses <span class="mono">classifier_expected_bucket</span> as input</td>
+      <td>5-class distribution<br>(win / podium / top5 / top15 / rest)</td>
+      <td>"Serious contenders" view. Validated +19.3% winner capture, −6.2% log-loss, +25.3% podium capture vs baseline.</td>
+    </tr>
+  </tbody>
+</table>
+
+<p class="subtitle" style="margin-top:12px">
+  Cumulative labels (<span class="mono">CUMULATIVE_LABELS</span>):
+  <span class="mono">win=[0]</span>, <span class="mono">podium=[0,1]</span>, <span class="mono">top5=[0,1,2]</span>,
+  <span class="mono">top15=[0,1,2,3]</span>, <span class="mono">top30=[0,1,2,3,4]</span>,
+  <span class="mono">top50=[0,1,2,3,4,5]</span>, <span class="mono">finish=[0..6]</span>,
+  <span class="mono">dnf=[7]</span>. Odds are capped at <span class="mono">MAX_ODDS=999.0</span>.
+</p>
+
+<!-- =========================================================== -->
+<!-- SECTION 5: APPENDIX -->
+<!-- =========================================================== -->
+
+<h2>5. Appendix</h2>
+
+<h4>Place bucket scale</h4>
+<div class="bucket-scale">
+  <div class="bucket-cell"><div class="b-num">0</div><div class="b-name">Winner</div><div class="b-pct">~0.9%</div></div>
+  <div class="bucket-cell"><div class="b-num">1</div><div class="b-name">2nd–3rd</div><div class="b-pct">Podium</div></div>
+  <div class="bucket-cell"><div class="b-num">2</div><div class="b-name">4th–5th</div><div class="b-pct">Top 5</div></div>
+  <div class="bucket-cell"><div class="b-num">3</div><div class="b-name">6th–15th</div><div class="b-pct">Top 15</div></div>
+  <div class="bucket-cell"><div class="b-num">4</div><div class="b-name">16th–30th</div><div class="b-pct">Top 30</div></div>
+  <div class="bucket-cell"><div class="b-num">5</div><div class="b-name">31st–50th</div><div class="b-pct">Top 50</div></div>
+  <div class="bucket-cell"><div class="b-num">6</div><div class="b-name">51st+</div><div class="b-pct">~58%</div></div>
+  <div class="bucket-cell"><div class="b-num">7</div><div class="b-name">DNF/DNS/OTL</div><div class="b-pct">(filtered)</div></div>
+</div>
+
+<details>
+  <summary>Data volumes &amp; known skew</summary>
+  <ul>
+    <li>~468K training samples, ~4,307 competitions, 2018 → present.</li>
+    <li>Heavily imbalanced: bucket 6 (Finisher 51st+) ≈ 58%, bucket 0 (Winner) ≈ 0.9%. Sample weights or class filters (contender model) are how the bucket/weighted probability model cope.</li>
+    <li>Bucket 7 is filtered out of bucket &amp; time-gap training sets; the probability models retain it as class 7.</li>
+    <li>Training filters: <span class="mono">start_date ≥ 2018-01-01</span>, <span class="mono">races_career ≥ 10</span> (requires meaningful rider history).</li>
+  </ul>
+</details>
+
+<details>
+  <summary>Pipeline step names (CLI)</summary>
+  <p>
+    <span class="mono">scrape-lists</span> → <span class="mono">scrape-data</span> →
+    <span class="mono">migrate</span> → <span class="mono">place-bucket</span> →
+    <span class="mono">bib</span> → <span class="mono">experience</span> →
+    <span class="mono">percentiles</span> → <span class="mono">gradients</span> →
+    <span class="mono">features</span> → <span class="mono">train</span>
+  </p>
+  <p>
+    Run one step: <span class="mono">uv run python -m cycling_project.update_pipeline --only train</span>.
+    Skip scraping: <span class="mono">--skip-scrape</span>. Dry-run plan: <span class="mono">--dry-run</span>.
+  </p>
+</details>
+
+<details>
+  <summary>Experiment framework (out of band)</summary>
+  <p>
+    Production training has no true val set — real model evaluation goes through
+    <span class="mono">prediction_tools/experiment_runner.py</span>, which runs
+    3-fold full-year CV (train→2021/test 2023, train→2022/test 2024, train→2023/test 2025)
+    to avoid seasonal bias. Results are saved as JSON under <span class="mono">experiments/</span>.
+    See <span class="mono">experiment_log.md</span> for the history of accepted / rejected changes.
+  </p>
+</details>
+
+<hr>
+
+<p class="subtitle">
+  Sources of truth (read from <span class="mono">webscrape-refactor</span> branch, commit <span class="mono">7e0b167</span>):
+  <span class="mono">update_pipeline.py</span>,
+  <span class="mono">prediction_tools/data_pipeline.py</span>,
+  <span class="mono">prediction_tools/feature_engineering.py</span>,
+  <span class="mono">prediction_tools/train_production_model.py</span>,
+  <span class="mono">prediction_tools/{bucket,time_gap,probability}_predictor.py</span>,
+  <span class="mono">prediction_tools/model_registry.py</span>,
+  <span class="mono">prediction_tools/inference.py</span>,
+  <span class="mono">web/app.py</span>,
+  <span class="mono">webscrape_tools/{download_race_data,scrape_client}.py</span>.
+</p>
+
+<script>
+// Smooth-scroll for flow-card jumps.
+document.querySelectorAll('.flow-card').forEach(card => {
+  card.addEventListener('click', (e) => {
+    const href = card.getAttribute('href');
+    if (!href || !href.startsWith('#')) return;
+    const target = document.querySelector(href);
+    if (target) {
+      e.preventDefault();
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  });
+});
+</script>
+
+</body>
+</html>
