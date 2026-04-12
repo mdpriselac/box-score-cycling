@@ -1,0 +1,66 @@
+{
+  "name": "contender_ranking_step_ab",
+  "description": "Contender-filtered (top-25) ranking experiments: baseline multiclass vs LambdaRank vs Plackett-Luce (linear). Stage 0 features (126). 3-fold CV.",
+  "results": {
+    "baseline_contender": [
+      {
+        "winner_capture_rate": 0.22958309537407195,
+        "n_races": 1751.0,
+        "podium_capture_rate": 0.3592309201491073,
+        "win_cal_ratio": 1.1534914361001318
+      },
+      {
+        "winner_capture_rate": 0.22795341098169716,
+        "n_races": 1202.0,
+        "podium_capture_rate": 0.37236467236467236,
+        "win_cal_ratio": 1.1393364928909953
+      },
+      {
+        "winner_capture_rate": 0.24096385542168675,
+        "n_races": 498.0,
+        "podium_capture_rate": 0.35010266940451745,
+        "win_cal_ratio": 1.1501154734411088
+      }
+    ],
+    "contender_lambdarank": [
+      {
+        "winner_capture_rate": 0.2118789263278127,
+        "n_races": 1751.0,
+        "podium_capture_rate": 0.36413576613694326,
+        "win_cal_ratio": 1.1534914361001318
+      },
+      {
+        "winner_capture_rate": 0.21713810316139767,
+        "n_races": 1202.0,
+        "podium_capture_rate": 0.3819088319088319,
+        "win_cal_ratio": 1.1393364928909953
+      },
+      {
+        "winner_capture_rate": 0.25903614457831325,
+        "n_races": 498.0,
+        "podium_capture_rate": 0.35900068446269673,
+        "win_cal_ratio": 1.1501154734411088
+      }
+    ],
+    "contender_pl": [
+      {
+        "winner_capture_rate": 0.2067390062821245,
+        "n_races": 1751.0,
+        "podium_capture_rate": 0.3408867961546007,
+        "win_cal_ratio": 1.1534914361001318
+      },
+      {
+        "winner_capture_rate": 0.19550748752079866,
+        "n_races": 1202.0,
+        "podium_capture_rate": 0.3394586894586894,
+        "win_cal_ratio": 1.1393364928909953
+      },
+      {
+        "winner_capture_rate": 0.19678714859437751,
+        "n_races": 498.0,
+        "podium_capture_rate": 0.33675564681724846,
+        "win_cal_ratio": 1.1501154734411088
+      }
+    ]
+  }
+}

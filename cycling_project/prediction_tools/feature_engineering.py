@@ -422,6 +422,62 @@ class FeatureEngineer:
         for col in profile_cols:
             df[col] = df[col].fillna(0)
 
+        # Stage 0 gradient / null-marker / race-shape defaults.
+        # Only applied when the columns are present (off by default).
+        # Slopes / volatility / monotonicity → 0.0 (neutral "no trend" signal).
+        # Coverage ratio → 1.0 (assume full coverage when unknown).
+        # Null-marker percentiles → 0 (no invalid band seen).
+        # lowest_valid_percentile → 10 (if unknown, assume the lowest percentile
+        # had valid data).
+        # winning_time → 14000s (approx median for a multi-category dataset).
+        # abandon_ratio → 0.05 (unremarkable default).
+        # race_profile_missing has no meaningful NaN case — it's computed as
+        # 0/1 in SQL, so no imputation hook needed.
+        gradient_defaults = {
+            'variance_normalized_slope': 0.0,
+            'variance_normalized_volatility': 0.0,
+            'variance_normalized_monotonicity': 0.0,
+            'clumpiness_score_slope': 0.0,
+            'clumpiness_score_volatility': 0.0,
+            'biggest_group_metric_slope': 0.0,
+            'biggest_group_metric_volatility': 0.0,
+            'selection_metric_slope': 0.0,
+            'selection_metric_volatility': 0.0,
+            'gini_coefficient_slope': 0.0,
+            'skewness_normalized_slope': 0.0,
+            'percentile_coverage_ratio': 1.0,
+            'lowest_valid_percentile': 10,
+            'highest_null_percentile': 0,
+            'kurtosis_null_percentile': 0,
+            'variance_zero_percentile': 0,
+            'winning_time': 14000.0,
+            'abandon_ratio': 0.05,
+        }
+        for col, default in gradient_defaults.items():
+            if col in df.columns:
+                df[col] = df[col].fillna(default)
+
+        # Stage 1 cluster feature imputation. Clusters are populated only
+        # for one-day rows in the DB; stage / gc rows come through the
+        # LEFT JOIN with NULL cluster columns. Soft memberships default to
+        # 0.0 (row isn't in any one-day cluster). race_cluster_dominant and
+        # race_cluster_k_chosen get sentinel -1 / 0 so the model can learn
+        # "this race has no cluster assignment" as its own state — the
+        # comp_type_one_day one-hot flag already tells LightGBM whether the
+        # row is one-day, so cluster imputation only needs to leave the
+        # numerics in a consistent NaN-free state.
+        cluster_score_cols = [c for c in df.columns if c.startswith('cluster_') and c.endswith('_score')]
+        for col in cluster_score_cols:
+            df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0.0)
+        if 'race_cluster_dominant' in df.columns:
+            df['race_cluster_dominant'] = (
+                pd.to_numeric(df['race_cluster_dominant'], errors='coerce').fillna(-1).astype(float)
+            )
+        if 'race_cluster_k_chosen' in df.columns:
+            df['race_cluster_k_chosen'] = (
+                pd.to_numeric(df['race_cluster_k_chosen'], errors='coerce').fillna(0).astype(float)
+            )
+
         # Categorical defaults
         if 'best_profile' in df.columns:
             df['best_profile'] = df['best_profile'].fillna('unknown')

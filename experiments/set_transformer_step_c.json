@@ -1,0 +1,29 @@
+{
+  "name": "set_transformer_step_c",
+  "description": "Set Transformer: top-30 contenders, 1 attention layer, 4 heads, 64-dim embeddings, PL loss on raw place. LightGBM warm-start features (expected_bucket, contender_rank).",
+  "fold_results": [
+    {
+      "winner_capture_rate": 0.1901770416904626,
+      "n_races": 1751.0,
+      "podium_capture_rate": 0.33933759442184774,
+      "win_cal_ratio": 1.1117460304906681,
+      "train_time": 382.50144600868225
+    },
+    {
+      "winner_capture_rate": 0.21214642262895175,
+      "n_races": 1202.0,
+      "podium_capture_rate": 0.34592529711375214,
+      "win_cal_ratio": 1.1150278295310396,
+      "train_time": 426.65801095962524
+    },
+    {
+      "winner_capture_rate": 0.18875502008032127,
+      "n_races": 498.0,
+      "podium_capture_rate": 0.3323108384458078,
+      "win_cal_ratio": 1.1241534920377787,
+      "train_time": 462.5148928165436
+    }
+  ],
+  "set_transformer_winner": 0.19702616146657856,
+  "set_transformer_podium": 0.33919124332713585
+}

@@ -65,6 +65,19 @@ class TrainingConfig:
     contender_use_soft_weights: bool = False  # Soft weighting instead of hard filtering
     contender_soft_weight_power: float = 2.0  # Exponent for soft weighting
 
+    # Stage 0: expose raw gradient / null-marker / race-shape columns to
+    # LightGBM. Off by default so production paths are unchanged.
+    include_gradient_features: bool = False
+
+    # Stage 1: expose one-day race cluster memberships from
+    # race_cluster_v1_scores. Clusters populate only on one-day rows;
+    # stage / gc rows are imputed to zero. fold_label is required when
+    # clusters are on (set by ExperimentRunner per fold). cluster_variant
+    # picks which GMM fit to read ('race_only' or 'joint').
+    include_race_clusters: bool = False
+    cluster_variant: str = 'joint'
+    fold_label: Optional[str] = None
+
     # Hyperparameter tuning (optional)
     tune_hyperparameters: bool = False
     n_tuning_trials: int = 50
@@ -89,7 +102,11 @@ class ModelTrainer:
 
         self.data_pipeline = CyclingDataPipeline(DataConfig(
             start_date=self.config.start_date,
-            min_races_career=self.config.min_races_career
+            min_races_career=self.config.min_races_career,
+            include_gradient_features=self.config.include_gradient_features,
+            include_race_clusters=self.config.include_race_clusters,
+            cluster_variant=self.config.cluster_variant,
+            current_fold_label=self.config.fold_label,
         ))
 
         self.bucket_predictor: Optional[OrdinalBucketPredictor] = None

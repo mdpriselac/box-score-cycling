@@ -1,0 +1,29 @@
+{
+  "name": "mlp_pl_v2",
+  "description": "MLP-PL v2: full field, raw place as PL target, top-30 truncated loss, batch norm, residual, LR warmup + cosine, 128-dim hidden.",
+  "fold_results": [
+    {
+      "winner_capture_rate": 0.18846373500856653,
+      "n_races": 1751.0,
+      "podium_capture_rate": 0.26832286312583287,
+      "win_cal_ratio": 1.0080598752379921,
+      "train_time": 388.1852331161499
+    },
+    {
+      "winner_capture_rate": 0.20715474209650583,
+      "n_races": 1202.0,
+      "podium_capture_rate": 0.28244592346089853,
+      "win_cal_ratio": 1.0058577386338876,
+      "train_time": 406.19640493392944
+    },
+    {
+      "winner_capture_rate": 0.17670682730923695,
+      "n_races": 498.0,
+      "podium_capture_rate": 0.25870147255689424,
+      "win_cal_ratio": 1.0060606058241266,
+      "train_time": 610.4699420928955
+    }
+  ],
+  "mlp_pl_v2_winner": 0.19077510147143642,
+  "mlp_pl_v2_podium": 0.2698234197145419
+}

@@ -1,0 +1,33 @@
+{
+  "name": "mlp_pl_step_b",
+  "fold_results": [
+    {
+      "winner_capture_rate": 0.21302113078241006,
+      "n_races": 1751.0,
+      "podium_capture_rate": 0.3582499509515401,
+      "win_cal_ratio": 1.1534914353767924,
+      "train_time": 180.92638111114502
+    },
+    {
+      "winner_capture_rate": 0.19966722129783693,
+      "n_races": 1202.0,
+      "podium_capture_rate": 0.371082621082621,
+      "win_cal_ratio": 1.1393364914079411,
+      "train_time": 206.65379095077515
+    },
+    {
+      "winner_capture_rate": 0.1827309236947791,
+      "n_races": 498.0,
+      "podium_capture_rate": 0.3422313483915127,
+      "win_cal_ratio": 1.1501154697319498,
+      "train_time": 218.8897726535797
+    }
+  ],
+  "comparison": {
+    "baseline": 0.2328,
+    "lambdarank": 0.2294,
+    "linear_pl": 0.1997,
+    "mlp_pl_winner": 0.1984730919250087,
+    "mlp_pl_podium": 0.3571879734752246
+  }
+}

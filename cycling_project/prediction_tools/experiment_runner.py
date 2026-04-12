@@ -85,6 +85,15 @@ class ExperimentConfig:
     contender_use_soft_weights: bool = False
     contender_soft_weight_power: float = 2.0
 
+    # Stage 0: expose raw gradient / null-marker / race-shape columns.
+    include_gradient_features: bool = False
+
+    # Stage 1: expose one-day race cluster memberships. Only meaningful in
+    # additive mode alongside include_gradient_features=True. cluster_variant
+    # selects which GMM fit in race_cluster_v1_scores to read from.
+    include_race_clusters: bool = False
+    cluster_variant: str = 'joint'  # 'race_only' or 'joint'
+
     # Output
     results_dir: str = 'experiments/'
     verbose: bool = True
@@ -187,6 +196,10 @@ class ExperimentRunner:
             contender_n_classes=self.config.contender_n_classes,
             contender_use_soft_weights=self.config.contender_use_soft_weights,
             contender_soft_weight_power=self.config.contender_soft_weight_power,
+            include_gradient_features=self.config.include_gradient_features,
+            include_race_clusters=self.config.include_race_clusters,
+            cluster_variant=self.config.cluster_variant,
+            fold_label=fold_config['label'],
             model_save_dir=None,  # Don't save models during experiments
             verbose=self.config.verbose,
         )

@@ -1,0 +1,204 @@
+{
+  "name": "lambdarank_step_a",
+  "description": "LambdaRank diagnostic: ranking-aware loss on Stage 0 features (126). One model, full field, softmax probabilities.",
+  "fold_results": [
+    {
+      "fold": "2023",
+      "metrics": {
+        "winner_capture_rate": 0.21758994860079955,
+        "n_races": 1751,
+        "podium_capture_rate": 0.32552826956025127,
+        "winner_log_loss": 3.3247559017116366,
+        "win_cal_ratio": 1.0080598733448474
+      },
+      "per_comp_type": {
+        "one_day": {
+          "winner_capture_rate": 0.2535211267605634,
+          "n_races": 355,
+          "podium_capture_rate": 0.3258215962441315,
+          "winner_log_loss": 3.2059651259543607,
+          "win_cal_ratio": 1.0056657223796035
+        },
+        "stage": {
+          "winner_capture_rate": 0.20414673046251994,
+          "n_races": 1254,
+          "podium_capture_rate": 0.3241626794258373,
+          "winner_log_loss": 3.378088523903157,
+          "win_cal_ratio": 1.008849557522124
+        },
+        "gc": {
+          "winner_capture_rate": 0.24647887323943662,
+          "n_races": 142,
+          "podium_capture_rate": 0.3368544600938967,
+          "winner_log_loss": 3.151994869500715,
+          "win_cal_ratio": 1.0070921985815604
+        }
+      },
+      "best_iteration": 72,
+      "elapsed": 28.87739086151123
+    },
+    {
+      "fold": "2024",
+      "metrics": {
+        "winner_capture_rate": 0.24958402662229617,
+        "n_races": 1202,
+        "podium_capture_rate": 0.3374930671103716,
+        "winner_log_loss": 3.1946149793078225,
+        "win_cal_ratio": 1.005857740585774
+      },
+      "per_comp_type": {
+        "one_day": {
+          "winner_capture_rate": 0.26,
+          "n_races": 250,
+          "podium_capture_rate": 0.3426666666666666,
+          "winner_log_loss": 3.0867616453321656,
+          "win_cal_ratio": 1.0040160642570282
+        },
+        "stage": {
+          "winner_capture_rate": 0.2459954233409611,
+          "n_races": 874,
+          "podium_capture_rate": 0.33790999237223496,
+          "winner_log_loss": 3.2419187144048593,
+          "win_cal_ratio": 1.005753739930955
+        },
+        "gc": {
+          "winner_capture_rate": 0.2564102564102564,
+          "n_races": 78,
+          "podium_capture_rate": 0.3162393162393161,
+          "winner_log_loss": 3.009531009965141,
+          "win_cal_ratio": 1.012987012987013
+        }
+      },
+      "best_iteration": 126,
+      "elapsed": 32.84696078300476
+    },
+    {
+      "fold": "2025",
+      "metrics": {
+        "winner_capture_rate": 0.26104417670682734,
+        "n_races": 498,
+        "podium_capture_rate": 0.3396921017402945,
+        "winner_log_loss": 3.215136804613544,
+        "win_cal_ratio": 1.006060606060606
+      },
+      "per_comp_type": {
+        "one_day": {
+          "winner_capture_rate": 0.264,
+          "n_races": 125,
+          "podium_capture_rate": 0.3213333333333333,
+          "winner_log_loss": 3.152714960160519,
+          "win_cal_ratio": 1.0080645161290323
+        },
+        "stage": {
+          "winner_capture_rate": 0.26005361930294907,
+          "n_races": 373,
+          "podium_capture_rate": 0.34584450402144773,
+          "winner_log_loss": 3.2360001704145556,
+          "win_cal_ratio": 1.0053908355795147
+        }
+      },
+      "best_iteration": 92,
+      "elapsed": 31.61820125579834
+    }
+  ],
+  "aggregated": {
+    "winner_capture_rate": {
+      "mean": 0.24273938397664105,
+      "std": 0.01838848071996369
+    },
+    "podium_capture_rate": {
+      "mean": 0.3342378128036391,
+      "std": 0.006223666976803537
+    },
+    "winner_log_loss": {
+      "mean": 3.2448358952110006,
+      "std": 0.05712962983581499
+    },
+    "win_cal_ratio": {
+      "mean": 1.0066594066637424,
+      "std": 0.0009937366498502396
+    }
+  },
+  "top20_features": [
+    [
+      "profile_weighted_expected",
+      57466.77395502726
+    ],
+    [
+      "relevant_category_avg_bucket",
+      17200.011728445686
+    ],
+    [
+      "form_recent_best_bucket",
+      6419.789437214534
+    ],
+    [
+      "best_profile_bucket",
+      3483.529566685359
+    ],
+    [
+      "wt_count",
+      2956.02379322052
+    ],
+    [
+      "team_bib",
+      2858.6567116578417
+    ],
+    [
+      "rider_vs_field_experience_ratio",
+      2235.878000577291
+    ],
+    [
+      "variance_normalized_monotonicity",
+      1909.477906703949
+    ],
+    [
+      "form_vs_field_gap",
+      1663.129554907481
+    ],
+    [
+      "age",
+      1244.863867521286
+    ],
+    [
+      "sprint_avg_bucket",
+      1215.7765458424888
+    ],
+    [
+      "mountain_vs_career_gap",
+      1195.9919548829396
+    ],
+    [
+      "race_rolling_score",
+      1194.347472667694
+    ],
+    [
+      "gc_vs_career_gap",
+      1191.497806708018
+    ],
+    [
+      "form_profile_recent_avg",
+      1033.9937062263489
+    ],
+    [
+      "form_delta",
+      903.3633072376251
+    ],
+    [
+      "race_mountain_score",
+      848.3866142431893
+    ],
+    [
+      "d1_count",
+      807.2544090747833
+    ],
+    [
+      "race_sprint_score",
+      761.3497510751088
+    ],
+    [
+      "skewness_normalized_slope",
+      760.1426057020823
+    ]
+  ]
+}
