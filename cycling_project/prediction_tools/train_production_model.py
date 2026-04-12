@@ -102,6 +102,7 @@ def main():
         db_path=str(db_path),
         start_date='2018-01-01',
         min_races_career=10,
+        include_gradient_features=True,
     )
     pipeline = CyclingDataPipeline(config)
     df = pipeline.load_training_data()

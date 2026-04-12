@@ -521,10 +521,17 @@ def get_reference_race_profile(
     db_path: str = None,
 ) -> dict:
     """
-    Get race profile and metadata from a historical race.
+    Get race profile, gradient features, and metadata from a historical race.
 
-    Returns dict with race profile scores, competition_type, race_category,
-    competition_name (includes parent race name), and competition_date.
+    Returns dict with race profile scores, gradient features (from
+    race_feature_gradients and race_features_100), competition_type,
+    race_category, competition_name, and competition_date.
+
+    Gradient features are included for Stage 0 production models that were
+    trained with include_gradient_features=True. If a race has no gradient
+    row (< 3 valid percentiles upstream), the gradient keys are set to None
+    and race_profile_missing is set to 1. Feature engineering imputation
+    will fill these with neutral defaults at inference time.
     """
     db_path = db_path or str(_DEFAULT_DB)
 
@@ -534,10 +541,31 @@ def get_reference_race_profile(
         cff.competition_date, cff.competition_type, cff.race_category,
         cff.race_sprint_score, cff.race_mountain_score, cff.race_hilly_score,
         cff.race_rolling_score, cff.race_breakaway_score, cff.race_time_trial_score,
-        cff.race_dominant_profile
+        cff.race_dominant_profile,
+        rfg.variance_normalized_slope,
+        rfg.variance_normalized_volatility,
+        rfg.variance_normalized_monotonicity,
+        rfg.clumpiness_score_slope,
+        rfg.clumpiness_score_volatility,
+        rfg.biggest_group_metric_slope,
+        rfg.biggest_group_metric_volatility,
+        rfg.selection_metric_slope,
+        rfg.selection_metric_volatility,
+        rfg.gini_coefficient_slope,
+        rfg.skewness_normalized_slope,
+        rfg.percentile_coverage_ratio,
+        rfg.lowest_valid_percentile,
+        rfg.highest_null_percentile,
+        rfg.kurtosis_null_percentile,
+        rfg.variance_zero_percentile,
+        rf100.winning_time,
+        rf100.abandon_ratio,
+        CASE WHEN rfg.competition_id IS NULL THEN 1 ELSE 0 END as race_profile_missing
     FROM competition_field_features cff
     JOIN competitions c ON cff.competition_id = c.id
     JOIN races r ON c.race_id = r.id
+    LEFT JOIN race_feature_gradients rfg ON rfg.competition_id = cff.competition_id
+    LEFT JOIN race_features_100 rf100 ON rf100.competition_id = cff.competition_id
     WHERE cff.competition_id = ?
     """
 
@@ -560,27 +588,67 @@ def get_reference_race_profile(
         'race_breakaway_score': row[8],
         'race_time_trial_score': row[9],
         'race_dominant_profile': row[10],
+        # Stage 0 gradient features
+        'variance_normalized_slope': row[11],
+        'variance_normalized_volatility': row[12],
+        'variance_normalized_monotonicity': row[13],
+        'clumpiness_score_slope': row[14],
+        'clumpiness_score_volatility': row[15],
+        'biggest_group_metric_slope': row[16],
+        'biggest_group_metric_volatility': row[17],
+        'selection_metric_slope': row[18],
+        'selection_metric_volatility': row[19],
+        'gini_coefficient_slope': row[20],
+        'skewness_normalized_slope': row[21],
+        'percentile_coverage_ratio': row[22],
+        'lowest_valid_percentile': row[23],
+        'highest_null_percentile': row[24],
+        'kurtosis_null_percentile': row[25],
+        'variance_zero_percentile': row[26],
+        'winning_time': row[27],
+        'abandon_ratio': row[28],
+        'race_profile_missing': row[29],
     }
 
 
 def average_race_profiles(profiles: List[dict]) -> dict:
     """
-    Average race profile scores across multiple reference races.
+    Average race profile scores and gradient features across multiple
+    reference races.
 
-    Uses mean of profile scores, mode of competition_type and race_category.
+    Uses mean of profile scores and gradient features, mode of
+    competition_type and race_category.
     """
     score_keys = [
         'race_sprint_score', 'race_mountain_score', 'race_hilly_score',
         'race_rolling_score', 'race_breakaway_score', 'race_time_trial_score',
     ]
 
+    # Stage 0 gradient features to average across reference races
+    gradient_keys = [
+        'variance_normalized_slope', 'variance_normalized_volatility',
+        'variance_normalized_monotonicity',
+        'clumpiness_score_slope', 'clumpiness_score_volatility',
+        'biggest_group_metric_slope', 'biggest_group_metric_volatility',
+        'selection_metric_slope', 'selection_metric_volatility',
+        'gini_coefficient_slope', 'skewness_normalized_slope',
+        'percentile_coverage_ratio', 'lowest_valid_percentile',
+        'highest_null_percentile', 'kurtosis_null_percentile',
+        'variance_zero_percentile',
+        'winning_time', 'abandon_ratio',
+    ]
+
     avg = {}
-    for key in score_keys:
-        values = [p[key] for p in profiles if p[key] is not None]
-        avg[key] = statistics.mean(values) if values else 0.0
+    for key in score_keys + gradient_keys:
+        values = [p[key] for p in profiles if p.get(key) is not None]
+        avg[key] = statistics.mean(values) if values else None
+
+    # race_profile_missing: 1 if ANY reference race was missing, else 0
+    missing_vals = [p.get('race_profile_missing', 0) for p in profiles]
+    avg['race_profile_missing'] = 1 if any(v == 1 for v in missing_vals) else 0
 
     # Dominant profile = highest averaged score
-    best_key = max(score_keys, key=lambda k: avg[k])
+    best_key = max(score_keys, key=lambda k: avg.get(k, 0) or 0)
     profile_name = best_key.replace('race_', '').replace('_score', '')
     avg['race_dominant_profile'] = profile_name
 
@@ -637,6 +705,26 @@ def assemble_prediction_df(
 
     # Add race profile (same for all riders)
     for col in RACE_PROFILE_COLS:
+        df[col] = race_profile.get(col)
+
+    # Add Stage 0 gradient features (same for all riders in the race —
+    # these come from the reference race's race_feature_gradients and
+    # race_features_100 rows). If the reference race has no gradient row,
+    # values will be None and feature_engineering imputation fills them
+    # with neutral defaults.
+    gradient_cols = [
+        'variance_normalized_slope', 'variance_normalized_volatility',
+        'variance_normalized_monotonicity',
+        'clumpiness_score_slope', 'clumpiness_score_volatility',
+        'biggest_group_metric_slope', 'biggest_group_metric_volatility',
+        'selection_metric_slope', 'selection_metric_volatility',
+        'gini_coefficient_slope', 'skewness_normalized_slope',
+        'percentile_coverage_ratio', 'lowest_valid_percentile',
+        'highest_null_percentile', 'kurtosis_null_percentile',
+        'variance_zero_percentile',
+        'winning_time', 'abandon_ratio', 'race_profile_missing',
+    ]
+    for col in gradient_cols:
         df[col] = race_profile.get(col)
 
     # Add metadata
