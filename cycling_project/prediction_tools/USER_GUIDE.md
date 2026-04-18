@@ -103,7 +103,7 @@ pipeline = CyclingDataPipeline()
 
 # Or customize
 config = DataConfig(
-    start_date='2018-01-01',      # Training data start
+    start_date='2016-01-01',      # Training data start (production default)
     min_races_career=10,           # Minimum career races for riders
     competition_types=['stage', 'one_day', 'gc'],
     race_categories=['wt', 'pro', 'd1'],
@@ -121,7 +121,7 @@ print(f"Loaded {len(df):,} samples")
 # Split by date (prevents data leakage)
 train, val, test = pipeline.get_temporal_split(
     df,
-    train_end='2022-12-31',    # Train: 2018-01-01 to 2022-12-31
+    train_end='2022-12-31',    # Train: 2016-01-01 to 2022-12-31
     val_end='2023-06-30'       # Val: 2023-01-01 to 2023-06-30
                                 # Test: 2023-07-01 onwards
 )
@@ -232,7 +232,7 @@ from prediction_tools import ModelTrainer, TrainingConfig
 
 config = TrainingConfig(
     # Data
-    start_date='2018-01-01',
+    start_date='2016-01-01',     # Production default since 2026-04-18
     train_end_date='2022-12-31',
     val_end_date='2023-06-30',
     min_races_career=10,

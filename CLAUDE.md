@@ -29,21 +29,22 @@ FirstCycling HTML → scrape → pickle files → migrate → SQLite DB
 |--------|------|
 | `webscrape_tools/` | Scraping (scrape_client, find_races, download_race_data) + SQLite migrations (`database/`) |
 | `engineering_tools/` | Feature precomputation, race profile scoring, form/team features |
-| `prediction_tools/` | Training pipeline, feature engineering, bucket + time gap predictors, inference |
+| `prediction_tools/` | Training pipeline, feature engineering, bucket + time gap + multiclass cascade + LambdaRank predictors, inference, prediction_log persistence |
 | `data_loading_tools/` | Pickle-to-memory data loading |
 | `data_cleaning_tools/` | Date verification, data standardization |
 | `data_validation_tools/` | Data quality checks |
 | `web/` | Streamlit frontend (`app.py`) |
-| `update_pipeline.py` | Orchestrates all 10 steps: scrape → migrate → features → train |
+| `update_pipeline.py` | Orchestrates all 11 steps: scrape → migrate → features → train → train-lambdarank |
 
 ## Key Paths
 
 | Path | Contents |
 |------|----------|
-| `cycling_project/webscrape_tools/database/database/cycling_races.db` | SQLite database |
-| `models/production/` | Trained LightGBM models (bucket + time gap) |
+| `cycling_project/webscrape_tools/database/database/cycling_races.db` | SQLite database (also hosts the `prediction_log` table written by the web app) |
+| `models/production/` | Trained LightGBM models: bucket, time gap, multiclass cascade (weighted/calibrated/contender), LambdaRank probability head |
 | `~/cycling_data/scraped_data/` | Scraped pickle files (default; override with `SCRAPED_DATA_DIR` in `.env`) |
 | `cycling_project/tests/fixtures/` | Test fixtures (HTML pages, mock data) |
+| `experiments/` | JSON results from CV / experiment runs (see `experiment_log.md` for the narrative) |
 
 ## Conventions
 
@@ -68,4 +69,6 @@ FirstCycling HTML → scrape → pickle files → migrate → SQLite DB
 - **Rate limiting**: `scrape_client.py` enforces 3-second minimum between HTTP requests with random jitter. Do not bypass this.
 - **Cloudflare**: Uses `cloudscraper` library (not plain requests/httpx) for FirstCycling pages.
 - **Pickle files**: Legacy intermediate format between scraping and SQLite. The migration step converts these to DB rows.
-- **Pipeline halts on critical failures**: Steps like migrate, percentiles, gradients, and features will stop the pipeline if they fail. Scraping and training failures are non-fatal.
+- **Pipeline halts on critical failures**: Steps like migrate, percentiles, gradients, and features will stop the pipeline if they fail. Scraping, training, and LambdaRank-head training failures are non-fatal.
+- **Two probability heads**: `prediction_tools/probability_predictor.py` is the multiclass contender cascade (used for ranking). `prediction_tools/lambdarank_probability_predictor.py` is the full-field LambdaRank head (used for calibrated probabilities — book comparison). The web app shows both side-by-side.
+- **Production training start_date is `2016-01-01`** in both `train_production_model.py` and `train_lambdarank_production.py` (was 2018; moved on 2026-04-18 after a CV sweep — see experiment_log.md).

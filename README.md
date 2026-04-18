@@ -22,7 +22,8 @@ cycling_project/
   data_cleaning_tools/      Date verification + data standardization
   data_validation_tools/    Data quality checks
   tests/                    Unit + integration tests
-models/production/          LightGBM models (bucket + time gap)
+models/production/          LightGBM models (bucket, time gap, multiclass cascade,
+                            full-field LambdaRank probability head)
 ```
 
 ## Weekly Update Pipeline
@@ -38,12 +39,13 @@ The update pipeline (`cycling_project/update_pipeline.py`) is a single script th
 7. **Percentile tables** — builds statistical percentile tables for target years
 8. **Gradient calculation** — computes performance gradients for unprocessed competitions
 9. **Feature precomputation** — rebuilds rider snapshots and field-level features
-10. **Train production model** — retrains the LightGBM models
+10. **Train production model** — retrains the multiclass cascade (bucket + time gap + multiclass + calibrated + contender)
+11. **Train LambdaRank head** — trains the full-field LambdaRank probability head and appends it to the registry
 
 ### Usage
 
 ```bash
-# Full pipeline (all 10 steps)
+# Full pipeline (all 11 steps)
 uv run python -m cycling_project.update_pipeline
 
 # Preview what would run without executing
@@ -58,8 +60,11 @@ uv run python -m cycling_project.update_pipeline --skip-migrate
 # Skip feature building
 uv run python -m cycling_project.update_pipeline --skip-features
 
-# Skip model training
+# Skip model training (multiclass cascade)
 uv run python -m cycling_project.update_pipeline --skip-train
+
+# Skip LambdaRank head training
+uv run python -m cycling_project.update_pipeline --skip-lambdarank
 
 # Run a single step only
 uv run python -m cycling_project.update_pipeline --only train
@@ -68,7 +73,7 @@ uv run python -m cycling_project.update_pipeline --only train
 uv run python -m cycling_project.update_pipeline -v
 ```
 
-Valid `--only` step names: `scrape-lists`, `scrape-data`, `migrate`, `place-bucket`, `bib`, `experience`, `percentiles`, `gradients`, `features`, `train`.
+Valid `--only` step names: `scrape-lists`, `scrape-data`, `migrate`, `place-bucket`, `bib`, `experience`, `percentiles`, `gradients`, `features`, `train`, `train-lambdarank`.
 
 ### Configuration
 
@@ -76,11 +81,13 @@ The pipeline resolves paths automatically from the project root. Scraped data de
 
 ## Other Workflows
 
-**Predict a race**: Enter a FirstCycling URL in the web app, select reference races, generate predictions.
+**Predict a race**: Enter a FirstCycling URL in the web app, select reference races, generate predictions. Two probability heads are shown side-by-side (multiclass + LambdaRank) with disagreement highlighting; every prediction run is persisted to the `prediction_log` table for retrospective comparison against actual results and book-implied odds.
 
-**Train models manually**: `uv run python -m cycling_project.prediction_tools.train_production_model`
+**Train models manually**:
+- Multiclass cascade: `uv run python -m cycling_project.prediction_tools.train_production_model`
+- LambdaRank head only (appends to existing registry): `uv run python -m cycling_project.prediction_tools.train_lambdarank_production`
 
-See `DEPLOYMENT_PLAN.md` for Streamlit Cloud deployment instructions.
+See `DEPLOYMENT_PLAN.md` for Streamlit Cloud deployment instructions and `experiment_log.md` for the model evaluation history.
 
 ## Claude Code Integration
 
