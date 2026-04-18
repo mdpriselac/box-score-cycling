@@ -554,12 +554,25 @@ def run_model_training(config: PipelineConfig) -> str:
 
 
 # ---------------------------------------------------------------------------
+# Step 11: Train LambdaRank probability head
+# ---------------------------------------------------------------------------
+
+def run_lambdarank_training(config: PipelineConfig) -> str:
+    from cycling_project.prediction_tools.train_lambdarank_production import (
+        main as lambdarank_main,
+    )
+    lambdarank_main()
+    return "done"
+
+
+# ---------------------------------------------------------------------------
 # CLI
 # ---------------------------------------------------------------------------
 
 STEP_NAMES = [
     "scrape-lists", "scrape-data", "migrate", "place-bucket",
     "bib", "experience", "percentiles", "gradients", "features", "train",
+    "train-lambdarank",
 ]
 
 
@@ -585,6 +598,8 @@ Examples:
                       help="Skip feature building (percentiles + gradients + precomputation)")
     skip.add_argument("--skip-train", action="store_true",
                       help="Skip model training")
+    skip.add_argument("--skip-lambdarank", action="store_true",
+                      help="Skip LambdaRank probability head training")
 
     parser.add_argument("--only", choices=STEP_NAMES,
                         help="Run ONLY the specified step")
@@ -605,6 +620,7 @@ def should_run(step: str, args: argparse.Namespace) -> bool:
     migrate_steps = {"migrate", "place-bucket", "bib", "experience"}
     feature_steps = {"percentiles", "gradients", "features"}
     train_steps = {"train"}
+    lambdarank_steps = {"train-lambdarank"}
 
     if args.skip_scrape and step in scrape_steps:
         return False
@@ -613,6 +629,8 @@ def should_run(step: str, args: argparse.Namespace) -> bool:
     if args.skip_features and step in feature_steps:
         return False
     if args.skip_train and step in train_steps:
+        return False
+    if args.skip_lambdarank and step in lambdarank_steps:
         return False
 
     return True
@@ -737,6 +755,12 @@ def run_pipeline(args: argparse.Namespace):
     if should_run("train", args):
         results.append(
             run_step("Train Production Model", run_model_training, config)
+        )
+
+    # Step 11: Train LambdaRank probability head (separate, appends to registry)
+    if should_run("train-lambdarank", args):
+        results.append(
+            run_step("Train LambdaRank Head", run_lambdarank_training, config)
         )
 
     print_summary(results)

@@ -1,0 +1,317 @@
+{
+  "started_at": "2026-04-18T13:04:06.068060",
+  "ended_at": "2026-04-18T14:17:31.497819",
+  "duration_seconds": 4405.429759,
+  "start_dates": [
+    "2018-01-01",
+    "2017-01-01",
+    "2016-01-01",
+    "2015-01-01"
+  ],
+  "summary": {
+    "2018-01-01": {
+      "primary_metrics": {
+        "probability_contender_top4.race_winner_capture_rate": {
+          "mean": 0.23593297257552703,
+          "std": 0.025953483910583795,
+          "min": 0.20282762370853724,
+          "max": 0.26621160409556316,
+          "n_folds": 3
+        },
+        "probability_contender_top4.race_podium_capture_rate": {
+          "mean": 0.45788687876579076,
+          "std": 0.014010210388512002,
+          "min": 0.4404279930595719,
+          "max": 0.4747292418772563,
+          "n_folds": 3
+        },
+        "probability_contender_top4.top4_log_loss": {
+          "mean": 1.7626535060707351,
+          "std": 0.008355983828705829,
+          "min": 1.7566504225061768,
+          "max": 1.7744701450961584,
+          "n_folds": 3
+        },
+        "probability_contender_top4.win_cal_ratio": {
+          "mean": 0.9873234506274704,
+          "std": 0.03571867808448738,
+          "min": 0.9448419232631441,
+          "max": 1.0322333042953165,
+          "n_folds": 3
+        },
+        "probability_contender_top4.podium_cal_ratio": {
+          "mean": 1.0062998299432138,
+          "std": 0.03641240285627629,
+          "min": 0.9590192545152006,
+          "max": 1.0476094417260298,
+          "n_folds": 3
+        },
+        "probability_contender_top4.top4_brier": {
+          "mean": 0.9273071103251752,
+          "std": 0.0037778860353647583,
+          "min": 0.9239257576125336,
+          "max": 0.932580170625023,
+          "n_folds": 3
+        },
+        "bucket.mae": {
+          "mean": 1.2007525222979327,
+          "std": 0.023245420833692892,
+          "min": 1.1771986408643254,
+          "max": 1.2323898604594479,
+          "n_folds": 3
+        }
+      },
+      "per_fold": [
+        {
+          "fold_label": "2023",
+          "train_samples": 235798,
+          "winner_capture": 0.20282762370853724,
+          "podium_capture": 0.4404279930595719,
+          "log_loss": 1.7744701450961584
+        },
+        {
+          "fold_label": "2024",
+          "train_samples": 288830,
+          "winner_capture": 0.23875968992248062,
+          "podium_capture": 0.4585034013605442,
+          "log_loss": 1.7566504225061768
+        },
+        {
+          "fold_label": "2025",
+          "train_samples": 348242,
+          "winner_capture": 0.26621160409556316,
+          "podium_capture": 0.4747292418772563,
+          "log_loss": 1.7568399506098702
+        }
+      ]
+    },
+    "2017-01-01": {
+      "primary_metrics": {
+        "probability_contender_top4.race_winner_capture_rate": {
+          "mean": 0.23622021870274826,
+          "std": 0.02506362677989304,
+          "min": 0.20663404023926046,
+          "max": 0.26791808873720135,
+          "n_folds": 3
+        },
+        "probability_contender_top4.race_podium_capture_rate": {
+          "mean": 0.46941101010107394,
+          "std": 0.01778280954061485,
+          "min": 0.451572688914461,
+          "max": 0.4936823104693141,
+          "n_folds": 3
+        },
+        "probability_contender_top4.top4_log_loss": {
+          "mean": 1.758840785363146,
+          "std": 0.0032100729547886,
+          "min": 1.7543771627318054,
+          "max": 1.761789469970505,
+          "n_folds": 3
+        },
+        "probability_contender_top4.win_cal_ratio": {
+          "mean": 0.9892308232164204,
+          "std": 0.009545566391564756,
+          "min": 0.9787694939435656,
+          "max": 1.0018504795964716,
+          "n_folds": 3
+        },
+        "probability_contender_top4.podium_cal_ratio": {
+          "mean": 1.0087538299294845,
+          "std": 0.01812224288456156,
+          "min": 0.9854816153085155,
+          "max": 1.0296865253628897,
+          "n_folds": 3
+        },
+        "probability_contender_top4.top4_brier": {
+          "mean": 0.9262992368656615,
+          "std": 0.0016011783828102414,
+          "min": 0.9241739993186694,
+          "max": 0.9280387473195685,
+          "n_folds": 3
+        },
+        "bucket.mae": {
+          "mean": 1.2044670277193572,
+          "std": 0.022776822610612237,
+          "min": 1.1843128666613576,
+          "max": 1.2363049174334289,
+          "n_folds": 3
+        }
+      },
+      "per_fold": [
+        {
+          "fold_label": "2023",
+          "train_samples": 308198,
+          "winner_capture": 0.20663404023926046,
+          "podium_capture": 0.451572688914461,
+          "log_loss": 1.761789469970505
+        },
+        {
+          "fold_label": "2024",
+          "train_samples": 361230,
+          "winner_capture": 0.23410852713178296,
+          "podium_capture": 0.4629780309194467,
+          "log_loss": 1.7603557233871272
+        },
+        {
+          "fold_label": "2025",
+          "train_samples": 420642,
+          "winner_capture": 0.26791808873720135,
+          "podium_capture": 0.4936823104693141,
+          "log_loss": 1.7543771627318054
+        }
+      ]
+    },
+    "2016-01-01": {
+      "primary_metrics": {
+        "probability_contender_top4.race_winner_capture_rate": {
+          "mean": 0.2432583465867135,
+          "std": 0.02559060532277098,
+          "min": 0.21750951604132682,
+          "max": 0.2781569965870307,
+          "n_folds": 3
+        },
+        "probability_contender_top4.race_podium_capture_rate": {
+          "mean": 0.46741015208055064,
+          "std": 0.014619443321292678,
+          "min": 0.4536930730960581,
+          "max": 0.4876654632972322,
+          "n_folds": 3
+        },
+        "probability_contender_top4.top4_log_loss": {
+          "mean": 1.7555225450770082,
+          "std": 0.004616901412623091,
+          "min": 1.74905697000799,
+          "max": 1.7595433188112632,
+          "n_folds": 3
+        },
+        "probability_contender_top4.win_cal_ratio": {
+          "mean": 0.989389382959302,
+          "std": 0.0445506523237907,
+          "min": 0.9451835909728926,
+          "max": 1.050370639255555,
+          "n_folds": 3
+        },
+        "probability_contender_top4.podium_cal_ratio": {
+          "mean": 1.0065318662810168,
+          "std": 0.03139025213998532,
+          "min": 0.9823503667622739,
+          "max": 1.0508633233044442,
+          "n_folds": 3
+        },
+        "probability_contender_top4.top4_brier": {
+          "mean": 0.9245701634880291,
+          "std": 0.0012709145488680454,
+          "min": 0.9229460156352824,
+          "max": 0.9260489033728108,
+          "n_folds": 3
+        },
+        "bucket.mae": {
+          "mean": 1.2034953307042502,
+          "std": 0.04024987212399429,
+          "min": 1.1502415651296753,
+          "max": 1.247532143074767,
+          "n_folds": 3
+        }
+      },
+      "per_fold": [
+        {
+          "fold_label": "2023",
+          "train_samples": 381408,
+          "winner_capture": 0.21750951604132682,
+          "podium_capture": 0.4536930730960581,
+          "log_loss": 1.7579673464117713
+        },
+        {
+          "fold_label": "2024",
+          "train_samples": 434440,
+          "winner_capture": 0.23410852713178296,
+          "podium_capture": 0.4608719198483617,
+          "log_loss": 1.7595433188112632
+        },
+        {
+          "fold_label": "2025",
+          "train_samples": 493852,
+          "winner_capture": 0.2781569965870307,
+          "podium_capture": 0.4876654632972322,
+          "log_loss": 1.74905697000799
+        }
+      ]
+    },
+    "2015-01-01": {
+      "primary_metrics": {
+        "probability_contender_top4.race_winner_capture_rate": {
+          "mean": 0.24190673703312723,
+          "std": 0.02850711520194437,
+          "min": 0.20663404023926046,
+          "max": 0.2764505119453925,
+          "n_folds": 3
+        },
+        "probability_contender_top4.race_podium_capture_rate": {
+          "mean": 0.465934708774207,
+          "std": 0.014510700125894603,
+          "min": 0.44575200918484503,
+          "max": 0.47924080664294183,
+          "n_folds": 3
+        },
+        "probability_contender_top4.top4_log_loss": {
+          "mean": 1.7453168039986633,
+          "std": 0.005212883795291239,
+          "min": 1.7395706854759283,
+          "max": 1.7521895917054164,
+          "n_folds": 3
+        },
+        "probability_contender_top4.win_cal_ratio": {
+          "mean": 1.0146695441469296,
+          "std": 0.03253517528385423,
+          "min": 0.9751420426646725,
+          "max": 1.0548291012230453,
+          "n_folds": 3
+        },
+        "probability_contender_top4.podium_cal_ratio": {
+          "mean": 1.0174494658285302,
+          "std": 0.024707099049646648,
+          "min": 0.9832342063129768,
+          "max": 1.0406929025736618,
+          "n_folds": 3
+        },
+        "probability_contender_top4.top4_brier": {
+          "mean": 0.9180815222395866,
+          "std": 0.0015850247523810977,
+          "min": 0.9159190396255844,
+          "max": 0.9196738475970088,
+          "n_folds": 3
+        },
+        "bucket.mae": {
+          "mean": 1.2134195664660483,
+          "std": 0.017148540433068488,
+          "min": 1.1956080273950784,
+          "max": 1.2365791237584547,
+          "n_folds": 3
+        }
+      },
+      "per_fold": [
+        {
+          "fold_label": "2023",
+          "train_samples": 449334,
+          "winner_capture": 0.20663404023926046,
+          "podium_capture": 0.44575200918484503,
+          "log_loss": 1.7521895917054164
+        },
+        {
+          "fold_label": "2024",
+          "train_samples": 502366,
+          "winner_capture": 0.24263565891472869,
+          "podium_capture": 0.4728113104948341,
+          "log_loss": 1.7395706854759283
+        },
+        {
+          "fold_label": "2025",
+          "train_samples": 561778,
+          "winner_capture": 0.2764505119453925,
+          "podium_capture": 0.47924080664294183,
+          "log_loss": 1.7441901348146458
+        }
+      ]
+    }
+  }
+}

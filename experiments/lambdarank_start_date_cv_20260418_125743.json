@@ -1,0 +1,626 @@
+{
+  "started_at": "2026-04-18T12:50:40.960465",
+  "ended_at": "2026-04-18T12:57:43.504492",
+  "duration_seconds": 422.544027,
+  "folds": [
+    {
+      "train_end": "2021-12-31",
+      "val_end": "2022-12-31",
+      "label": "2023"
+    },
+    {
+      "train_end": "2022-12-31",
+      "val_end": "2023-12-31",
+      "label": "2024"
+    },
+    {
+      "train_end": "2023-12-31",
+      "val_end": "2024-12-31",
+      "label": "2025"
+    }
+  ],
+  "start_dates": [
+    "2018-01-01",
+    "2017-01-01",
+    "2016-01-01",
+    "2015-01-01"
+  ],
+  "results_by_start_date": {
+    "2018-01-01": {
+      "start_date": "2018-01-01",
+      "data_stats": {
+        "total_rows": 498926,
+        "total_competitions": 4431,
+        "date_min": "2018-01-15",
+        "date_max": "2026-04-18"
+      },
+      "fold_results": [
+        {
+          "fold_label": "2023",
+          "skipped": false,
+          "best_iteration": 115,
+          "n_train_rows": 235798,
+          "n_train_groups": 2100,
+          "calibrated_temperature": 0.7203640301228937,
+          "test_metrics": {
+            "winner_capture": 0.2136279926335175,
+            "podium_capture": 0.31368937998772256,
+            "win_log_loss": 3.149794390292797,
+            "discrimination_ratio": 10.278735176057504,
+            "win_cal_ratio": 1.011049723756906,
+            "win_ece": 0.000495031174176562,
+            "n_races": 543,
+            "avg_field_size": 108.21857923497268,
+            "temperature": 0.7203640301228937
+          }
+        },
+        {
+          "fold_label": "2024",
+          "skipped": false,
+          "best_iteration": 64,
+          "n_train_rows": 288830,
+          "n_train_groups": 2592,
+          "calibrated_temperature": 0.6329102288280062,
+          "test_metrics": {
+            "winner_capture": 0.22428571428571428,
+            "podium_capture": 0.32666666666666666,
+            "win_log_loss": 3.1195685502259582,
+            "discrimination_ratio": 11.148025112681758,
+            "win_cal_ratio": 1.0057142857142858,
+            "win_ece": 0.0006129019152681499,
+            "n_races": 700,
+            "avg_field_size": 120.79545454545455,
+            "temperature": 0.6329102288280062
+          }
+        },
+        {
+          "fold_label": "2025",
+          "skipped": false,
+          "best_iteration": 157,
+          "n_train_rows": 348242,
+          "n_train_groups": 3141,
+          "calibrated_temperature": 0.7093222217995065,
+          "test_metrics": {
+            "winner_capture": 0.26713947990543735,
+            "podium_capture": 0.35933806146572106,
+            "win_log_loss": 3.0114687089151255,
+            "discrimination_ratio": 13.094401026717687,
+            "win_cal_ratio": 1.0070921985815602,
+            "win_ece": 0.0005789077331858974,
+            "n_races": 423,
+            "avg_field_size": 113.47887323943662,
+            "temperature": 0.7093222217995065
+          }
+        }
+      ],
+      "aggregated": {
+        "avg_field_size": {
+          "mean": 114.1643023399546,
+          "std": 5.157312474065652,
+          "min": 108.21857923497268,
+          "max": 120.79545454545455,
+          "n_folds": 3
+        },
+        "discrimination_ratio": {
+          "mean": 11.507053771818983,
+          "std": 1.1771914965161472,
+          "min": 10.278735176057504,
+          "max": 13.094401026717687,
+          "n_folds": 3
+        },
+        "n_races": {
+          "mean": 555.3333333333334,
+          "std": 113.42055467252055,
+          "min": 423.0,
+          "max": 700.0,
+          "n_folds": 3
+        },
+        "podium_capture": {
+          "mean": 0.3332313693733701,
+          "std": 0.019205416274070367,
+          "min": 0.31368937998772256,
+          "max": 0.35933806146572106,
+          "n_folds": 3
+        },
+        "temperature": {
+          "mean": 0.6875321602501355,
+          "std": 0.03888570368807756,
+          "min": 0.6329102288280062,
+          "max": 0.7203640301228937,
+          "n_folds": 3
+        },
+        "win_cal_ratio": {
+          "mean": 1.0079520693509174,
+          "std": 0.002261453526924081,
+          "min": 1.0057142857142858,
+          "max": 1.011049723756906,
+          "n_folds": 3
+        },
+        "win_ece": {
+          "mean": 0.0005622802742102031,
+          "std": 4.953606225341517e-05,
+          "min": 0.000495031174176562,
+          "max": 0.0006129019152681499,
+          "n_folds": 3
+        },
+        "win_log_loss": {
+          "mean": 3.093610549811294,
+          "std": 0.059379355959767025,
+          "min": 3.0114687089151255,
+          "max": 3.149794390292797,
+          "n_folds": 3
+        },
+        "winner_capture": {
+          "mean": 0.2350177289415564,
+          "std": 0.023126491612335223,
+          "min": 0.2136279926335175,
+          "max": 0.26713947990543735,
+          "n_folds": 3
+        },
+        "best_iteration": {
+          "mean": 112.0,
+          "std": 38.02630668366309
+        },
+        "calibrated_temperature": {
+          "mean": 0.6875321602501355,
+          "std": 0.03888570368807756
+        },
+        "n_train_rows": {
+          "mean": 290956.6666666667,
+          "std": 45929.69495024131
+        },
+        "n_train_groups": {
+          "mean": 2611.0,
+          "std": 425.19877704433725
+        }
+      }
+    },
+    "2017-01-01": {
+      "start_date": "2017-01-01",
+      "data_stats": {
+        "total_rows": 571326,
+        "total_competitions": 5049,
+        "date_min": "2017-01-17",
+        "date_max": "2026-04-18"
+      },
+      "fold_results": [
+        {
+          "fold_label": "2023",
+          "skipped": false,
+          "best_iteration": 197,
+          "n_train_rows": 308198,
+          "n_train_groups": 2718,
+          "calibrated_temperature": 0.7494068837373004,
+          "test_metrics": {
+            "winner_capture": 0.2154696132596685,
+            "podium_capture": 0.32228360957642727,
+            "win_log_loss": 3.1030774665839522,
+            "discrimination_ratio": 10.722861012134556,
+            "win_cal_ratio": 1.011049723756906,
+            "win_ece": 0.00019989644600669837,
+            "n_races": 543,
+            "avg_field_size": 108.21857923497268,
+            "temperature": 0.7494068837373004
+          }
+        },
+        {
+          "fold_label": "2024",
+          "skipped": false,
+          "best_iteration": 65,
+          "n_train_rows": 361230,
+          "n_train_groups": 3210,
+          "calibrated_temperature": 0.6384320291883205,
+          "test_metrics": {
+            "winner_capture": 0.22714285714285715,
+            "podium_capture": 0.3452380952380953,
+            "win_log_loss": 3.092156641355007,
+            "discrimination_ratio": 11.480535525466214,
+            "win_cal_ratio": 1.0057142857142858,
+            "win_ece": 0.0010267259940952452,
+            "n_races": 700,
+            "avg_field_size": 120.79545454545455,
+            "temperature": 0.6384320291883205
+          }
+        },
+        {
+          "fold_label": "2025",
+          "skipped": false,
+          "best_iteration": 104,
+          "n_train_rows": 420642,
+          "n_train_groups": 3759,
+          "calibrated_temperature": 0.6679641399503201,
+          "test_metrics": {
+            "winner_capture": 0.2718676122931442,
+            "podium_capture": 0.3640661938534279,
+            "win_log_loss": 2.978234437998507,
+            "discrimination_ratio": 13.91455720581795,
+            "win_cal_ratio": 1.0070921985815602,
+            "win_ece": 0.0007276329520250389,
+            "n_races": 423,
+            "avg_field_size": 113.47887323943662,
+            "temperature": 0.6679641399503201
+          }
+        }
+      ],
+      "aggregated": {
+        "avg_field_size": {
+          "mean": 114.1643023399546,
+          "std": 5.157312474065652,
+          "min": 108.21857923497268,
+          "max": 120.79545454545455,
+          "n_folds": 3
+        },
+        "discrimination_ratio": {
+          "mean": 12.039317914472909,
+          "std": 1.3615945228276258,
+          "min": 10.722861012134556,
+          "max": 13.91455720581795,
+          "n_folds": 3
+        },
+        "n_races": {
+          "mean": 555.3333333333334,
+          "std": 113.42055467252055,
+          "min": 423.0,
+          "max": 700.0,
+          "n_folds": 3
+        },
+        "podium_capture": {
+          "mean": 0.34386263288931684,
+          "std": 0.017085374051526176,
+          "min": 0.32228360957642727,
+          "max": 0.3640661938534279,
+          "n_folds": 3
+        },
+        "temperature": {
+          "mean": 0.6852676842919804,
+          "std": 0.04692841406958516,
+          "min": 0.6384320291883205,
+          "max": 0.7494068837373004,
+          "n_folds": 3
+        },
+        "win_cal_ratio": {
+          "mean": 1.0079520693509174,
+          "std": 0.002261453526924081,
+          "min": 1.0057142857142858,
+          "max": 1.011049723756906,
+          "n_folds": 3
+        },
+        "win_ece": {
+          "mean": 0.0006514184640423274,
+          "std": 0.0003418267217289366,
+          "min": 0.00019989644600669837,
+          "max": 0.0010267259940952452,
+          "n_folds": 3
+        },
+        "win_log_loss": {
+          "mean": 3.057822848645822,
+          "std": 0.0564538303273542,
+          "min": 2.978234437998507,
+          "max": 3.1030774665839522,
+          "n_folds": 3
+        },
+        "winner_capture": {
+          "mean": 0.23816002756522328,
+          "std": 0.024306612362778653,
+          "min": 0.2154696132596685,
+          "max": 0.2718676122931442,
+          "n_folds": 3
+        },
+        "best_iteration": {
+          "mean": 122.0,
+          "std": 55.37147279962851
+        },
+        "calibrated_temperature": {
+          "mean": 0.6852676842919804,
+          "std": 0.04692841406958516
+        },
+        "n_train_rows": {
+          "mean": 363356.6666666667,
+          "std": 45929.69495024131
+        },
+        "n_train_groups": {
+          "mean": 3229.0,
+          "std": 425.19877704433725
+        }
+      }
+    },
+    "2016-01-01": {
+      "start_date": "2016-01-01",
+      "data_stats": {
+        "total_rows": 644536,
+        "total_competitions": 5679,
+        "date_min": "2016-01-18",
+        "date_max": "2026-04-18"
+      },
+      "fold_results": [
+        {
+          "fold_label": "2023",
+          "skipped": false,
+          "best_iteration": 165,
+          "n_train_rows": 381408,
+          "n_train_groups": 3348,
+          "calibrated_temperature": 0.7433566328876673,
+          "test_metrics": {
+            "winner_capture": 0.20257826887661143,
+            "podium_capture": 0.3143032535297729,
+            "win_log_loss": 3.1153411093668457,
+            "discrimination_ratio": 10.668221162433458,
+            "win_cal_ratio": 1.011049723756906,
+            "win_ece": 0.0002712969952456486,
+            "n_races": 543,
+            "avg_field_size": 108.21857923497268,
+            "temperature": 0.7433566328876673
+          }
+        },
+        {
+          "fold_label": "2024",
+          "skipped": false,
+          "best_iteration": 24,
+          "n_train_rows": 434440,
+          "n_train_groups": 3840,
+          "calibrated_temperature": 0.3964783424479298,
+          "test_metrics": {
+            "winner_capture": 0.21285714285714286,
+            "podium_capture": 0.31666666666666665,
+            "win_log_loss": 3.2155355426307297,
+            "discrimination_ratio": 9.514486564596188,
+            "win_cal_ratio": 1.0057142857142858,
+            "win_ece": 0.0011771819605512002,
+            "n_races": 700,
+            "avg_field_size": 120.79545454545455,
+            "temperature": 0.3964783424479298
+          }
+        },
+        {
+          "fold_label": "2025",
+          "skipped": false,
+          "best_iteration": 101,
+          "n_train_rows": 493852,
+          "n_train_groups": 4389,
+          "calibrated_temperature": 0.6688740137043774,
+          "test_metrics": {
+            "winner_capture": 0.26713947990543735,
+            "podium_capture": 0.34988179669030733,
+            "win_log_loss": 2.990429381648027,
+            "discrimination_ratio": 13.799687541199274,
+            "win_cal_ratio": 1.0070921985815602,
+            "win_ece": 0.000849966897431047,
+            "n_races": 423,
+            "avg_field_size": 113.47887323943662,
+            "temperature": 0.6688740137043774
+          }
+        }
+      ],
+      "aggregated": {
+        "avg_field_size": {
+          "mean": 114.1643023399546,
+          "std": 5.157312474065652,
+          "min": 108.21857923497268,
+          "max": 120.79545454545455,
+          "n_folds": 3
+        },
+        "discrimination_ratio": {
+          "mean": 11.32746508940964,
+          "std": 1.810467484548534,
+          "min": 9.514486564596188,
+          "max": 13.799687541199274,
+          "n_folds": 3
+        },
+        "n_races": {
+          "mean": 555.3333333333334,
+          "std": 113.42055467252055,
+          "min": 423.0,
+          "max": 700.0,
+          "n_folds": 3
+        },
+        "podium_capture": {
+          "mean": 0.32695057229558233,
+          "std": 0.016243505770919344,
+          "min": 0.3143032535297729,
+          "max": 0.34988179669030733,
+          "n_folds": 3
+        },
+        "temperature": {
+          "mean": 0.6029029963466582,
+          "std": 0.14909788382805905,
+          "min": 0.3964783424479298,
+          "max": 0.7433566328876673,
+          "n_folds": 3
+        },
+        "win_cal_ratio": {
+          "mean": 1.0079520693509174,
+          "std": 0.002261453526924081,
+          "min": 1.0057142857142858,
+          "max": 1.011049723756906,
+          "n_folds": 3
+        },
+        "win_ece": {
+          "mean": 0.000766148617742632,
+          "std": 0.00037454507570215906,
+          "min": 0.0002712969952456486,
+          "max": 0.0011771819605512002,
+          "n_folds": 3
+        },
+        "win_log_loss": {
+          "mean": 3.107102011215201,
+          "std": 0.09208368650981535,
+          "min": 2.990429381648027,
+          "max": 3.2155355426307297,
+          "n_folds": 3
+        },
+        "winner_capture": {
+          "mean": 0.22752496387973054,
+          "std": 0.028324267834493065,
+          "min": 0.20257826887661143,
+          "max": 0.26713947990543735,
+          "n_folds": 3
+        },
+        "best_iteration": {
+          "mean": 96.66666666666667,
+          "std": 57.644504411859494
+        },
+        "calibrated_temperature": {
+          "mean": 0.6029029963466582,
+          "std": 0.14909788382805905
+        },
+        "n_train_rows": {
+          "mean": 436566.6666666667,
+          "std": 45929.69495024131
+        },
+        "n_train_groups": {
+          "mean": 3859.0,
+          "std": 425.19877704433725
+        }
+      }
+    },
+    "2015-01-01": {
+      "start_date": "2015-01-01",
+      "data_stats": {
+        "total_rows": 712462,
+        "total_competitions": 6270,
+        "date_min": "2015-01-19",
+        "date_max": "2026-04-18"
+      },
+      "fold_results": [
+        {
+          "fold_label": "2023",
+          "skipped": false,
+          "best_iteration": 58,
+          "n_train_rows": 449334,
+          "n_train_groups": 3939,
+          "calibrated_temperature": 0.6040153254124419,
+          "test_metrics": {
+            "winner_capture": 0.20257826887661143,
+            "podium_capture": 0.3001841620626151,
+            "win_log_loss": 3.205073713058903,
+            "discrimination_ratio": 9.912132069745798,
+            "win_cal_ratio": 1.011049723756906,
+            "win_ece": 0.0002433733053408928,
+            "n_races": 543,
+            "avg_field_size": 108.21857923497268,
+            "temperature": 0.6040153254124419
+          }
+        },
+        {
+          "fold_label": "2024",
+          "skipped": false,
+          "best_iteration": 117,
+          "n_train_rows": 502366,
+          "n_train_groups": 4431,
+          "calibrated_temperature": 0.7226622342689738,
+          "test_metrics": {
+            "winner_capture": 0.2357142857142857,
+            "podium_capture": 0.33809523809523806,
+            "win_log_loss": 3.049203083156006,
+            "discrimination_ratio": 12.08303957019057,
+            "win_cal_ratio": 1.0057142857142858,
+            "win_ece": 0.0005818743239325328,
+            "n_races": 700,
+            "avg_field_size": 120.79545454545455,
+            "temperature": 0.7226622342689738
+          }
+        },
+        {
+          "fold_label": "2025",
+          "skipped": false,
+          "best_iteration": 151,
+          "n_train_rows": 561778,
+          "n_train_groups": 4980,
+          "calibrated_temperature": 0.7092262203965451,
+          "test_metrics": {
+            "winner_capture": 0.2695035460992908,
+            "podium_capture": 0.3530338849487786,
+            "win_log_loss": 2.9646278685609126,
+            "discrimination_ratio": 14.2986109593753,
+            "win_cal_ratio": 1.0070921985815602,
+            "win_ece": 0.0008002002771918145,
+            "n_races": 423,
+            "avg_field_size": 113.47887323943662,
+            "temperature": 0.7092262203965451
+          }
+        }
+      ],
+      "aggregated": {
+        "avg_field_size": {
+          "mean": 114.1643023399546,
+          "std": 5.157312474065652,
+          "min": 108.21857923497268,
+          "max": 120.79545454545455,
+          "n_folds": 3
+        },
+        "discrimination_ratio": {
+          "mean": 12.09792753310389,
+          "std": 1.7908034511304503,
+          "min": 9.912132069745798,
+          "max": 14.2986109593753,
+          "n_folds": 3
+        },
+        "n_races": {
+          "mean": 555.3333333333334,
+          "std": 113.42055467252055,
+          "min": 423.0,
+          "max": 700.0,
+          "n_folds": 3
+        },
+        "podium_capture": {
+          "mean": 0.33043776170221056,
+          "std": 0.02224486473800785,
+          "min": 0.3001841620626151,
+          "max": 0.3530338849487786,
+          "n_folds": 3
+        },
+        "temperature": {
+          "mean": 0.6786345933593202,
+          "std": 0.05304814152504027,
+          "min": 0.6040153254124419,
+          "max": 0.7226622342689738,
+          "n_folds": 3
+        },
+        "win_cal_ratio": {
+          "mean": 1.0079520693509174,
+          "std": 0.002261453526924081,
+          "min": 1.0057142857142858,
+          "max": 1.011049723756906,
+          "n_folds": 3
+        },
+        "win_ece": {
+          "mean": 0.0005418159688217466,
+          "std": 0.00022908160555546304,
+          "min": 0.0002433733053408928,
+          "max": 0.0008002002771918145,
+          "n_folds": 3
+        },
+        "win_log_loss": {
+          "mean": 3.0729682215919407,
+          "std": 0.09958961588354248,
+          "min": 2.9646278685609126,
+          "max": 3.205073713058903,
+          "n_folds": 3
+        },
+        "winner_capture": {
+          "mean": 0.23593203356339595,
+          "std": 0.027322563855141962,
+          "min": 0.20257826887661143,
+          "max": 0.2695035460992908,
+          "n_folds": 3
+        },
+        "best_iteration": {
+          "mean": 108.66666666666667,
+          "std": 38.42163742245016
+        },
+        "calibrated_temperature": {
+          "mean": 0.6786345933593202,
+          "std": 0.05304814152504027
+        },
+        "n_train_rows": {
+          "mean": 504492.6666666667,
+          "std": 45929.69495024131
+        },
+        "n_train_groups": {
+          "mean": 4450.0,
+          "std": 425.19877704433725
+        }
+      }
+    }
+  }
+}

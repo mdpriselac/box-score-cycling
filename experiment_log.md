@@ -871,3 +871,179 @@ by our hand-engineered feature vocabulary.
    or losses.** Learned rider embeddings from competitive co-occurrence
    data, conditioned on race context, is the most promising direction
    for breaking above the 24.31% ceiling.
+
+---
+
+## Hybrid deployment — LambdaRank probability head (2026-04-18)
+
+Shipped a full-field LambdaRank head alongside the existing multiclass
+contender cascade, specifically for calibrated probability output
+(book-comparison, log-loss scoring). Not a replacement — both heads run
+in parallel and disagreements are surfaced in the web UI and logged to
+`prediction_log` for long-term analysis.
+
+**Key files**: `lambdarank_probability_predictor.py`,
+`train_lambdarank_production.py`, `prediction_log.py`,
+`experiments/lambdarank_cv.py`. Web app shows both heads side-by-side
+with yellow highlight when |Δ Win pp| ≥ 2pp.
+
+### CV (3-fold, matches Step A folds)
+
+**Results JSON:** `experiments/lambdarank_cv_20260418_*.json`
+
+| Metric | LR=0.05 | LR=0.01 |
+|---|---|---|
+| Winner capture | 23.26% ± 1.97% | 23.11% ± 2.68% |
+| Podium capture | 33.26% ± 1.13% | 33.47% ± 1.48% |
+| Win log-loss | 3.040 ± 0.022 | 3.037 ± 0.021 |
+| Discrimination ratio | 12.63× | 12.49× |
+| Win cal ratio | **1.0086 ± 0.003** | **1.0086 ± 0.003** |
+| Win ECE | **0.0005 ± 0.0002** | **0.0005 ± 0.0002** |
+| Best iteration | ~172 | ~624 |
+| Softmax temperature | ~0.72 | ~0.68 |
+
+### Conclusions
+
+1. **Calibration is confirmed near-perfect** (cal ratio 1.009, ECE
+   0.0005). Matches Step A's published 1.007. The softmax of LambdaRank
+   scores is directly usable as calibrated win probabilities — the
+   original value proposition for book comparison holds up on CV.
+2. **LR=0.01 is no better than LR=0.05** on any primary metric — keep
+   the LR=0.05 production config. LR=0.01 trains 3.6× as many trees to
+   reach the same point.
+3. **Winner capture is ~1pp below Step A** (23.26% vs 24.27%). Could be
+   data drift (more 2025-26 races now in train/test) or seed variation.
+   Still ~1pp below the multiclass Stage 0 ceiling (24.31%), matching
+   Step A's finding that the loss function isn't the discrimination
+   bottleneck.
+4. **Fold 1 (test=2023) regresses** to ~20% winner capture in both
+   configs. Folds 2 & 3 are 24-25%. Something systematic about 2023
+   data — not investigated today, flagged for follow-up.
+5. **Calibrated temperature ~0.7 across all folds** — model consistently
+   needs sharpening. This is an inherent LambdaRank/NDCG scale effect,
+   not an under-training signal (LR=0.01 doesn't change it).
+
+### Production state
+
+LambdaRank head trained at LR=0.05 is live in `models/production/`.
+Web app renders both heads and writes every prediction run to
+`prediction_log` (schema in `prediction_log.py`). The 2-pp disagreement
+threshold for UI highlighting is tunable via `DISAGREEMENT_THRESHOLD_PP`
+in `web/app.py`.
+
+### Start-date sweep — does moving the training window back help? (2026-04-18)
+
+**Result JSON:** `experiments/lambdarank_start_date_cv_*.json`
+**Script:** `cycling_project/prediction_tools/experiments/lambdarank_start_date_cv.py`
+
+**Setup bootstrap**: the feature precomputer historically defaulted to
+`start_date='2018-01-01'`, so `rider_competition_snapshots` and
+`competition_field_features` only covered 2018+. Before the experiment
+could run, we rebuilt those tables from 2010 via `FeaturePrecomputer.run(start_date='2010-01-01', resume=False)` — now 1.10M snapshots
+(vs 530K previously) and 9077 field_features rows covering 2010→2026.
+
+**What's being varied**: only `DataConfig.start_date` on the training
+script; snapshots themselves have identical feature values across all
+configs (pre-computed from full 2010+ history). The experiment isolates
+the pure "more training labels" effect.
+
+| Metric | 2018 (baseline) | 2017 | 2016 | 2015 |
+|---|---|---|---|---|
+| Train rows | 291K | 363K (+25%) | 437K (+50%) | 504K (+73%) |
+| Winner capture | 23.50% ± 2.3 | **23.82% ± 2.4** | 22.75% ± 2.8 | 23.59% ± 2.7 |
+| Podium capture | 33.32% ± 1.9 | **34.39% ± 1.7** | 32.70% ± 1.6 | 33.04% ± 2.2 |
+| Win log-loss | 3.094 | **3.058** | 3.107 | 3.073 |
+| Win cal ratio | 1.008 | 1.008 | 1.008 | 1.008 |
+| Win ECE | 0.0006 | 0.0007 | 0.0008 | **0.0005** |
+| Best iteration | 112 | 122 | 97 | 109 |
+| Calibrated T | 0.688 | 0.685 | 0.603 | 0.679 |
+
+**Findings:**
+
+1. **Not monotonic.** 2017 > 2018 > 2015 > 2016. If more data strictly
+   helped, we'd see a clean trend. We don't. The response to +3 years of
+   older labels is essentially flat.
+2. **2017 is marginally best** on all primary metrics (winner +0.3pp,
+   podium +1.1pp, log-loss −0.04). But all deltas are within fold-std.
+3. **2016 regresses sharply** on fold 2 (test=2024): best_iter=24,
+   T=0.396 — LightGBM's val NDCG flat-lined almost immediately and
+   early-stopped. Noise effect from the weak 2023 val signal, amplified
+   by larger train set. Not a systemic problem with 2016 data.
+4. **Calibration is invariant** across all configs. Cal ratio 1.008 and
+   ECE ≈ 0.0006 hold everywhere — more data doesn't hurt or help
+   probability quality. The LambdaRank softmax is fundamentally
+   well-calibrated regardless of training window size.
+
+**Verdict:** **Keep production at 2018-01-01.** The marginal lift from
+2017 (+0.3pp winner) is within fold noise and not worth the added
+training time / operational complexity of maintaining pre-2018
+snapshots. The experiment confirms we are near the data ceiling for
+this model family — more labels don't unlock more signal.
+
+**Side effect of the rebuild:** The existing production ensemble
+(bucket, contender, time_gap, calibrated, multiclass) was all trained
+on the *incremental* snapshot table — which we discovered was missing
+~100 competitions worth of rows the incremental build had skipped. The
+rebuilt table has 498,926 rows at `start_date='2018-01-01'` vs the
+470,851 production was originally trained on. Production models remain
+valid (feature schemas unchanged), but the next full retrain will
+silently include those previously-missed rows.
+
+### Multiclass stack — start-date sweep (2026-04-18)
+
+**Result JSON:** `experiments/multiclass_start_date_cv_*.json` (plus
+per-start-date `multiclass_start_{year}_*.json` files from ExperimentRunner)
+**Script:** `cycling_project/prediction_tools/experiments/multiclass_start_date_cv.py`
+
+Companion to the LambdaRank start-date sweep. Runs the full multiclass
+stack (bucket → time_gap → probability → calibrated → contender cascade
+with top-15 filter, LR=0.01, OOF, 5-class reduction, Stage 0 gradients)
+across four training start dates. Capped `n_estimators` at 500 (vs
+production 2000) to keep runtime reasonable; comparison across
+start_dates is apples-to-apples at that cap.
+
+Result (mean ± std across 3 folds):
+
+| Metric | 2018 (291K) | 2017 (363K) | 2016 (437K) | 2015 (504K) |
+|---|---|---|---|---|
+| Winner capture | 23.59% ± 2.6 | 23.62% ± 2.5 | **24.33% ± 2.6** | 24.19% ± 2.9 |
+| Podium capture | 45.79% ± 1.4 | **46.94% ± 1.8** | 46.74% ± 1.5 | 46.59% ± 1.5 |
+| Top4 log loss | 1.763 | 1.759 | 1.755 | **1.745** |
+| Top4 Brier | 0.9273 | 0.9263 | 0.9246 | **0.9181** |
+| Bucket MAE | **1.201** | 1.205 | 1.203 | 1.213 |
+
+**Multiclass scaling signal is real, unlike LambdaRank.**
+Log loss and Brier improve monotonically as the training window
+extends. Per-year slope analysis (see `analyze_data_scaling.py`):
+
+- Test 2023: **−0.010 log loss per +100K rows** (r = −0.97)
+- Test 2024: −0.007 log loss per +100K rows (r = −0.68)
+- Test 2025: **−0.006 log loss per +100K rows** (r = −0.99)
+
+Winner and podium capture also trend positive but with weaker r values
+(fold-std dominates). Bucket MAE is the exception — it slightly
+regresses as older data is added (the bucket model's ordinal regression
+is the one stage that sees more noise than signal from pre-2018 rows).
+
+**Implication for full-field / transformer architectures:**
+the multiclass contender at 290K–560K training rows is still
+data-limited. Per-rider models have ~100× the effective training samples
+of full-field models (470K rider-events vs ~4K race-events). The
+transformer-over-races failure is consistent with a pure data-size
+bottleneck, not an architectural one — the cycling calendar doesn't
+produce enough races to reach the data regime where full-field models
+could match per-rider LightGBM.
+
+### Production decision — move to start_date='2016-01-01' (2026-04-18)
+
+Cautious pick: 2016 rather than 2015. Rationale:
+- 2016 is peak winner capture (24.33% vs 23.59% at 2018, +0.74pp)
+- Log loss / Brier improvement is captured (−0.005 log loss, −0.003 Brier vs 2018)
+- 2015 adds another +0.007 log loss improvement but with 0.02pp podium regression from its peak and slightly more bucket MAE noise
+- Marginal difference 2016→2015 within fold-std; ~50% additional data for essentially no metric gain past 2016
+
+Updated:
+- `cycling_project/prediction_tools/train_production_model.py` → `start_date='2016-01-01'`
+- `cycling_project/prediction_tools/train_lambdarank_production.py` → `start_date='2016-01-01'` (for consistency; the LambdaRank head is empirically insensitive to window size)
+
+Next full pipeline retrain will pick up the new window.

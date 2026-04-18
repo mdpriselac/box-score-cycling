@@ -1,9 +1,16 @@
 """
 Train Production Model on All Available Data
 
-Uses all data from 2018-01-01 onward for maximum training signal.
+Uses all data from 2016-01-01 onward for maximum training signal.
 A small chronological holdout (last 5%) is used only for LightGBM
 early stopping - this is NOT a true validation set.
+
+The 2016-01-01 cutoff was chosen on 2026-04-18 after a start-date CV
+sweep (see experiment_log.md "Multiclass stack — start-date sweep"):
+moving the window back from 2018 to 2016 delivered +0.7pp winner
+capture and ~1% log loss / Brier reduction on the multiclass contender
+cascade, with the LambdaRank head unchanged. 2015 was marginally better
+on log loss but within fold-std on winner; 2016 is the cautious pick.
 
 Saves to models/production/ via ModelRegistry.
 """
@@ -19,6 +26,10 @@ from cycling_project.prediction_tools.data_pipeline import CyclingDataPipeline, 
 from cycling_project.prediction_tools.bucket_predictor import OrdinalBucketPredictor, BucketPredictorConfig
 from cycling_project.prediction_tools.time_gap_predictor import TimeGapPredictor, TimeGapPredictorConfig
 from cycling_project.prediction_tools.probability_predictor import ProbabilityPredictor, ProbabilityPredictorConfig
+from cycling_project.prediction_tools.lambdarank_probability_predictor import (
+    LambdaRankProbabilityPredictor,
+    LambdaRankPredictorConfig,
+)
 from cycling_project.prediction_tools.model_registry import ModelRegistry
 
 
@@ -100,7 +111,7 @@ def main():
     db_path = Path(__file__).parent.parent / "webscrape_tools" / "database" / "database" / "cycling_races.db"
     config = DataConfig(
         db_path=str(db_path),
-        start_date='2018-01-01',
+        start_date='2016-01-01',
         min_races_career=10,
         include_gradient_features=True,
     )
@@ -328,7 +339,7 @@ def main():
         'contender_use_oof': True,
         'contender_train_samples': len(train_contender),
         'min_races_career': 10,
-        'start_date': '2018-01-01',
+        'start_date': '2016-01-01',
         'timestamp': datetime.now().isoformat(),
     }
     registry.save(

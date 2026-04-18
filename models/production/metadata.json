@@ -157,6 +157,16 @@
     "contender_train_samples": 60900,
     "min_races_career": 10,
     "start_date": "2018-01-01",
-    "timestamp": "2026-04-12T12:50:18.851056"
-  }
+    "timestamp": "2026-04-12T12:50:18.851056",
+    "lambdarank_best_iteration": 153,
+    "lambdarank_n_features": 126,
+    "lambdarank_n_train_groups": 4114,
+    "lambdarank_temperature": 0.6836218154308689,
+    "lambdarank_early_stop_winner_capture": 0.3225806451612903,
+    "lambdarank_early_stop_podium_capture": 0.37634408602150543,
+    "lambdarank_early_stop_win_log_loss": 2.808183591386,
+    "lambdarank_early_stop_win_cal_ratio": 17.206400074433205,
+    "lambdarank_trained_at": "2026-04-18T12:27:34.974512"
+  },
+  "has_lambdarank_model": true
 }

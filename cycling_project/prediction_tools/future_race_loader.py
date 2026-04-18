@@ -851,7 +851,7 @@ def predict_future_race(
 
     # 5. Load production model
     registry = ModelRegistry(model_dir)
-    bucket_pred, time_gap_pred, race_ranker = registry.load_with_ranker(
+    bucket_pred, time_gap_pred, race_ranker, _lambdarank = registry.load_with_ranker(
         ranking_method='expected_bucket'
     )
 

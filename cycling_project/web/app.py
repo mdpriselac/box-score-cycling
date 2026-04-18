@@ -37,9 +37,22 @@ from cycling_project.prediction_tools.future_race_loader import (
     get_default_references,
 )
 from cycling_project.prediction_tools.model_registry import ModelRegistry
+from cycling_project.prediction_tools.prediction_log import (
+    PredictionLogRow,
+    ensure_schema as _ensure_prediction_log_schema,
+    log_predictions,
+)
 
 
 MODEL_DIR = str(Path(__file__).parent.parent.parent / "models" / "production")
+DB_PATH = str(
+    Path(__file__).parent.parent
+    / "webscrape_tools" / "database" / "database" / "cycling_races.db"
+)
+
+# Absolute-percentage-point gap above which we flag a win-probability
+# disagreement between the multiclass and LambdaRank heads in the UI.
+DISAGREEMENT_THRESHOLD_PP = 2.0
 
 
 def _decimal_to_american(d: float) -> str:
@@ -560,17 +573,77 @@ if (
 
         with st.spinner("Loading model and running predictions..."):
             try:
-                # Load model (ensemble gives both bucket + time gap)
+                # Load model (ensemble gives both bucket + time gap,
+                # plus the optional full-field LambdaRank probability head)
                 registry = ModelRegistry(MODEL_DIR)
-                bucket_pred, time_gap_pred, race_ranker = registry.load_with_ranker(
-                    ranking_method='ensemble'
-                )
+                (
+                    bucket_pred,
+                    time_gap_pred,
+                    race_ranker,
+                    lambdarank_pred,
+                ) = registry.load_with_ranker(ranking_method='ensemble')
+                registry_metadata = registry.get_metadata()
+                model_version = registry_metadata.get('saved_at', '')
 
                 # Build name/team lookup
                 name_map = matched.set_index('rider_id')[['rider_name', 'team_name']].to_dict('index')
 
                 all_predictions = {}
                 reference_profiles = []
+                log_rows: list = []
+
+                fc_race_id = str(st.session_state.get('fc_race_id', ''))
+                race_year = st.session_state.get('race_year')
+                stage_hint = st.session_state.get('stage_hint')
+                reference_ids = [int(c) for c in selected_refs.keys()]
+
+                def _attach_lambdarank(result_df: pd.DataFrame, pred_df: pd.DataFrame):
+                    """Merge LambdaRank win/podium probabilities onto result_df.
+
+                    Both columns are aligned on rider_id; silently no-ops
+                    if the LambdaRank head isn't installed in the registry.
+                    """
+                    if lambdarank_pred is None:
+                        return None
+                    # LambdaRank requires competition_id to form the softmax
+                    # denominator. pred_df already has competition_id=0 set
+                    # by assemble_prediction_df, so the whole field forms
+                    # one group (what we want for full-field softmax).
+                    win_p = lambdarank_pred.predict_win_probabilities(pred_df)
+                    podium_p = lambdarank_pred.predict_topk_probabilities(
+                        pred_df, k=3, n_samples=2000
+                    )
+                    lr_df = pd.DataFrame({
+                        'rider_id': pred_df['rider_id'].values,
+                        'lambdarank_win_p': win_p.values,
+                        'lambdarank_podium_p': podium_p.values,
+                    })
+                    result_df['lambdarank_win_p'] = result_df['rider_id'].map(
+                        lr_df.set_index('rider_id')['lambdarank_win_p']
+                    )
+                    result_df['lambdarank_podium_p'] = result_df['rider_id'].map(
+                        lr_df.set_index('rider_id')['lambdarank_podium_p']
+                    )
+                    return float(lambdarank_pred.config.temperature)
+
+                def _append_log_rows(label: str, result_df: pd.DataFrame, lr_temp):
+                    for _, row in result_df.iterrows():
+                        log_rows.append(PredictionLogRow(
+                            fc_race_id=fc_race_id,
+                            year=int(race_year) if race_year else 0,
+                            stage_number=int(stage_hint) if stage_hint else None,
+                            rider_id=int(row['rider_id']),
+                            rider_name=row.get('rider_name'),
+                            reference_comp_ids=reference_ids,
+                            model_version=model_version,
+                            multiclass_win_p=row.get('prob_win'),
+                            multiclass_podium_p=row.get('prob_podium'),
+                            multiclass_top5_p=row.get('prob_top5'),
+                            multiclass_top15_p=row.get('prob_top15'),
+                            lambdarank_win_p=row.get('lambdarank_win_p'),
+                            lambdarank_podium_p=row.get('lambdarank_podium_p'),
+                            lambdarank_temperature=lr_temp,
+                        ))
 
                 for comp_id in selected_refs:
                     profile = get_reference_race_profile(comp_id)
@@ -581,9 +654,11 @@ if (
                     result['team'] = result['rider_id'].map(
                         lambda rid: name_map.get(rid, {}).get('team_name', '')
                     )
+                    lr_temp = _attach_lambdarank(result, pred_df)
 
                     label = f"{profile['competition_name']} ({profile['competition_date']})"
                     all_predictions[label] = result
+                    _append_log_rows(label, result, lr_temp)
 
                 # Average prediction (always, even for 1 race)
                 avg_profile = average_race_profiles(reference_profiles)
@@ -592,13 +667,38 @@ if (
                 result['team'] = result['rider_id'].map(
                     lambda rid: name_map.get(rid, {}).get('team_name', '')
                 )
+                lr_temp = _attach_lambdarank(result, pred_df)
                 all_predictions['Averaged Reference Races'] = result
+                _append_log_rows('Averaged Reference Races', result, lr_temp)
+
+                # Persist to prediction_log (best-effort — never blocks the UI)
+                if log_rows and fc_race_id:
+                    try:
+                        import sqlite3
+                        from cycling_project.prediction_tools.prediction_log import (
+                            resolve_competition_id,
+                        )
+                        with sqlite3.connect(DB_PATH) as conn:
+                            _ensure_prediction_log_schema(conn)
+                            # Fill competition_id for the *target* race if it exists
+                            target_comp_id = resolve_competition_id(
+                                conn,
+                                fc_race_id,
+                                int(race_year) if race_year else 0,
+                                int(stage_hint) if stage_hint else None,
+                            )
+                            for r in log_rows:
+                                r.competition_id = target_comp_id
+                            log_predictions(conn, log_rows)
+                    except Exception as log_exc:
+                        st.warning(f"Prediction log write failed (non-fatal): {log_exc}")
 
                 st.session_state['all_predictions'] = all_predictions
                 st.session_state['reference_profiles'] = reference_profiles
                 st.session_state['_predictions_removed_set'] = set(
                     st.session_state.get('removed_rider_ids', set())
                 )
+                st.session_state['lambdarank_available'] = lambdarank_pred is not None
                 # Clear old actual results when new predictions are run
                 st.session_state.pop('actual_results', None)
                 st.session_state.pop('eval_results', None)
@@ -635,6 +735,8 @@ if (
 
                 # Add cumulative probability columns if available
                 has_probs = 'prob_win' in result.columns
+                has_lambdarank = 'lambdarank_win_p' in result.columns
+
                 if has_probs:
                     cols_to_show.extend(['prob_win', 'prob_podium', 'prob_top5', 'prob_top15'])
                     col_rename.update({
@@ -642,6 +744,12 @@ if (
                         'prob_podium': 'Podium %',
                         'prob_top5': 'Top 5 %',
                         'prob_top15': 'Top 15 %',
+                    })
+                if has_lambdarank:
+                    cols_to_show.extend(['lambdarank_win_p', 'lambdarank_podium_p'])
+                    col_rename.update({
+                        'lambdarank_win_p': 'LR Win %',
+                        'lambdarank_podium_p': 'LR Podium %',
                     })
 
                 display = result[cols_to_show].copy().rename(columns=col_rename)
@@ -655,12 +763,35 @@ if (
                     display['Podium %'] = (result['prob_podium'] * 100).round(1)
                     display['Top 5 %'] = (result['prob_top5'] * 100).round(1)
                     display['Top 15 %'] = (result['prob_top15'] * 100).round(1)
+                if has_lambdarank:
+                    display['LR Win %'] = (result['lambdarank_win_p'] * 100).round(1)
+                    display['LR Podium %'] = (result['lambdarank_podium_p'] * 100).round(1)
+                    # Add disagreement marker column (only shown if both heads present)
+                    win_gap_pp = (
+                        (result['prob_win'] - result['lambdarank_win_p']).abs() * 100
+                    )
+                    display['Δ Win pp'] = win_gap_pp.round(1)
 
-                st.dataframe(
-                    display,
-                    hide_index=True,
-                    width='stretch',
-                )
+                if has_probs and has_lambdarank:
+                    # Highlight rows where the two heads disagree materially on win probability.
+                    def _highlight_disagreement(row):
+                        gap = row.get('Δ Win pp', 0)
+                        if isinstance(gap, (int, float)) and gap >= DISAGREEMENT_THRESHOLD_PP:
+                            return ['background-color: #fff3cd'] * len(row)
+                        return [''] * len(row)
+                    styled = display.style.apply(_highlight_disagreement, axis=1)
+                    st.caption(
+                        f"Rows highlighted where |multiclass Win % − LambdaRank Win %| ≥ "
+                        f"{DISAGREEMENT_THRESHOLD_PP}pp."
+                    )
+                    st.dataframe(styled, hide_index=True, width='stretch')
+                else:
+                    if has_probs and not has_lambdarank:
+                        st.caption(
+                            "LambdaRank probability head not installed. "
+                            "Run `uv run python -m cycling_project.update_pipeline --only train-lambdarank` to add it."
+                        )
+                    st.dataframe(display, hide_index=True, width='stretch')
 
                 # Odds view in expander
                 if has_probs:
