@@ -30,6 +30,7 @@ from cycling_project.prediction_tools.future_race_loader import (
     compute_characteristics_from_results,
     compare_race_characteristics,
     evaluate_predictions_against_actual,
+    evaluate_probability_heads_against_actual,
     get_race_finishing_characteristics,
     compute_profile_scores_from_results,
     detect_stage_race_from_db,
@@ -558,6 +559,46 @@ if (
 ):
     st.header("3. Predictions")
 
+    with st.expander("How these predictions work", expanded=False):
+        st.markdown("""
+Every prediction run produces three kinds of output per rider. They're
+derived from different models and answer slightly different questions.
+
+**Rank order (the default sort)** — produced by the *bucket + time-gap
+ensemble*. The bucket predictor is a LightGBM ordinal regression that
+estimates each rider's finishing bucket (0 = winner, 1 = podium, …,
+6 = finisher). The time-gap predictor estimates seconds behind the
+winner. Combined as an ensemble, they produce the `Predicted Rank`
+column — treat this as "most likely to least likely to do well."
+
+**Win % / Podium % / Top 5 % / Top 15 %** — produced by the *multiclass
+contender cascade*. The bucket predictor first narrows to the top 15
+contenders; then a softmax classifier (5-class reduction: winner,
+podium, top-5, top-15, rest) assigns probabilities to each. This is
+the strongest model we have for *discrimination* — i.e. picking which
+rider from a field will win. Historically it captures ~24% of winners
+in a 130-rider field (vs ~0.8% random baseline).
+
+**LR Win % / LR Podium %** — produced by the *full-field LambdaRank
+probability head*. A single LightGBM model trained with a ranking loss
+(LambdaRank/NDCG); its scores are softmaxed across the entire field
+to produce probabilities. Slightly weaker on discrimination than the
+contender cascade but **near-perfectly calibrated** (mean predicted
+probability ≈ actual frequency). These are the numbers to compare
+against sportsbook-implied odds.
+
+**Δ Win pp** — the absolute gap between the two heads' win
+probabilities. Rows highlighted yellow mean the two heads disagree by
+≥ 2pp on win probability for that rider. Disagreement is interesting:
+one head sees the rider as a stronger or weaker favorite than the
+other. Every prediction run is logged to the `prediction_log` table so
+we can later analyze *which head is right* when they disagree.
+
+**Odds** — simply the reciprocal of each probability, rendered in
+decimal / American / fractional formats. Uses the multiclass
+probabilities by default (the more discriminative head).
+""")
+
     # Warn if startlist changed since last prediction run
     if 'all_predictions' in st.session_state:
         current_removed = st.session_state.get('removed_rider_ids', set())
@@ -702,6 +743,7 @@ if (
                 # Clear old actual results when new predictions are run
                 st.session_state.pop('actual_results', None)
                 st.session_state.pop('eval_results', None)
+                st.session_state.pop('prob_head_eval', None)
 
             except Exception as e:
                 st.error(f"Prediction error: {e}")
@@ -899,6 +941,7 @@ if 'all_predictions' in st.session_state and 'fc_race_id' in st.session_state:
             st.session_state['winning_time'] = winning_time
             # Clear old eval results
             st.session_state.pop('eval_results', None)
+            st.session_state.pop('prob_head_eval', None)
         else:
             st.warning("No results found. The race may not have been completed yet.")
 
@@ -1053,6 +1096,125 @@ if 'all_predictions' in st.session_state and 'fc_race_id' in st.session_state:
                                 else:
                                     st.text(f"  {k}: {v}")
                     st.divider()
+
+        # ── 4e-bis. Probability head comparison ──
+        # Per-prediction, score both probability heads (multiclass cascade
+        # vs LambdaRank) against the actual results. Answers the question
+        # "which probability head was more accurate on THIS race?"
+        st.subheader("Probability Head Comparison")
+        st.caption(
+            "Compares the multiclass cascade's probabilities (Win %, Podium %) "
+            "against the full-field LambdaRank head (LR Win %, LR Podium %) on "
+            "this specific race. Lower log loss and Brier = better; winner "
+            "predicted rank = where the actual winner fell on each head's "
+            "sorted list of riders."
+        )
+
+        if 'prob_head_eval' not in st.session_state:
+            st.session_state['prob_head_eval'] = (
+                evaluate_probability_heads_against_actual(predictions, actual_df)
+            )
+        prob_head_eval = st.session_state['prob_head_eval']
+
+        if not prob_head_eval:
+            st.info(
+                "No probability head metrics available. Either predictions "
+                "don't include both heads, or no riders matched the actual results."
+            )
+        else:
+            # Flat summary table: one row per (prediction, head) with key metrics.
+            rows = []
+            for label, heads in prob_head_eval.items():
+                for head_name, head in heads.items():
+                    if head is None:
+                        continue
+                    pretty_head = {
+                        'multiclass': 'Multiclass cascade',
+                        'lambdarank': 'LambdaRank softmax',
+                    }.get(head_name, head_name)
+                    rows.append({
+                        'Prediction': label,
+                        'Head': pretty_head,
+                        'Winner log loss': f"{head['winner_log_loss']:.3f}"
+                            if pd.notna(head['winner_log_loss']) else '—',
+                        'Winner Brier': f"{head['winner_brier']:.4f}",
+                        'Winner rank': (
+                            f"#{head['winner_predicted_rank']}"
+                            if head['winner_predicted_rank'] is not None else '—'
+                        ),
+                        'Winner p %': (
+                            f"{head['winner_predicted_p'] * 100:.1f}%"
+                            if pd.notna(head['winner_predicted_p']) else '—'
+                        ),
+                        'Podium log loss': f"{head['podium_log_loss']:.3f}"
+                            if pd.notna(head['podium_log_loss']) else '—',
+                        'Podium Brier': f"{head['podium_brier']:.4f}",
+                        'Top-3 overlap': f"{head['top3_overlap']}/3",
+                    })
+            if rows:
+                head_summary_df = pd.DataFrame(rows)
+                st.dataframe(head_summary_df, hide_index=True, width='stretch')
+
+                # Surface who wins the head-to-head on the averaged prediction,
+                # since that's the single-number summary most users look at.
+                avg_label = 'Averaged Reference Races'
+                if avg_label in prob_head_eval:
+                    avg = prob_head_eval[avg_label]
+                    mc = avg.get('multiclass')
+                    lr = avg.get('lambdarank')
+                    if mc and lr:
+                        winner_rank_mc = mc['winner_predicted_rank']
+                        winner_rank_lr = lr['winner_predicted_rank']
+                        winner_p_mc = mc['winner_predicted_p'] * 100
+                        winner_p_lr = lr['winner_predicted_p'] * 100
+
+                        # Pick a narrative based on whichever rank was better.
+                        if winner_rank_mc is not None and winner_rank_lr is not None:
+                            if winner_rank_mc < winner_rank_lr:
+                                verdict = (
+                                    f"On the averaged prediction, the **multiclass cascade** "
+                                    f"was more confident on the actual winner "
+                                    f"(ranked #{winner_rank_mc} at {winner_p_mc:.1f}% "
+                                    f"vs LambdaRank #{winner_rank_lr} at {winner_p_lr:.1f}%)."
+                                )
+                            elif winner_rank_lr < winner_rank_mc:
+                                verdict = (
+                                    f"On the averaged prediction, the **LambdaRank head** "
+                                    f"was more confident on the actual winner "
+                                    f"(ranked #{winner_rank_lr} at {winner_p_lr:.1f}% "
+                                    f"vs multiclass #{winner_rank_mc} at {winner_p_mc:.1f}%)."
+                                )
+                            else:
+                                verdict = (
+                                    f"Both heads ranked the actual winner at "
+                                    f"#{winner_rank_mc} on the averaged prediction "
+                                    f"(multiclass: {winner_p_mc:.1f}%, LambdaRank: {winner_p_lr:.1f}%)."
+                                )
+                            st.info(verdict)
+
+                with st.expander("What do these numbers mean?"):
+                    st.markdown("""
+- **Winner log loss**: `-log(p)` where `p` is the probability that head
+  assigned to the actual winner. Lower is better. A perfectly confident
+  head (`p = 1.0`) scores 0; a head that gave the winner a 10% chance
+  scores 2.30; 5% scores 3.00.
+- **Winner Brier**: mean squared error between the binary winner
+  indicator and the probability assigned to each rider. Lower is
+  better. A head that assigned 1.0 to the winner and 0.0 to everyone
+  else would score 0.
+- **Winner rank**: where the actual winner finished on each head's
+  sorted list of riders (sorted by predicted win probability, highest
+  first). #1 means the head correctly identified the winner.
+- **Winner p %**: the head's predicted win probability for the actual
+  winner. Useful for spotting cases where the model was right about
+  *who* would win but unsure (low p) vs confidently right (high p).
+- **Podium log loss / Brier**: same idea but for the three actual
+  podium finishers and each head's podium probability column.
+- **Top-3 overlap**: how many of each head's top-3-by-win-prob were
+  in the actual top 3. 0/3 means no overlap; 3/3 means a clean sweep.
+                    """)
+            else:
+                st.info("No comparable probability output on these predictions.")
 
         # ── 4f. Race characteristics comparison ──
         winning_time = st.session_state.get('winning_time')

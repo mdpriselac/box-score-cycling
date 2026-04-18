@@ -1551,3 +1551,128 @@ def evaluate_predictions_against_actual(
             results[best_tg].setdefault('best_for', []).append('time_gap')
 
     return results
+
+
+def evaluate_probability_heads_against_actual(
+    predictions_dict: dict,
+    actual_results_df: pd.DataFrame,
+) -> dict:
+    """
+    Per-head probability accuracy on an actual race.
+
+    For each prediction (reference race or average) and each probability
+    head that is present on the result DataFrame, compute:
+      - winner_log_loss: -log(p) assigned to the actual winner
+      - winner_brier:    mean((winner_indicator - p)^2) across all matched riders
+      - winner_predicted_rank: where the actual winner ranked by that head's prob
+      - winner_predicted_p:    probability that head assigned to the actual winner
+      - podium_log_loss, podium_brier: same but for top-3 finishers
+      - top3_overlap: |predicted_top3 ∩ actual_top3|
+
+    Heads currently supported:
+      - "multiclass"  (columns prob_win / prob_podium from the contender cascade)
+      - "lambdarank"  (columns lambdarank_win_p / lambdarank_podium_p)
+
+    A head is skipped (returns None for that label/head) if its columns
+    aren't on the prediction DataFrame (e.g. LambdaRank head not installed
+    in the registry).
+
+    Args:
+        predictions_dict: {label: prediction_df} from web-app session state
+        actual_results_df: DataFrame with rider_id, place
+
+    Returns:
+        {label: {head_name: {metric: value, ...} | None, ...}, ...}
+    """
+    import numpy as np
+
+    out = {}
+
+    needed_cols = {
+        'multiclass': ('prob_win', 'prob_podium'),
+        'lambdarank': ('lambdarank_win_p', 'lambdarank_podium_p'),
+    }
+
+    for label, pred_df in predictions_dict.items():
+        if 'rider_id' not in pred_df.columns or 'rider_id' not in actual_results_df.columns:
+            continue
+
+        merged = pred_df.merge(
+            actual_results_df[['rider_id', 'place']].rename(columns={'place': 'actual_place'}),
+            on='rider_id',
+            how='inner',
+        )
+        if merged.empty or 'actual_place' not in merged.columns:
+            continue
+
+        valid = merged.dropna(subset=['actual_place']).copy()
+        valid['actual_place'] = valid['actual_place'].astype(int)
+        if valid.empty:
+            continue
+
+        is_winner = (valid['actual_place'] == 1).values.astype(float)
+        is_podium = (valid['actual_place'] <= 3).values.astype(float)
+
+        # Actual top-3 rider ids (may include fewer than 3 if ties/missing).
+        actual_top3_ids = set(
+            valid.nsmallest(min(3, (valid['actual_place'] <= 3).sum()), 'actual_place')
+            ['rider_id'].tolist()
+        )
+
+        head_metrics = {}
+        for head, (win_col, podium_col) in needed_cols.items():
+            if win_col not in valid.columns or podium_col not in valid.columns:
+                head_metrics[head] = None
+                continue
+
+            win_p = valid[win_col].astype(float).fillna(1e-12).values
+            podium_p = valid[podium_col].astype(float).fillna(1e-12).values
+
+            # Log loss on the actual winner and brier on the whole field.
+            winner_rows = valid[valid['actual_place'] == 1]
+            if winner_rows.empty:
+                winner_p = float('nan')
+                winner_log_loss = float('nan')
+                winner_rank = None
+            else:
+                winner_p = float(winner_rows.iloc[0][win_col])
+                winner_log_loss = float(-np.log(max(winner_p, 1e-12)))
+                # Rank of actual winner by predicted win prob (1 = predicted most likely).
+                ordered = valid.sort_values(win_col, ascending=False).reset_index(drop=True)
+                winner_rank = int(
+                    ordered.index[ordered['rider_id'] == winner_rows.iloc[0]['rider_id']][0]
+                ) + 1
+
+            win_brier = float(np.mean((is_winner - win_p) ** 2))
+
+            # Podium: average log loss across the three actual podium finishers.
+            podium_rows = valid[valid['actual_place'] <= 3]
+            if podium_rows.empty:
+                podium_log_loss = float('nan')
+            else:
+                pp = podium_rows[podium_col].astype(float).clip(lower=1e-12).values
+                podium_log_loss = float(-np.mean(np.log(pp)))
+
+            podium_brier = float(np.mean((is_podium - podium_p) ** 2))
+
+            # Top-3 predicted by this head; intersection with actual podium.
+            pred_top3_ids = set(
+                valid.nlargest(3, win_col)['rider_id'].tolist()
+            )
+            top3_overlap = len(pred_top3_ids & actual_top3_ids)
+
+            head_metrics[head] = {
+                'winner_log_loss': winner_log_loss,
+                'winner_brier': win_brier,
+                'winner_predicted_rank': winner_rank,
+                'winner_predicted_p': winner_p,
+                'podium_log_loss': podium_log_loss,
+                'podium_brier': podium_brier,
+                'top3_overlap': top3_overlap,
+                'n_matched': int(len(valid)),
+            }
+
+        if head_metrics:
+            out[label] = head_metrics
+
+    return out
