@@ -159,6 +159,62 @@ class FeatureEngineer:
 
         return df
 
+    # Columns that originate as numeric in the DB but can come back as
+    # object dtype if the SQL query returns all-NULL or mixed rows (e.g. a
+    # future race with no field stats yet). Coerced up-front so the many
+    # inline `.fillna(default)` calls below don't trigger pandas' object-
+    # dtype downcasting FutureWarning (pandas >= 2.2).
+    _NUMERIC_INPUT_COLS = (
+        # Rider profile averages
+        'stage_avg_bucket', 'one_day_avg_bucket', 'gc_avg_bucket',
+        'wt_avg_bucket', 'pro_avg_bucket', 'd1_avg_bucket',
+        'sprint_avg_bucket', 'mountain_avg_bucket', 'hilly_avg_bucket',
+        'rolling_avg_bucket', 'breakaway_avg_bucket', 'time_trial_avg_bucket',
+        # Field stats
+        'bucket_mean', 'bucket_median', 'bucket_std', 'bucket_min',
+        'bucket_max', 'bucket_p25', 'bucket_p75',
+        'experience_mean', 'experience_median', 'experience_std',
+        'experience_min', 'experience_max', 'experience_p25', 'experience_p75',
+        'field_size',
+        # Race profile scores
+        'race_sprint_score', 'race_mountain_score', 'race_hilly_score',
+        'race_rolling_score', 'race_breakaway_score', 'race_time_trial_score',
+        # Counts / experience
+        'races_career', 'races_this_year', 'stage_count', 'one_day_count',
+        'gc_count', 'wt_count', 'pro_count', 'd1_count',
+        # Specialist counts
+        'sprinter_count', 'climber_count', 'hilly_specialist_count',
+        'rolling_specialist_count', 'breakaway_specialist_count',
+        'time_trialist_count', 'unknown_profile_count',
+        # Form features
+        'form_recent_avg_bucket', 'form_recent_best_bucket', 'form_recent_count',
+        'form_delta', 'form_profile_recent_avg', 'days_since_last_race',
+        # Team features
+        'team_quality_mean', 'team_quality_median', 'team_quality_std',
+        'team_quality_min', 'team_quality_max', 'team_quality_p25',
+        'team_quality_p75', 'team_size', 'team_depth',
+        # Misc
+        'age', 'team_bib', 'personal_bib',
+        # Stage 0 gradients (also coerced again in apply_imputation, but
+        # create_derived_features may run first via fit_transform)
+        'variance_normalized_slope', 'variance_normalized_volatility',
+        'variance_normalized_monotonicity', 'clumpiness_score_slope',
+        'clumpiness_score_volatility', 'biggest_group_metric_slope',
+        'biggest_group_metric_volatility', 'selection_metric_slope',
+        'selection_metric_volatility', 'gini_coefficient_slope',
+        'skewness_normalized_slope', 'percentile_coverage_ratio',
+        'lowest_valid_percentile', 'highest_null_percentile',
+        'kurtosis_null_percentile', 'variance_zero_percentile',
+        'winning_time', 'abandon_ratio',
+    )
+
+    def _coerce_numeric_inputs(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Coerce known-numeric columns away from object dtype before fillna."""
+        for col in self._NUMERIC_INPUT_COLS:
+            if col in df.columns and df[col].dtype == 'object':
+                df[col] = pd.to_numeric(df[col], errors='coerce')
+        return df
+
     def create_derived_features(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         Add derived features to the dataset.
@@ -166,6 +222,7 @@ class FeatureEngineer:
         Creates features that combine rider, field, and race information.
         """
         df = df.copy()
+        df = self._coerce_numeric_inputs(df)
 
         if not self.config.include_derived_features:
             return df
@@ -358,6 +415,7 @@ class FeatureEngineer:
         Uses patterns from engineering_tools/imputation.py.
         """
         df = df.copy()
+        df = self._coerce_numeric_inputs(df)
 
         # Age imputation by tour level
         if 'age' in df.columns:
@@ -403,9 +461,13 @@ class FeatureEngineer:
             'bucket_p25': 4.0,
             'bucket_p75': 6.0,
         }
+        # Coerce to numeric before fillna so pandas doesn't emit a downcast
+        # FutureWarning when these columns arrive as object dtype (which can
+        # happen when the SQL query returns columns with all-NULL or mixed
+        # rows — e.g. for a future race with no field stats yet).
         for col, default in field_defaults.items():
             if col in df.columns:
-                df[col] = df[col].fillna(default)
+                df[col] = pd.to_numeric(df[col], errors='coerce').fillna(default)
 
         # Specialist counts default to 0
         specialist_cols = [
@@ -415,12 +477,12 @@ class FeatureEngineer:
         ]
         for col in specialist_cols:
             if col in df.columns:
-                df[col] = df[col].fillna(0)
+                df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
 
         # Race profile scores default to 0 (will sum to less than 1 but that's ok)
         profile_cols = [c for c in df.columns if c.startswith('race_') and c.endswith('_score')]
         for col in profile_cols:
-            df[col] = df[col].fillna(0)
+            df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
 
         # Stage 0 gradient / null-marker / race-shape defaults.
         # Only applied when the columns are present (off by default).
@@ -455,7 +517,7 @@ class FeatureEngineer:
         }
         for col, default in gradient_defaults.items():
             if col in df.columns:
-                df[col] = df[col].fillna(default)
+                df[col] = pd.to_numeric(df[col], errors='coerce').fillna(default)
 
         # Stage 1 cluster feature imputation. Clusters are populated only
         # for one-day rows in the DB; stage / gc rows come through the
@@ -501,7 +563,7 @@ class FeatureEngineer:
         }
         for col, default in form_defaults.items():
             if col in df.columns:
-                df[col] = df[col].fillna(default)
+                df[col] = pd.to_numeric(df[col], errors='coerce').fillna(default)
 
         # Team feature imputation
         team_defaults = {
@@ -517,7 +579,7 @@ class FeatureEngineer:
         }
         for col, default in team_defaults.items():
             if col in df.columns:
-                df[col] = df[col].fillna(default)
+                df[col] = pd.to_numeric(df[col], errors='coerce').fillna(default)
 
         return df
 

@@ -348,8 +348,11 @@ class ProbabilityPredictor:
         for col in cumulative.columns:
             label = col.replace('prob_', '')
             prob = cumulative[col].values
-            # Avoid division by zero, cap at MAX_ODDS
-            odds = np.where(prob > 0, 1.0 / prob, MAX_ODDS)
+            # Avoid division by zero, cap at MAX_ODDS. np.where still computes
+            # 1/prob on the zero-prob rows even though the mask discards them,
+            # so suppress the RuntimeWarning with errstate.
+            with np.errstate(divide='ignore', invalid='ignore'):
+                odds = np.where(prob > 0, 1.0 / prob, MAX_ODDS)
             odds = np.minimum(odds, MAX_ODDS)
             result[f'odds_{label}'] = np.round(odds, 2)
 

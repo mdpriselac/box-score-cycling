@@ -200,10 +200,15 @@ class RaceRankingPredictor:
             for label, buckets in CUMULATIVE_LABELS.items():
                 results[f'prob_{label}'] = proba[:, buckets].sum(axis=1)
 
-            # Decimal odds from cumulative probabilities
+            # Decimal odds from cumulative probabilities. np.where evaluates
+            # both branches even on the masked-out elements, so 1/prob_col
+            # would emit a divide-by-zero RuntimeWarning on rows where
+            # prob_col == 0. Suppress with errstate — the where mask already
+            # handles those rows correctly.
             for label in CUMULATIVE_LABELS:
                 prob_col = results[f'prob_{label}'].values
-                odds = np.where(prob_col > 0, 1.0 / prob_col, MAX_ODDS)
+                with np.errstate(divide='ignore', invalid='ignore'):
+                    odds = np.where(prob_col > 0, 1.0 / prob_col, MAX_ODDS)
                 results[f'odds_{label}'] = np.minimum(np.round(odds, 2), MAX_ODDS)
 
         # Sort by ranking score (lower is better)
