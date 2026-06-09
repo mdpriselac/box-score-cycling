@@ -1047,3 +1047,606 @@ Updated:
 - `cycling_project/prediction_tools/train_lambdarank_production.py` → `start_date='2016-01-01'` (for consistency; the LambdaRank head is empirically insensitive to window size)
 
 Next full pipeline retrain will pick up the new window.
+
+---
+
+## Score-level blend — multiclass × LambdaRank (2026-05-04)
+
+**Branch / worktree:** `webscrape-refactor`
+**Result JSON:** `experiments/blend_multiclass_lambdarank_cv_20260504_145332.json`
+**Script:** `cycling_project/prediction_tools/experiments/blend_multiclass_lambdarank_cv.py`
+
+### Motivation
+
+The 2026-04-18 hybrid deployment runs the multiclass contender cascade and
+the full-field LambdaRank head **side-by-side** but never combines them.
+The two heads have known-decorrelated strengths (multiclass: discrimination,
+24.31% winner; LambdaRank: calibration, ~1.009 cal ratio). First experiment
+in the reranking series: does a per-rider linear blend
+`blend_p = w * mc_p + (1-w) * lr_p` improve over either head alone?
+
+### Setup
+
+Same 3 folds as Step A / `lambdarank_cv.py`. Production-aligned configs:
+- Multiclass: top-15, LR=0.01, OOF, 5-class, gradient features (Stage 0),
+  500 estimators, 50 early-stop. Trains bucket → contender (skips
+  time_gap / weighted / calibrated heads).
+- LambdaRank: LR=0.05, 2000 estimators, 300 early-stop, temperature
+  calibrated on val.
+- `start_date='2018-01-01'` for direct comparability with prior CV
+  entries (production has since moved to 2016, but the CV protocol stays
+  at 2018).
+
+`mc_p` is the multiclass contender's `prob_win` (class 0 of the 5-class
+softmax), padded over the full field with 0 for non-contenders, then
+renormalized per race so it sums to 1. `lr_p` is the LambdaRank softmax
+win_p over the full field. Sweep `w ∈ {0.0, 0.1, ..., 1.0}` in steps of 0.1.
+
+### Diagnostics (per fold)
+
+| Fold | Bucket top-15 winner coverage | Within-race Spearman(mc, lr) | LR temperature |
+|---|---|---|---|
+| 2023 | 0.7624 | 0.5956 ± 0.0752 | 0.720 |
+| 2024 | 0.7986 | 0.5641 ± 0.0665 | 0.633 |
+| 2025 | 0.8014 | 0.5901 ± 0.0810 | 0.709 |
+
+The **0.56–0.60 within-race rank correlation** confirms the heads provide
+genuinely different rankings, putting this experiment in the regime where
+a blend *could* help.
+
+The **bucket-coverage row is the ceiling for any contender-style head**:
+~22% of races have the actual winner outside the top-15 by bucket
+regression, so the renormalized multiclass contributes 0 prob to the
+winner in those races (this is what blows up log loss at w=1.0).
+
+### Aggregated sweep (3-fold mean ± std)
+
+| w | winner | podium | log_loss | win_ece |
+|---|---|---|---|---|
+| 0.0 (LR) | 0.2350 ± 0.0231 | 0.3375 ± 0.0197 | 3.0936 ± 0.0594 | 0.0006 |
+| **0.1** | **0.2354** ± 0.0255 | 0.3384 ± 0.0214 | 3.0840 ± 0.0614 | 0.0006 |
+| **0.2** | 0.2341 ± 0.0246 | 0.3396 ± 0.0216 | **3.0821** ± 0.0640 | **0.0006** |
+| 0.3 | 0.2327 ± 0.0251 | 0.3411 ± 0.0200 | 3.0872 ± 0.0670 | 0.0006 |
+| **0.4** | 0.2293 ± 0.0248 | **0.3417** ± 0.0184 | 3.0995 ± 0.0705 | 0.0006 |
+| 0.5 | 0.2263 ± 0.0254 | 0.3375 ± 0.0204 | 3.1200 ± 0.0745 | 0.0007 |
+| 0.6 | 0.2206 ± 0.0214 | 0.3342 ± 0.0212 | 3.1512 ± 0.0794 | 0.0007 |
+| 0.7 | 0.2215 ± 0.0223 | 0.3337 ± 0.0211 | 3.1979 ± 0.0854 | 0.0007 |
+| 0.8 | 0.2190 ± 0.0240 | 0.3334 ± 0.0201 | 3.2712 ± 0.0935 | 0.0007 |
+| 0.9 | 0.2180 ± 0.0247 | 0.3307 ± 0.0211 | 3.4071 ± 0.1067 | 0.0007 |
+| 1.0 (MC) | 0.2217 ± 0.0255 | 0.3272 ± 0.0209 | 7.6464 ± 0.4880 | 0.0021 |
+
+Best w per metric: winner @ 0.1 (0.2354), podium @ 0.4 (0.3417),
+log_loss @ 0.2 (3.0821), ECE @ 0.2 (0.0006).
+
+`win_cal_ratio` is invariant at 1.008 ± 0.002 across all w — by
+construction (both inputs are sums-to-1-per-race, blend is too). Not
+informative for blend selection.
+
+### Per-fold detail
+
+Fold 2023 (the historically anomalous fold) shows pure LR is best at all
+metrics; blend trends slightly down. Folds 2024 and 2025 are where the
+blend lift lives:
+
+**Fold 2024** (704 races, bucket_cov=0.799):
+- Winner: 0.2243 (LR) → **0.2286 @ w=0.1** → 0.2029 (MC) — +0.43pp
+- Podium: 0.3283 (LR) → **0.3412 @ w=0.4** → 0.3288 (MC) — +1.29pp
+- Log loss: 3.120 (LR) → **3.094 @ w=0.2-0.3** → 7.382 (MC)
+
+**Fold 2025** (426 races, bucket_cov=0.801):
+- Winner: 0.2671 (LR) → **0.2695 @ w=0.1** → 0.2577 (MC) — +0.24pp
+- Podium: 0.3649 (LR) → **0.3676 @ w=0.1-0.2** → 0.3519 (MC) — +0.27pp
+- Log loss: 3.012 (LR) → **2.998 @ w=0.2** → 7.227 (MC)
+
+### Why w=1.0 looks much worse than the production multiclass number
+
+The pure-multiclass endpoint here (winner 0.2217, log_loss 7.65) is **not
+comparable** to the existing `probability_contender_top4` numbers
+(winner 0.2431, log_loss ~1.78). Two reasons:
+
+1. **Population**: production multiclass is evaluated *only* on the
+   contender pool (top-15), so its winner_capture is conditional on the
+   bucket filter catching the winner. This experiment evaluates over the
+   full field; in races where the bucket filter misses (~22%), all top-15
+   contenders get `prob_win = 0` after renormalization → winner capture
+   automatically counts as a miss, log loss → ∞ for those rows.
+2. **Probability scale**: log_loss is computed on the *win* probability
+   of the actual winner. Production reports `top4_log_loss` over a
+   different population (rows with `place_bucket ≤ 3`), which is a
+   completely different distribution.
+
+w=1.0 is included as a sanity-check endpoint, not as a production-realistic
+multiclass.
+
+### Verdict
+
+**The blend does not materially improve winner capture.** w=0.1 gives
++0.04pp over pure LR (0.2354 vs 0.2350) — vastly within fold-std (±2.4pp).
+Direction is consistent across folds 2024 and 2025 but lift is ≪ noise.
+
+**Podium and log loss show small consistent gains in the w=0.2–0.4 range:**
+- Podium: +0.42pp (+1.2%) at w=0.4 vs pure LR
+- Log loss: −0.012 (−0.4%) at w=0.2 vs pure LR
+
+Both within fold-std but consistent direction across all 3 folds. Not
+enough lift to justify a production change to a fixed blend.
+
+**Calibration is preserved** for w ≤ 0.5 (ECE ≈ 0.0006). LambdaRank's
+near-perfect calibration is robust to mild multiclass mixing.
+
+### What we learned
+
+1. **The two heads are providing genuinely orthogonal signal at the
+   ranking level** (within-race Spearman ~0.58). They disagree on
+   ordering — but they tend to agree on the top-1 pick. The simple
+   linear-prob blend can't extract winner-capture lift from this
+   orthogonality because the disagreements are mostly in positions 2-N,
+   not at the top.
+
+2. **Linear-prob blending is ruled out as a winner-capture lever.** Any
+   future experiment that hopes to combine the two heads needs a more
+   flexible aggregator that can route by context (e.g., trust LR more on
+   bunch finishes, MC more on small fields).
+
+3. **The 22% of races where the bucket filter misses the winner remain
+   the structural ceiling for any contender-cascade head.** A meta-learner
+   that gets multiclass + LambdaRank + bucket + time_gap as inputs has
+   genuine ground to make up here, since LambdaRank already does well on
+   those races where bucket misses.
+
+4. **Calibration robustness is a free benefit of any blend below ~50%
+   multiclass.** ECE doesn't move; cal ratio is invariant. So a blend at
+   w=0.2-0.3 is a "no-regret" config for sportsbook odds output if we
+   ever wanted to commit to a single number — small log-loss improvement
+   without giving up calibration.
+
+### Next direction
+
+The original plan flagged the **stacked meta-learner** (Approach F from
+`model_specialization_plan.md`) as the next bigger swing. It uses all
+four outputs (bucket, time_gap, multiclass probs, LambdaRank score) plus
+race context and can learn context-dependent routing. The 0.58 within-race
+correlation between mc and lr suggests there *is* unblendable signal in
+their disagreements that a non-linear aggregator might extract.
+
+Linear-prob blend is shelved.
+
+---
+
+## Stacked meta-learner — augmented contender (+ time-gap OOF + LambdaRank OOF) (2026-05-04)
+
+**Branch / worktree:** `webscrape-refactor`
+**Result JSON:** `experiments/stacked_meta_learner_cv_20260504_152931.json`
+**Script:** `cycling_project/prediction_tools/experiments/stacked_meta_learner_cv.py`
+**Runtime:** 20.3 min
+
+### Motivation
+
+The linear-prob blend (2026-05-04) showed mc and lr are decorrelated within
+race (Spearman ~0.58) but linear blending couldn't extract winner-capture
+lift. A non-linear aggregator should fare better — it can route by
+context. This is the original Approach F from `model_specialization_plan.md`.
+
+### Setup
+
+Augment the production contender (top-15, LR=0.01, OOF, 5-class, gradient
+features) with two OOF base-model features:
+
+- `oof_time_gap_pred`: predicted seconds behind winner from a `TimeGapPredictor`
+- `oof_lambdarank_win_p`: per-race calibrated softmax win probability from
+  a full-field `LambdaRankProbabilityPredictor`
+
+Both generated via 5-fold temporal CV on the training data (each sub-fold
+trains on 4/5 of train, predicts on held-out 1/5). Val rows use
+predictions from main models trained on full train (with val for early
+stopping). Test rows likewise. Same 3-fold CV protocol as
+`multiclass_start_date_cv.py` (uncapped test, `start_date='2018-01-01'`),
+making the baseline numbers directly comparable to historic Stage 0.
+
+Baseline trains on the original 126 features; meta on 128 (+ 2 OOF) → 129
+total inside the contender (counting `classifier_expected_bucket` added
+internally). Both contenders trained on the same train/val/test slices
+within each outer fold for paired comparison.
+
+### Aggregated 3-fold results (mean ± std)
+
+| Metric | Baseline | Meta | Δ paired |
+|---|---|---|---|
+| **race_winner_capture_rate** | 0.2385 ± 0.0261 | **0.2535 ± 0.0379** | **+0.0150 ± 0.0155** |
+| race_podium_capture_rate | 0.4595 ± 0.0150 | 0.4619 ± 0.0141 | +0.0024 ± 0.0014 |
+| top4_log_loss | 1.7626 ± 0.0081 | 1.7596 ± 0.0096 | -0.0030 ± 0.0082 |
+| top4_brier | 0.9270 ± 0.0039 | 0.9280 ± 0.0070 | +0.0010 ± 0.0071 |
+| win_cal_ratio | 0.9866 ± 0.0353 | 0.9634 ± 0.0262 | -0.0232 ± 0.0147 |
+| podium_cal_ratio | 1.0064 ± 0.0364 | 0.9912 ± 0.0312 | -0.0152 ± 0.0052 |
+
+### Per-fold deltas
+
+| Fold (test=) | Δ winner | Δ podium | Δ log_loss |
+|---|---|---|---|
+| 2023+ | **+0.0107** | +0.0029 | -0.0069 |
+| 2024+ | -0.0015 | +0.0038 | -0.0104 |
+| 2025+ | **+0.0358** | +0.0005 | +0.0083 |
+
+Fold 3 (test=2025+) drives most of the winner-capture lift: meta jumps
+from 26.99% → 30.57%. Fold 1 (test=2023+) shows a +1.07pp lift on the
+hardest fold. Fold 2 is essentially flat (-0.15pp, noise).
+
+Mean paired Δ winner = +1.50pp with std 1.55pp across 3 folds. Standard
+error 0.90pp → t-stat 1.67 (n=3). **Suggestive but not statistically
+significant at this sample size.** Direction is positive in 2 of 3 folds.
+
+### Meta feature importance — both new features dominate
+
+In **all 3 folds**, the new OOF features rank #2 and #3 by gain:
+
+| Feature | Mean rank | Min rank | Max rank | Mean gain |
+|---|---|---|---|---|
+| `oof_lambdarank_win_p` | **#2.0** | #2 | #2 | 79,581 |
+| `oof_time_gap_pred` | **#3.0** | #3 | #3 | 34,670 |
+
+For context, fold 3's top-10 meta features:
+
+```
+ 1. classifier_expected_bucket           gain=207,122  (vs 227,864 baseline)
+ 2. oof_lambdarank_win_p                 gain= 82,386  (NEW)
+ 3. oof_time_gap_pred                    gain= 41,392  (NEW)
+ 4. profile_weighted_expected            gain= 30,525  (vs 36,675 baseline)
+ 5. mountain_vs_career_gap               gain= 27,285
+ 6. time_trial_avg_bucket                gain= 25,747
+ 7. type_experience_ratio                gain= 24,031
+ 8. skewness_normalized_slope            gain= 23,649
+ 9. form_vs_field_gap                    gain= 23,503
+10. form_delta                           gain= 23,383
+```
+
+The new features slot in below the bucket prediction (#1) but above
+`profile_weighted_expected` (the previous #2), without dethroning the
+bucket head. They're carrying **independent signal** the contender
+couldn't reach with the 126-feature input alone — exactly the
+orthogonal-signal hypothesis from the linear-blend diagnostic.
+
+### Why this works where linear blending didn't
+
+The linear-prob blend had access to lr_p as a global mixing weight only
+(`blend = w * mc + (1-w) * lr` with a single fold-level `w`). The tree-based
+meta-learner can split on `oof_lambdarank_win_p` conditionally — e.g.,
+"if mountain stage AND form is high AND lr_p > X, predict winner with
+higher confidence." That kind of contextual routing is what the 0.58
+within-race Spearman between mc and lr was hinting at: the heads agree
+on average but disagree under specific conditions, and a tree can learn
+which conditions.
+
+### Cost: calibration regression
+
+`win_cal_ratio` drops 0.987 → 0.963 (paired Δ -0.023). The meta contender
+becomes mildly under-confident on its top picks. Same direction for
+`podium_cal_ratio` (1.006 → 0.991). This is fixable via temperature refit
+on val (the contender already does this; the regression is despite that).
+A more flexible Platt rescale would likely close the gap.
+
+### Verdict
+
+**Promising, not conclusive.** Direction is positive across 4 of 5
+primary discrimination metrics, the lift is materially larger than the
+linear blend (+1.50pp vs +0.04pp paired winner), and the new features
+are unambiguously useful (rank #2 and #3 in every fold). But n=3 folds
+gives too-wide error bars — the +1.50pp lift is within noise (std 1.55pp).
+
+Before any production decision, this needs:
+1. **More folds**: 5-fold CV with the same protocol to tighten error bars,
+   or a paired-bootstrap on the existing fold predictions
+2. **Production config check**: re-run at `start_date='2016-01-01'`
+   (current production) and `n_estimators=2000` to confirm the lift
+   isn't a 2018-window or 500-tree artifact
+3. **Calibration fix**: temperature recalibration on val with the new
+   features, or a Platt-style rescale, to recover the cal_ratio
+4. **Ablation**: meta with only `oof_lambdarank_win_p`, only
+   `oof_time_gap_pred`, both — to know which feature drives the lift
+   (LR's gain is ~2.3× time-gap's, so LR likely dominates)
+
+### What we learned
+
+1. **The orthogonal mc/lr signal IS extractable** — but only with a
+   non-linear aggregator. Linear blend couldn't, tree-based meta-learner
+   can. This validates the path forward for any future stacking work.
+2. **Time-gap is a real meta-signal** despite being a regression on a
+   different target than buckets. Predicted seconds carries information
+   about race shape (selective vs bunch finish) that the contender
+   benefits from.
+3. **The bucket regression is still the dominant feature**, and that's
+   the right architecture: filter to top-15 with bucket, then refine
+   within the contender pool using bucket prediction + LR + time-gap +
+   126 base features.
+4. **Production retraining of just the contender + base feature
+   predictors is sufficient** — no model architecture change required.
+   The meta contender is a drop-in replacement for the existing
+   contender stage.
+
+### Next steps (if pursuing)
+
+A confirmatory 5-fold run at `start_date='2016-01-01'` with
+`n_estimators=2000` is the cheapest way to settle whether to ship.
+Estimated runtime: ~50 min (extrapolating from this 20 min run).
+Calibration refit is a small change once the production config is
+confirmed. Ablation can run in parallel.
+
+---
+
+## Stacked meta-learner — 5-fold confirmatory run at production start_date (2026-05-04)
+
+**Branch / worktree:** `webscrape-refactor`
+**Result JSON:** `experiments/stacked_meta_learner_cv_5fold_20260504_161559.json`
+**Script:** `cycling_project/prediction_tools/experiments/stacked_meta_learner_cv_5fold.py`
+**Runtime:** 39.6 min
+
+### Outcome: the 3-fold lift does not replicate
+
+Same architecture (augmented contender + 2 OOF features), now at 5-fold
+expanding-window CV (test years 2021-2025) with `start_date='2016-01-01'`
+matching production. n_estimators=500 to match the 3-fold for direct
+comparability.
+
+| Metric | Baseline | Meta | Δ paired (5-fold) | Δ paired (3-fold prior) |
+|---|---|---|---|---|
+| Winner capture | 0.2336 ± 0.0229 | 0.2363 ± 0.0259 | **+0.0027 ± 0.0061** | +0.0150 ± 0.0155 |
+| Podium capture | 0.4590 ± 0.0173 | 0.4547 ± 0.0145 | -0.0043 ± 0.0094 | +0.0024 ± 0.0014 |
+| Top4 log loss | 1.7559 ± 0.0044 | 1.7501 ± 0.0084 | -0.0058 ± 0.0123 | -0.0030 ± 0.0082 |
+| Top4 Brier | 0.9219 ± 0.0033 | 0.9198 ± 0.0058 | -0.0022 ± 0.0064 | +0.0010 ± 0.0071 |
+| Win cal ratio | 0.9882 ± 0.0350 | 1.0018 ± 0.0605 | +0.0136 ± 0.0460 | -0.0232 ± 0.0147 |
+| Podium cal ratio | 1.0094 ± 0.0258 | 1.0063 ± 0.0487 | -0.0031 ± 0.0401 | -0.0152 ± 0.0052 |
+
+**Winner capture: +0.27pp paired (was +1.50pp at 3-fold).** t-stat
+0.27 / (0.61/√5) = 0.99. Solidly within noise.
+
+### Per-fold deltas
+
+| Fold (test=) | Δ winner | Δ podium | Δ log_loss |
+|---|---|---|---|
+| 2021+ | -0.0018 | +0.0010 | -0.0086 |
+| 2022+ | -0.0013 | -0.0050 | -0.0144 |
+| 2023+ | **-0.0021** (was +0.0107 at 2018-start) | -0.0098 | -0.0083 |
+| 2024+ | **+0.0136** (was -0.0015 at 2018-start) | +0.0098 | -0.0155 |
+| 2025+ | **+0.0049** (was +0.0358 at 2018-start) | -0.0177 | +0.0181 |
+
+The matched test years swing wildly between the 2018-start (3-fold) and
+2016-start (5-fold) runs:
+- **2023**: +1.07pp → -0.21pp
+- **2024**: -0.15pp → +1.36pp
+- **2025**: +3.58pp → +0.49pp
+
+The 3-fold's headline +1.50pp lift was driven primarily by the 2025-fold
++3.58pp result, which collapses to +0.49pp at the production start_date.
+The two new folds added at 5-fold (2021, 2022) both show small negative
+winner deltas. The signal is fold-dependent and not robust to data
+window choice.
+
+### What stays robust
+
+**Meta features still rank #2 and #3 across all 5 folds:**
+
+| Feature | Mean rank | Min rank | Max rank | Mean gain |
+|---|---|---|---|---|
+| `oof_lambdarank_win_p` | **#2.0** | #2 | #2 | 98,930 |
+| `oof_time_gap_pred` | **#3.0** | #3 | #3 | 43,613 |
+
+The model **wants** these features and uses them heavily. Their
+information just doesn't translate into argmax-level winner-capture lift
+on most folds.
+
+**Log loss improves consistently** — 4 of 5 folds show -0.008 to -0.016
+improvement, with one regressing fold (2025, +0.018). Mean -0.006 across
+5 folds. Real but small.
+
+### Why the disconnect between feature importance and winner capture?
+
+Hypothesis: the meta features sharpen the contender's **probability
+estimates** without changing the **argmax** much. Same rider gets picked
+#1, but with slightly different probability mass — visible in log loss
+improvement but invisible in winner-capture rate. For applications that
+care about probability calibration (sportsbook comparison) this is a
+small win. For applications that care about top-1 picks (ranking
+display) it's a wash.
+
+The 0.58 within-race Spearman correlation between mc and lr always meant
+the disagreements would be in positions 2-N more than position 1. That
+turns out to translate to log-loss / Brier improvements rather than
+winner-capture lift.
+
+### Verdict — meta-learner shelved
+
+**Do not ship.** The 5-fold result shows winner capture lift is within
+noise (+0.27pp ± 0.61pp). The 3-fold result that motivated the
+confirmatory run was driven by a single anomalous fold-year and does not
+generalize to 5-fold or to the production training window.
+
+The architectural insight stands: tree-based stacking *can* extract
+orthogonal signal that linear blending can't (the meta features rank #2
+and #3 in *every* fold across both runs). But the magnitude here — a
+~0.3% log-loss improvement with no winner-capture signal — does not
+justify the operational complexity of OOF generation in the production
+pipeline.
+
+### What we learned (preserving for future work)
+
+1. **n=3 paired CV is too small to settle directional questions.** The
+   3-fold +1.50pp paired delta with std 1.55pp looked promising but
+   evaporated at n=5. Future stacking / ensembling experiments should
+   start at n=5 minimum if the goal is a ship/no-ship decision.
+2. **start_date matters as much as the architecture.** The production
+   2016-start baseline is stronger than the 2018-start one (more data
+   helps), which leaves less marginal room for the meta-learner to
+   improve. Experiments at 2018-start may overestimate lifts that
+   evaporate at production scale.
+3. **Probability quality vs argmax quality are different things.** Meta
+   features can sharpen probability estimates (log loss, Brier, ECE)
+   without affecting top-1 picks (winner_capture). For book-comparison
+   workflows this is still small but real. For ranking workflows it's
+   not actionable.
+4. **The orthogonal mc/lr signal is real but operationally limited.**
+   Both linear blend (2026-05-04 falsified) and tree stacking (this run
+   falsified for winner capture) can use the signal, but the lift on
+   primary discrimination metrics is bounded by ~0.3% log loss / +0.3pp
+   winner. The 24-25% winner-capture ceiling stands.
+
+### Next direction
+
+Drop the meta-learner. Move forward with the queued backlog:
+1. Richer rider form/recent-history features (`future_work_form_metrics.md`)
+2. Specialist detection in noisy profiles (`specialist_detection_ideas.md`)
+3. Rider volatility features, IRT sample weighting (`pipeline_enhancements.md`)
+4. Investigate the 2023 CV fold anomaly (LambdaRank-specific drop)
+
+The hybrid LambdaRank deployment continues to be the right architecture
+for this project: multiclass for ranking, LambdaRank for calibrated
+probabilities, both surfaced side-by-side in the web app. The
+meta-learner experiment confirmed that combining them via a single
+stacked head doesn't unlock additional value beyond the parallel
+deployment.
+
+## Stage-race state features — within-race GC/form/fatigue state (2026-06-09)
+
+Phase 1 of `stage_race_dynamics_plan.md`. Every prior experiment fed the
+models pre-race history only; a stage-15 row was predicted blind to the
+14 stages already raced. This run adds 22 within-race state features +
+a missing-flag to stage rows: reconstructed GC standings (rank, gaps,
+leader/team flags), in-race stage form (last/best/mean stage results so
+far), fatigue/progress (stages completed, % complete, post-rest-day,
+field attrition), and tactical freedom (10-minutes-down flag, lost big
+time yesterday).
+
+### Data foundation
+
+New `rider_race_state` table (804,482 rows, 1,088 stage races 2010+),
+built by `engineering_tools/stage_race_state.py`. GC standings are
+reconstructed as cumulative stage time (winning_time + time_gap summed
+over completed stages), tie-broken by countback (mean stage place) so
+ranks are strict. Validation against stored final GCs: median top-10 gap
+error 10s (bonus seconds), ~72s worst case over a Grand Tour; races
+disagreeing by >120s mean (data corruption, e.g. Tour de Wallonie 2024
+at 7,951s) are excluded by a sanity guard — 11 suspect + 46 truncated
+races write no state and silently fall back to pre-race behavior.
+State coverage on stage rows: 81.6% (remainder = stage-1 rows, coverage
+gaps, suspect races). Run on the post-dedupe DB (30 duplicate 2024
+races removed same day — all numbers here are post-dedupe baselines).
+
+### Setup
+
+Production contender config (top-15, LR 0.01, OOF, 5-class, gradients;
+n_estimators 500), start_date 2016-01-01, 5-fold expanding-window CV
+(test years 2021-2025), identical row sets for both variants (state
+columns dropped for baseline). Stage rows only get state; gc/one-day
+rows keep pre-race features (Phase 2 owns the GC head). Evaluation
+stratified by stage sequence; stage_1 / one_day / gc are controls (no
+state by construction).
+
+### Results (paired Δ state − baseline, mean ± fold std, n=5)
+
+| Stratum | winner Δ | podium Δ | log loss Δ | brier Δ |
+|---|---|---|---|---|
+| **all** | **+0.50pp ± 0.29** | +0.06pp | **−0.019 ± 0.022** | −0.012 |
+| stage_all | +0.40pp ± 0.59 | −0.01pp | **−0.033 ± 0.016** | −0.021 |
+| stage_1 (control) | +1.09pp ± 2.66 | **−2.35pp ± 1.27** | +0.033 ± 0.028 | +0.020 |
+| stage_2_3 | +0.61pp ± 0.82 | −0.20pp | −0.034 ± 0.015 | −0.024 |
+| stage_4_9 | +0.13pp ± 0.54 | +0.57pp | **−0.051 ± 0.015** | −0.031 |
+| stage_10_plus | −0.28pp ± 2.21 | **+3.16pp ± 3.63** | −0.048 ± 0.024 | −0.025 |
+| one_day (control) | +0.52pp ± 2.10 | +0.29pp | +0.015 ± 0.038 | +0.011 |
+| gc (control, n=4 folds) | +1.48pp ± 2.11 | +0.26pp | +0.019 ± 0.034 | +0.010 |
+
+Per-fold [all] winner deltas: +0.64, +0.04, +0.30, +0.86, +0.65 —
+**positive in 5 of 5 folds** (the stacked meta-learner, by comparison,
+was +0.27 ± 0.61 and got shelved). Per-fold stage_all log loss deltas:
+−0.002, −0.046, −0.045, −0.036, −0.034 — improvement in 5/5.
+
+### What the strata say
+
+1. **The log-loss dose-response is the signature of real signal**:
+   stage_1 +0.033 (no state) → stage_2_3 −0.034 → stage_4_9 −0.051 →
+   stage_10_plus −0.048. Probability quality improves exactly where
+   state information exists, and scales with how much of the race has
+   been observed. This is 5-8× the meta-learner's log-loss effect.
+2. **Winner capture improves overall (+0.50pp, all folds) but isn't
+   concentrated late-race** — argmax picks change less than the
+   probability mass around them. Same probability-vs-argmax split the
+   meta-learner taught us, but with a winner lift that actually clears
+   fold noise this time.
+3. **stage_10_plus podium +3.2pp** (GT third weeks) is the most
+   tantalizing cell but sits on 34-174 competitions/fold — directional,
+   not conclusive.
+4. **Feature importance**: gc_rank_current ranks #9-#45 (median ~#22),
+   then gc_rank_pctile, last_stage_pctile, mean_stage_pctile_so_far,
+   gc_gap_to_rank10_s around #42-#70 of 150. Used, not dominant.
+5. **Costs**: win_cal_ratio dips ~−0.04 (0.99→0.95 overall, −0.07 on
+   stage_4_9) — same direction as the gradient-features tradeoff
+   (0.911→0.866) that we shipped and later fixed with the LambdaRank
+   head. And the stage_1 control regresses (podium −2.35pp ± 1.27,
+   consistent) — the imputed neutral defaults appear to pollute splits
+   shared between no-state and with-state rows (training interference,
+   not leakage; stage-1 rows carry no state information to leak).
+
+### Verdict — gate PASSED, one refinement run before integration
+
+Ship-gate criteria from the plan: winner lift clearing fold noise OR
+consistent podium+log-loss improvement without winner regression. The
+all-rows winner lift (+0.50pp ± 0.29, 5/5 folds positive) and the
+stage-row log-loss improvement (−0.033, 5/5 folds) both qualify. This is
+the first experiment since Stage-0 gradients to move winner capture
+beyond fold noise — consistent with the thesis that new *information*
+beats new *architecture* on this problem.
+
+Before production integration, one targeted refinement: the stage-1
+regression implicates the neutral-default imputation. A variant leaving
+missing state as NaN (LightGBM routes missing down its own branch at
+every split — exactly the isolation the missing-flag alone isn't
+providing) directly tests the identified mechanism. If it removes the
+stage-1/one-day regression while keeping stage-2+ gains, integrate that;
+otherwise integrate v1 as-is (the all-rows aggregate already nets
+positive).
+
+Results JSON: `experiments/stage_state_features_cv_20260609_134033.json`
+
+### NaN-imputation variant (same day follow-up)
+
+The stage-1 interference hypothesis predicted that leaving missing state
+as NaN (LightGBM native missing routing) instead of neutral defaults
+would remove the stage-1 control regression. Run with identical config
+(`--state-nan`, JSON: `experiments/stage_state_features_cv_nan_20260609_141328.json`):
+
+| Δ vs baseline | neutral defaults (v1) | NaN mode |
+|---|---|---|
+| all winner | **+0.50pp ± 0.29 (5/5 folds)** | +0.21pp ± 0.38 |
+| stage_all winner | +0.40pp ± 0.59 | −0.07pp ± 0.65 |
+| stage_all log loss | −0.033 ± 0.016 | **−0.040 ± 0.016** |
+| stage_4_9 log loss | −0.051 | **−0.060** |
+| stage_1 podium (control) | −2.35pp ± 1.27 | −2.17pp ± 2.52 |
+| stage_10_plus winner | −0.28pp ± 2.21 | −1.90pp ± 0.83 |
+
+Findings:
+
+1. **The stage-1 regression survives NaN routing** (−2.2pp podium either
+   way) — so it is NOT an imputation artifact. It's the intrinsic cost of
+   the model reallocating capacity toward state features that pay off on
+   the 82% of stage rows that have state. Hypothesis falsified.
+2. **NaN mode trades winner capture for probability quality**: log
+   loss/Brier improve further everywhere, but the all-rows winner lift
+   drops below noise and stages-10+ winner goes consistently negative.
+   Probability mass sharpens; argmax picks suffer.
+3. Per the pre-registered rule (and winner capture being the primary
+   metric): **integrate v1 (neutral defaults)**. NaN mode is worth
+   revisiting if a calibrated-probability-first head (LambdaRank +
+   state) is built later.
+
+### Integration-order constraint (important)
+
+The CV gains exist only where state is available. A state-trained model
+fed all-NaN/default state behaves like the stage_1 stratum — slightly
+WORSE than baseline. The web app's future-race frames currently carry no
+state columns, so flipping production training on before inference can
+attach real state would degrade live predictions, not improve them.
+
+Ship order is therefore: (1) plumbing with flag off — TrainingConfig
+pass-through, weekly pipeline step keeping rider_race_state fresh;
+(2) inference-side state attachment for ongoing stage races (Phase 3
+lite: compute state from completed stages via the same
+compute_race_state code path, defaults for everything else);
+(3) only then flip include_race_state=True in production training and
+retrain. Steps tracked in stage_race_dynamics_plan.md.

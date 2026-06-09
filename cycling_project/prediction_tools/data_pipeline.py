@@ -51,6 +51,14 @@ class DataConfig:
     include_race_clusters: bool = False
     cluster_variant: str = 'joint'
     current_fold_label: Optional[str] = None
+    # Stage-race state: optionally include within-race state features from
+    # rider_race_state (current GC standings, in-race stage form, fatigue,
+    # tactical flags — all strictly from stages completed BEFORE the target
+    # stage). Joined for competition_type='stage' rows only; stage-1 rows,
+    # one-day races, gc rows and riders without complete prior-stage coverage
+    # come through NULL and feature_engineering imputes neutral defaults plus
+    # a race_state_missing flag. Off by default so production is unchanged.
+    include_race_state: bool = False
 
 
 class CyclingDataPipeline:
@@ -146,6 +154,23 @@ class CyclingDataPipeline:
     # Clusters are stored only for one_day rows; stage / gc rows produce
     # NULL on the LEFT JOIN and feature_engineering imputes those to 0.
     MAX_CLUSTERS = 12
+
+    # Stage-race state features from rider_race_state (only used when
+    # config.include_race_state=True). Must stay in sync with
+    # engineering_tools.stage_race_state.STATE_FEATURE_COLUMNS (unit-tested);
+    # duplicated here so prediction_tools stays free of engineering_tools
+    # imports, matching the gradient-feature pattern above.
+    RACE_STATE_FEATURE_COLS = [
+        'gc_rank_current', 'gc_gap_to_leader_s', 'gc_gap_to_podium_s',
+        'gc_gap_to_rank10_s', 'gc_rank_pctile', 'is_race_leader',
+        'team_best_gc_rank', 'is_team_gc_leader', 'teammates_top10_count',
+        'team_has_gc_top5',
+        'last_stage_bucket', 'last_stage_pctile', 'best_stage_bucket_so_far',
+        'mean_stage_pctile_so_far', 'stage_top10_count_so_far',
+        'stages_completed', 'pct_race_complete', 'cum_time_raced_s',
+        'is_post_rest_day', 'field_attrition',
+        'gc_gap_gt_10min', 'lost_big_time_last_stage',
+    ]
 
     METADATA_COLS = [
         'competition_id', 'competition_name', 'competition_date',
@@ -316,6 +341,36 @@ class CyclingDataPipeline:
         )
         return select_fragment, join_fragment
 
+    def _build_race_state_clauses(self) -> Tuple[str, str]:
+        """
+        Build SELECT and JOIN fragments for stage-race state features.
+
+        Returns ('', '') when include_race_state is off. When on, pulls the
+        22 state columns plus a derived race_state_missing flag. The JOIN is
+        restricted to competition_type='stage' rows (Phase 1: gc rows keep
+        their pre-race behavior; the mid-race GC head is a separate model),
+        and is LEFT so rows without state — stage 1, one-day, gc, riders
+        without complete prior-stage coverage, suspect races — come through
+        as NULL with the flag set.
+        """
+        if not self.config.include_race_state:
+            return '', ''
+
+        state_parts = [f'rrs.{c}' for c in self.RACE_STATE_FEATURE_COLS]
+        state_parts.append(
+            '(CASE WHEN rrs.competition_id IS NULL THEN 1 ELSE 0 END) '
+            'AS race_state_missing'
+        )
+        select_fragment = ', '.join(state_parts)
+
+        join_fragment = (
+            "LEFT JOIN rider_race_state rrs "
+            "ON rrs.rider_id = rcs.rider_id "
+            "AND rrs.competition_id = cff.competition_id "
+            "AND cff.competition_type = 'stage'"
+        )
+        return select_fragment, join_fragment
+
     def _build_training_query(
         self,
         target: str,
@@ -343,6 +398,12 @@ class CyclingDataPipeline:
         cluster_select, cluster_join = self._build_cluster_clauses()
         cluster_select_line = (
             f',\n            {cluster_select}' if cluster_select else ''
+        )
+
+        # Stage-race state features (empty strings when flag is off)
+        state_select, state_join = self._build_race_state_clauses()
+        state_select_line = (
+            f',\n            {state_select}' if state_select else ''
         )
 
         # Target columns
@@ -381,7 +442,7 @@ class CyclingDataPipeline:
             {field_cols},
             {profile_cols},
             {metadata_cols},
-            {target_cols}{gradient_select_line}{cluster_select_line}
+            {target_cols}{gradient_select_line}{cluster_select_line}{state_select_line}
         FROM rider_competition_snapshots rcs
         JOIN competition_field_features cff
             ON rcs.competition_id = cff.competition_id
@@ -390,6 +451,7 @@ class CyclingDataPipeline:
             AND rcs.competition_id = rr.competition_id
         {gradient_join}
         {cluster_join}
+        {state_join}
         WHERE {where_clause}
         ORDER BY cff.competition_date, cff.competition_id, rcs.rider_id
         """
@@ -469,13 +531,19 @@ class CyclingDataPipeline:
                 f',\n                {cluster_select}' if cluster_select else ''
             )
 
+            # Stage-race state features (empty strings when flag is off)
+            state_select, state_join = self._build_race_state_clauses()
+            state_select_line = (
+                f',\n                {state_select}' if state_select else ''
+            )
+
             query = f"""
             SELECT
                 {rider_cols},
                 {field_cols},
                 {profile_cols},
                 {metadata_cols}
-                {target_clause}{gradient_select_line}{cluster_select_line}
+                {target_clause}{gradient_select_line}{cluster_select_line}{state_select_line}
             FROM rider_competition_snapshots rcs
             JOIN competition_field_features cff
                 ON rcs.competition_id = cff.competition_id
@@ -484,6 +552,7 @@ class CyclingDataPipeline:
                 AND rcs.competition_id = rr.competition_id
             {gradient_join}
             {cluster_join}
+            {state_join}
             WHERE rcs.competition_id = ?
             ORDER BY rcs.rider_id
             """

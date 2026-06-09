@@ -17,6 +17,14 @@ import pandas as pd
 import numpy as np
 from dataclasses import dataclass, field
 
+# Module-level switch for stage-race state imputation, togglable by
+# experiments (stage_state_features_cv --state-nan). When False, missing
+# state (stage-1 rows, one-day, gc, coverage gaps) stays NaN so LightGBM
+# routes those rows down each split's default branch instead of placing
+# them at fabricated mid-field values. Production default: True (impute
+# neutral defaults), consistent with every other feature group.
+IMPUTE_RACE_STATE_DEFAULTS = True
+
 
 @dataclass
 class FeatureConfig:
@@ -103,6 +111,39 @@ class FeatureEngineer:
         'd1': 24,
     }
     DEFAULT_AGE = 27
+
+    # Stage-race state defaults, shared by apply_imputation (NaN fill) and
+    # get_feature_matrix (absent-column fill). NULL/absent means "no
+    # within-race state": stage-1 rows, one-day races, gc rows (Phase 1),
+    # riders without complete prior-stage coverage, suspect-reconstruction
+    # races, and any prediction frame assembled without live state. Values
+    # are neutral mid-field choices that avoid colliding with meaningful
+    # states (a 0s gap means "race leader", so the gap default is mid-pack).
+    RACE_STATE_DEFAULTS = {
+        'gc_rank_current': 60,
+        'gc_gap_to_leader_s': 900.0,
+        'gc_gap_to_podium_s': 850.0,
+        'gc_gap_to_rank10_s': 700.0,
+        'gc_rank_pctile': 50.0,
+        'is_race_leader': 0,
+        'team_best_gc_rank': 30,
+        'is_team_gc_leader': 0,
+        'teammates_top10_count': 0,
+        'team_has_gc_top5': 0,
+        'last_stage_bucket': 4.0,
+        'last_stage_pctile': 50.0,
+        'best_stage_bucket_so_far': 4.0,
+        'mean_stage_pctile_so_far': 50.0,
+        'stage_top10_count_so_far': 0,
+        'stages_completed': 0,
+        'pct_race_complete': 0.0,
+        'cum_time_raced_s': 0.0,
+        'is_post_rest_day': 0,
+        'field_attrition': 1.0,
+        'gc_gap_gt_10min': 0,
+        'lost_big_time_last_stage': 0,
+        'race_state_missing': 1,
+    }
 
     # Race category ordinal encoding
     RACE_CATEGORY_MAP = {'wt': 0, 'pro': 1, 'd1': 2}
@@ -206,6 +247,15 @@ class FeatureEngineer:
         'lowest_valid_percentile', 'highest_null_percentile',
         'kurtosis_null_percentile', 'variance_zero_percentile',
         'winning_time', 'abandon_ratio',
+        # Stage-race state (rider_race_state LEFT JOIN; NULL when no state)
+        'gc_rank_current', 'gc_gap_to_leader_s', 'gc_gap_to_podium_s',
+        'gc_gap_to_rank10_s', 'gc_rank_pctile', 'is_race_leader',
+        'team_best_gc_rank', 'is_team_gc_leader', 'teammates_top10_count',
+        'team_has_gc_top5', 'last_stage_bucket', 'last_stage_pctile',
+        'best_stage_bucket_so_far', 'mean_stage_pctile_so_far',
+        'stage_top10_count_so_far', 'stages_completed', 'pct_race_complete',
+        'cum_time_raced_s', 'is_post_rest_day', 'field_attrition',
+        'gc_gap_gt_10min', 'lost_big_time_last_stage', 'race_state_missing',
     )
 
     def _coerce_numeric_inputs(self, df: pd.DataFrame) -> pd.DataFrame:
@@ -519,6 +569,19 @@ class FeatureEngineer:
             if col in df.columns:
                 df[col] = pd.to_numeric(df[col], errors='coerce').fillna(default)
 
+        # Stage-race state defaults (see RACE_STATE_DEFAULTS for semantics).
+        # stages_completed=0 / pct_race_complete=0 are literally true for
+        # rows with no completed prior stages. race_state_missing is
+        # excluded here: it arrives as a computed 0/1 (SQL CASE or
+        # attach_race_state) and must not be overwritten.
+        for col, default in self.RACE_STATE_DEFAULTS.items():
+            if col == 'race_state_missing':
+                continue
+            if col in df.columns:
+                df[col] = pd.to_numeric(df[col], errors='coerce')
+                if IMPUTE_RACE_STATE_DEFAULTS:
+                    df[col] = df[col].fillna(default)
+
         # Stage 1 cluster feature imputation. Clusters are populated only
         # for one-day rows in the DB; stage / gc rows come through the
         # LEFT JOIN with NULL cluster columns. Soft memberships default to
@@ -698,8 +761,11 @@ class FeatureEngineer:
             if col in df.columns:
                 feature_data[col] = df[col].values
             else:
-                # Add missing column with default value
-                feature_data[col] = np.zeros(len(df))
+                # Add missing column with default value. State columns get
+                # their training-time "missing state" defaults — zero is a
+                # meaningful state there (a 0s gap means race leader).
+                default = self.RACE_STATE_DEFAULTS.get(col, 0.0)
+                feature_data[col] = np.full(len(df), float(default))
         X = pd.DataFrame(feature_data, index=df.index)
 
         y = None

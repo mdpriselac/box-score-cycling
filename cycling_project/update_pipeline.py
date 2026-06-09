@@ -542,6 +542,23 @@ def run_feature_precomputation(config: PipelineConfig) -> str:
 
 
 # ---------------------------------------------------------------------------
+# Step 9b: Stage-race state (incremental; feeds rider_race_state)
+# ---------------------------------------------------------------------------
+
+def run_stage_race_state(config: PipelineConfig) -> str:
+    from cycling_project.engineering_tools.stage_race_state import (
+        StageRaceStateBuilder,
+    )
+    builder = StageRaceStateBuilder(db_path=str(config.db_path))
+    summary = builder.run()
+    return (
+        f"{summary['races_processed']} races, "
+        f"{summary['state_rows']} state rows, "
+        f"{summary['suspect_races']} suspect"
+    )
+
+
+# ---------------------------------------------------------------------------
 # Step 10: Train production model
 # ---------------------------------------------------------------------------
 
@@ -571,8 +588,8 @@ def run_lambdarank_training(config: PipelineConfig) -> str:
 
 STEP_NAMES = [
     "scrape-lists", "scrape-data", "migrate", "place-bucket",
-    "bib", "experience", "percentiles", "gradients", "features", "train",
-    "train-lambdarank",
+    "bib", "experience", "percentiles", "gradients", "features",
+    "race-state", "train", "train-lambdarank",
 ]
 
 
@@ -618,7 +635,7 @@ def should_run(step: str, args: argparse.Namespace) -> bool:
 
     scrape_steps = {"scrape-lists", "scrape-data"}
     migrate_steps = {"migrate", "place-bucket", "bib", "experience"}
-    feature_steps = {"percentiles", "gradients", "features"}
+    feature_steps = {"percentiles", "gradients", "features", "race-state"}
     train_steps = {"train"}
     lambdarank_steps = {"train-lambdarank"}
 
@@ -750,6 +767,13 @@ def run_pipeline(args: argparse.Namespace):
             logger.error("Feature precomputation failed - stopping pipeline")
             print_summary(results)
             return
+
+    # Step 9b: Stage-race state (non-fatal: training tolerates a stale
+    # rider_race_state via the LEFT JOIN; rows simply come through NULL)
+    if should_run("race-state", args):
+        results.append(
+            run_step("Stage-Race State", run_stage_race_state, config)
+        )
 
     # Step 10: Train model
     if should_run("train", args):

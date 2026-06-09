@@ -43,10 +43,19 @@ CREATE TABLE IF NOT EXISTS prediction_log (
     lambdarank_win_p REAL,
     lambdarank_podium_p REAL,
     lambdarank_temperature REAL,
+    state_through_stage INTEGER,
     FOREIGN KEY (competition_id) REFERENCES competitions(id),
     FOREIGN KEY (rider_id) REFERENCES riders(id)
 );
 """
+
+# Columns added after the table first shipped; applied via ALTER TABLE for
+# existing databases. state_through_stage: number of completed stages whose
+# results fed the within-race state attached to this prediction (NULL =
+# pre-race features only).
+MIGRATION_COLUMNS = [
+    ("state_through_stage", "INTEGER"),
+]
 
 INDEX_SQL = [
     "CREATE INDEX IF NOT EXISTS idx_prediction_log_fc_race ON prediction_log(fc_race_id, year);",
@@ -61,6 +70,14 @@ def ensure_schema(conn: sqlite3.Connection) -> None:
     conn.execute(SCHEMA_SQL)
     for stmt in INDEX_SQL:
         conn.execute(stmt)
+    existing = {
+        row[1] for row in conn.execute("PRAGMA table_info(prediction_log)")
+    }
+    for col, col_type in MIGRATION_COLUMNS:
+        if col not in existing:
+            conn.execute(
+                f"ALTER TABLE prediction_log ADD COLUMN {col} {col_type}"
+            )
     conn.commit()
 
 
@@ -81,6 +98,7 @@ class PredictionLogRow:
     lambdarank_win_p: Optional[float] = None
     lambdarank_podium_p: Optional[float] = None
     lambdarank_temperature: Optional[float] = None
+    state_through_stage: Optional[int] = None
 
     def as_row(self) -> Dict[str, Any]:
         return {
@@ -99,6 +117,10 @@ class PredictionLogRow:
             'lambdarank_win_p': _as_float(self.lambdarank_win_p),
             'lambdarank_podium_p': _as_float(self.lambdarank_podium_p),
             'lambdarank_temperature': _as_float(self.lambdarank_temperature),
+            'state_through_stage': (
+                int(self.state_through_stage)
+                if self.state_through_stage is not None else None
+            ),
         }
 
 

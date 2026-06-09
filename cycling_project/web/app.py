@@ -37,6 +37,10 @@ from cycling_project.prediction_tools.future_race_loader import (
     get_available_stages,
     get_default_references,
 )
+from cycling_project.prediction_tools.live_race_state import (
+    attach_race_state,
+    fetch_live_race_state,
+)
 from cycling_project.prediction_tools.model_registry import ModelRegistry
 from cycling_project.prediction_tools.prediction_log import (
     PredictionLogRow,
@@ -606,6 +610,24 @@ probabilities by default (the more discriminative head).
         if current_removed != prev_removed:
             st.warning("Start list has changed since predictions were run. Re-run predictions to update.")
 
+    # Within-race state applies when predicting stage 2+ of a stage race:
+    # completed stages of THIS edition feed GC standings / in-race form /
+    # fatigue features (mirrors training, where only stage rows carry state).
+    _state_target_is_stage = (
+        st.session_state.get('_prev_comp_type') == 'stage'
+        and (st.session_state.get('_prev_stage_num') or 0) >= 2
+    )
+    force_refresh_state = False
+    if _state_target_is_stage:
+        force_refresh_state = st.checkbox(
+            "Force refresh completed stages (race state)",
+            value=False,
+            help=(
+                "Re-scrape this edition's completed stage results instead of "
+                "using the cache. Use after a new stage has finished."
+            ),
+        )
+
     if st.button("Run Predictions", type="primary"):
         selected_refs = st.session_state['selected_refs']
         snapshots = st.session_state['active_snapshots']
@@ -635,8 +657,54 @@ probabilities by default (the more discriminative head).
 
                 fc_race_id = str(st.session_state.get('fc_race_id', ''))
                 race_year = st.session_state.get('race_year')
-                stage_hint = st.session_state.get('stage_hint')
+                target_comp_type = st.session_state.get('_prev_comp_type', 'one_day')
+                target_stage_num = st.session_state.get('_prev_stage_num')
                 reference_ids = [int(c) for c in selected_refs.keys()]
+
+                # Log stage_number = the SELECTED prediction target (NULL for
+                # one-day and GC), so state_through_stage pairs coherently.
+                logged_stage_num = (
+                    int(target_stage_num)
+                    if target_comp_type == 'stage' and target_stage_num
+                    else None
+                )
+
+                # ── Within-race state (stage 2+ targets only) ──
+                race_state_df = None
+                race_state_info = None
+                if (
+                    target_comp_type == 'stage'
+                    and target_stage_num
+                    and int(target_stage_num) >= 2
+                ):
+                    race_state_df, race_state_info = fetch_live_race_state(
+                        int(fc_race_id),
+                        int(race_year),
+                        target_stage_number=int(target_stage_num),
+                        force_refresh=force_refresh_state,
+                        db_path=DB_PATH,
+                    )
+                state_through = (
+                    int(race_state_info['stages_completed'])
+                    if race_state_info and race_state_info.get('available')
+                    else None
+                )
+                if race_state_info is not None:
+                    if race_state_info.get('available'):
+                        leader = race_state_info.get('leader_name')
+                        st.caption(
+                            f"Race state attached from "
+                            f"{race_state_info['stages_completed']} completed "
+                            f"stage(s) of {race_state_info['total_stages']}"
+                            + (f" — current leader: {leader}" if leader else "")
+                            + f" ({race_state_info['riders_in_standings']} riders in standings)"
+                        )
+                    else:
+                        st.info(
+                            "No race state attached — "
+                            f"{race_state_info.get('reason') or 'unavailable'}. "
+                            "Predictions use pre-race features."
+                        )
 
                 def _attach_lambdarank(result_df: pd.DataFrame, pred_df: pd.DataFrame):
                     """Merge LambdaRank win/podium probabilities onto result_df.
@@ -672,7 +740,7 @@ probabilities by default (the more discriminative head).
                         log_rows.append(PredictionLogRow(
                             fc_race_id=fc_race_id,
                             year=int(race_year) if race_year else 0,
-                            stage_number=int(stage_hint) if stage_hint else None,
+                            stage_number=logged_stage_num,
                             rider_id=int(row['rider_id']),
                             rider_name=row.get('rider_name'),
                             reference_comp_ids=reference_ids,
@@ -684,6 +752,7 @@ probabilities by default (the more discriminative head).
                             lambdarank_win_p=row.get('lambdarank_win_p'),
                             lambdarank_podium_p=row.get('lambdarank_podium_p'),
                             lambdarank_temperature=lr_temp,
+                            state_through_stage=state_through,
                         ))
 
                 for comp_id in selected_refs:
@@ -691,6 +760,7 @@ probabilities by default (the more discriminative head).
                     reference_profiles.append(profile)
 
                     pred_df = assemble_prediction_df(snapshots, matched, field_features, profile)
+                    pred_df = attach_race_state(pred_df, race_state_df)
                     result = race_ranker.predict_race(pred_df, return_details=True)
                     result['team'] = result['rider_id'].map(
                         lambda rid: name_map.get(rid, {}).get('team_name', '')
@@ -704,6 +774,7 @@ probabilities by default (the more discriminative head).
                 # Average prediction (always, even for 1 race)
                 avg_profile = average_race_profiles(reference_profiles)
                 pred_df = assemble_prediction_df(snapshots, matched, field_features, avg_profile)
+                pred_df = attach_race_state(pred_df, race_state_df)
                 result = race_ranker.predict_race(pred_df, return_details=True)
                 result['team'] = result['rider_id'].map(
                     lambda rid: name_map.get(rid, {}).get('team_name', '')
@@ -726,7 +797,7 @@ probabilities by default (the more discriminative head).
                                 conn,
                                 fc_race_id,
                                 int(race_year) if race_year else 0,
-                                int(stage_hint) if stage_hint else None,
+                                logged_stage_num,
                             )
                             for r in log_rows:
                                 r.competition_id = target_comp_id

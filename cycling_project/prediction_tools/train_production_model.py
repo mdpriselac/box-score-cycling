@@ -114,6 +114,12 @@ def main():
         start_date='2016-01-01',
         min_races_career=10,
         include_gradient_features=True,
+        # Stage-race state features: passed Phase-1 CV 2026-06-09 (+0.50pp
+        # winner / -0.033 stage log loss). ON since the web app attaches
+        # live state to stage-2+ prediction frames (live_race_state.py);
+        # all other targets get the same neutral-default imputation used
+        # for missing state in training. See stage_race_dynamics_plan.md.
+        include_race_state=True,
     )
     pipeline = CyclingDataPipeline(config)
     df = pipeline.load_training_data()

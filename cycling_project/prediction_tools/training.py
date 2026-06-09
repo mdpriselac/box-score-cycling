@@ -78,6 +78,11 @@ class TrainingConfig:
     cluster_variant: str = 'joint'
     fold_label: Optional[str] = None
 
+    # Stage-race state: expose within-race state features from
+    # rider_race_state (stage rows only; see stage_race_dynamics_plan.md).
+    # Off by default so production paths are unchanged.
+    include_race_state: bool = False
+
     # Hyperparameter tuning (optional)
     tune_hyperparameters: bool = False
     n_tuning_trials: int = 50
@@ -107,6 +112,7 @@ class ModelTrainer:
             include_race_clusters=self.config.include_race_clusters,
             cluster_variant=self.config.cluster_variant,
             current_fold_label=self.config.fold_label,
+            include_race_state=self.config.include_race_state,
         ))
 
         self.bucket_predictor: Optional[OrdinalBucketPredictor] = None
