@@ -52,6 +52,7 @@ class RaceMigrator:
         # Statistics
         self.stats = {
             'races_processed': 0,
+            'races_skipped': 0,
             'competitions_created': 0,
             'riders_created': 0,
             'teams_created': 0,
@@ -139,7 +140,20 @@ class RaceMigrator:
         # Load the race object
         with open(pkl_file, 'rb') as f:
             race = pickle.load(f)
-            
+
+        # Skip races already in the database. Same key as the unique index
+        # idx_races_unique_fc_year_category — re-running a migration must
+        # never duplicate a race.
+        self.cursor.execute(
+            "SELECT 1 FROM races WHERE fc_race_id = ? AND year = ? AND category = ?",
+            (str(race.fc_race_id), race.year, category)
+        )
+        if self.cursor.fetchone() is not None:
+            logger.info(f"Skipping already-migrated race: {race.name} "
+                        f"({race.year}/{category})")
+            self.stats['races_skipped'] += 1
+            return
+
         # Insert the race
         race_id = self.insert_race(race, category)
         
@@ -429,6 +443,7 @@ class RaceMigrator:
         logger.info("\n" + "="*50)
         logger.info("Migration Statistics:")
         logger.info(f"  Races processed: {self.stats['races_processed']}")
+        logger.info(f"  Races skipped (already migrated): {self.stats['races_skipped']}")
         logger.info(f"  Competitions created: {self.stats['competitions_created']}")
         logger.info(f"  Riders created: {self.stats['riders_created']}")
         logger.info(f"  Teams created: {self.stats['teams_created']}")
@@ -444,7 +459,8 @@ def main():
     parser = argparse.ArgumentParser(description="Migrate race data to SQLite database")
     parser.add_argument("--source-dir", default="~/cycling_data/scraped_data",
                         help="Root directory containing pickle files")
-    parser.add_argument("--db-path", default="database/cycling_races.db",
+    parser.add_argument("--db-path",
+                        default=str(Path(__file__).resolve().parent / "database" / "cycling_races.db"),
                         help="Path to the SQLite database")
     parser.add_argument("--year", help="Migrate only a specific year")
     parser.add_argument("--category", choices=['wt', 'pro', 'd1'],
