@@ -166,19 +166,37 @@ class RaceMigrator:
             
         self.stats['races_processed'] += 1
         
+    def _parse_date_value(self, value: Any) -> Optional[str]:
+        """Normalize a pickle date (datetime or 'YYYY-MM-DD' string) to an ISO string."""
+        if not value:
+            return None
+        if isinstance(value, datetime):
+            return value.date().isoformat()
+        try:
+            return datetime.strptime(str(value), '%Y-%m-%d').date().isoformat()
+        except ValueError:
+            return None
+
+    def _final_stage_date(self, race: Race) -> Optional[str]:
+        """Latest dated stage of a stage race — used as the race/GC date.
+
+        The scraper only sets a race-level date for one-day races, so
+        stage-race pickles always have race.date=None and the date must be
+        derived from the stages (the 'GC' pseudo-stage, when dated, already
+        carries the final day and participates in the max like any other).
+        """
+        stage_dates = [self._parse_date_value(s.date) for s in (race.stages or [])]
+        stage_dates = [d for d in stage_dates if d]
+        return max(stage_dates) if stage_dates else None
+
     def insert_race(self, race: Race, category: str) -> int:
         """Insert a race record and return its ID."""
-        # Parse date if available
-        race_date = None
-        if race.date:
-            try:
-                if isinstance(race.date, datetime):
-                    race_date = race.date.date()
-                else:
-                    race_date = datetime.strptime(str(race.date), '%Y-%m-%d').date()
-            except:
-                logger.warning(f"Could not parse date for {race.name}: {race.date}")
-                
+        race_date = self._parse_date_value(race.date)
+        if race.date and race_date is None:
+            logger.warning(f"Could not parse date for {race.name}: {race.date}")
+        if race_date is None and race.stage_race:
+            race_date = self._final_stage_date(race)
+
         # Insert race
         self.cursor.execute("""
             INSERT INTO races (fc_race_id, name, year, date, category, is_stage_race, url)
@@ -213,17 +231,20 @@ class RaceMigrator:
             
     def process_stage_race(self, race: Race, race_id: int):
         """Process a stage race with multiple stages."""
-        # Insert GC if it has results
+        # Insert GC if it has results. race.date is None for stage-race
+        # pickles, so the GC date comes from the final stage; the same date
+        # feeds rider_age computation in insert_results.
         if race.results:
+            gc_date = self._parse_date_value(race.date) or self._final_stage_date(race)
             gc_competition_id = self.insert_competition(
                 race_id=race_id,
                 name="GC",
                 competition_type='gc',
-                date=race.date,
+                date=gc_date,
                 winning_time=race.race_time,
                 url=race.url
             )
-            self.insert_results(gc_competition_id, race.results, race.date)
+            self.insert_results(gc_competition_id, race.results, gc_date)
             
         # Process each stage
         for i, stage in enumerate(race.stages, 1):
