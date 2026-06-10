@@ -98,6 +98,14 @@ class CyclingDataPipeline:
         'team_quality_min', 'team_quality_max',
         'team_quality_p25', 'team_quality_p75',
         'team_size', 'team_depth',
+        # Trajectory/EMA form features (v2v3 config, 2026-06; NULL = no
+        # qualifying history, intentionally left unimputed)
+        'v2_ema_pct_h30', 'v2_ema_pct_h60', 'v2_ema_pct_qw_h60',
+        'v2_ema_eff_n_h60', 'v2_ema_bucket_h60',
+        'v3_season_pct_cur', 'v3_season_pct_prev', 'v3_season_pct_prev2',
+        'v3_season_delta', 'v3_season_delta_prev', 'v3_slope365',
+        'v3_races365', 'v3_peak_season_pct', 'v3_decline_from_peak',
+        'v3_season_races_cur',
     ]
 
     FIELD_FEATURE_COLS = [

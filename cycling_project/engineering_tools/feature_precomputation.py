@@ -31,12 +31,14 @@ try:
         RaceProfileScores
     )
     from cycling_project.engineering_tools.form_team_features import (
-        RiderFormHistory, TeamFeatureComputer
+        RiderFormHistory, TeamFeatureComputer, TRAJECTORY_FORM_COLUMNS
     )
 except ModuleNotFoundError:
     from .place_handling import place_bucketer
     from .race_profile_scoring import calculate_race_profile_scores, RaceProfileScores
-    from .form_team_features import RiderFormHistory, TeamFeatureComputer
+    from .form_team_features import (
+        RiderFormHistory, TeamFeatureComputer, TRAJECTORY_FORM_COLUMNS
+    )
 
 try:
     from dotenv import load_dotenv
@@ -327,9 +329,43 @@ class FeaturePrecomputer:
                 team_quality_p75 REAL,
                 team_size INTEGER,
                 team_depth INTEGER,
+                -- Trajectory/EMA form features (v2v3 config, 2026-06).
+                -- NULL means "no qualifying history" — intentionally not
+                -- imputed downstream (LightGBM native missing).
+                v2_ema_pct_h30 REAL,
+                v2_ema_pct_h60 REAL,
+                v2_ema_pct_qw_h60 REAL,
+                v2_ema_eff_n_h60 REAL,
+                v2_ema_bucket_h60 REAL,
+                v3_season_pct_cur REAL,
+                v3_season_pct_prev REAL,
+                v3_season_pct_prev2 REAL,
+                v3_season_delta REAL,
+                v3_season_delta_prev REAL,
+                v3_slope365 REAL,
+                v3_races365 INTEGER,
+                v3_peak_season_pct REAL,
+                v3_decline_from_peak REAL,
+                v3_season_races_cur INTEGER,
                 PRIMARY KEY (rider_id, competition_id)
             )
         """)
+
+        # Existing databases predate the trajectory columns: append any that
+        # are missing so the positional INSERT below stays valid. ALTER adds
+        # columns at the end, matching the CREATE order above.
+        existing_cols = {
+            row[1] for row in cursor.execute(
+                "PRAGMA table_info(rider_competition_snapshots)"
+            )
+        }
+        col_types = {'v3_races365': 'INTEGER', 'v3_season_races_cur': 'INTEGER'}
+        for col in TRAJECTORY_FORM_COLUMNS:
+            if col not in existing_cols:
+                cursor.execute(
+                    f"ALTER TABLE rider_competition_snapshots "
+                    f"ADD COLUMN {col} {col_types.get(col, 'REAL')}"
+                )
 
         # Field features table
         cursor.execute("""
@@ -430,7 +466,9 @@ class FeaturePrecomputer:
                 c.race_id,
                 r.year,
                 cff.competition_type,
-                cff.race_dominant_profile
+                cff.race_dominant_profile,
+                rr.percentile,
+                r.category
             FROM rider_results rr
             JOIN competition_field_features cff ON rr.competition_id = cff.competition_id
             JOIN competitions c ON rr.competition_id = c.id
@@ -442,7 +480,8 @@ class FeaturePrecomputer:
         """, (up_to_date,))
 
         for row in cursor:
-            rider_id, comp_date, place_bucket, race_id, race_year, comp_type, profile = row
+            (rider_id, comp_date, place_bucket, race_id, race_year,
+             comp_type, profile, percentile, race_category) = row
             if rider_id not in self.rider_histories:
                 self.rider_histories[rider_id] = RiderFormHistory(rider_id=rider_id)
             self.rider_histories[rider_id].add_race(
@@ -451,7 +490,9 @@ class FeaturePrecomputer:
                 race_id=race_id,
                 race_year=race_year,
                 comp_type=comp_type,
-                profile=profile or 'unknown'
+                profile=profile or 'unknown',
+                percentile=percentile,
+                race_category=race_category,
             )
         print(f"  Rebuilt histories for {len(self.rider_histories)} riders")
 
@@ -543,7 +584,7 @@ class FeaturePrecomputer:
             SELECT
                 rr.competition_id, rr.rider_id, rr.place,
                 rr.rider_age, rr.team_bib, rr.personal_bib,
-                r.name as rider_name, rr.team_id
+                r.name as rider_name, rr.team_id, rr.percentile
             FROM rider_results rr
             LEFT JOIN riders r ON rr.rider_id = r.id
             WHERE rr.competition_id IN ({placeholders})
@@ -729,7 +770,7 @@ class FeaturePrecomputer:
                     rider_data_list = []  # Store data for form/team computation
 
                     # PASS 1: Create all rider snapshots
-                    for rider_id, place, age, team_bib, personal_bib, rider_name, team_id in comp_results:
+                    for rider_id, place, age, team_bib, personal_bib, rider_name, team_id, percentile in comp_results:
                         # Get or create rider state
                         if rider_id not in self.rider_states:
                             self.rider_states[rider_id] = RiderRunningState(
@@ -757,6 +798,7 @@ class FeaturePrecomputer:
                             'team_id': team_id,
                             'snapshot': snapshot,
                             'state': state,
+                            'percentile': percentile,
                         })
 
                     # PASS 2: Compute form and team features
@@ -792,6 +834,15 @@ class FeaturePrecomputer:
                             career_avg_bucket=career_avg
                         )
 
+                        # Trajectory/EMA form features (v2v3, 2026-06)
+                        traj = history.get_trajectory_form_features(
+                            target_date=comp_date,
+                            target_year=race_year,
+                            target_race_id=race_id,
+                            target_comp_type=comp_type,
+                            race_start_date=race_start_date if comp_type == 'gc' else None,
+                        )
+
                         # Get team features
                         team = team_features.get(rider_id, TeamFeatureComputer._default_team_features())
 
@@ -818,7 +869,9 @@ class FeaturePrecomputer:
                             team['team_quality_mean'], team['team_quality_median'],
                             team['team_quality_std'], team['team_quality_min'],
                             team['team_quality_max'], team['team_quality_p25'],
-                            team['team_quality_p75'], team['team_size'], team['team_depth']
+                            team['team_quality_p75'], team['team_size'], team['team_depth'],
+                            # Trajectory/EMA form features (15, v2v3 config)
+                            *[traj[c] for c in TRAJECTORY_FORM_COLUMNS]
                         ))
 
                         # Update running state with this race result
@@ -833,7 +886,9 @@ class FeaturePrecomputer:
                                 race_id=race_id,
                                 race_year=race_year,
                                 comp_type=comp_type,
-                                profile=race_profile_name
+                                profile=race_profile_name,
+                                percentile=data['percentile'],
+                                race_category=race_cat,
                             )
 
                     # Compute field features
@@ -847,9 +902,11 @@ class FeaturePrecomputer:
 
                 # Save batch to database
                 cursor = conn.cursor()
+                # 42 original columns + 15 trajectory/EMA form columns
                 cursor.executemany("""
                     INSERT OR REPLACE INTO rider_competition_snapshots VALUES
-                    (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+                    (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,
+                     ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
                 """, snapshot_rows)
 
                 cursor.executemany("""

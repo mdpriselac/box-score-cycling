@@ -1,0 +1,688 @@
+{
+  "started_at": "2026-06-10T08:03:36.950479",
+  "ended_at": "2026-06-10T08:17:57.476714",
+  "duration_seconds": 860.526235,
+  "config": {
+    "start_date": "2016-01-01",
+    "folds": [
+      {
+        "train_end": "2019-12-31",
+        "val_end": "2020-12-31",
+        "label": "2021"
+      },
+      {
+        "train_end": "2020-12-31",
+        "val_end": "2021-12-31",
+        "label": "2022"
+      },
+      {
+        "train_end": "2021-12-31",
+        "val_end": "2022-12-31",
+        "label": "2023"
+      },
+      {
+        "train_end": "2022-12-31",
+        "val_end": "2023-12-31",
+        "label": "2024"
+      },
+      {
+        "train_end": "2023-12-31",
+        "val_end": "2024-12-31",
+        "label": "2025"
+      }
+    ],
+    "contender": {
+      "n_estimators": 500,
+      "early_stopping": 50,
+      "contender_top_n": 15,
+      "contender_learning_rate": 0.01,
+      "contender_use_oof": true,
+      "contender_n_classes": 5,
+      "include_gradient_features": true
+    },
+    "lambdarank_main": {
+      "n_estimators": 2000,
+      "early_stopping_rounds": 300,
+      "learning_rate": 0.05
+    },
+    "top_n": 15,
+    "age_bins": [
+      0,
+      25,
+      30,
+      34,
+      37,
+      200
+    ],
+    "test_restriction": "label calendar year (pooled rows unique)"
+  },
+  "fold_summaries": [
+    {
+      "fold_label": "2021",
+      "skipped": false,
+      "training_info": {
+        "bucket_best_iteration": 186,
+        "contender_best_iteration": 415
+      },
+      "lr_temperature": 0.6553597591116799,
+      "n_test_rows": 51557,
+      "n_test_races": 443,
+      "standard_metrics_uncapped": {
+        "top4_log_loss": 1.7599940892114265,
+        "top4_accuracy": 0.12721997098404123,
+        "top4_brier": 0.920228442566283,
+        "top4_n_samples": 19989.0,
+        "win_cumulative_cal_error": 0.024649265487705376,
+        "win_mean_predicted": 0.05104501896079915,
+        "win_actual_frequency": 0.05167826193091664,
+        "win_cal_ratio": 0.9877464344492854,
+        "podium_cumulative_cal_error": 0.027799771321610912,
+        "podium_mean_predicted": 0.14712532061950842,
+        "podium_actual_frequency": 0.14466007567435615,
+        "podium_cal_ratio": 1.0170416400908138,
+        "top5_cumulative_cal_error": 0.01822782221073476,
+        "top5_mean_predicted": 0.2308043547817693,
+        "top5_actual_frequency": 0.22343463932625413,
+        "top5_cal_ratio": 1.032983764190449,
+        "top15_cumulative_cal_error": 0.03251700036403578,
+        "top15_mean_predicted": 0.5028191445497578,
+        "top15_actual_frequency": 0.4879531307213475,
+        "top15_cal_ratio": 1.0304660691620806,
+        "win_precision_at_5": 0.4,
+        "win_precision_at_10": 0.6,
+        "win_precision_at_20": 0.5,
+        "win_precision_at_50": 0.42,
+        "podium_precision_at_5": 0.6,
+        "podium_precision_at_10": 0.5,
+        "podium_precision_at_20": 0.65,
+        "podium_precision_at_50": 0.7,
+        "top5_precision_at_5": 0.8,
+        "top5_precision_at_10": 0.9,
+        "top5_precision_at_20": 0.75,
+        "top5_precision_at_50": 0.78,
+        "top15_precision_at_5": 1.0,
+        "top15_precision_at_10": 1.0,
+        "top15_precision_at_20": 0.95,
+        "top15_precision_at_50": 0.96,
+        "race_winner_capture_rate": 0.22482607103625046,
+        "race_winner_n_races": 2731.0,
+        "race_podium_capture_rate": 0.4416471506635441
+      }
+    },
+    {
+      "fold_label": "2022",
+      "skipped": false,
+      "training_info": {
+        "bucket_best_iteration": 269,
+        "contender_best_iteration": 434
+      },
+      "lr_temperature": 0.7026835669095026,
+      "n_test_rows": 53032,
+      "n_test_races": 492,
+      "standard_metrics_uncapped": {
+        "top4_log_loss": 1.7678836142683485,
+        "top4_accuracy": 0.1296394329745309,
+        "top4_brier": 0.9247616446575824,
+        "top4_n_samples": 17001.0,
+        "win_cumulative_cal_error": 0.01415476435805969,
+        "win_mean_predicted": 0.05034160240167416,
+        "win_actual_frequency": 0.052214452214452214,
+        "win_cal_ratio": 0.9641315817106345,
+        "podium_cumulative_cal_error": 0.018388377489142797,
+        "podium_mean_predicted": 0.14352093469899044,
+        "podium_actual_frequency": 0.14702797202797202,
+        "podium_cal_ratio": 0.9761471420668554,
+        "top5_cumulative_cal_error": 0.013862929588439746,
+        "top5_mean_predicted": 0.2243180510331797,
+        "top5_actual_frequency": 0.22645687645687645,
+        "top5_cal_ratio": 0.9905552639550601,
+        "top15_cumulative_cal_error": 0.024243864277370956,
+        "top15_mean_predicted": 0.49856054834511093,
+        "top15_actual_frequency": 0.49536713286713285,
+        "top15_cal_ratio": 1.006446563096536,
+        "win_precision_at_5": 0.4,
+        "win_precision_at_10": 0.5,
+        "win_precision_at_20": 0.35,
+        "win_precision_at_50": 0.4,
+        "podium_precision_at_5": 0.8,
+        "podium_precision_at_10": 0.7,
+        "podium_precision_at_20": 0.6,
+        "podium_precision_at_50": 0.7,
+        "top5_precision_at_5": 0.8,
+        "top5_precision_at_10": 0.8,
+        "top5_precision_at_20": 0.7,
+        "top5_precision_at_50": 0.84,
+        "top15_precision_at_5": 1.0,
+        "top15_precision_at_10": 1.0,
+        "top15_precision_at_20": 1.0,
+        "top15_precision_at_50": 0.98,
+        "race_winner_capture_rate": 0.229020979020979,
+        "race_winner_n_races": 2288.0,
+        "race_podium_capture_rate": 0.44480319803198026
+      }
+    },
+    {
+      "fold_label": "2023",
+      "skipped": false,
+      "training_info": {
+        "bucket_best_iteration": 267,
+        "contender_best_iteration": 423
+      },
+      "lr_temperature": 0.7433566328876673,
+      "n_test_rows": 59412,
+      "n_test_races": 549,
+      "standard_metrics_uncapped": {
+        "top4_log_loss": 1.7638077573429298,
+        "top4_accuracy": 0.110381861575179,
+        "top4_brier": 0.9273409396889095,
+        "top4_n_samples": 13408.0,
+        "win_cumulative_cal_error": 0.023981538052938074,
+        "win_mean_predicted": 0.05466967552718983,
+        "win_actual_frequency": 0.05252412769116555,
+        "win_cal_ratio": 1.0408488047367448,
+        "podium_cumulative_cal_error": 0.0356303650055899,
+        "podium_mean_predicted": 0.15263232504088842,
+        "podium_actual_frequency": 0.1475872308834447,
+        "podium_cal_ratio": 1.0341838120225186,
+        "top5_cumulative_cal_error": 0.02355300937659735,
+        "top5_mean_predicted": 0.23767191107223543,
+        "top5_actual_frequency": 0.22802524127691165,
+        "top5_cal_ratio": 1.0423052717379166,
+        "top15_cumulative_cal_error": 0.03958351327568251,
+        "top15_mean_predicted": 0.49938434178580215,
+        "top15_actual_frequency": 0.49769858945805495,
+        "top15_cal_ratio": 1.0033870948470696,
+        "win_precision_at_5": 0.4,
+        "win_precision_at_10": 0.5,
+        "win_precision_at_20": 0.45,
+        "win_precision_at_50": 0.44,
+        "podium_precision_at_5": 1.0,
+        "podium_precision_at_10": 0.9,
+        "podium_precision_at_20": 0.8,
+        "podium_precision_at_50": 0.78,
+        "top5_precision_at_5": 1.0,
+        "top5_precision_at_10": 0.9,
+        "top5_precision_at_20": 0.9,
+        "top5_precision_at_50": 0.86,
+        "top15_precision_at_5": 1.0,
+        "top15_precision_at_10": 1.0,
+        "top15_precision_at_20": 1.0,
+        "top15_precision_at_50": 0.92,
+        "race_winner_capture_rate": 0.22383073496659242,
+        "race_winner_n_races": 1796.0,
+        "race_podium_capture_rate": 0.45112414467253176
+      }
+    },
+    {
+      "fold_label": "2024",
+      "skipped": false,
+      "training_info": {
+        "bucket_best_iteration": 405,
+        "contender_best_iteration": 488
+      },
+      "lr_temperature": 0.3964783424479298,
+      "n_test_rows": 62399,
+      "n_test_races": 547,
+      "standard_metrics_uncapped": {
+        "top4_log_loss": 1.7608272496609492,
+        "top4_accuracy": 0.11360016986941289,
+        "top4_brier": 0.9281907163968842,
+        "top4_n_samples": 9419.0,
+        "win_cumulative_cal_error": 0.05039336015521675,
+        "win_mean_predicted": 0.05112200758020046,
+        "win_actual_frequency": 0.05388933440256616,
+        "win_cal_ratio": 0.9486479680433032,
+        "podium_cumulative_cal_error": 0.03971466542753637,
+        "podium_mean_predicted": 0.14596280317172208,
+        "podium_actual_frequency": 0.15033413525795242,
+        "podium_cal_ratio": 0.9709225580821699,
+        "top5_cumulative_cal_error": 0.036953469871001704,
+        "top5_mean_predicted": 0.23250936617990964,
+        "top5_actual_frequency": 0.23122159850307406,
+        "top5_cal_ratio": 1.005569409108719,
+        "top15_cumulative_cal_error": 0.03033885578741465,
+        "top15_mean_predicted": 0.4975696549566897,
+        "top15_actual_frequency": 0.5035551991446138,
+        "top15_cal_ratio": 0.9881134298720544,
+        "win_precision_at_5": 0.0,
+        "win_precision_at_10": 0.3,
+        "win_precision_at_20": 0.45,
+        "win_precision_at_50": 0.48,
+        "podium_precision_at_5": 0.4,
+        "podium_precision_at_10": 0.6,
+        "podium_precision_at_20": 0.75,
+        "podium_precision_at_50": 0.76,
+        "top5_precision_at_5": 0.8,
+        "top5_precision_at_10": 0.8,
+        "top5_precision_at_20": 0.9,
+        "top5_precision_at_50": 0.88,
+        "top15_precision_at_5": 0.8,
+        "top15_precision_at_10": 0.9,
+        "top15_precision_at_20": 0.95,
+        "top15_precision_at_50": 0.94,
+        "race_winner_capture_rate": 0.23416198877305533,
+        "race_winner_n_races": 1247.0,
+        "race_podium_capture_rate": 0.4574944071588367
+      }
+    },
+    {
+      "fold_label": "2025",
+      "skipped": false,
+      "training_info": {
+        "bucket_best_iteration": 331,
+        "contender_best_iteration": 468
+      },
+      "lr_temperature": 0.6600116285944219,
+      "n_test_rows": 53993,
+      "n_test_races": 482,
+      "standard_metrics_uncapped": {
+        "top4_log_loss": 1.7541563455442173,
+        "top4_accuracy": 0.13276353276353275,
+        "top4_brier": 0.9231338318695053,
+        "top4_n_samples": 5265.0,
+        "win_cumulative_cal_error": 0.053102570717111365,
+        "win_mean_predicted": 0.05190457063511928,
+        "win_actual_frequency": 0.05466666666666667,
+        "win_cal_ratio": 0.9494738530814503,
+        "podium_cumulative_cal_error": 0.05167326531322151,
+        "podium_mean_predicted": 0.14421958078251934,
+        "podium_actual_frequency": 0.15047619047619049,
+        "podium_cal_ratio": 0.9584212646939576,
+        "top5_cumulative_cal_error": 0.032734998207836624,
+        "top5_mean_predicted": 0.22480932837916173,
+        "top5_actual_frequency": 0.23057142857142857,
+        "top5_cal_ratio": 0.9750094787200323,
+        "top15_cumulative_cal_error": 0.02763050841928741,
+        "top15_mean_predicted": 0.49461595102877703,
+        "top15_actual_frequency": 0.5014285714285714,
+        "top15_cal_ratio": 0.9864135775502676,
+        "win_precision_at_5": 0.0,
+        "win_precision_at_10": 0.4,
+        "win_precision_at_20": 0.45,
+        "win_precision_at_50": 0.48,
+        "podium_precision_at_5": 0.8,
+        "podium_precision_at_10": 0.8,
+        "podium_precision_at_20": 0.85,
+        "podium_precision_at_50": 0.78,
+        "top5_precision_at_5": 1.0,
+        "top5_precision_at_10": 0.9,
+        "top5_precision_at_20": 0.95,
+        "top5_precision_at_50": 0.88,
+        "top15_precision_at_5": 1.0,
+        "top15_precision_at_10": 1.0,
+        "top15_precision_at_20": 1.0,
+        "top15_precision_at_50": 0.94,
+        "race_winner_capture_rate": 0.2857142857142857,
+        "race_winner_n_races": 700.0,
+        "race_podium_capture_rate": 0.4678624813153961
+      }
+    }
+  ],
+  "analysis": {
+    "n_records": 280393,
+    "n_unknown_age": 0,
+    "band_table": {
+      "<25": {
+        "n_rows": 79474,
+        "n_wins": 707,
+        "lr_expected_wins": 634.3543601206488,
+        "lr_win_cal": 0.8972480341169008,
+        "bucket_optimism_full": 0.9558792418331244,
+        "bucket_optimism_top15": 1.456011483284221,
+        "n_top15_rows": 9736,
+        "c_win_cal": 0.9112764033210522,
+        "c_podium_cal": 0.9402099610528681,
+        "c_top5_cal": 0.944535498611578,
+        "c_top15_cal": 0.9723018198362597
+      },
+      "25-29": {
+        "n_rows": 111195,
+        "n_wins": 1099,
+        "lr_expected_wins": 1107.2264041609121,
+        "lr_win_cal": 1.0074853541045605,
+        "bucket_optimism_full": 1.006384974710842,
+        "bucket_optimism_top15": 1.524230339635862,
+        "n_top15_rows": 16961,
+        "c_win_cal": 1.0485726120031609,
+        "c_podium_cal": 1.0050005655727754,
+        "c_top5_cal": 1.0027763985754634,
+        "c_top15_cal": 0.9949079871154888
+      },
+      "30-33": {
+        "n_rows": 56080,
+        "n_wins": 480,
+        "lr_expected_wins": 514.859610444781,
+        "lr_win_cal": 1.072624188426627,
+        "bucket_optimism_full": 0.9572169621274874,
+        "bucket_optimism_top15": 1.5256913316856946,
+        "n_top15_rows": 7461,
+        "c_win_cal": 0.9780189865806493,
+        "c_podium_cal": 1.0294518076117554,
+        "c_top5_cal": 1.0519596374469495,
+        "c_top15_cal": 1.029951647951669
+      },
+      "34-36": {
+        "n_rows": 22238,
+        "n_wins": 142,
+        "lr_expected_wins": 174.26372632644473,
+        "lr_win_cal": 1.2272093403270756,
+        "bucket_optimism_full": 0.8771068722204742,
+        "bucket_optimism_top15": 1.5095659771530403,
+        "n_top15_rows": 2497,
+        "c_win_cal": 0.9877711295407807,
+        "c_podium_cal": 1.0348240234901824,
+        "c_top5_cal": 1.096551064958479,
+        "c_top15_cal": 1.0292035483495074
+      },
+      "37+": {
+        "n_rows": 11406,
+        "n_wins": 62,
+        "lr_expected_wins": 82.29589894721335,
+        "lr_win_cal": 1.3273532088260216,
+        "bucket_optimism_full": 0.8279013841025742,
+        "bucket_optimism_top15": 1.3907588199820362,
+        "n_top15_rows": 1040,
+        "c_win_cal": 0.8562264765745459,
+        "c_podium_cal": 1.0272254984856495,
+        "c_top5_cal": 1.0193970587887633,
+        "c_top15_cal": 0.9938703073748746
+      }
+    },
+    "selection_table": {
+      "<25": {
+        "pred_top15_slot_share": 0.25828359198832734,
+        "actual_top15_share": 0.2756284688214169,
+        "selection_ratio": 0.9370715336218498
+      },
+      "25-29": {
+        "pred_top15_slot_share": 0.4499535747446611,
+        "actual_top15_share": 0.4352758733268038,
+        "selection_ratio": 1.0337204571107421
+      },
+      "30-33": {
+        "pred_top15_slot_share": 0.1979307600477517,
+        "actual_top15_share": 0.1933833931875068,
+        "selection_ratio": 1.0235147743831121
+      },
+      "34-36": {
+        "pred_top15_slot_share": 0.06624220718928239,
+        "actual_top15_share": 0.06763521601915333,
+        "selection_ratio": 0.9794040898830506
+      },
+      "37+": {
+        "pred_top15_slot_share": 0.027589866029977452,
+        "actual_top15_share": 0.028077048645119163,
+        "selection_ratio": 0.9826483680211737
+      }
+    },
+    "form_slices": {
+      "poor_recent_form (form_delta >= +0.5)": {
+        "<30": {
+          "n_rows": 38722,
+          "n_wins": 279,
+          "lr_expected_wins": 260.28813749197013,
+          "lr_win_cal": 0.9329323924443373,
+          "bucket_optimism_full": 1.0697605786214845,
+          "bucket_optimism_top15": 1.7392073565443564,
+          "n_top15_rows": 4215,
+          "c_win_cal": 1.0574896626537569,
+          "c_podium_cal": 1.0781501301216057,
+          "c_top5_cal": 1.0678649233057211,
+          "c_top15_cal": 1.0185951267469946
+        },
+        "30-33": {
+          "n_rows": 18222,
+          "n_wins": 110,
+          "lr_expected_wins": 104.54415437140025,
+          "lr_win_cal": 0.9504014033763659,
+          "bucket_optimism_full": 0.9536619919655284,
+          "bucket_optimism_top15": 1.7438013880944128,
+          "n_top15_rows": 1599,
+          "c_win_cal": 1.054156764085553,
+          "c_podium_cal": 1.194991701142767,
+          "c_top5_cal": 1.1438629938478324,
+          "c_top15_cal": 1.0763447168402427
+        },
+        "34+": {
+          "n_rows": 13678,
+          "n_wins": 49,
+          "lr_expected_wins": 63.12483275936539,
+          "lr_win_cal": 1.2882618930482732,
+          "bucket_optimism_full": 0.8643849417252609,
+          "bucket_optimism_top15": 1.710273153475921,
+          "n_top15_rows": 865,
+          "c_win_cal": 1.1400912963437124,
+          "c_podium_cal": 1.1037630991371488,
+          "c_top5_cal": 1.2412966446014646,
+          "c_top15_cal": 1.1093087110360556
+        }
+      },
+      "good_recent_form (form_delta <= -0.5)": {
+        "<30": {
+          "n_rows": 37300,
+          "n_wins": 759,
+          "lr_expected_wins": 754.7361560692583,
+          "lr_win_cal": 0.9943822873112758,
+          "bucket_optimism_full": 1.1194127226308823,
+          "bucket_optimism_top15": 1.3684011497976938,
+          "n_top15_rows": 11084,
+          "c_win_cal": 0.9506144625483554,
+          "c_podium_cal": 0.9353886504087214,
+          "c_top5_cal": 0.9400291214584546,
+          "c_top15_cal": 0.9632470886862387
+        },
+        "30-33": {
+          "n_rows": 8759,
+          "n_wins": 188,
+          "lr_expected_wins": 189.07272315441634,
+          "lr_win_cal": 1.005705974225619,
+          "bucket_optimism_full": 1.0687164287289226,
+          "bucket_optimism_top15": 1.3403916288929913,
+          "n_top15_rows": 2610,
+          "c_win_cal": 0.8997074845437097,
+          "c_podium_cal": 0.9274416963235524,
+          "c_top5_cal": 0.9627261957027328,
+          "c_top15_cal": 0.9844496219746557
+        },
+        "34+": {
+          "n_rows": 3531,
+          "n_wins": 76,
+          "lr_expected_wins": 77.99554991596072,
+          "lr_win_cal": 1.0262572357363253,
+          "bucket_optimism_full": 1.0035595486804398,
+          "bucket_optimism_top15": 1.2276608396968776,
+          "n_top15_rows": 1053,
+          "c_win_cal": 0.8117478837057681,
+          "c_podium_cal": 0.9120579610387808,
+          "c_top5_cal": 0.9307929479892781,
+          "c_top15_cal": 0.9351598764683698
+        }
+      },
+      "neutral_form (|form_delta| < 0.5)": {
+        "<30": {
+          "n_rows": 88770,
+          "n_wins": 564,
+          "lr_expected_wins": 546.1897131447056,
+          "lr_win_cal": 0.9684214772069248,
+          "bucket_optimism_full": 0.9172976783741414,
+          "bucket_optimism_top15": 1.554337262329492,
+          "n_top15_rows": 8760,
+          "c_win_cal": 1.074876834333469,
+          "c_podium_cal": 1.0218412034278974,
+          "c_top5_cal": 1.0202750680691508,
+          "c_top15_cal": 1.0028637184928748
+        },
+        "30-33": {
+          "n_rows": 22748,
+          "n_wins": 141,
+          "lr_expected_wins": 159.4552311169317,
+          "lr_win_cal": 1.1308881639498702,
+          "bucket_optimism_full": 0.9012470002760344,
+          "bucket_optimism_top15": 1.5371052086979897,
+          "n_top15_rows": 2407,
+          "c_win_cal": 0.9392040058584876,
+          "c_podium_cal": 0.9834341789542216,
+          "c_top5_cal": 1.0409092064275975,
+          "c_top15_cal": 1.0295083052932477
+        },
+        "34+": {
+          "n_rows": 12304,
+          "n_wins": 62,
+          "lr_expected_wins": 81.64261290223573,
+          "lr_win_cal": 1.3168163371328343,
+          "bucket_optimism_full": 0.7895948884491216,
+          "bucket_optimism_top15": 1.468163278477999,
+          "n_top15_rows": 1126,
+          "c_win_cal": 0.9220586495983981,
+          "c_podium_cal": 1.0094923736584422,
+          "c_top5_cal": 1.0382263150079778,
+          "c_top15_cal": 1.0126096089233785
+        }
+      }
+    },
+    "residual_slopes": {
+      "bucket_optimism_per_year_full": -0.004908822124435578,
+      "lr_win_resid_per_year_full": 0.00020136957059734202,
+      "bucket_optimism_per_year_top15": 0.0024444201200665722,
+      "c_win_resid_per_year_top15": 0.0003147528891275416
+    },
+    "per_fold_band_lr_win_cal": {
+      "2021": {
+        "<25": {
+          "lr_win_cal": 0.9230653658916933,
+          "bucket_optimism_top15": 1.5324667440813824,
+          "n_wins": 95
+        },
+        "25-29": {
+          "lr_win_cal": 0.9101363792462074,
+          "bucket_optimism_top15": 1.5535788080585033,
+          "n_wins": 219
+        },
+        "30-33": {
+          "lr_win_cal": 1.2270043176184842,
+          "bucket_optimism_top15": 1.5250126569438176,
+          "n_wins": 82
+        },
+        "34-36": {
+          "lr_win_cal": 1.1786089042769385,
+          "bucket_optimism_top15": 1.7010718710456452,
+          "n_wins": 33
+        },
+        "37+": {
+          "lr_win_cal": 1.8311639221683376,
+          "bucket_optimism_top15": 1.597272956221634,
+          "n_wins": 9
+        }
+      },
+      "2022": {
+        "<25": {
+          "lr_win_cal": 0.8969656964725428,
+          "bucket_optimism_top15": 1.4446682444827759,
+          "n_wins": 146
+        },
+        "25-29": {
+          "lr_win_cal": 1.1043470465574992,
+          "bucket_optimism_top15": 1.5425007734016,
+          "n_wins": 194
+        },
+        "30-33": {
+          "lr_win_cal": 0.9252919456206463,
+          "bucket_optimism_top15": 1.4433218876452778,
+          "n_wins": 107
+        },
+        "34-36": {
+          "lr_win_cal": 1.0977368269448402,
+          "bucket_optimism_top15": 1.4594590693873295,
+          "n_wins": 27
+        },
+        "37+": {
+          "lr_win_cal": 1.5128790644945056,
+          "bucket_optimism_top15": 1.3548391066551706,
+          "n_wins": 12
+        }
+      },
+      "2023": {
+        "<25": {
+          "lr_win_cal": 0.9552940788238388,
+          "bucket_optimism_top15": 1.4529206114046909,
+          "n_wins": 139
+        },
+        "25-29": {
+          "lr_win_cal": 1.0001772424720266,
+          "bucket_optimism_top15": 1.5256164505908012,
+          "n_wins": 260
+        },
+        "30-33": {
+          "lr_win_cal": 1.160559595349841,
+          "bucket_optimism_top15": 1.508842164085695,
+          "n_wins": 92
+        },
+        "34-36": {
+          "lr_win_cal": 0.9970322004356748,
+          "bucket_optimism_top15": 1.395615095972534,
+          "n_wins": 34
+        },
+        "37+": {
+          "lr_win_cal": 0.8609701340978473,
+          "bucket_optimism_top15": 1.3748449207090125,
+          "n_wins": 18
+        }
+      },
+      "2024": {
+        "<25": {
+          "lr_win_cal": 0.8276747215917468,
+          "bucket_optimism_top15": 1.4004294726993463,
+          "n_wins": 176
+        },
+        "25-29": {
+          "lr_win_cal": 0.9941268564956275,
+          "bucket_optimism_top15": 1.5082390733333797,
+          "n_wins": 216
+        },
+        "30-33": {
+          "lr_win_cal": 1.1569819143751228,
+          "bucket_optimism_top15": 1.5924548399930876,
+          "n_wins": 104
+        },
+        "34-36": {
+          "lr_win_cal": 1.4648547244519217,
+          "bucket_optimism_top15": 1.3564541930006013,
+          "n_wins": 30
+        },
+        "37+": {
+          "lr_win_cal": 1.2403381760125889,
+          "bucket_optimism_top15": 1.291453325140352,
+          "n_wins": 18
+        }
+      },
+      "2025": {
+        "<25": {
+          "lr_win_cal": 0.9089372895316937,
+          "bucket_optimism_top15": 1.4878243070127728,
+          "n_wins": 151
+        },
+        "25-29": {
+          "lr_win_cal": 1.042312981085978,
+          "bucket_optimism_top15": 1.4939512926452496,
+          "n_wins": 210
+        },
+        "30-33": {
+          "lr_win_cal": 0.9278043826469262,
+          "bucket_optimism_top15": 1.5639167403094094,
+          "n_wins": 95
+        },
+        "34-36": {
+          "lr_win_cal": 1.549222311634694,
+          "bucket_optimism_top15": 1.5969259086551044,
+          "n_wins": 18
+        },
+        "37+": {
+          "lr_win_cal": 1.967465058355279,
+          "bucket_optimism_top15": 1.2081558760657058,
+          "n_wins": 5
+        }
+      }
+    }
+  },
+  "records_file": "experiments/age_bias_backtest_records_20260610_081757.csv.gz"
+}

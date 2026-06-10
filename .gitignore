@@ -116,3 +116,11 @@ models/history/
 
 #performance evals
 performance_eval/
+# Database backups (multi-GB copies)
+cycling_project/webscrape_tools/database/backups/
+
+# Claude Code worktrees
+.claude/worktrees/
+
+# Experiment record dumps / lab caches (large; JSONs are the tracked artifact)
+experiments/*.csv.gz

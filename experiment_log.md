@@ -1764,3 +1764,135 @@ included). LambdaRank head retrained stateless per the same-day verdict.
 JSON: `experiments/gc_checkpoint_head_cv_20260609_191539.json`
 Next: productionize as a separate "GC outlook" head + app surface
 (stage_race_dynamics_plan.md §8 item 6 → Phase 2b).
+
+## Form features: veteran bias quantified + lab-feature sweep round 1 (2026-06-10)
+
+Motivating symptom (user-observed): the model overestimates older riders'
+chances despite recent lacklustre results. Step 0 quantified it; a form
+feature lab + sweep then tested fixes. All runs: standard 5-fold expanding
+window, start 2016, production contender config, bucket + contender +
+calibrated LambdaRank per fold. Age-bias analysis pools each fold's label
+calendar year (every 2021-2025 row predicted exactly once, 280K records).
+
+**Step 0 — bias backtest** (`age_bias_backtest.py`): LambdaRank win-cal
+ratio (Σ predicted win p ÷ actual wins; >1 = overestimates) by age band:
+<25 **0.897**, 25-29 1.007, 30-33 1.073, 34-36 **1.227**, 37+ **1.327** —
+monotone, 4/5 folds. The clinical slice: riders with form_delta ≥ +0.5
+(clearly below career level) and age 34+ get **1.288** (vs 0.93-0.95 for
+younger riders with identical poor form); in-form 34+ are calibrated
+(1.026). Top-15 selection is unbiased (slot/finish ratios 0.94-1.03) — the
+error is probability mass, not ranking slots. Root causes diagnosed: the
+top form feature is best-of-5 (decline-insensitive), 90d/same-year window
+blanks January (34% empty), and no feature sees multi-season trajectory
+while lifetime career averages dominate gain.
+JSON: `experiments/age_bias_backtest_20260610_081757.json`
+
+**Form feature lab** (`form_feature_lab.py`, cached
+`experiments/form_lab_features_v1.csv.gz`): leak-free recomputation from
+rider_results (2010+ history), replicating production effective-date rules.
+Blocks: v1 fixed-window (cross-year 90d, NaN defaults), v2 EMA percentile
+(h30/h60 + quality-weighted), v3 season trajectory (season deltas, 365d
+slope, decline-from-peak), v4 volatility. Sanity: January coverage 94.5%
+via 365d EMA — the cross-year 90d window only reaches 68%, i.e. the window
+WIDTH was the binding constraint, not the calendar-year reset. EMA
+percentile out-signals the current 5-race bucket stat (Spearman +0.44 vs
+|0.38|). v3_season_delta means by age: <30 +0.5 / 30-33 −1.0 / 34+ −2.3
+pct points — decline is plainly visible to the features.
+
+**Sweep round 1** (`form_feature_sweep.py`, paired per fold vs baseline):
+
+| Config | winner Δ | podium Δ | log loss Δ | LR cal 34-36 | 37+ | poor-form 34+ |
+|---|---|---|---|---|---|---|
+| baseline | — | — | — | 1.227 | 1.327 | 1.288 |
+| v1 window fix | −0.25pp (1/5) | +0.27pp | −0.002 | 1.143 | 1.199 | 1.139 |
+| v2 EMA | +0.24pp (4/5) | **+0.69pp (5/5)** | −0.008 (4/5) | 1.189 | 1.188 | 1.145 |
+| v3 trajectory | +0.55pp (3/5) | +0.33pp | −0.003 | **1.112** | **1.127** | **1.092** |
+| v2v3v4 all | +0.59pp (3/5) | +0.71pp (4/5) | **−0.011 (4/5)** | 1.212 | 1.218 | 1.176 |
+
+Young bands never degrade (<25 improves 0.897 → 0.91-0.92 everywhere).
+New features are heavily used: v3_slope365 / v3_decline_from_peak rank ~5
+of ~136 in the contender; v4_pct_std365 ranks #3 in the combined config.
+
+Read: **v3 is the bias fix** (repairs both tails of the age gradient,
+poor-form veterans 1.288 → 1.092), **v2 is the probability-quality fix**
+(podium 5/5, log loss), but combining all three dilutes the veteran
+calibration halfway back (37+ 1.218). v1 confirms the mechanical window
+fix alone is not the answer. Round 2 (running): v2v3 and v3v4 to isolate
+whether v4 volatility or the EMA block causes the dilution.
+JSON: `experiments/form_feature_sweep_20260610_093306.json`
+
+### Sweep round 2: v2v3 is the production candidate (2026-06-10)
+
+Round 2 isolated the calibration-dilution source from round 1's combined
+config: v2v3 (EMA + trajectory) vs v3v4 (trajectory + volatility).
+
+| Config | winner Δ | podium Δ | log loss Δ | LR cal 34-36 | 37+ | poor-form 34+ |
+|---|---|---|---|---|---|---|
+| baseline | — | — | — | 1.227 | 1.327 | 1.288 |
+| **v2v3** | **+0.64pp (4/5)** | +0.62pp (4/5) | −0.001 (4/5) | **1.110** | **1.061** | **1.061** |
+| v3v4 | +0.28pp (3/5) | **+0.98pp (5/5)** | −0.010 (4/5) | 1.190 | 1.176 | 1.182 |
+
+**v4 volatility confirmed as the diluter**: v3v4 keeps all v3 features yet
+re-inflates veteran win cal (fold-2021 37+ hits 2.22, worse than baseline's
+1.83); v4_pct_std365 ranks #3 in the contender — it reads as "has good
+days in them", which is exactly the spiky-veteran upside signal. v4 has
+real podium/log-loss value but is anti-calibration; shelved (possible
+contender-only feature if per-head feature sets ever exist).
+
+**v2v3 final band profile** (LR win cal): <25 0.920 / 25-29 1.032 /
+30-33 1.052 / 34-36 1.110 / 37+ 1.061 — the monotone age gradient is
+essentially flattened (baseline: 0.897 → 1.327). The poor-form-veteran
+slice (the original complaint) goes 1.288 → 1.061. Bias improved in every
+fold where baseline overestimated; the one fold where baseline was already
+calibrated (2023) is left roughly alone. Winner capture +0.64pp paired
+(4/5 folds; the regression fold is 2025 at −0.86pp), podium +0.62pp (4/5),
+log loss flat overall — one bad fold (2021, +0.038, a v2-block quirk also
+present in v2-alone) against −0.01 in the other four.
+
+**Verdict: v2v3 passes the gate** — primary goal (veteran calibration)
+achieved with the best winner delta of any config and no young-band harm.
+Next: production integration (snapshot pipeline state for EMA + season
+aggregates, schema +15 cols, rebuild, retrain).
+JSONs: `experiments/form_feature_sweep_20260610_093306.json` (round 1),
+`experiments/form_feature_sweep_20260610_102102.json` (round 2).
+
+### v2v3 trajectory form features PRODUCTIONIZED (2026-06-10)
+
+The CV-validated v2v3 config (15 features: EMA percentile + multi-season
+trajectory) is live in production end to end:
+
+- `form_team_features.py`: RaceHistoryEntry carries percentile / category
+  weight / season (slots=True); RiderFormHistory gains never-pruned
+  per-season aggregates + `get_trajectory_form_features()` (the production
+  twin of form_feature_lab); buffer 50 → 250 (observed max 115 comps/year).
+- `feature_precomputation.py`: percentile plumbed through results queries
+  and the resume rebuild; snapshot schema +15 columns (ALTER guard for
+  existing DBs); 57-column INSERT.
+- `data_pipeline.py` / `feature_engineering.py`: columns registered for
+  selection + numeric coercion, NO imputation (NULL-by-design; names avoid
+  the 'avg_bucket'/'_count' fill patterns). CLAUDE.md gotcha added.
+- Parity gates: logic-level replay (verify_trajectory_parity) — 16,661 rows
+  exact to 1e-13; post-rebuild wiring check (verify_snapshot_trajectory) —
+  60K sampled snapshot rows, zero mismatches, coverage 98% (EMA) / 76-94%
+  (trajectory). Known divergence (documented, production-correct): GC rows
+  of race-years whose stages have no scraped results anchor at the true
+  race start; the lab anchored at the GC's own date (~0.01% of rows).
+- Snapshot rebuild from 2010: 9,142 competitions, 11,776 riders (DB backed
+  up first: backups/cycling_races_pre_trajectory_features_20260610_1037.db).
+- All heads retrained on the 141-feature snapshots: production stack
+  (calibrated T=0.827/1.021/0.984), LambdaRank (T=0.608), GC outlook.
+  All four models use all 15 features; ranks mirror CV (contender:
+  v3_slope365 #5, v3_season_delta_prev #7; bucket/LambdaRank:
+  v2_ema_bucket_h60 #4/#3). Inference smoke test on Famenne Ardenne
+  Classic 2026: both heads sane, LR win_p sums to 1.000.
+- Note: GC outlook was retrained with the new features without a dedicated
+  re-gate (additive features, low risk); its next scheduled validation will
+  confirm.
+- Future-race caveat (pre-existing, unchanged): app predictions for
+  upcoming races reuse each rider's latest snapshot, so EMA/season features
+  are as-of their last race. A future enhancement could re-age them to the
+  race date at inference.
+
+Expected production effect (from the 5-fold gate): winner capture +0.64pp,
+podium +0.62pp, veteran win-probability overestimation 1.23-1.33 → 1.06-1.11
+(poor-form veterans 1.29 → 1.06), under-25s 0.90 → 0.92.
