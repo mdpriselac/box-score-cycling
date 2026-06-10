@@ -24,6 +24,7 @@ from cycling_project.prediction_tools.evaluation import (
     BucketEvaluator, TimeGapEvaluator, RankingEvaluator,
 )
 from cycling_project.webscrape_tools.get_startlist import get_start_list
+from cycling_project.webscrape_tools.logging_config import get_logger
 from cycling_project.webscrape_tools.start_list_parse_tools import Team, Rider
 from cycling_project.webscrape_tools.scrape_client import WebClient
 from cycling_project.webscrape_tools.get_race_results import extract_results, extract_race_time
@@ -46,6 +47,8 @@ from cycling_project.engineering_tools.race_profile_scoring import (
 )
 from cycling_project.engineering_tools.place_handling import place_bucketer
 
+
+logger = get_logger(__name__)
 
 # Default database path
 _DEFAULT_DB = (
@@ -670,6 +673,8 @@ def assemble_prediction_df(
     matched_riders: pd.DataFrame,
     field_features: dict,
     race_profile: dict,
+    asof_date: str = None,
+    recompute_form: bool = True,
 ) -> pd.DataFrame:
     """
     Combine rider snapshots + field features + race profile into a model-ready DataFrame.
@@ -679,9 +684,40 @@ def assemble_prediction_df(
         matched_riders: Rider mapping with bib_number, team_name
         field_features: Computed from the actual start list
         race_profile: From a historical reference race
+        asof_date: Date to re-age form features to (YYYY-MM-DD); defaults to
+            today. Snapshot form features are as-of each rider's *last race*,
+            which goes stale between races — worst in early season, where the
+            snapshot's "current season" is still last year.
+        recompute_form: Set False to keep the raw snapshot form values
+            (pre-2026-06 behavior).
     """
     # Start with rider snapshot data
     df = rider_snapshots.copy()
+
+    # Re-age the 21 time-sensitive form features (original six + the
+    # trajectory/EMA block) to asof_date using the same production classes
+    # that build snapshots. Falls back to the stale snapshot values if the
+    # recompute fails — predictions degrade, they don't break.
+    if recompute_form and len(df):
+        try:
+            from cycling_project.prediction_tools.live_form import (
+                LIVE_FORM_COLUMNS,
+                compute_form_features_asof,
+            )
+            live = compute_form_features_asof(
+                rider_ids=[int(r) for r in df['rider_id']],
+                asof_date=asof_date,
+                comp_type=race_profile.get('competition_type', 'one_day'),
+                race_dominant_profile=race_profile.get(
+                    'race_dominant_profile', 'unknown'
+                ),
+            )
+            live = live.set_index('rider_id')
+            idx = df['rider_id'].astype(int)
+            for col in LIVE_FORM_COLUMNS:
+                df[col] = idx.map(live[col]).values
+        except Exception as exc:  # pragma: no cover — defensive app path
+            logger.warning(f"Live form recompute failed, using snapshot form: {exc}")
 
     # Merge in bib numbers and team names from the scraped start list
     if not matched_riders.empty and 'bib_number' in matched_riders.columns:

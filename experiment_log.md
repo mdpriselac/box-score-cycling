@@ -1896,3 +1896,36 @@ trajectory) is live in production end to end:
 Expected production effect (from the 5-fold gate): winner capture +0.64pp,
 podium +0.62pp, veteran win-probability overestimation 1.23-1.33 → 1.06-1.11
 (poor-form veterans 1.29 → 1.06), under-25s 0.90 → 0.92.
+
+### Live form re-aging at inference (2026-06-10, afternoon)
+
+Future-race predictions assembled rider features from each rider's latest
+snapshot, so every form feature was as-of their *last race*: mean
+days_since_last_race read 7 when the true value was 43 (smoke sample of a
+late-April field predicted on June 10), the 365d EMA window retained
+year-old results that should have aged out (per-rider shifts up to 30
+percentile points), and in January the snapshot's "current season" is
+still last year.
+
+New `prediction_tools/live_form.py` recomputes all 21 form features
+(original six + trajectory/EMA block) as-of a given date using the same
+production RiderFormHistory that builds snapshots, including the
+precompute's exact career-average semantics (per-type sums with snapshot
+2dp rounding — using the raw mean shifts form_delta's own rounding on ~20%
+of rows) and an optional (date, id) cut replicating same-day processing
+order. Hooked into `assemble_prediction_df` (default on, `recompute_form=
+False` restores old behavior; graceful fallback to snapshot values on
+error), which covers all call sites: per-reference and averaged future-race
+predictions, and the GC outlook frame.
+
+Validation: replaying 60 sampled 2024-26 competitions (7,141 rider rows),
+the live recompute reproduces the stored snapshot form columns **bit-exactly
+(21/21 columns, max diff 0.0)**. Inference smoke on a 120-rider frame:
+predictions clean on the re-aged features, LambdaRank win_p sums to 1.000.
+
+Notes: the EMA *mean* is mathematically shift-invariant under re-aging
+(uniform weight decay), so the live gains come from days_since_last_race,
+window composition (old results aging out), and the January season
+rollover — the early-season cases where the old features were weakest.
+Mid-race GC callers can pass exclude_race/race_start_date once same-race
+stage results are migrated mid-race (not currently the case weekly).
