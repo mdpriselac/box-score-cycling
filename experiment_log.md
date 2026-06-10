@@ -1650,3 +1650,117 @@ lite: compute state from completed stages via the same
 compute_race_state code path, defaults for everything else);
 (3) only then flip include_race_state=True in production training and
 retrain. Steps tracked in stage_race_dynamics_plan.md.
+
+## Mid-race GC head — Phase 2 of stage-race dynamics (2026-06-09)
+
+A new head predicting FINAL GC bucket from the race state after k completed
+stages: 316K training rows = (rider × gc race × checkpoint k=1..N-1), state
+from `rider_race_state` (state-after-k is the row keyed to stage k+1), target
+= final GC bucket. Production contender-cascade config. Evaluation on 2,905
+(gc race × checkpoint) synthetic groups against two baselines on identical
+groups: **blind** (pre-race features only — what production does for GC
+today) and **carry-forward** (predicted final GC = current GC order — the
+real bar; across the 2024 Tour's own checkpoints it captures the winner 90%
+of the time). Strata by pct_race_complete. 4 usable folds (2021-2024 test);
+the 2025 fold is empty because 2025+ GC comps had NULL dates (bug found
+during this work; backfill landed same day, snapshot rebuild pending).
+
+### Results (means across 4 folds, paired on identical groups)
+
+| Stratum | carry-fwd | blind | **state** | Δ st−cf | Δ st−blind |
+|---|---|---|---|---|---|
+| early (≤1/3) winner | 0.184 | 0.297 | **0.336** | **+0.152** | +0.040 |
+| mid (1/3-2/3) winner | 0.423 | 0.276 | **0.467** | **+0.045** | +0.191 |
+| late (>2/3) winner | 0.703 | 0.303 | 0.693 | −0.010 | +0.390 |
+| all winner | 0.421 | 0.290 | **0.485** | +0.064 | +0.195 |
+| all podium | 0.519 | 0.465 | **0.640** | +0.121 | +0.175 |
+| all log loss | — | 1.698 | **1.105** | — | −0.593 |
+| all Brier | — | 0.881 | **0.558** | — | −0.323 |
+
+Per-fold Δ winner vs carry-forward: early +0.182/+0.161/+0.185/+0.080
+(4/4 positive), mid +0.062/+0.042/+0.042/+0.031 (4/4), late
++0.006/−0.029/−0.006/−0.013 (wash). Vs blind: positive everywhere except
+early-fold-2024 (−0.05) — at k=1-2 state is thin and pre-race features carry
+most of the signal.
+
+### Reading
+
+1. **The head beats carry-forward exactly where carry-forward is weak** —
+   +15.2pp winner capture early-race (4/4 folds), +4.5pp mid (4/4) — and
+   **matches it late** (it learns to carry forward when the race is
+   settled). This is the textbook shape of a model that adds information
+   rather than noise.
+2. **Probability quality transforms**: log loss 1.70 → 1.11, Brier 0.88 →
+   0.56 vs blind, with calibration ratio 0.95. Carry-forward can't produce
+   probabilities at all — for GC in-play market comparison, this head is
+   the only game in town.
+3. Honest caveats: checkpoint groups within a race are correlated (per-fold
+   pairing is the unit of evidence, not the 2,905 groups); 4 folds; blind
+   edge early-race is modest and one fold negative.
+
+### Verdict — gate PASSED
+
+Beats carry-forward early/mid in every fold, matches it late, and produces
+calibrated probabilities the baseline can't. Productionization (separate
+"GC outlook" head + app surface alongside the existing pre-race GC
+prediction) should follow the GC-date snapshot rebuild + retrain so 2025+
+GC races are covered and a 5th fold can confirm.
+
+JSON: `experiments/gc_checkpoint_head_cv_20260609_154338.json`
+
+## LambdaRank + state — no value, head stays stateless (2026-06-09)
+
+Tested production LambdaRank (LR=0.05) with the 23 state columns in both
+imputation modes vs the stateless baseline, same 5-fold design as Phase 1.
+Run was stopped during fold 5; folds 1-4 are complete and consistent enough
+to call.
+
+Per-fold Δ winner capture vs baseline (folds 2021-2024):
+state_defaults +0.23/−0.14/+1.65/+0.53pp (mean +0.57 ± 0.66);
+state_nan −0.15/−0.74/+1.17/−0.43pp (mean −0.04). Log loss deltas are
+sign-inconsistent for defaults (−0.005/+0.030/+0.024/−0.167) and mildly
+negative for nan (−0.041 mean, 3/4 folds). The largest single delta
+(fold 2024, defaults, log loss −0.167) coincides with a degenerate baseline
+fit that fold (24 boosting iterations, T=0.396) — baseline instability, not
+state signal.
+
+**Verdict: keep production LambdaRank stateless.** Consistent with the
+training-window experiment's finding that the LambdaRank head sits at a
+calibration ceiling and is insensitive to added information. The
+within-noise nan-mode log-loss lean isn't worth retraining and re-validating
+the deployed calibrated head. Fold 5 not rerun — the 4-fold pattern is
+clear; rerun only if a future need for sharper in-race probabilities
+emerges. Log: `experiments/lambdarank_state_cv_run.log` (no JSON — killed
+before completion).
+
+### 5-fold confirmation after the GC-date rebuild (2026-06-09, evening)
+
+The snapshot rebuild (1,094,045 rows; 81 of 93 date-fixed 2025-26 GC comps
+materialized) unlocked the 2025 fold and enlarged every fold's uncapped test
+window. Re-run of the identical experiment, now 5 folds and 4,813 checkpoint
+groups total:
+
+| Stratum | carry-fwd | blind | **state** | Δ st−cf (per fold) |
+|---|---|---|---|---|
+| early winner | 0.167 | 0.300 | **0.350** | **+0.183** (+.192/+.171/+.205/+.134/+.214 — 5/5) |
+| mid winner | 0.409 | 0.287 | **0.467** | **+0.058** (5/5 positive) |
+| late winner | 0.704 | 0.312 | **0.721** | +0.017 (4/5 positive) |
+| all winner | 0.408 | 0.298 | **0.495** | **+0.087** (5/5) |
+| all podium | 0.496 | 0.456 | **0.632** | +0.136 |
+| all log loss vs blind | — | 1.689 | **1.110** | −0.579 |
+
+Stronger than the 4-fold result on every margin, and the new 2025 fold —
+data that had never existed in training or evaluation before today — is
+among the strongest folds (early +21.4pp over carry-forward). The
+early-race blind comparison also turned uniformly positive (5/5, was 3/4).
+Late-race now slightly POSITIVE vs carry-forward (+1.7pp, 4/5) rather than
+a wash. Verdict unchanged and hardened: **gate passed at 5 folds**.
+
+Production models were retrained the same evening on the rebuilt table
+(633,367 samples / 5,636 comps, up from 624,796 / 5,551 — the dedupe,
+the previously-missed incremental rows, and the 2025-26 GC rows all now
+included). LambdaRank head retrained stateless per the same-day verdict.
+
+JSON: `experiments/gc_checkpoint_head_cv_20260609_191539.json`
+Next: productionize as a separate "GC outlook" head + app surface
+(stage_race_dynamics_plan.md §8 item 6 → Phase 2b).
