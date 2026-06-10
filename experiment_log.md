@@ -1929,3 +1929,36 @@ window composition (old results aging out), and the January season
 rollover — the early-season cases where the old features were weakest.
 Mid-race GC callers can pass exclude_race/race_start_date once same-race
 stage results are migrated mid-race (not currently the case weekly).
+
+### GC outlook re-gate after trajectory form features (2026-06-10)
+
+The GC outlook head was retrained with the 15 trajectory/EMA form features
+(productionized earlier today) without a dedicated re-gate; this confirms it.
+Re-ran gc_checkpoint_head_cv identically (5 folds, 2016 start, same contender
+config) on the now-141-feature frames. Result: the head holds on every
+margin, indistinguishable from the 2026-06-09 baseline.
+
+| Stratum | carry-fwd | blind | state | Δ st−cf (per fold) |
+|---|---|---|---|---|
+| early winner | 0.167 | 0.309 | **0.345** | **+0.178** (+.181/+.199/+.180/+.152/+.179 — 5/5) |
+| mid winner | 0.409 | 0.290 | **0.470** | **+0.062** (5/5) |
+| late winner | 0.704 | 0.321 | **0.726** | +0.022 (5/5) |
+| all winner | 0.408 | 0.304 | **0.497** | **+0.089** (5/5: +.098/+.095/+.078/+.076/+.096) |
+| all podium | 0.496 | 0.454 | **0.632** | +0.136 |
+| all log loss vs blind | — | 1.675 | **1.109** | −0.566 |
+
+vs the pre-form baseline (state: early 0.350 / all 0.495 / podium 0.632 /
+log loss 1.110) — flat to within noise. The form features neither help nor
+hurt the GC head, which is expected: it's dominated by the in-race state
+features (gc_rank_current et al.), and the trajectory features are a small
+additive contribution. **Verdict: gate re-passed; the retrained production
+GC outlook head is validated.**
+
+JSON: `experiments/gc_checkpoint_head_cv_20260610_155759.json`
+
+Note (operational): this run's weekly update scraped no new data —
+FirstCycling's Cloudflare began 403-blocking cloudscraper on 2026-06-10
+(real browsers still pass; plain curl also 403s). DB max date stuck at
+2026-05-03 until the scraper is fixed (curl_cffi impersonation the likely
+route). Models/features were retrained on unchanged data, so the re-gate
+is unaffected.

@@ -3,7 +3,7 @@
   "contender_best_iteration": 468,
   "n_train_rows": 335310,
   "n_checkpoint_groups": 3087,
-  "saved_at": "2026-06-10T11:08:13.184527",
+  "saved_at": "2026-06-10T15:43:44.128659",
   "train_config": {
     "n_estimators": 2000,
     "early_stopping": 100,
