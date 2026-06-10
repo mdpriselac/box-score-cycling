@@ -583,13 +583,25 @@ def run_lambdarank_training(config: PipelineConfig) -> str:
 
 
 # ---------------------------------------------------------------------------
+# Step 12: Train GC outlook head (state-aware final-GC prediction)
+# ---------------------------------------------------------------------------
+
+def run_gc_outlook_training(config: PipelineConfig) -> str:
+    from cycling_project.prediction_tools.train_gc_outlook_production import (
+        main as gc_outlook_main,
+    )
+    gc_outlook_main()
+    return "done"
+
+
+# ---------------------------------------------------------------------------
 # CLI
 # ---------------------------------------------------------------------------
 
 STEP_NAMES = [
     "scrape-lists", "scrape-data", "migrate", "place-bucket",
     "bib", "experience", "percentiles", "gradients", "features",
-    "race-state", "train", "train-lambdarank",
+    "race-state", "train", "train-lambdarank", "train-gc-outlook",
 ]
 
 
@@ -636,7 +648,7 @@ def should_run(step: str, args: argparse.Namespace) -> bool:
     scrape_steps = {"scrape-lists", "scrape-data"}
     migrate_steps = {"migrate", "place-bucket", "bib", "experience"}
     feature_steps = {"percentiles", "gradients", "features", "race-state"}
-    train_steps = {"train"}
+    train_steps = {"train", "train-gc-outlook"}
     lambdarank_steps = {"train-lambdarank"}
 
     if args.skip_scrape and step in scrape_steps:
@@ -785,6 +797,13 @@ def run_pipeline(args: argparse.Namespace):
     if should_run("train-lambdarank", args):
         results.append(
             run_step("Train LambdaRank Head", run_lambdarank_training, config)
+        )
+
+    # Step 12: Train GC outlook head (state-aware final-GC prediction;
+    # non-fatal — the app degrades gracefully when the head is absent)
+    if should_run("train-gc-outlook", args):
+        results.append(
+            run_step("Train GC Outlook Head", run_gc_outlook_training, config)
         )
 
     print_summary(results)

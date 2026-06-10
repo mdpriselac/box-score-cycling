@@ -1,0 +1,16 @@
+{
+  "bucket_best_iteration": 137,
+  "contender_best_iteration": 515,
+  "n_train_rows": 335310,
+  "n_checkpoint_groups": 3087,
+  "saved_at": "2026-06-09T19:42:10.074403",
+  "train_config": {
+    "n_estimators": 2000,
+    "early_stopping": 100,
+    "contender_top_n": 15,
+    "contender_learning_rate": 0.01,
+    "contender_use_oof": true,
+    "contender_n_classes": 5,
+    "include_gradient_features": true
+  }
+}

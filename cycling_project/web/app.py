@@ -37,6 +37,7 @@ from cycling_project.prediction_tools.future_race_loader import (
     get_available_stages,
     get_default_references,
 )
+from cycling_project.prediction_tools.gc_outlook import GCOutlookHead
 from cycling_project.prediction_tools.live_race_state import (
     attach_race_state,
     fetch_live_race_state,
@@ -610,15 +611,20 @@ probabilities by default (the more discriminative head).
         if current_removed != prev_removed:
             st.warning("Start list has changed since predictions were run. Re-run predictions to update.")
 
-    # Within-race state applies when predicting stage 2+ of a stage race:
-    # completed stages of THIS edition feed GC standings / in-race form /
-    # fatigue features (mirrors training, where only stage rows carry state).
+    # Within-race state applies when predicting stage 2+ of a stage race
+    # (state features feed the main models, mirroring training) or the GC
+    # of an in-progress stage race (state feeds the separate GC outlook
+    # head; the main GC prediction stays pre-race, also mirroring training).
     _state_target_is_stage = (
         st.session_state.get('_prev_comp_type') == 'stage'
         and (st.session_state.get('_prev_stage_num') or 0) >= 2
     )
+    _state_target_is_gc = (
+        st.session_state.get('_prev_comp_type') == 'gc'
+        and st.session_state.get('is_stage_race', False)
+    )
     force_refresh_state = False
-    if _state_target_is_stage:
+    if _state_target_is_stage or _state_target_is_gc:
         force_refresh_state = st.checkbox(
             "Force refresh completed stages (race state)",
             value=False,
@@ -669,21 +675,35 @@ probabilities by default (the more discriminative head).
                     else None
                 )
 
-                # ── Within-race state (stage 2+ targets only) ──
-                race_state_df = None
-                race_state_info = None
-                if (
+                # ── Within-race state ──
+                # Stage 2+ targets: state feeds the MAIN models (mirrors
+                # training). GC targets of stage races: state feeds only
+                # the separate GC outlook head; the main GC prediction
+                # stays pre-race (gc training rows carry no state).
+                fetch_for_stage = (
                     target_comp_type == 'stage'
                     and target_stage_num
                     and int(target_stage_num) >= 2
-                ):
+                )
+                fetch_for_gc = (
+                    target_comp_type == 'gc'
+                    and st.session_state.get('is_stage_race', False)
+                )
+                race_state_df = None
+                race_state_info = None
+                if fetch_for_stage or fetch_for_gc:
                     race_state_df, race_state_info = fetch_live_race_state(
                         int(fc_race_id),
                         int(race_year),
-                        target_stage_number=int(target_stage_num),
+                        target_stage_number=(
+                            int(target_stage_num) if fetch_for_stage else None
+                        ),
                         force_refresh=force_refresh_state,
                         db_path=DB_PATH,
                     )
+                # State for the main per-reference/averaged predictions —
+                # only stage targets; everything else gets NaN -> defaults.
+                main_state_df = race_state_df if fetch_for_stage else None
                 state_through = (
                     int(race_state_info['stages_completed'])
                     if race_state_info and race_state_info.get('available')
@@ -760,7 +780,7 @@ probabilities by default (the more discriminative head).
                     reference_profiles.append(profile)
 
                     pred_df = assemble_prediction_df(snapshots, matched, field_features, profile)
-                    pred_df = attach_race_state(pred_df, race_state_df)
+                    pred_df = attach_race_state(pred_df, main_state_df)
                     result = race_ranker.predict_race(pred_df, return_details=True)
                     result['team'] = result['rider_id'].map(
                         lambda rid: name_map.get(rid, {}).get('team_name', '')
@@ -774,7 +794,7 @@ probabilities by default (the more discriminative head).
                 # Average prediction (always, even for 1 race)
                 avg_profile = average_race_profiles(reference_profiles)
                 pred_df = assemble_prediction_df(snapshots, matched, field_features, avg_profile)
-                pred_df = attach_race_state(pred_df, race_state_df)
+                pred_df = attach_race_state(pred_df, main_state_df)
                 result = race_ranker.predict_race(pred_df, return_details=True)
                 result['team'] = result['rider_id'].map(
                     lambda rid: name_map.get(rid, {}).get('team_name', '')
@@ -782,6 +802,41 @@ probabilities by default (the more discriminative head).
                 lr_temp = _attach_lambdarank(result, pred_df)
                 all_predictions['Averaged Reference Races'] = result
                 _append_log_rows('Averaged Reference Races', result, lr_temp)
+
+                # ── GC outlook head (state-aware final-GC prediction) ──
+                gc_outlook_df = None
+                if fetch_for_gc and race_state_df is not None:
+                    gc_outlook_head = GCOutlookHead.load(MODEL_DIR)
+                    if gc_outlook_head is None:
+                        st.info(
+                            "GC outlook head not installed — train it with "
+                            "`uv run python -m cycling_project.update_pipeline "
+                            "--only train-gc-outlook`."
+                        )
+                    else:
+                        outlook_frame = assemble_prediction_df(
+                            snapshots, matched, field_features, avg_profile
+                        )
+                        outlook_frame = attach_race_state(
+                            outlook_frame, race_state_df
+                        )
+                        gc_outlook_df = gc_outlook_head.predict(outlook_frame)
+                        if not gc_outlook_df.empty:
+                            gc_outlook_df['team'] = gc_outlook_df['rider_id'].map(
+                                lambda rid: name_map.get(rid, {}).get('team_name', '')
+                            )
+                            # Outlook is run-level (averaged profile): merge
+                            # its probabilities onto every log row by rider.
+                            outlook_by_rider = gc_outlook_df.set_index('rider_id')
+                            for r in log_rows:
+                                if r.rider_id in outlook_by_rider.index:
+                                    o = outlook_by_rider.loc[r.rider_id]
+                                    r.gc_outlook_win_p = o.get('gc_outlook_win_p')
+                                    r.gc_outlook_podium_p = o.get('gc_outlook_podium_p')
+                                    r.gc_outlook_top5_p = o.get('gc_outlook_top5_p')
+                                    r.gc_outlook_top15_p = o.get('gc_outlook_top15_p')
+                st.session_state['gc_outlook'] = gc_outlook_df
+                st.session_state['gc_outlook_state_info'] = race_state_info
 
                 # Persist to prediction_log (best-effort — never blocks the UI)
                 if log_rows and fc_race_id:
@@ -964,6 +1019,62 @@ probabilities by default (the more discriminative head).
                             hide_index=True,
                             width='stretch',
                         )
+
+# ── GC Outlook (state-aware final-GC prediction) ─────────────────────────
+
+if (
+    'all_predictions' in st.session_state
+    and st.session_state.get('gc_outlook') is not None
+    and not st.session_state['gc_outlook'].empty
+):
+    outlook = st.session_state['gc_outlook']
+    state_info = st.session_state.get('gc_outlook_state_info') or {}
+
+    k = state_info.get('stages_completed')
+    total = state_info.get('total_stages')
+    st.subheader(
+        f"GC Outlook — after stage {k} of {total}"
+        if k else "GC Outlook"
+    )
+    st.caption(
+        "Final-GC probabilities conditioned on the race so far "
+        "(reconstructed standings, in-race form, fatigue). The main "
+        "prediction tabs above remain pre-race for GC targets. "
+        f"{state_info.get('riders_in_standings', '?')} riders in standings"
+        + (
+            f" — current leader: {state_info['leader_name']}"
+            if state_info.get('leader_name') else ""
+        )
+    )
+
+    def _fmt_gap(seconds):
+        if pd.isna(seconds):
+            return ''
+        s = int(seconds)
+        if s >= 3600:
+            return f"+{s // 3600}:{(s % 3600) // 60:02d}:{s % 60:02d}"
+        return f"+{s // 60}:{s % 60:02d}"
+
+    display = outlook.head(25).copy()
+    display['Gap'] = display['gc_gap_to_leader_s'].apply(_fmt_gap)
+    for col in ('gc_outlook_win_p', 'gc_outlook_podium_p',
+                'gc_outlook_top5_p', 'gc_outlook_top15_p'):
+        display[col] = (display[col] * 100).round(1)
+    display = display[[
+        'outlook_rank', 'rider_name', 'team', 'gc_rank_current', 'Gap',
+        'gc_outlook_win_p', 'gc_outlook_podium_p',
+        'gc_outlook_top5_p', 'gc_outlook_top15_p',
+    ]].rename(columns={
+        'outlook_rank': 'Outlook Rank',
+        'rider_name': 'Rider',
+        'team': 'Team',
+        'gc_rank_current': 'Current GC',
+        'gc_outlook_win_p': 'Win %',
+        'gc_outlook_podium_p': 'Podium %',
+        'gc_outlook_top5_p': 'Top 5 %',
+        'gc_outlook_top15_p': 'Top 15 %',
+    })
+    st.dataframe(display, hide_index=True, width='stretch')
 
 
 # ── Step 4: Compare with Actual Results ──────────────────────────────────

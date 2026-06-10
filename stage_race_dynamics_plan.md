@@ -209,13 +209,24 @@ The pieces mostly exist:
    moved vs the state-blind frame. `prediction_log.state_through_stage` column added (ALTER
    migration), and the logged `stage_number` now records the SELECTED prediction target rather
    than the URL stage hint. LambdaRank head remains stateless by design (untested with state).
-6. **Phase 2 experiment** (~2–3 days): checkpoint-row construction + GC head CV vs carry-forward.
-   Decision gate. (State after stage k is already in the table: it's the state keyed to stage
-   k+1's competition_id; the GC-keyed row holds state after the final stage.)
-7. **Later / optional:** scrape FirstCycling per-stage classification tables for bonus-second-exact
+6. ~~**Phase 2 experiment**: checkpoint-row construction + GC head CV vs carry-forward~~ —
+   DONE 2026-06-09, **gate PASSED and 5-fold confirmed post-rebuild**: vs carry-forward
+   +18.3pp winner early-race (5/5 folds, +21.4pp on the new 2025 fold), +5.8pp mid (5/5),
+   parity late; vs blind +19.8pp winner, log loss 1.69→1.11. LambdaRank+state tested the same
+   day and REJECTED (within noise; head stays stateless). See experiment_log.md.
+7. ~~**Phase 2b — productionize the GC outlook head**~~ — DONE 2026-06-09.
+   `prediction_tools/gc_outlook.py` (canonical checkpoint assembly + `GCOutlookHead`
+   train/save/load/predict; self-contained gc_outlook_* files in models/production, main
+   ModelRegistry untouched), `train_gc_outlook_production.py`, pipeline step
+   `train-gc-outlook` (13 steps total). Web app: GC targets of in-progress stage races fetch
+   live state (all completed stages), the MAIN GC prediction stays pre-race (training
+   parity), and a separate "GC Outlook — after stage k" section shows state-aware
+   win/podium/top5/top15 with current standings. `prediction_log` gains gc_outlook_* columns;
+   outlook probabilities logged per rider per run.
+8. **Later / optional:** scrape FirstCycling per-stage classification tables for bonus-second-exact
    GC (webscrape-refactor branch); remaining-terrain features from reference editions; Monte-Carlo
    GC simulation driven by the stage model; points/KOM jersey markets; LambdaRank + state
-   (NaN-mode showed log-loss-heavy gains that suit the calibrated head).
+   revisit only if a calibrated in-race head becomes a priority (2026-06-09 test: within noise).
 
 ## 9. Integration-order constraint (learned in Phase 1)
 

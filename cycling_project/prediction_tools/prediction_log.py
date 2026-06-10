@@ -52,9 +52,15 @@ CREATE TABLE IF NOT EXISTS prediction_log (
 # Columns added after the table first shipped; applied via ALTER TABLE for
 # existing databases. state_through_stage: number of completed stages whose
 # results fed the within-race state attached to this prediction (NULL =
-# pre-race features only).
+# pre-race features only). gc_outlook_*: the state-aware GC outlook head's
+# cumulative probabilities — populated only on GC-target runs of in-progress
+# stage races (multiclass_*/lambdarank_* on the same row remain pre-race).
 MIGRATION_COLUMNS = [
     ("state_through_stage", "INTEGER"),
+    ("gc_outlook_win_p", "REAL"),
+    ("gc_outlook_podium_p", "REAL"),
+    ("gc_outlook_top5_p", "REAL"),
+    ("gc_outlook_top15_p", "REAL"),
 ]
 
 INDEX_SQL = [
@@ -99,6 +105,10 @@ class PredictionLogRow:
     lambdarank_podium_p: Optional[float] = None
     lambdarank_temperature: Optional[float] = None
     state_through_stage: Optional[int] = None
+    gc_outlook_win_p: Optional[float] = None
+    gc_outlook_podium_p: Optional[float] = None
+    gc_outlook_top5_p: Optional[float] = None
+    gc_outlook_top15_p: Optional[float] = None
 
     def as_row(self) -> Dict[str, Any]:
         return {
@@ -121,6 +131,10 @@ class PredictionLogRow:
                 int(self.state_through_stage)
                 if self.state_through_stage is not None else None
             ),
+            'gc_outlook_win_p': _as_float(self.gc_outlook_win_p),
+            'gc_outlook_podium_p': _as_float(self.gc_outlook_podium_p),
+            'gc_outlook_top5_p': _as_float(self.gc_outlook_top5_p),
+            'gc_outlook_top15_p': _as_float(self.gc_outlook_top15_p),
         }
 
 
