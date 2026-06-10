@@ -26,10 +26,13 @@ class WebClient:
         # the Response API the scrapers use (.text/.status_code/.raise_for_status).
         self._browser = None
         if _browser_backend_enabled():
-            from cycling_project.webscrape_tools.browser_client import BrowserFetcher
-            self._browser = BrowserFetcher()
+            # Shared, process-wide headed Chrome: one window reused across every
+            # WebClient in the session (the scrapers build a fresh client per
+            # race). close() leaves it open; it's torn down at process exit.
+            from cycling_project.webscrape_tools.browser_client import get_shared_fetcher
+            self._browser = get_shared_fetcher()
             self.client = None
-            logger.info(f"WebClient initialized (browser backend) for {base_url}")
+            logger.info(f"WebClient initialized (shared browser backend) for {base_url}")
         else:
             self.client = self._build_scraper()
             logger.info(f"WebClient initialized with base URL: {base_url}")
@@ -108,11 +111,15 @@ class WebClient:
             raise
 
     def close(self):
-        """Close the client session."""
+        """Close the client session.
+
+        The browser backend is a shared, process-wide instance — closing a
+        single WebClient must NOT tear it down (the scrapers close a client
+        per race). It is closed once at process exit via atexit. Only the
+        per-instance cloudscraper session is closed here.
+        """
         logger.debug("Closing WebClient session")
-        if self._browser is not None:
-            self._browser.close()
-        elif self.client is not None:
+        if self.client is not None:
             self.client.close()
 
 
