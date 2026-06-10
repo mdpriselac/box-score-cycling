@@ -67,7 +67,6 @@ FirstCycling HTML → scrape → pickle files → migrate → SQLite DB
 ## Gotchas
 
 - **Rate limiting**: `scrape_client.py` enforces 3-second minimum between HTTP requests with random jitter. Do not bypass this.
-- **Cloudflare**: Uses `cloudscraper` library (not plain requests/httpx) for FirstCycling pages.
 - **Pickle files**: Legacy intermediate format between scraping and SQLite. The migration step converts these to DB rows.
 - **Pipeline halts on critical failures**: Steps like migrate, percentiles, gradients, and features will stop the pipeline if they fail. Scraping, training, and LambdaRank-head training failures are non-fatal.
 - **Two probability heads**: `prediction_tools/probability_predictor.py` is the multiclass contender cascade (used for ranking). `prediction_tools/lambdarank_probability_predictor.py` is the full-field LambdaRank head (used for calibrated probabilities — book comparison). The web app shows both side-by-side.
