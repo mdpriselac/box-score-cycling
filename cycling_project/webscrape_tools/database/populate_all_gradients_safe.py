@@ -209,7 +209,8 @@ def calculate_gradients_for_competition(competition_id: int, db_path: str) -> Di
         # Check from highest to lowest percentile for variance zero
         for p in sorted(valid_percentiles, reverse=True):
             if feature_data[p].get('variance_normalized') == 0:
-                variance_zero_at = p  # Keep updating to find the highest percentile where this occurs
+                variance_zero_at = p  # First hit while descending = highest such percentile
+                break
         
         # For kurtosis null, check the imputed flags if they exist
         kurtosis_gradient_name = None
