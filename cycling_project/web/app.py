@@ -37,7 +37,6 @@ from cycling_project.prediction_tools.future_race_loader import (
     load_production_rating_snapshots,
     search_historical_races,
     get_selected_race_details,
-    detect_race_stages,
     scrape_or_load_results,
     compute_characteristics_from_results,
     compare_race_characteristics,
@@ -62,6 +61,7 @@ from cycling_project.prediction_tools.pricing_layer import (
 )
 from cycling_project.prediction_tools.live_race_state import (
     attach_race_state,
+    enumerate_edition_stages,
     fetch_live_race_state,
 )
 from cycling_project.prediction_tools.model_registry import ModelRegistry
@@ -1621,16 +1621,19 @@ if 'all_predictions' in st.session_state and 'fc_race_id' in st.session_state:
     fc_race_id = st.session_state['fc_race_id']
     race_year = st.session_state['race_year']
 
-    # ── 4a. Stage detection & selection ──
+    # ── 4a. Stage detection & selection (local DB/cache first; the live
+    #        race page is fetched only when the edition has no local stages) ──
     if 'race_stages' not in st.session_state:
         with st.spinner("Checking for stages..."):
-            is_stage_race, stages = detect_race_stages(fc_race_id, race_year)
+            is_stage_race, stages = enumerate_edition_stages(fc_race_id, race_year)
         st.session_state['race_stages'] = (is_stage_race, stages)
     else:
         is_stage_race, stages = st.session_state['race_stages']
 
     selected_stage_id = None
     selected_stage_param = None
+    selected_stage_number = None
+    selected_comp_type = None
 
     if is_stage_race and stages:
         stage_names = [s['name'] for s in stages]
@@ -1638,6 +1641,31 @@ if 'all_predictions' in st.session_state and 'fc_race_id' in st.session_state:
         selected_stage = next(s for s in stages if s['name'] == selected_stage_name)
         selected_stage_id = selected_stage['url_param']
         selected_stage_param = selected_stage['url_param']
+        selected_stage_number = selected_stage.get('stage_number')
+        selected_comp_type = selected_stage.get('competition_type')
+
+        if any(s.get('source') in ('db', 'cache') for s in stages):
+            cap_col, refresh_col = st.columns([3, 1])
+            with cap_col:
+                st.caption(
+                    "Stage list from local data (DB / results cache) — "
+                    "no live fetch."
+                )
+            with refresh_col:
+                if st.button("Refresh from FirstCycling"):
+                    with st.spinner("Fetching live stage list..."):
+                        live_ok, live_stages = enumerate_edition_stages(
+                            fc_race_id, race_year, prefer_live=True
+                        )
+                    if live_stages and any(
+                        s.get('source') == 'live' for s in live_stages
+                    ):
+                        st.session_state['race_stages'] = (live_ok, live_stages)
+                        st.rerun()
+                    else:
+                        st.warning(
+                            "Live stage list unavailable — keeping local list."
+                        )
 
     # ── 4b. Fetch results ──
     col1, col2 = st.columns([3, 1])
@@ -1653,6 +1681,8 @@ if 'all_predictions' in st.session_state and 'fc_race_id' in st.session_state:
                 stage_id=selected_stage_id,
                 stage_url_param=selected_stage_param,
                 force_refresh=force_refresh_results,
+                stage_number=selected_stage_number,
+                competition_type=selected_comp_type,
             )
         if actual_df is not None and not actual_df.empty:
             st.session_state['actual_results'] = actual_df

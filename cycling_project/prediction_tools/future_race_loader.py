@@ -1357,21 +1357,43 @@ def _get_results_from_rider_results(
     fc_race_id: int,
     year: int,
     db_path: str = None,
+    stage_number: int = None,
+    competition_type: str = None,
 ) -> Tuple[Optional[pd.DataFrame], Optional[float]]:
-    """Check the main rider_results table for existing results."""
+    """Check the main rider_results table for existing results.
+
+    With no keying args the edition's best-populated competition is used
+    (one-day races have exactly one). ``stage_number`` selects that stage's
+    competition instead (the same keying ``live_race_state`` uses for state
+    reconstruction); ``competition_type`` (e.g. 'gc') selects by type and
+    is ignored when ``stage_number`` is given.
+    """
     db_path = db_path or str(_DEFAULT_DB)
 
-    query = """
+    conditions = ["r.fc_race_id = ?", "r.year = ?"]
+    params = [str(fc_race_id), int(year)]
+    if stage_number is not None:
+        conditions.append("c.competition_type = 'stage'")
+        conditions.append("c.stage_number = ?")
+        params.append(int(stage_number))
+    elif competition_type is not None:
+        conditions.append("c.competition_type = ?")
+        params.append(competition_type)
+
+    query = f"""
     SELECT
         c.id as competition_id,
         c.winning_time
     FROM competitions c
     JOIN races r ON c.race_id = r.id
-    WHERE r.fc_race_id = ? AND r.year = ?
+    LEFT JOIN rider_results rr ON rr.competition_id = c.id
+    WHERE {' AND '.join(conditions)}
+    GROUP BY c.id
+    ORDER BY COUNT(rr.id) DESC
     LIMIT 1
     """
     with sqlite3.connect(db_path) as conn:
-        row = conn.execute(query, (str(fc_race_id), int(year))).fetchone()
+        row = conn.execute(query, params).fetchone()
 
     if row is None:
         return None, None
@@ -1383,11 +1405,13 @@ def _get_results_from_rider_results(
         rr.rider_id,
         rd.fc_rider_id as rider_fc_id,
         rd.name as rider_name,
+        t.name as team_name,
         rr.place,
         rr.time_gap,
         rr.place_bucket
     FROM rider_results rr
     JOIN riders rd ON rr.rider_id = rd.id
+    LEFT JOIN teams t ON rr.team_id = t.id
     WHERE rr.competition_id = ?
     ORDER BY rr.place
     """
@@ -1408,19 +1432,34 @@ def scrape_or_load_results(
     force_refresh: bool = False,
     db_path: str = None,
     raise_fetch_errors: bool = False,
+    stage_number: int = None,
+    competition_type: str = None,
 ) -> Tuple[Optional[pd.DataFrame], Optional[float]]:
     """
     Load results from DB/cache, or scrape and cache them.
 
     Checks in order: rider_results table, cached_race_results, then scrapes.
+    The main-DB check serves the edition-level competition when stage_id is
+    None and — when the caller keys the target with ``stage_number`` (or
+    ``competition_type='gc'``) — that specific competition of a stage race,
+    so stage/GC comparisons need no network once the stage is migrated.
     ``raise_fetch_errors`` is passed through to scrape_race_results.
     """
     db_path = db_path or str(_DEFAULT_DB)
 
     if not force_refresh:
-        # Check main DB first (only for non-stage or when we can map stages)
-        if stage_id is None:
-            df, wt = _get_results_from_rider_results(fc_race_id, year, db_path)
+        # Check main DB first (non-stage targets, or stage/GC targets the
+        # caller keyed unambiguously — never guess from stage_id alone).
+        if (
+            stage_id is None
+            or stage_number is not None
+            or competition_type == 'gc'
+        ):
+            df, wt = _get_results_from_rider_results(
+                fc_race_id, year, db_path,
+                stage_number=stage_number,
+                competition_type=competition_type,
+            )
             if df is not None:
                 return df, wt
 

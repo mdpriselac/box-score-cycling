@@ -35,6 +35,10 @@ as NaN, which feature_engineering imputes to the same neutral defaults
 used for missing state in training. GC targets of in-progress stage races
 get state too — it feeds the separate GC outlook head, not the main models.
 
+``enumerate_edition_stages`` reuses the same local stage inventory for the
+web app's Step-4 "compare with actual results" dropdown, so that selector
+also works without a live page fetch.
+
 Known v1 limitation: stage dates aren't available from the live results
 path, so ``is_post_rest_day`` is always 0 for live state (it is populated
 correctly in training data).
@@ -175,6 +179,156 @@ def _cached_edition_stage_ids(
         if num >= 0 and num not in out:
             out[num] = str(stage_id)
     return out
+
+
+def _db_edition_has_gc(fc_race_id: int, year: int, db_path: str) -> bool:
+    """True when this edition has a migrated GC competition with results."""
+    query = """
+    SELECT 1 FROM races r
+    JOIN competitions c ON c.race_id = r.id AND c.competition_type = 'gc'
+    JOIN rider_results rr ON rr.competition_id = c.id
+    WHERE r.fc_race_id = ? AND r.year = ?
+    LIMIT 1
+    """
+    with sqlite3.connect(db_path) as conn:
+        row = conn.execute(query, (str(fc_race_id), int(year))).fetchone()
+    return row is not None
+
+
+def _db_is_stage_race(fc_race_id: int, db_path: str) -> Optional[bool]:
+    """races.is_stage_race of the most recent edition; None when unknown."""
+    with sqlite3.connect(db_path) as conn:
+        row = conn.execute(
+            "SELECT is_stage_race FROM races "
+            "WHERE fc_race_id = ? ORDER BY year DESC LIMIT 1",
+            (str(fc_race_id),),
+        ).fetchone()
+    return None if row is None else bool(row[0])
+
+
+# The live race page's stage selector names its GC tab like this (its url
+# value is '0' — see tests/fixtures race_detail.html).
+_GC_NAME_RE = re.compile(
+    r'^\s*(gc|general(\s+classification)?)\s*$', re.IGNORECASE
+)
+
+
+def _annotate_live_stage_entries(raw: List[Dict]) -> List[Dict]:
+    """Step-4 entry dicts from raw ``detect_race_stages`` output.
+
+    ``competition_type``/``stage_number`` are set only when unambiguous (a
+    plain numeric url value, or a GC-named entry) so the main-DB
+    short-circuit in ``scrape_or_load_results`` can never serve the wrong
+    competition; everything else keeps None and loads cache-first, then
+    scrapes, exactly as before.
+    """
+    entries: List[Dict] = []
+    for entry in raw:
+        name = (entry.get('name') or '').strip()
+        value = entry.get('url_param')
+        if value is None:
+            continue
+        value = str(value)
+        if _GC_NAME_RE.match(name):
+            comp_type, stage_num = 'gc', None
+        elif _NON_STAGE_RE.search(name):
+            comp_type, stage_num = None, None  # points/youth/teams tabs
+        elif value.isdigit():
+            comp_type, stage_num = 'stage', int(value)
+        else:
+            comp_type, stage_num = None, None  # split stages ('7a') etc.
+        entries.append({
+            'stage_number': stage_num,
+            'name': name,
+            'url_param': value,
+            'competition_type': comp_type,
+            'source': 'live',
+        })
+    return entries
+
+
+def enumerate_edition_stages(
+    fc_race_id: int,
+    year: int,
+    db_path: Optional[str] = None,
+    prefer_live: bool = False,
+) -> Tuple[bool, List[Dict]]:
+    """
+    Stage-selector entries for one edition, local-first (web/app.py Step 4).
+
+    The edition's migrated stage competitions and ``cached_race_results``
+    rows are merged into dropdown entries without touching the network; the
+    live race page is fetched only when the edition has no local stage data
+    (or ``prefer_live`` asks for a refresh), so an unreachable FirstCycling
+    still yields a stage selector for races already in the DB. Known
+    one-day races (``races.is_stage_race`` = 0) skip the fetch entirely.
+
+    Returns ``(is_stage_race, entries)``; each entry carries
+    ``stage_number``, ``name``, ``url_param``, ``competition_type`` and
+    ``source`` ('db' | 'cache' | 'live'). A 'GC' entry is included when the
+    edition's GC standings are migrated, or cached under the live page's
+    GC url value '0' — mirroring the live selector. When a live fetch
+    fails but local data exists, the local list is returned.
+    """
+    db_path = _resolve_db_path(db_path)
+
+    db_stages = _db_edition_stages(fc_race_id, year, db_path)
+    cached_ids = _cached_edition_stage_ids(fc_race_id, year, db_path)
+
+    entries: List[Dict] = []
+    # A cached stage_id of '0' is the live selector's GC tab, not a
+    # prologue — unless the DB knows a stage-0 competition for the edition.
+    stage_nums = set(db_stages) | {
+        n for n in cached_ids if n > 0 or n in db_stages
+    }
+    for num in sorted(stage_nums):
+        db_entry = db_stages.get(num)
+        cache_id = cached_ids.get(num)
+        url_param = (
+            (db_entry or {}).get('url_param')
+            or (str(cache_id) if cache_id is not None else None)
+            or str(num)
+        )
+        entries.append({
+            'stage_number': num,
+            'name': 'Prologue' if num == 0 else f'Stage {num}',
+            'url_param': url_param,
+            'competition_type': 'stage',
+            'source': 'db' if db_entry else 'cache',
+        })
+    if _db_edition_has_gc(fc_race_id, year, db_path):
+        entries.append({
+            'stage_number': None,
+            'name': 'GC',
+            'url_param': '0',
+            'competition_type': 'gc',
+            'source': 'db',
+        })
+    elif 0 in cached_ids and 0 not in db_stages:
+        entries.append({
+            'stage_number': None,
+            'name': 'GC',
+            'url_param': str(cached_ids[0]),
+            'competition_type': 'gc',
+            'source': 'cache',
+        })
+
+    if entries and not prefer_live:
+        return True, entries
+    if (
+        not entries
+        and not prefer_live
+        and _db_is_stage_race(fc_race_id, db_path) is False
+    ):
+        return False, []
+
+    from cycling_project.prediction_tools.future_race_loader import (
+        detect_race_stages,
+    )
+    is_live_stage_race, raw = detect_race_stages(fc_race_id, year)
+    if is_live_stage_race and raw:
+        return True, _annotate_live_stage_entries(raw)
+    return bool(entries), entries
 
 
 def _prior_edition_stage_count(
