@@ -114,6 +114,7 @@ venv.bak/
 
 # Model history (archived models)
 models/history/
+models/production_backup_*/
 
 #performance evals
 performance_eval/
