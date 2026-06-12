@@ -686,6 +686,7 @@ def assemble_prediction_df(
     race_profile: dict,
     asof_date: str = None,
     recompute_form: bool = True,
+    form_status: dict = None,
 ) -> pd.DataFrame:
     """
     Combine rider snapshots + field features + race profile into a model-ready DataFrame.
@@ -701,6 +702,9 @@ def assemble_prediction_df(
             snapshot's "current season" is still last year.
         recompute_form: Set False to keep the raw snapshot form values
             (pre-2026-06 behavior).
+        form_status: optional dict the caller can pass to learn what the form
+            recompute actually did (provenance reporting). Keys written:
+            'mode' ('live' | 'snapshot'), 'asof_date', 'error' (str | None).
     """
     # Start with rider snapshot data
     df = rider_snapshots.copy()
@@ -709,6 +713,10 @@ def assemble_prediction_df(
     # trajectory/EMA block) to asof_date using the same production classes
     # that build snapshots. Falls back to the stale snapshot values if the
     # recompute fails — predictions degrade, they don't break.
+    if form_status is not None:
+        form_status.setdefault('mode', 'snapshot')
+        form_status.setdefault('asof_date', None)
+        form_status.setdefault('error', None)
     if recompute_form and len(df):
         try:
             from cycling_project.prediction_tools.live_form import (
@@ -727,8 +735,17 @@ def assemble_prediction_df(
             idx = df['rider_id'].astype(int)
             for col in LIVE_FORM_COLUMNS:
                 df[col] = idx.map(live[col]).values
+            if form_status is not None:
+                from datetime import date as _date
+                form_status['mode'] = 'live'
+                form_status['asof_date'] = (
+                    asof_date or _date.today().isoformat()
+                )
         except Exception as exc:  # pragma: no cover — defensive app path
             logger.warning(f"Live form recompute failed, using snapshot form: {exc}")
+            if form_status is not None:
+                form_status['mode'] = 'snapshot'
+                form_status['error'] = str(exc)
 
     # Merge in bib numbers and team names from the scraped start list
     if not matched_riders.empty and 'bib_number' in matched_riders.columns:
@@ -1259,9 +1276,17 @@ def scrape_race_results(
     year: int,
     stage_url_param: str = None,
     db_path: str = None,
+    raise_fetch_errors: bool = False,
 ) -> Tuple[Optional[pd.DataFrame], Optional[float]]:
     """
     Scrape race results from FirstCycling.
+
+    Args:
+        raise_fetch_errors: re-raise page-fetch/parse exceptions instead of
+            collapsing them into (None, None). Lets callers distinguish
+            "scrape failed (Cloudflare / network down)" from "page fetched
+            fine but holds no results yet" — live race-state needs that
+            distinction for honest staleness reporting.
 
     Returns:
         (results_df, winning_time) or (None, None) if no results found.
@@ -1280,6 +1305,8 @@ def scrape_race_results(
         raw_results = extract_results(soup)
         winning_time = extract_race_time(soup)
     except Exception:
+        if raise_fetch_errors:
+            raise
         return None, None
     finally:
         client.close()
@@ -1380,11 +1407,13 @@ def scrape_or_load_results(
     stage_url_param: str = None,
     force_refresh: bool = False,
     db_path: str = None,
+    raise_fetch_errors: bool = False,
 ) -> Tuple[Optional[pd.DataFrame], Optional[float]]:
     """
     Load results from DB/cache, or scrape and cache them.
 
     Checks in order: rider_results table, cached_race_results, then scrapes.
+    ``raise_fetch_errors`` is passed through to scrape_race_results.
     """
     db_path = db_path or str(_DEFAULT_DB)
 
@@ -1402,7 +1431,10 @@ def scrape_or_load_results(
             return cached, wt
 
     # Scrape
-    df, wt = scrape_race_results(fc_race_id, year, stage_url_param, db_path)
+    df, wt = scrape_race_results(
+        fc_race_id, year, stage_url_param, db_path,
+        raise_fetch_errors=raise_fetch_errors,
+    )
     if df is not None:
         save_results_to_cache(
             fc_race_id, year, df, wt,

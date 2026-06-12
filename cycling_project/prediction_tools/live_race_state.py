@@ -5,17 +5,35 @@ Computes the within-race state block (the rider_race_state feature columns)
 for an ONGOING stage race at prediction time, from the stages completed so
 far. Training-side state rows are built by
 ``engineering_tools.stage_race_state`` from migrated results; this module
-feeds the SAME ``compute_race_state`` function from the web app's on-demand
-results path (``future_race_loader.scrape_or_load_results``, which checks
-the DB, then ``cached_race_results``, then scrapes), so a model trained
-with ``include_race_state`` sees identical feature semantics live.
+feeds the SAME ``compute_race_state`` function, so a model trained with
+``include_race_state`` sees identical feature semantics live.
+
+Completed-stage data is loaded LOCAL-FIRST, per stage:
+
+1. the main DB (``competitions`` + ``rider_results`` for this edition —
+   stages the weekly pipeline already migrated),
+2. ``cached_race_results`` (stages fetched by a previous app session),
+3. a live scrape (``future_race_loader.scrape_or_load_results``) only for
+   stages not available locally.
+
+The stage list itself is likewise assembled from the edition's DB
+competitions + cache rows, enriched (not gated) by the live race page.
+Scrape failures are NON-FATAL: state is built from whatever contiguous
+prefix of stages is available, and the returned ``info`` dict says exactly
+which stages are missing and why (``missing_stages``, ``scrape_failed``,
+``db_horizon``, per-source breakdown in ``sources``) so the UI can attach
+state honestly instead of silently falling back to pre-race features.
+Before 2026-06 this module required a live page fetch to enumerate stages,
+so a Cloudflare block produced "no stage list found" even with every
+completed stage already migrated in the DB.
 
 Used by web/app.py Step 3: real state is attached only when the prediction
 target is stage 2+ of a stage race — matching training, where only
 competition_type='stage' rows carry state. Every other target (stage 1,
-one-day, GC, races without completed results yet) gets the state columns
+one-day, races without completed results yet) gets the state columns
 as NaN, which feature_engineering imputes to the same neutral defaults
-used for missing state in training.
+used for missing state in training. GC targets of in-progress stage races
+get state too — it feeds the separate GC outlook head, not the main models.
 
 Known v1 limitation: stage dates aren't available from the live results
 path, so ``is_post_rest_day`` is always 0 for live state (it is populated
@@ -23,6 +41,7 @@ correctly in training data).
 """
 
 import re
+import sqlite3
 from typing import Dict, List, Optional, Tuple
 
 import numpy as np
@@ -86,6 +105,126 @@ def list_race_stages(fc_race_id: int, year: int) -> List[Dict]:
             'url_param': str(value),
         })
     return stages
+
+
+# ---------------------------------------------------------------------------
+# Local (DB + cache) edition inventory — no network
+# ---------------------------------------------------------------------------
+
+_STAGE_URL_PARAM_RE = re.compile(r'[?&]e=([^&]+)')
+
+
+def _resolve_db_path(db_path: Optional[str]) -> str:
+    from cycling_project.prediction_tools.future_race_loader import _DEFAULT_DB
+    return db_path or str(_DEFAULT_DB)
+
+
+def _db_edition_stages(
+    fc_race_id: int, year: int, db_path: str
+) -> Dict[int, Dict]:
+    """
+    Stage competitions of THIS edition already migrated into the main DB.
+
+    Returns {stage_number: {'competition_id', 'winning_time', 'url_param',
+    'n_results'}} for stages that have results. ``url_param`` is mined from
+    the stored competition URL (…&e=N) when present.
+    """
+    query = """
+    SELECT c.id, c.stage_number, c.winning_time, c.url, COUNT(rr.id) AS n_res
+    FROM races r
+    JOIN competitions c ON c.race_id = r.id AND c.competition_type = 'stage'
+    LEFT JOIN rider_results rr ON rr.competition_id = c.id
+    WHERE r.fc_race_id = ? AND r.year = ? AND c.stage_number IS NOT NULL
+    GROUP BY c.id
+    ORDER BY c.stage_number, n_res DESC
+    """
+    out: Dict[int, Dict] = {}
+    with sqlite3.connect(db_path) as conn:
+        for comp_id, stage_num, wt, url, n_res in conn.execute(
+            query, (str(fc_race_id), int(year))
+        ):
+            stage_num = int(stage_num)
+            if n_res <= 0 or stage_num in out:
+                continue
+            m = _STAGE_URL_PARAM_RE.search(url or '')
+            out[stage_num] = {
+                'competition_id': int(comp_id),
+                'winning_time': wt,
+                'url_param': m.group(1) if m else None,
+                'n_results': int(n_res),
+            }
+    return out
+
+
+def _cached_edition_stage_ids(
+    fc_race_id: int, year: int, db_path: str
+) -> Dict[int, str]:
+    """{stage_number: cached stage_id} from cached_race_results."""
+    out: Dict[int, str] = {}
+    with sqlite3.connect(db_path) as conn:
+        try:
+            rows = conn.execute(
+                "SELECT DISTINCT stage_id FROM cached_race_results "
+                "WHERE fc_race_id = ? AND year = ? AND stage_id IS NOT NULL",
+                (str(fc_race_id), int(year)),
+            ).fetchall()
+        except sqlite3.OperationalError:  # cache table not created yet
+            return out
+    for (stage_id,) in rows:
+        num = _parse_stage_number('', str(stage_id), -1)
+        if num >= 0 and num not in out:
+            out[num] = str(stage_id)
+    return out
+
+
+def _prior_edition_stage_count(
+    fc_race_id: int, year: int, db_path: str
+) -> Optional[int]:
+    """Stage count of the most recent earlier edition (total_stages proxy)."""
+    with sqlite3.connect(db_path) as conn:
+        row = conn.execute(
+            """
+            SELECT COUNT(c.id) FROM races r
+            JOIN competitions c ON c.race_id = r.id
+                AND c.competition_type = 'stage'
+            WHERE r.fc_race_id = ? AND r.year = (
+                SELECT MAX(r2.year) FROM races r2
+                JOIN competitions c2 ON c2.race_id = r2.id
+                    AND c2.competition_type = 'stage'
+                WHERE r2.fc_race_id = ? AND r2.year < ?
+            )
+            """,
+            (str(fc_race_id), str(fc_race_id), int(year)),
+        ).fetchone()
+    return int(row[0]) if row and row[0] else None
+
+
+def _db_data_horizon(db_path: str) -> Optional[str]:
+    """Latest competition date in the DB — 'data current through' marker."""
+    with sqlite3.connect(db_path) as conn:
+        row = conn.execute("SELECT MAX(date) FROM competitions").fetchone()
+    return row[0] if row and row[0] else None
+
+
+def _load_db_stage_results(
+    competition_id: int, db_path: str
+) -> Optional[pd.DataFrame]:
+    """Migrated stage results in build_live_state's input shape."""
+    query = """
+    SELECT rr.rider_id,
+           rd.fc_rider_id AS rider_fc_id,
+           rd.name AS rider_name,
+           t.name AS team_name,
+           rr.place, rr.time_gap, rr.place_bucket, rr.percentile
+    FROM rider_results rr
+    JOIN riders rd ON rr.rider_id = rd.id
+    LEFT JOIN teams t ON rr.team_id = t.id
+    WHERE rr.competition_id = ?
+    ORDER BY rr.place
+    """
+    with sqlite3.connect(db_path) as conn:
+        df = pd.read_sql_query(query, conn, params=(int(competition_id),))
+    return df if not df.empty else None
 
 
 def build_live_state(
@@ -165,6 +304,12 @@ def build_live_state(
             bucket = r.get('place_bucket')
             if pd.isna(bucket):
                 bucket = _place_bucket(place)
+            # DB-sourced rows carry the migration-time percentile (what
+            # training saw); cache/scrape rows don't have one, so compute
+            # the same formula over the rows with a place.
+            pctile = r.get('percentile')
+            if pd.isna(pctile):
+                pctile = 100.0 * (n_finishers - place + 1) / n_finishers
             result_rows.append({
                 'competition_id': seq,
                 'rider_id': _key_for(
@@ -175,7 +320,7 @@ def build_live_state(
                 'place': place,
                 'time_gap': r.get('time_gap'),
                 'place_bucket': bucket,
-                'percentile': 100.0 * (n_finishers - place + 1) / n_finishers,
+                'percentile': float(pctile),
             })
 
     state, quality = compute_race_state(
@@ -210,6 +355,21 @@ def build_live_state(
     return out.reset_index(drop=True), info
 
 
+def _plain_numeral_params(stages_by_num: Dict[int, Dict]) -> bool:
+    """True when every known stage identifier is just its stage number.
+
+    Guards url_param guessing for stages we have no identifier for: if any
+    known param deviates (prologue, split stages), guessing str(n) could
+    fetch the WRONG stage's results, so we don't.
+    """
+    for num, entry in stages_by_num.items():
+        for key in ('url_param', 'cache_stage_id'):
+            value = entry.get(key)
+            if value is not None and str(value).strip() != str(num):
+                return False
+    return True
+
+
 def fetch_live_race_state(
     fc_race_id: int,
     year: int,
@@ -218,77 +378,191 @@ def fetch_live_race_state(
     db_path: Optional[str] = None,
 ) -> Tuple[Optional[pd.DataFrame], Dict]:
     """
-    Fetch completed-stage results for an ongoing race and compute state.
+    Load completed-stage results for an ongoing race and compute state.
+
+    Local-first: per stage, the main DB (migrated results) is checked, then
+    cached_race_results, then a live scrape — so state attaches even when
+    scraping is unavailable, as long as completed stages are in the DB.
+    Stages feed the state in racing order and must be contiguous from the
+    first; the first unavailable stage stops the reconstruction (a gap would
+    corrupt cumulative GC time) and is reported in ``info``.
 
     Args:
         target_stage_number: the stage being predicted; only stages with a
             lower number feed the state (strictly-before leakage rule).
-            None means "use everything completed" (not used for GC targets
-            in Phase 1 — the production model carries no state on gc rows).
-        force_refresh: bypass cached_race_results (e.g. a stage finished
-            since the cache row was written mid-race).
+            None means "use everything completed" (GC targets — state feeds
+            the GC outlook head; the main models stay pre-race on gc rows).
+        force_refresh: re-scrape stages instead of using cached_race_results
+            (e.g. a stage finished since the cache row was written mid-race).
+            Stages migrated into the main DB are final and are not re-scraped.
 
-    Returns (state_df or None, info). Network access: one race-page fetch
-    plus one fetch per completed stage not already cached (3s+ rate limit
-    each, so a Grand Tour's first mid-race fetch can take a minute or two;
-    subsequent runs hit the cache).
+    Returns (state_df or None, info). info keys beyond the build stats:
+        sources: {'db': [...], 'cache': [...], 'scraped': [...]} stage numbers
+        missing_stages: candidate stages that could not be loaded
+        scrape_failed: a live fetch was attempted and raised
+        total_stages_estimated: total came from a prior edition / floor,
+            not the live race page
+        db_horizon: latest competition date in the DB (data-current-through)
     """
     from cycling_project.prediction_tools.future_race_loader import (
+        get_cached_results,
         scrape_or_load_results,
     )
 
-    stages = list_race_stages(fc_race_id, year)
+    db_path = _resolve_db_path(db_path)
     info: Dict = {
         'available': False,
         'stages_completed': 0,
-        'total_stages': len(stages),
+        'total_stages': 0,
         'riders_in_standings': 0,
         'leader_name': None,
         'reason': None,
+        'sources': {'db': [], 'cache': [], 'scraped': []},
+        'missing_stages': [],
+        'scrape_failed': False,
+        'total_stages_estimated': False,
+        'db_horizon': _db_data_horizon(db_path),
     }
-    if not stages:
-        info['reason'] = 'no stage list found for this edition'
+
+    # ── stage inventory: local DB + cache first, live page as enrichment ──
+    stages_by_num: Dict[int, Dict] = {}
+    for num, entry in _db_edition_stages(fc_race_id, year, db_path).items():
+        stages_by_num[num] = dict(entry)
+    for num, stage_id in _cached_edition_stage_ids(
+        fc_race_id, year, db_path
+    ).items():
+        stages_by_num.setdefault(num, {})['cache_stage_id'] = stage_id
+
+    live_stages = list_race_stages(fc_race_id, year)  # [] on fetch failure
+    for s in live_stages:
+        entry = stages_by_num.setdefault(s['stage_number'], {})
+        entry.setdefault('url_param', s['url_param'])
+
+    # ── scheduled total (pct_race_complete denominator) ──
+    if live_stages:
+        total_stages = len(live_stages)
+    else:
+        info['total_stages_estimated'] = True
+        total_stages = max(
+            _prior_edition_stage_count(fc_race_id, year, db_path) or 0,
+            max(stages_by_num) if stages_by_num else 0,
+            len(stages_by_num),  # covers prologue numbering (stage 0)
+            target_stage_number or 0,
+        )
+    info['total_stages'] = total_stages
+
+    if not stages_by_num:
+        info['reason'] = (
+            'no stage data for this edition — not in the local DB and the '
+            'live race page could not be fetched'
+        )
         return None, info
 
+    # ── candidate stage numbers, strictly before the target ──
     if target_stage_number is not None:
-        candidates = [
-            s for s in stages if s['stage_number'] < target_stage_number
-        ]
+        upper = int(target_stage_number) - 1
     else:
-        candidates = stages
+        upper = total_stages
+    # Fill gaps up to the bound so locally-unknown completed stages can be
+    # scraped (e.g. DB has 1-5, target is stage 7 -> try stage 6 too). Only
+    # when stage identifiers are plain numerals — see _plain_numeral_params.
+    if _plain_numeral_params(stages_by_num):
+        for num in range(min(stages_by_num), upper + 1):
+            stages_by_num.setdefault(num, {})
+    candidate_nums = sorted(n for n in stages_by_num if n <= upper)
 
+    # ── load each candidate: DB -> cache -> scrape; stop at the first gap ──
     completed: List[Dict] = []
-    for seq, stage in enumerate(candidates, start=1):
-        try:
-            results, winning_time = scrape_or_load_results(
-                fc_race_id,
-                year,
-                stage_id=stage['url_param'],
-                stage_url_param=stage['url_param'],
-                force_refresh=force_refresh,
-                db_path=db_path,
-            )
-        except Exception as exc:
-            logger.warning(
-                "Live state: failed to load stage %s of race %s/%s: %s",
-                stage['url_param'], fc_race_id, year, exc,
-            )
+    loaded_nums: List[int] = []
+    for num in candidate_nums:
+        entry = stages_by_num.get(num, {})
+        results = None
+        winning_time = None
+        source = None
+
+        # 1. Main DB: migrated results are final — force_refresh never
+        #    re-scrapes them.
+        if entry.get('competition_id') is not None:
+            results = _load_db_stage_results(entry['competition_id'], db_path)
+            if results is not None:
+                winning_time = entry.get('winning_time')
+                source = 'db'
+
+        # 2. Cache (skipped on force_refresh — re-scrape instead).
+        cache_id = entry.get('cache_stage_id')
+        if results is None and cache_id is not None and not force_refresh:
+            cached = get_cached_results(fc_race_id, year, cache_id, db_path)
+            if cached is not None and len(cached):
+                results = cached
+                wt = cached['winning_time'].dropna()
+                winning_time = float(wt.iloc[0]) if len(wt) else None
+                source = 'cache'
+
+        # 3. Live scrape (also the force_refresh path for cached stages).
+        if results is None:
+            url_param = entry.get('url_param') or cache_id or str(num)
+            try:
+                results, winning_time = scrape_or_load_results(
+                    fc_race_id,
+                    year,
+                    stage_id=str(url_param),
+                    stage_url_param=str(url_param),
+                    force_refresh=force_refresh,
+                    db_path=db_path,
+                    raise_fetch_errors=True,
+                )
+                if results is not None and len(results):
+                    source = 'scraped'
+            except Exception as exc:
+                info['scrape_failed'] = True
+                logger.warning(
+                    "Live state: fetch failed for stage %s of race %s/%s: %s",
+                    num, fc_race_id, year, exc,
+                )
+                results = None
+                # force_refresh asked to bypass the cache, but a failed
+                # scrape beats no data — fall back and say so via sources.
+                if cache_id is not None and force_refresh:
+                    cached = get_cached_results(
+                        fc_race_id, year, cache_id, db_path
+                    )
+                    if cached is not None and len(cached):
+                        results = cached
+                        wt = cached['winning_time'].dropna()
+                        winning_time = (
+                            float(wt.iloc[0]) if len(wt) else None
+                        )
+                        source = 'cache'
+
+        if results is None or len(results) == 0 or winning_time is None:
+            # Contiguity break: without this stage every later cumulative
+            # GC sum is wrong, so stop here (stages already loaded still
+            # produce valid — possibly stale — state).
             break
-        if results is None or len(results) == 0:
-            break  # race hasn't reached this stage yet
         completed.append({
-            'seq': seq,
+            'seq': len(completed) + 1,
             'winning_time': winning_time,
             'results': results,
         })
+        loaded_nums.append(num)
+        info['sources'][source].append(num)
+
+    info['missing_stages'] = [
+        n for n in candidate_nums if n not in loaded_nums
+    ]
 
     if not completed:
         info['reason'] = 'no completed stage results yet'
+        if info['scrape_failed']:
+            info['reason'] += (
+                ' (live fetch failed; no local results for this edition)'
+            )
         return None, info
 
-    state, build_info = build_live_state(completed, total_stages=len(stages))
-    build_info['total_stages'] = len(stages)
-    return state, build_info
+    state, build_info = build_live_state(completed, total_stages=total_stages)
+    info.update(build_info)
+    info['total_stages'] = total_stages
+    return state, info
 
 
 def attach_race_state(

@@ -56,7 +56,10 @@ from cycling_project.prediction_tools.dnf_predictor import (
     load_production_dnf_head,
 )
 from cycling_project.prediction_tools.gc_outlook import GCOutlookHead
-from cycling_project.prediction_tools.pricing_layer import apply_pricing_layer
+from cycling_project.prediction_tools.pricing_layer import (
+    BLEND_W,
+    apply_pricing_layer,
+)
 from cycling_project.prediction_tools.live_race_state import (
     attach_race_state,
     fetch_live_race_state,
@@ -103,6 +106,246 @@ def _decimal_to_fractional(d: float) -> str:
         return "—"
     frac = Fraction(profit).limit_denominator(10)
     return str(frac)
+
+
+def _fmt_stage_nums(nums) -> str:
+    """Compact '1-4' / '1-3, 5' rendering of a stage-number list."""
+    nums = sorted({int(n) for n in nums})
+    if not nums:
+        return ''
+    runs = []
+    start = prev = nums[0]
+    for n in nums[1:]:
+        if n == prev + 1:
+            prev = n
+            continue
+        runs.append((start, prev))
+        start = prev = n
+    runs.append((start, prev))
+    return ', '.join(
+        f"{a}" if a == b else f"{a}-{b}" for a, b in runs
+    )
+
+
+def _race_state_status(info: dict, feeds_gc_outlook: bool) -> tuple:
+    """(level, message) describing the live race-state attachment outcome.
+
+    Levels: 'ok' (quiet caption), 'info' (note — e.g. next stage simply not
+    raced yet), 'warn' (loud — state missing or stale because data that
+    should exist could not be loaded).
+    """
+    if not info.get('available'):
+        return 'warn', (
+            f"NOT attached — {info.get('reason') or 'unavailable'}. "
+            "Predictions use pre-race features."
+        )
+
+    k = info.get('stages_completed')
+    total = info.get('total_stages')
+    total_txt = (
+        f"{total} (est.)" if info.get('total_stages_estimated') else f"{total}"
+    )
+    parts = [f"attached through stage {k} of {total_txt}"]
+    if info.get('leader_name'):
+        parts.append(f"leader: {info['leader_name']}")
+    parts.append(f"{info.get('riders_in_standings')} riders in standings")
+    sources = info.get('sources') or {}
+    src_bits = [
+        f"{label} {_fmt_stage_nums(stage_nums)}"
+        for label, stage_nums in (
+            ('DB', sources.get('db')),
+            ('cache', sources.get('cache')),
+            ('scraped', sources.get('scraped')),
+        )
+        if stage_nums
+    ]
+    if src_bits:
+        parts.append("from " + ", ".join(src_bits))
+    if feeds_gc_outlook:
+        parts.append(
+            "feeds the GC outlook head (main GC prediction stays "
+            "pre-race, mirroring training)"
+        )
+    msg = "; ".join(parts)
+
+    missing = info.get('missing_stages') or []
+    if not missing:
+        return 'ok', msg
+    horizon = info.get('db_horizon') or 'unknown'
+    if info.get('scrape_failed'):
+        return 'warn', (
+            f"{msg}. STALE: stage(s) {_fmt_stage_nums(missing)} missing — "
+            f"DB data through {horizon}, live fetch failed (scrape "
+            f"pending). State reflects the race only through stage {k}."
+        )
+    return 'info', (
+        f"{msg}. Stage(s) {_fmt_stage_nums(missing)} have no results yet "
+        f"(not yet raced or published) — state is current through stage {k}."
+    )
+
+
+def _render_provenance_panel(prov: dict) -> None:
+    """Compact always-visible status panel: one line per feature family /
+    head, with its live status for THIS prediction run. Absence is loud
+    (warning icon + bold), presence is quiet."""
+    if not prov:
+        return
+
+    target = prov.get('target') or {}
+    comp_type = target.get('comp_type') or 'one_day'
+    if comp_type == 'stage' and target.get('stage_num'):
+        target_txt = f"stage {target['stage_num']} target"
+    elif comp_type == 'gc':
+        target_txt = "GC target"
+    else:
+        target_txt = "one-day target"
+
+    rows = []  # (is_warn, family, detail)
+
+    rs = prov.get('race_state') or {}
+    rows.append((
+        rs.get('level') == 'warn', 'Race state', rs.get('msg', 'unknown')
+    ))
+
+    gco = prov.get('gc_outlook') or {}
+    if gco.get('applicable'):
+        if gco.get('engaged'):
+            rows.append((
+                False, 'GC outlook',
+                'engaged — state-aware final-GC head '
+                f"({gco.get('n_riders', '?')} riders)",
+            ))
+        else:
+            rows.append((
+                True, 'GC outlook',
+                f"not engaged — {gco.get('note') or 'unavailable'}",
+            ))
+    else:
+        rows.append((False, 'GC outlook', 'n/a (not a GC target)'))
+
+    sig = prov.get('sig') or {}
+    if not sig.get('applicable'):
+        rows.append((
+            False, 'Signatures',
+            'n/a by design (one-day scope; stage/GC rows stay NaN)',
+        ))
+    elif sig.get('error'):
+        rows.append((
+            True, 'Signatures',
+            f"unavailable (NaN fallback): {sig['error']}",
+        ))
+    elif (sig.get('coverage') or 0) > 0:
+        detail = f"on — coverage {sig['coverage']:.0%}"
+        if sig.get('n_refs') is not None:
+            detail += f", {sig['n_refs']} reference comps"
+        rows.append((False, 'Signatures', detail))
+    else:
+        rows.append((
+            True, 'Signatures', 'all NaN (no reference signatures found)'
+        ))
+
+    elo = prov.get('elo') or {}
+    if not elo.get('loaded'):
+        rows.append((
+            True, 'Contested Elo',
+            'snapshots artifact missing — features NaN '
+            '(run pipeline step elo-snapshots)',
+        ))
+    else:
+        cov = elo.get('coverage') or 0.0
+        rows.append((
+            cov < 0.5, 'Contested Elo', f"rating coverage {cov:.0%} of field"
+        ))
+
+    meta = prov.get('meta_oof') or {}
+    if meta.get('time_gap') and meta.get('lambdarank'):
+        rows.append((
+            False, 'Meta-OOF', 'time-gap + LambdaRank features attached'
+        ))
+    else:
+        absent = [
+            label for label, key in
+            (('time-gap', 'time_gap'), ('LambdaRank', 'lambdarank'))
+            if not meta.get(key)
+        ]
+        rows.append((True, 'Meta-OOF', f"missing: {', '.join(absent)}"))
+
+    wc = prov.get('win_corrector') or {}
+    if wc.get('loaded'):
+        method = wc.get('method') or 'identity'
+        if method == 'identity':
+            detail = 'identity (no correction fitted)'
+        elif wc.get('param') is not None:
+            detail = f"applied — {method} (param {wc['param']:.4f})"
+        else:
+            detail = f"applied — {method}"
+        rows.append((False, 'Win corrector', detail))
+    else:
+        rows.append((
+            True, 'Win corrector',
+            'artifact missing — uncorrected win probabilities',
+        ))
+
+    dnf = prov.get('dnf') or {}
+    if dnf.get('loaded'):
+        if dnf.get('mean_p') is not None:
+            rows.append((
+                False, 'DNF head',
+                f"loaded — mean P(DNF) {dnf['mean_p']:.1%}",
+            ))
+        else:
+            rows.append((True, 'DNF head', 'loaded but produced no output'))
+    else:
+        rows.append((
+            True, 'DNF head',
+            'absent — honest (DNF-adjusted) prices unavailable',
+        ))
+
+    bl = prov.get('blend') or {}
+    if bl.get('available'):
+        rows.append((
+            False, 'Blend win',
+            f"on (w={bl.get('w', 0.2):g} multiclass, book-preserving)",
+        ))
+    else:
+        rows.append((
+            True, 'Blend win', 'unavailable (LambdaRank head absent)'
+        ))
+
+    lf = prov.get('live_form') or {}
+    if lf.get('mode') == 'live':
+        rows.append((
+            False, 'Live form re-aging', f"on (as-of {lf.get('asof_date')})"
+        ))
+    else:
+        err = lf.get('error')
+        rows.append((
+            True, 'Live form re-aging',
+            'FAILED — using stale snapshot form'
+            + (f" ({err})" if err else ''),
+        ))
+
+    refs = prov.get('references') or []
+    refs_detail = (
+        f"{len(refs)} comps: " + '; '.join(refs) if refs else 'none selected'
+    )
+    rows.append((len(refs) == 0, 'References', refs_detail))
+
+    def _line(is_warn: bool, family: str, detail: str) -> str:
+        if is_warn:
+            return f"⚠️ **{family} — {detail}**"
+        return f"✓ {family} — {detail}"
+
+    with st.container(border=True):
+        st.markdown(f"**Prediction provenance** — {target_txt}")
+        lines = [_line(*row) for row in rows]
+        mid = (len(lines) + 1) // 2
+        col1, col2 = st.columns(2)
+        with col1:
+            st.markdown("  \n".join(lines[:mid]))
+        with col2:
+            st.markdown("  \n".join(lines[mid:]))
+
 
 st.set_page_config(page_title="Cycling Race Predictor", layout="wide")
 st.title("Cycling Race Predictor")
@@ -157,6 +400,7 @@ if st.button("Get Start List") and url:
         st.session_state.pop('actual_results', None)
         st.session_state.pop('race_stages', None)
         st.session_state.pop('_predictions_removed_set', None)
+        st.session_state.pop('provenance', None)
     except Exception as e:
         st.error(f"Error: {e}")
 
@@ -752,22 +996,26 @@ passed the probability gate. Three pricing additions on top:
                     if race_state_info and race_state_info.get('available')
                     else None
                 )
+                # Honest state status: through which stage, from which
+                # sources, and exactly what is missing when data is stale
+                # (mid-race edition with the scrape on hold).
                 if race_state_info is not None:
-                    if race_state_info.get('available'):
-                        leader = race_state_info.get('leader_name')
-                        st.caption(
-                            f"Race state attached from "
-                            f"{race_state_info['stages_completed']} completed "
-                            f"stage(s) of {race_state_info['total_stages']}"
-                            + (f" — current leader: {leader}" if leader else "")
-                            + f" ({race_state_info['riders_in_standings']} riders in standings)"
-                        )
+                    rs_level, rs_msg = _race_state_status(
+                        race_state_info, feeds_gc_outlook=bool(fetch_for_gc)
+                    )
+                    {
+                        'ok': st.caption,
+                        'info': st.info,
+                        'warn': st.warning,
+                    }[rs_level](f"Race state: {rs_msg}")
+                else:
+                    rs_level = 'ok'
+                    if target_comp_type == 'one_day':
+                        rs_msg = 'n/a (one-day race)'
+                    elif target_comp_type == 'stage':
+                        rs_msg = 'n/a (stage 1 — no prior stages)'
                     else:
-                        st.info(
-                            "No race state attached — "
-                            f"{race_state_info.get('reason') or 'unavailable'}. "
-                            "Predictions use pre-race features."
-                        )
+                        rs_msg = 'n/a (not an in-progress stage-race target)'
 
                 def _attach_lambdarank(result_df: pd.DataFrame, pred_df: pd.DataFrame):
                     """Merge LambdaRank win/podium probabilities onto result_df.
@@ -803,12 +1051,14 @@ passed the probability gate. Three pricing additions on top:
                 # models' trained out-of-scope state (ref-keyed stage serving
                 # was shown to cost +0.078 log loss).
                 sig_context = None
+                sig_error = None
                 if target_comp_type == 'one_day':
                     try:
                         sig_context = build_serving_signature_context(
                             reference_ids, field_features, DB_PATH,
                         )
                     except Exception as sig_exc:
+                        sig_error = str(sig_exc)
                         st.warning(
                             f"Signature features unavailable (NaN fallback): {sig_exc}"
                         )
@@ -862,46 +1112,24 @@ passed the probability gate. Three pricing additions on top:
                             blend_win_p=row.get('blend_win_p'),
                         ))
 
-                _stack_caption_state = {'shown': False}
-
-                def _stack_caption(pred_df: pd.DataFrame):
-                    if _stack_caption_state['shown']:
-                        return
-                    _stack_caption_state['shown'] = True
-                    parts = []
-                    if 'sig_sprint' in pred_df.columns:
-                        if pred_df['sig_sprint'].notna().any():
-                            n_refs = pred_df['sig_n_refs'].dropna()
-                            parts.append(
-                                f"signatures on (refs={int(n_refs.iloc[0]) if len(n_refs) else 0})"
-                            )
-                        else:
-                            parts.append("signatures NaN (stage/gc target or unavailable)")
-                    if 'contested_rating' in pred_df.columns:
-                        cov = pred_df['contested_rating'].notna().mean()
-                        parts.append(f"Elo coverage {cov:.0%}")
-                    if 'oof_lambdarank_win_p' in pred_df.columns:
-                        parts.append(
-                            "meta-OOF on" if pred_df['oof_lambdarank_win_p'].notna().any()
-                            else "meta-OOF NaN"
-                        )
-                    if win_corrector:
-                        parts.append(f"win corrector: {win_corrector.get('method')}")
-                    parts.append("DNF head " + ("on" if dnf_bundle else "absent"))
-                    st.caption("Arm-C stack — " + "; ".join(parts))
+                # Live-form recompute status, written by assemble_prediction_df
+                # (shared across all assembles this run — same inputs).
+                form_status: dict = {}
 
                 for comp_id in selected_refs:
                     profile = get_reference_race_profile(comp_id)
                     reference_profiles.append(profile)
 
-                    pred_df = assemble_prediction_df(snapshots, matched, field_features, profile)
+                    pred_df = assemble_prediction_df(
+                        snapshots, matched, field_features, profile,
+                        form_status=form_status,
+                    )
                     pred_df = attach_race_state(pred_df, main_state_df)
                     pred_df = attach_stack_features(
                         pred_df, time_gap_pred, lambdarank_pred,
                         rating_snapshots=rating_snaps,
                         signature_context=sig_context,
                     )
-                    _stack_caption(pred_df)
                     result = race_ranker.predict_race(pred_df, return_details=True)
                     result['team'] = result['rider_id'].map(
                         lambda rid: name_map.get(rid, {}).get('team_name', '')
@@ -915,14 +1143,16 @@ passed the probability gate. Three pricing additions on top:
 
                 # Average prediction (always, even for 1 race)
                 avg_profile = average_race_profiles(reference_profiles)
-                pred_df = assemble_prediction_df(snapshots, matched, field_features, avg_profile)
+                pred_df = assemble_prediction_df(
+                    snapshots, matched, field_features, avg_profile,
+                    form_status=form_status,
+                )
                 pred_df = attach_race_state(pred_df, main_state_df)
                 pred_df = attach_stack_features(
                     pred_df, time_gap_pred, lambdarank_pred,
                     rating_snapshots=rating_snaps,
                     signature_context=sig_context,
                 )
-                _stack_caption(pred_df)
                 result = race_ranker.predict_race(pred_df, return_details=True)
                 result['team'] = result['rider_id'].map(
                     lambda rid: name_map.get(rid, {}).get('team_name', '')
@@ -934,9 +1164,19 @@ passed the probability gate. Three pricing additions on top:
 
                 # ── GC outlook head (state-aware final-GC prediction) ──
                 gc_outlook_df = None
+                gc_outlook_note = None
+                if fetch_for_gc and race_state_df is None:
+                    gc_outlook_note = (
+                        "no race state — "
+                        + (
+                            (race_state_info or {}).get('reason')
+                            or 'unavailable'
+                        )
+                    )
                 if fetch_for_gc and race_state_df is not None:
                     gc_outlook_head = GCOutlookHead.load(MODEL_DIR)
                     if gc_outlook_head is None:
+                        gc_outlook_note = "head not installed"
                         st.info(
                             "GC outlook head not installed — train it with "
                             "`uv run python -m cycling_project.update_pipeline "
@@ -944,12 +1184,18 @@ passed the probability gate. Three pricing additions on top:
                         )
                     else:
                         outlook_frame = assemble_prediction_df(
-                            snapshots, matched, field_features, avg_profile
+                            snapshots, matched, field_features, avg_profile,
+                            form_status=form_status,
                         )
                         outlook_frame = attach_race_state(
                             outlook_frame, race_state_df
                         )
                         gc_outlook_df = gc_outlook_head.predict(outlook_frame)
+                        if gc_outlook_df.empty:
+                            gc_outlook_note = (
+                                "head produced no rows (no riders in "
+                                "reconstructed standings)"
+                            )
                         if not gc_outlook_df.empty:
                             gc_outlook_df['team'] = gc_outlook_df['rider_id'].map(
                                 lambda rid: name_map.get(rid, {}).get('team_name', '')
@@ -966,6 +1212,100 @@ passed the probability gate. Three pricing additions on top:
                                     r.gc_outlook_top15_p = o.get('gc_outlook_top15_p')
                 st.session_state['gc_outlook'] = gc_outlook_df
                 st.session_state['gc_outlook_state_info'] = race_state_info
+
+                # ── Prediction provenance (persistent status panel) ──
+                # Computed from the averaged-reference frame/result (in scope
+                # from the run above) — representative of every tab.
+                _sig_cov = (
+                    float(pred_df['sig_sprint'].notna().mean())
+                    if 'sig_sprint' in pred_df.columns else 0.0
+                )
+                _sig_n_refs_series = (
+                    pred_df['sig_n_refs'].dropna()
+                    if 'sig_n_refs' in pred_df.columns else pd.Series(dtype=float)
+                )
+                _dnf_series = (
+                    result['dnf_p'].dropna()
+                    if 'dnf_p' in result.columns else pd.Series(dtype=float)
+                )
+                st.session_state['provenance'] = {
+                    'target': {
+                        'comp_type': target_comp_type,
+                        'stage_num': (
+                            int(target_stage_num) if target_stage_num else None
+                        ),
+                    },
+                    'race_state': {'level': rs_level, 'msg': rs_msg},
+                    'gc_outlook': {
+                        'applicable': bool(fetch_for_gc),
+                        'engaged': (
+                            gc_outlook_df is not None
+                            and not gc_outlook_df.empty
+                        ),
+                        'note': gc_outlook_note,
+                        'n_riders': (
+                            int(len(gc_outlook_df))
+                            if gc_outlook_df is not None else 0
+                        ),
+                    },
+                    'sig': {
+                        'applicable': target_comp_type == 'one_day',
+                        'coverage': _sig_cov,
+                        'n_refs': (
+                            int(_sig_n_refs_series.iloc[0])
+                            if len(_sig_n_refs_series) else None
+                        ),
+                        'error': sig_error,
+                    },
+                    'elo': {
+                        'loaded': rating_snaps is not None,
+                        'coverage': (
+                            float(pred_df['contested_rating'].notna().mean())
+                            if 'contested_rating' in pred_df.columns else 0.0
+                        ),
+                    },
+                    'meta_oof': {
+                        'time_gap': bool(
+                            'oof_time_gap_pred' in pred_df.columns
+                            and pred_df['oof_time_gap_pred'].notna().any()
+                        ),
+                        'lambdarank': bool(
+                            'oof_lambdarank_win_p' in pred_df.columns
+                            and pred_df['oof_lambdarank_win_p'].notna().any()
+                        ),
+                    },
+                    'win_corrector': {
+                        'loaded': bool(win_corrector),
+                        'method': (
+                            win_corrector.get('method')
+                            if win_corrector else None
+                        ),
+                        'param': (
+                            win_corrector.get('param')
+                            if win_corrector else None
+                        ),
+                    },
+                    'dnf': {
+                        'loaded': dnf_bundle is not None,
+                        'mean_p': (
+                            float(_dnf_series.mean())
+                            if len(_dnf_series) else None
+                        ),
+                    },
+                    'blend': {
+                        'available': bool(
+                            'blend_win_p' in result.columns
+                            and result['blend_win_p'].notna().any()
+                        ),
+                        'w': BLEND_W,
+                    },
+                    'live_form': dict(form_status),
+                    'references': [
+                        f"{p.get('competition_name')} "
+                        f"({p.get('competition_date')})"
+                        for p in reference_profiles
+                    ],
+                }
 
                 # Persist to prediction_log (best-effort — never blocks the UI)
                 if log_rows and fc_race_id:
@@ -1008,6 +1348,10 @@ passed the probability gate. Three pricing additions on top:
     # Display predictions
     if 'all_predictions' in st.session_state:
         predictions = st.session_state['all_predictions']
+
+        # Always-visible provenance: what actually fed THIS prediction run
+        # (race state, stack features, pricing heads), warts and all.
+        _render_provenance_panel(st.session_state.get('provenance'))
 
         tabs = st.tabs(list(predictions.keys()))
         for tab, (label, result) in zip(tabs, predictions.items()):
@@ -1212,8 +1556,12 @@ if (
 
     k = state_info.get('stages_completed')
     total = state_info.get('total_stages')
+    total_txt = (
+        f"{total} (est.)"
+        if state_info.get('total_stages_estimated') else f"{total}"
+    )
     st.subheader(
-        f"GC Outlook — after stage {k} of {total}"
+        f"GC Outlook — after stage {k} of {total_txt}"
         if k else "GC Outlook"
     )
     st.caption(
@@ -1226,6 +1574,14 @@ if (
             if state_info.get('leader_name') else ""
         )
     )
+    if state_info.get('missing_stages') and state_info.get('scrape_failed'):
+        st.warning(
+            f"Outlook is computed from the first {k} completed stage(s) "
+            f"only — stage(s) "
+            f"{_fmt_stage_nums(state_info['missing_stages'])} missing "
+            f"(DB data through {state_info.get('db_horizon') or 'unknown'}; "
+            "scrape pending)."
+        )
 
     def _fmt_gap(seconds):
         if pd.isna(seconds):
