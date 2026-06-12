@@ -33,6 +33,8 @@ from cycling_project.prediction_tools.future_race_loader import (
     get_reference_race_profile,
     average_race_profiles,
     assemble_prediction_df,
+    attach_stack_features,
+    load_production_rating_snapshots,
     search_historical_races,
     get_selected_race_details,
     detect_race_stages,
@@ -47,7 +49,14 @@ from cycling_project.prediction_tools.future_race_loader import (
     get_available_stages,
     get_default_references,
 )
+from cycling_project.prediction_tools.contest_signature_features import (
+    build_serving_signature_context,
+)
+from cycling_project.prediction_tools.dnf_predictor import (
+    load_production_dnf_head,
+)
 from cycling_project.prediction_tools.gc_outlook import GCOutlookHead
+from cycling_project.prediction_tools.pricing_layer import apply_pricing_layer
 from cycling_project.prediction_tools.live_race_state import (
     attach_race_state,
     fetch_live_race_state,
@@ -57,6 +66,9 @@ from cycling_project.prediction_tools.prediction_log import (
     PredictionLogRow,
     ensure_schema as _ensure_prediction_log_schema,
     log_predictions,
+)
+from cycling_project.prediction_tools.win_calibration import (
+    load_corrector as load_win_corrector,
 )
 
 
@@ -612,6 +624,21 @@ we can later analyze *which head is right* when they disagree.
 **Odds** — simply the reciprocal of each probability, rendered in
 decimal / American / fractional formats. Uses the multiclass
 probabilities by default (the more discriminative head).
+
+**Arm-C stack (2026-06-11)** — the bucket + contender models now consume
+17 extra features (meta-OOF time-gap & LambdaRank predictions, one-day
+contest signatures, contested-comparison Elo), the combination that
+passed the probability gate. Three pricing additions on top:
+
+- *Win %* carries a scalar **calibration corrector** fit at train time
+  (the stack's raw win book ran slightly under-confident on one-days).
+- **Blend Win %** — 0.2 × multiclass + 0.8 × LambdaRank win probability,
+  renormalized to preserve the multiclass book (small but consistent
+  log-loss winner in CV).
+- **DNF %** and the *DNF-adjusted (honest) prices* expander — the
+  multiclass heads are trained on finishers only, so their probabilities
+  are implicitly conditioned on finishing. P(market | finish) × P(finish)
+  from the DNF head is the price an actual bet pays on.
 """)
 
     # Warn if startlist changed since last prediction run
@@ -663,6 +690,12 @@ probabilities by default (the more discriminative head).
                 ) = registry.load_with_ranker(ranking_method='ensemble')
                 registry_metadata = registry.get_metadata()
                 model_version = registry_metadata.get('saved_at', '')
+
+                # ── Arm-C stack inputs (all optional; features stay NaN
+                # and pricing degrades gracefully when artifacts are absent)
+                win_corrector = load_win_corrector(MODEL_DIR)
+                dnf_bundle = load_production_dnf_head(Path(MODEL_DIR))
+                rating_snaps = load_production_rating_snapshots()
 
                 # Build name/team lookup
                 name_map = matched.set_index('rider_id')[['rider_name', 'team_name']].to_dict('index')
@@ -765,6 +798,44 @@ probabilities by default (the more discriminative head).
                     )
                     return float(lambdarank_pred.config.temperature)
 
+                # ── Arm-C signature context: one-day targets only.
+                # Stage / gc targets keep all signature columns NaN — the
+                # models' trained out-of-scope state (ref-keyed stage serving
+                # was shown to cost +0.078 log loss).
+                sig_context = None
+                if target_comp_type == 'one_day':
+                    try:
+                        sig_context = build_serving_signature_context(
+                            reference_ids, field_features, DB_PATH,
+                        )
+                    except Exception as sig_exc:
+                        st.warning(
+                            f"Signature features unavailable (NaN fallback): {sig_exc}"
+                        )
+
+                _pricing_warned = set()
+
+                def _apply_pricing_layer(result_df: pd.DataFrame, pred_df: pd.DataFrame,
+                                         profile: dict):
+                    """Shared pricing layer (prediction_tools.pricing_layer):
+                    win corrector + blend win market + DNF-adjusted prices."""
+                    priced, pricing_warnings = apply_pricing_layer(
+                        result_df, pred_df, profile,
+                        win_corrector=win_corrector,
+                        dnf_bundle=dnf_bundle,
+                        stage_number=(
+                            int(target_stage_num)
+                            if target_comp_type == 'stage' and target_stage_num
+                            else None
+                        ),
+                        db_path=DB_PATH,
+                    )
+                    for w in pricing_warnings:
+                        if w not in _pricing_warned:
+                            _pricing_warned.add(w)
+                            st.warning(w)
+                    return priced
+
                 def _append_log_rows(label: str, result_df: pd.DataFrame, lr_temp):
                     for _, row in result_df.iterrows():
                         log_rows.append(PredictionLogRow(
@@ -783,7 +854,41 @@ probabilities by default (the more discriminative head).
                             lambdarank_podium_p=row.get('lambdarank_podium_p'),
                             lambdarank_temperature=lr_temp,
                             state_through_stage=state_through,
+                            dnf_p=row.get('dnf_p'),
+                            dnf_adj_win_p=row.get('dnf_adj_win_p'),
+                            dnf_adj_podium_p=row.get('dnf_adj_podium_p'),
+                            dnf_adj_top5_p=row.get('dnf_adj_top5_p'),
+                            dnf_adj_top15_p=row.get('dnf_adj_top15_p'),
+                            blend_win_p=row.get('blend_win_p'),
                         ))
+
+                _stack_caption_state = {'shown': False}
+
+                def _stack_caption(pred_df: pd.DataFrame):
+                    if _stack_caption_state['shown']:
+                        return
+                    _stack_caption_state['shown'] = True
+                    parts = []
+                    if 'sig_sprint' in pred_df.columns:
+                        if pred_df['sig_sprint'].notna().any():
+                            n_refs = pred_df['sig_n_refs'].dropna()
+                            parts.append(
+                                f"signatures on (refs={int(n_refs.iloc[0]) if len(n_refs) else 0})"
+                            )
+                        else:
+                            parts.append("signatures NaN (stage/gc target or unavailable)")
+                    if 'contested_rating' in pred_df.columns:
+                        cov = pred_df['contested_rating'].notna().mean()
+                        parts.append(f"Elo coverage {cov:.0%}")
+                    if 'oof_lambdarank_win_p' in pred_df.columns:
+                        parts.append(
+                            "meta-OOF on" if pred_df['oof_lambdarank_win_p'].notna().any()
+                            else "meta-OOF NaN"
+                        )
+                    if win_corrector:
+                        parts.append(f"win corrector: {win_corrector.get('method')}")
+                    parts.append("DNF head " + ("on" if dnf_bundle else "absent"))
+                    st.caption("Arm-C stack — " + "; ".join(parts))
 
                 for comp_id in selected_refs:
                     profile = get_reference_race_profile(comp_id)
@@ -791,11 +896,18 @@ probabilities by default (the more discriminative head).
 
                     pred_df = assemble_prediction_df(snapshots, matched, field_features, profile)
                     pred_df = attach_race_state(pred_df, main_state_df)
+                    pred_df = attach_stack_features(
+                        pred_df, time_gap_pred, lambdarank_pred,
+                        rating_snapshots=rating_snaps,
+                        signature_context=sig_context,
+                    )
+                    _stack_caption(pred_df)
                     result = race_ranker.predict_race(pred_df, return_details=True)
                     result['team'] = result['rider_id'].map(
                         lambda rid: name_map.get(rid, {}).get('team_name', '')
                     )
                     lr_temp = _attach_lambdarank(result, pred_df)
+                    result = _apply_pricing_layer(result, pred_df, profile)
 
                     label = f"{profile['competition_name']} ({profile['competition_date']})"
                     all_predictions[label] = result
@@ -805,11 +917,18 @@ probabilities by default (the more discriminative head).
                 avg_profile = average_race_profiles(reference_profiles)
                 pred_df = assemble_prediction_df(snapshots, matched, field_features, avg_profile)
                 pred_df = attach_race_state(pred_df, main_state_df)
+                pred_df = attach_stack_features(
+                    pred_df, time_gap_pred, lambdarank_pred,
+                    rating_snapshots=rating_snaps,
+                    signature_context=sig_context,
+                )
+                _stack_caption(pred_df)
                 result = race_ranker.predict_race(pred_df, return_details=True)
                 result['team'] = result['rider_id'].map(
                     lambda rid: name_map.get(rid, {}).get('team_name', '')
                 )
                 lr_temp = _attach_lambdarank(result, pred_df)
+                result = _apply_pricing_layer(result, pred_df, avg_profile)
                 all_predictions['Averaged Reference Races'] = result
                 _append_log_rows('Averaged Reference Races', result, lr_temp)
 
@@ -914,6 +1033,11 @@ probabilities by default (the more discriminative head).
                 # Add cumulative probability columns if available
                 has_probs = 'prob_win' in result.columns
                 has_lambdarank = 'lambdarank_win_p' in result.columns
+                has_blend = (
+                    'blend_win_p' in result.columns
+                    and result['blend_win_p'].notna().any()
+                )
+                has_dnf = 'dnf_p' in result.columns and result['dnf_p'].notna().any()
 
                 if has_probs:
                     cols_to_show.extend(['prob_win', 'prob_podium', 'prob_top5', 'prob_top15'])
@@ -929,6 +1053,12 @@ probabilities by default (the more discriminative head).
                         'lambdarank_win_p': 'LR Win %',
                         'lambdarank_podium_p': 'LR Podium %',
                     })
+                if has_blend:
+                    cols_to_show.append('blend_win_p')
+                    col_rename['blend_win_p'] = 'Blend Win %'
+                if has_dnf:
+                    cols_to_show.append('dnf_p')
+                    col_rename['dnf_p'] = 'DNF %'
 
                 display = result[cols_to_show].copy().rename(columns=col_rename)
                 display['Expected Bucket'] = display['Expected Bucket'].round(2)
@@ -949,6 +1079,12 @@ probabilities by default (the more discriminative head).
                         (result['prob_win'] - result['lambdarank_win_p']).abs() * 100
                     )
                     display['Δ Win pp'] = win_gap_pp.round(1)
+                if has_blend:
+                    display['Blend Win %'] = (
+                        result['blend_win_p'].astype(float) * 100
+                    ).round(1)
+                if has_dnf:
+                    display['DNF %'] = (result['dnf_p'].astype(float) * 100).round(1)
 
                 if has_probs and has_lambdarank:
                     # Highlight rows where the two heads disagree materially on win probability.
@@ -970,6 +1106,40 @@ probabilities by default (the more discriminative head).
                             "Run `uv run python -m cycling_project.update_pipeline --only train-lambdarank` to add it."
                         )
                     st.dataframe(display, hide_index=True, width='stretch')
+
+                # DNF-adjusted (honest) prices: the multiclass heads emit
+                # P(market | finished); multiplying by P(finish) is the
+                # price an actual bet pays on (gate: honest frame
+                # market_avg_log_loss -0.0019 all / -0.0076 one-day, 5/5).
+                if has_dnf and has_probs:
+                    with st.expander("DNF-adjusted (honest) prices"):
+                        st.caption(
+                            "P(market | finish) × P(finish) from the DNF head. "
+                            "Podium/Top 5/Top 15 are multiplied directly, so "
+                            "adjusted ≤ unadjusted; the Win market is "
+                            "renormalized within the race to preserve the "
+                            "total win book, so low-DNF riders can gain."
+                        )
+                        adj_display = result[
+                            ['predicted_rank', 'rider_name', 'team', 'dnf_p',
+                             'dnf_adj_win_p', 'dnf_adj_podium_p',
+                             'dnf_adj_top5_p', 'dnf_adj_top15_p']
+                        ].copy().rename(columns={
+                            'predicted_rank': 'Rank',
+                            'rider_name': 'Rider',
+                            'team': 'Team',
+                            'dnf_p': 'DNF %',
+                            'dnf_adj_win_p': 'Win % (adj)',
+                            'dnf_adj_podium_p': 'Podium % (adj)',
+                            'dnf_adj_top5_p': 'Top 5 % (adj)',
+                            'dnf_adj_top15_p': 'Top 15 % (adj)',
+                        })
+                        for c in ('DNF %', 'Win % (adj)', 'Podium % (adj)',
+                                  'Top 5 % (adj)', 'Top 15 % (adj)'):
+                            adj_display[c] = (
+                                adj_display[c].astype(float) * 100
+                            ).round(1)
+                        st.dataframe(adj_display, hide_index=True, width='stretch')
 
                 # Odds view in expander
                 if has_probs:

@@ -55,12 +55,25 @@ CREATE TABLE IF NOT EXISTS prediction_log (
 # pre-race features only). gc_outlook_*: the state-aware GC outlook head's
 # cumulative probabilities — populated only on GC-target runs of in-progress
 # stage races (multiclass_*/lambdarank_* on the same row remain pre-race).
+#
+# Arm-C pricing-layer columns (2026-06-11): dnf_p = P(DNF | started) from the
+# production DNF head; dnf_adj_* = P(market | finish) x P(finish) honest
+# prices (win renormalized within race to preserve the book); blend_win_p =
+# w=0.2 multiclass x LambdaRank win blend (book-preserving). multiclass_win_p
+# carries the win-calibration corrector once the corrector ships (it is the
+# production opinion).
 MIGRATION_COLUMNS = [
     ("state_through_stage", "INTEGER"),
     ("gc_outlook_win_p", "REAL"),
     ("gc_outlook_podium_p", "REAL"),
     ("gc_outlook_top5_p", "REAL"),
     ("gc_outlook_top15_p", "REAL"),
+    ("dnf_p", "REAL"),
+    ("dnf_adj_win_p", "REAL"),
+    ("dnf_adj_podium_p", "REAL"),
+    ("dnf_adj_top5_p", "REAL"),
+    ("dnf_adj_top15_p", "REAL"),
+    ("blend_win_p", "REAL"),
 ]
 
 INDEX_SQL = [
@@ -109,6 +122,12 @@ class PredictionLogRow:
     gc_outlook_podium_p: Optional[float] = None
     gc_outlook_top5_p: Optional[float] = None
     gc_outlook_top15_p: Optional[float] = None
+    dnf_p: Optional[float] = None
+    dnf_adj_win_p: Optional[float] = None
+    dnf_adj_podium_p: Optional[float] = None
+    dnf_adj_top5_p: Optional[float] = None
+    dnf_adj_top15_p: Optional[float] = None
+    blend_win_p: Optional[float] = None
 
     def as_row(self) -> Dict[str, Any]:
         return {
@@ -135,6 +154,12 @@ class PredictionLogRow:
             'gc_outlook_podium_p': _as_float(self.gc_outlook_podium_p),
             'gc_outlook_top5_p': _as_float(self.gc_outlook_top5_p),
             'gc_outlook_top15_p': _as_float(self.gc_outlook_top15_p),
+            'dnf_p': _as_float(self.dnf_p),
+            'dnf_adj_win_p': _as_float(self.dnf_adj_win_p),
+            'dnf_adj_podium_p': _as_float(self.dnf_adj_podium_p),
+            'dnf_adj_top5_p': _as_float(self.dnf_adj_top5_p),
+            'dnf_adj_top15_p': _as_float(self.dnf_adj_top15_p),
+            'blend_win_p': _as_float(self.blend_win_p),
         }
 
 

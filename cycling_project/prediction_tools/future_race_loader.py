@@ -23,6 +23,17 @@ from cycling_project.prediction_tools.model_registry import ModelRegistry
 from cycling_project.prediction_tools.evaluation import (
     BucketEvaluator, TimeGapEvaluator, RankingEvaluator,
 )
+from cycling_project.prediction_tools.contest_signature_features import (
+    SIGNATURE_FEATURE_COLS,
+    attach_serving_signature_features,
+    build_serving_signature_context,
+)
+from cycling_project.prediction_tools.contested_rating import (
+    PRODUCTION_SNAPSHOT_PATH as RATING_SNAPSHOT_PATH,
+    RATING_FEATURE_COLS,
+    attach_rating_features,
+    load_snapshots as load_rating_snapshots,
+)
 from cycling_project.webscrape_tools.get_startlist import get_start_list
 from cycling_project.webscrape_tools.logging_config import get_logger
 from cycling_project.webscrape_tools.start_list_parse_tools import Team, Rider
@@ -773,7 +784,98 @@ def assemble_prediction_df(
     # Drop the snapshot's competition_id (it was from the rider's last race)
     # We've already set competition_id = 0 above
 
+    # Arm-C stack columns default to NaN so models trained with them never
+    # receive a silent 0.0 from FeatureEngineer.get_feature_matrix when a
+    # caller skips attach_stack_features (NaN routes down LightGBM's default
+    # branch — the trained "feature unavailable" state). attach_stack_features
+    # overwrites these with real values on the app's prediction path.
+    for col in STACK_FEATURE_COLS:
+        df[col] = np.nan
+
     return df
+
+
+# ── Arm-C stack feature attachment (serving) ─────────────────────────────
+
+STACK_FEATURE_COLS = (
+    ['oof_time_gap_pred', 'oof_lambdarank_win_p']
+    + SIGNATURE_FEATURE_COLS
+    + RATING_FEATURE_COLS
+)
+
+
+def load_production_rating_snapshots() -> Optional[pd.DataFrame]:
+    """Contested-rating snapshots artifact, or None when not built yet."""
+    if not RATING_SNAPSHOT_PATH.exists():
+        logger.warning(
+            "Contested-rating snapshots artifact missing (%s) — Elo features "
+            "will be NaN. Run the pipeline's elo-snapshots step.",
+            RATING_SNAPSHOT_PATH,
+        )
+        return None
+    return load_rating_snapshots(RATING_SNAPSHOT_PATH)
+
+
+def attach_stack_features(
+    pred_df: pd.DataFrame,
+    time_gap_predictor=None,
+    lambdarank_predictor=None,
+    rating_snapshots: Optional[pd.DataFrame] = None,
+    signature_context: Optional[dict] = None,
+    asof_date: str = None,
+) -> pd.DataFrame:
+    """Attach the 17 arm-C stack columns to an assembled prediction frame.
+
+    Mirrors training semantics exactly:
+      - oof_time_gap_pred / oof_lambdarank_win_p: the production time-gap and
+        LambdaRank base models' predictions on this frame (training's
+        early-stop rows use the same main-model path).
+      - signature features: one-day B4 from the chosen reference comps +
+        scraped-startlist field shares (signature_context); stage / gc
+        targets pass signature_context=None -> NaN (out-of-scope state).
+      - contested-Elo: rating as of TODAY (strictly before), from the
+        production snapshots artifact; NaN for never-rated riders.
+        contested_rating_vs_field is the mean over this startlist.
+
+    Anything unavailable stays NaN — never zero-filled.
+    """
+    out = pred_df.copy()
+
+    # ---- signatures (creates all 11 columns; NaN when context is None) ----
+    out = attach_serving_signature_features(out, signature_context)
+
+    # ---- contested-Elo as of today ----
+    if rating_snapshots is not None and len(out):
+        asof = pd.to_datetime(asof_date) if asof_date else pd.Timestamp.today().normalize()
+        tmp = pd.DataFrame({
+            'rider_id': out['rider_id'].astype('int64').values,
+            'competition_id': 0,           # one group = this startlist
+            'competition_date': asof,
+        })
+        # db_path=None + no competition_type column -> plain (date, id=0)
+        # cutoff, strictly before anything dated today.
+        rated = attach_rating_features(tmp, rating_snapshots, db_path=None)
+        for col in RATING_FEATURE_COLS:
+            out[col] = rated[col].values
+    else:
+        for col in RATING_FEATURE_COLS:
+            out[col] = np.nan
+
+    # ---- meta-OOF from the production base models ----
+    if time_gap_predictor is not None:
+        out['oof_time_gap_pred'] = time_gap_predictor.predict(out)
+    else:
+        out['oof_time_gap_pred'] = np.nan
+        logger.warning("attach_stack_features: no time-gap model — oof_time_gap_pred NaN")
+    if lambdarank_predictor is not None:
+        out['oof_lambdarank_win_p'] = np.asarray(
+            lambdarank_predictor.predict_win_probabilities(out)
+        )
+    else:
+        out['oof_lambdarank_win_p'] = np.nan
+        logger.warning("attach_stack_features: no LambdaRank head — oof_lambdarank_win_p NaN")
+
+    return out
 
 
 def search_historical_races(
@@ -887,19 +989,38 @@ def predict_future_race(
 
     # 5. Load production model
     registry = ModelRegistry(model_dir)
-    bucket_pred, time_gap_pred, race_ranker, _lambdarank = registry.load_with_ranker(
+    bucket_pred, time_gap_pred, race_ranker, lambdarank_pred = registry.load_with_ranker(
         ranking_method='expected_bucket'
     )
+
+    # Arm-C stack inputs (all optional — attach_stack_features degrades to NaN)
+    rating_snaps = load_production_rating_snapshots()
 
     # 6. Get reference race profiles and generate predictions
     reference_profiles = []
     predictions = {}
+
+    def _sig_context_for(profile: dict) -> Optional[dict]:
+        if profile.get('competition_type') != 'one_day':
+            return None
+        try:
+            return build_serving_signature_context(
+                [int(c) for c in reference_competition_ids], field_features, db_path
+            )
+        except Exception as exc:  # pragma: no cover — defensive serving path
+            logger.warning(f"Signature context failed, sig features NaN: {exc}")
+            return None
 
     for comp_id in reference_competition_ids:
         profile = get_reference_race_profile(comp_id, db_path)
         reference_profiles.append(profile)
 
         pred_df = assemble_prediction_df(snapshots, matched_riders, field_features, profile)
+        pred_df = attach_stack_features(
+            pred_df, time_gap_pred, lambdarank_pred,
+            rating_snapshots=rating_snaps,
+            signature_context=_sig_context_for(profile),
+        )
         result = race_ranker.predict_race(pred_df, return_details=False)
 
         # Add rider names from matched_riders
@@ -913,6 +1034,11 @@ def predict_future_race(
     if len(reference_profiles) > 1:
         avg_profile = average_race_profiles(reference_profiles)
         pred_df = assemble_prediction_df(snapshots, matched_riders, field_features, avg_profile)
+        pred_df = attach_stack_features(
+            pred_df, time_gap_pred, lambdarank_pred,
+            rating_snapshots=rating_snaps,
+            signature_context=_sig_context_for(avg_profile),
+        )
         result = race_ranker.predict_race(pred_df, return_details=False)
 
         name_map = matched_riders.set_index('rider_id')[['rider_name', 'team_name']].to_dict('index')

@@ -34,14 +34,14 @@ FirstCycling HTML → scrape → pickle files → migrate → SQLite DB
 | `data_cleaning_tools/` | Date verification, data standardization |
 | `data_validation_tools/` | Data quality checks |
 | `web/` | Streamlit frontend (`app.py`) |
-| `update_pipeline.py` | Orchestrates all 11 steps: scrape → migrate → features → train → train-lambdarank |
+| `update_pipeline.py` | Orchestrates all 15 steps: scrape → migrate → features → elo-snapshots → train → train-lambdarank → train-gc-outlook → train-dnf |
 
 ## Key Paths
 
 | Path | Contents |
 |------|----------|
 | `cycling_project/webscrape_tools/database/database/cycling_races.db` | SQLite database (also hosts the `prediction_log` table written by the web app) |
-| `models/production/` | Trained LightGBM models: bucket, time gap, multiclass cascade (weighted/calibrated/contender), LambdaRank probability head |
+| `models/production/` | Trained LightGBM models: bucket, time gap, multiclass cascade (weighted/calibrated/contender), LambdaRank probability head, GC outlook head, DNF head (`dnf_*` + `dnf_events.parquet`), contested-Elo snapshots (`contested_rating_snapshots.parquet`), win corrector (`win_calibration.json`) |
 | `~/cycling_data/scraped_data/` | Scraped pickle files (default; override with `SCRAPED_DATA_DIR` in `.env`) |
 | `cycling_project/tests/fixtures/` | Test fixtures (HTML pages, mock data) |
 | `experiments/` | JSON results from CV / experiment runs (see `experiment_log.md` for the narrative) |
