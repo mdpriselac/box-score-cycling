@@ -147,7 +147,8 @@ class ModelTrainer:
         self,
         train_df,
         val_df,
-        best_params: Optional[Dict[str, Any]] = None
+        best_params: Optional[Dict[str, Any]] = None,
+        external_weights=None
     ) -> Tuple[OrdinalBucketPredictor, Dict[str, Any]]:
         """Train bucket prediction model."""
         if self.config.verbose:
@@ -162,7 +163,10 @@ class ModelTrainer:
             config.lgb_params.update(best_params)
 
         model = OrdinalBucketPredictor(config)
-        info = model.train(train_df, val_df, verbose=self.config.verbose)
+        info = model.train(
+            train_df, val_df, verbose=self.config.verbose,
+            external_weights=external_weights
+        )
 
         self.bucket_predictor = model
 

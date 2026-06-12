@@ -1,0 +1,381 @@
+{
+  "generated_at": "2026-06-11T08:50:34",
+  "n_edition_rows": 1022,
+  "test_years": [
+    2019,
+    2020,
+    2021,
+    2022,
+    2023,
+    2024,
+    2025,
+    2026
+  ],
+  "results": {
+    "n_test_rows": 723,
+    "with_history": {
+      "n_rows": 685,
+      "predictors": {
+        "B0": {
+          "per_dim": {
+            "top10_sprint": {
+              "n": 685,
+              "r": -0.008,
+              "mae": 0.252
+            },
+            "top10_mountain": {
+              "n": 685,
+              "r": 0.012,
+              "mae": 0.1186
+            },
+            "top10_hilly": {
+              "n": 685,
+              "r": -0.094,
+              "mae": 0.094
+            },
+            "top10_rolling": {
+              "n": 685,
+              "r": 0.005,
+              "mae": 0.1382
+            },
+            "top10_breakaway": {
+              "n": 685,
+              "r": -0.064,
+              "mae": 0.1021
+            },
+            "top10_time_trial": {
+              "n": 685,
+              "r": -0.093,
+              "mae": 0.1162
+            },
+            "wg_prop": {
+              "n": 685,
+              "r": -0.015,
+              "mae": 0.1363
+            }
+          },
+          "signature_cosine": 0.7281,
+          "mean_share_r": -0.04
+        },
+        "B1": {
+          "per_dim": {
+            "top10_sprint": {
+              "n": 685,
+              "r": 0.689,
+              "mae": 0.1568
+            },
+            "top10_mountain": {
+              "n": 685,
+              "r": 0.625,
+              "mae": 0.08
+            },
+            "top10_hilly": {
+              "n": 685,
+              "r": 0.171,
+              "mae": 0.1051
+            },
+            "top10_rolling": {
+              "n": 685,
+              "r": 0.446,
+              "mae": 0.1178
+            },
+            "top10_breakaway": {
+              "n": 685,
+              "r": 0.215,
+              "mae": 0.1155
+            },
+            "top10_time_trial": {
+              "n": 685,
+              "r": 0.347,
+              "mae": 0.1204
+            },
+            "wg_prop": {
+              "n": 685,
+              "r": 0.386,
+              "mae": 0.112
+            }
+          },
+          "signature_cosine": 0.7665,
+          "mean_share_r": 0.415
+        },
+        "B2": {
+          "per_dim": {
+            "top10_sprint": {
+              "n": 685,
+              "r": 0.734,
+              "mae": 0.1464
+            },
+            "top10_mountain": {
+              "n": 685,
+              "r": 0.644,
+              "mae": 0.0798
+            },
+            "top10_hilly": {
+              "n": 685,
+              "r": 0.25,
+              "mae": 0.0924
+            },
+            "top10_rolling": {
+              "n": 685,
+              "r": 0.527,
+              "mae": 0.1069
+            },
+            "top10_breakaway": {
+              "n": 685,
+              "r": 0.23,
+              "mae": 0.0996
+            },
+            "top10_time_trial": {
+              "n": 685,
+              "r": 0.39,
+              "mae": 0.1065
+            },
+            "wg_prop": {
+              "n": 685,
+              "r": 0.45,
+              "mae": 0.1031
+            }
+          },
+          "signature_cosine": 0.817,
+          "mean_share_r": 0.463
+        },
+        "B3": {
+          "per_dim": {
+            "top10_sprint": {
+              "n": 685,
+              "r": 0.791,
+              "mae": 0.168
+            },
+            "top10_mountain": {
+              "n": 685,
+              "r": 0.723,
+              "mae": 0.0811
+            },
+            "top10_hilly": {
+              "n": 685,
+              "r": 0.399,
+              "mae": 0.0789
+            },
+            "top10_rolling": {
+              "n": 685,
+              "r": 0.678,
+              "mae": 0.0995
+            },
+            "top10_breakaway": {
+              "n": 685,
+              "r": 0.423,
+              "mae": 0.0901
+            },
+            "top10_time_trial": {
+              "n": 685,
+              "r": 0.361,
+              "mae": 0.1256
+            }
+          },
+          "signature_cosine": 0.8364,
+          "mean_share_r": 0.562
+        },
+        "B4": {
+          "per_dim": {
+            "top10_sprint": {
+              "n": 685,
+              "r": 0.785,
+              "mae": 0.1328
+            },
+            "top10_mountain": {
+              "n": 685,
+              "r": 0.706,
+              "mae": 0.0712
+            },
+            "top10_hilly": {
+              "n": 685,
+              "r": 0.348,
+              "mae": 0.0856
+            },
+            "top10_rolling": {
+              "n": 685,
+              "r": 0.641,
+              "mae": 0.0948
+            },
+            "top10_breakaway": {
+              "n": 685,
+              "r": 0.384,
+              "mae": 0.0923
+            },
+            "top10_time_trial": {
+              "n": 685,
+              "r": 0.445,
+              "mae": 0.1042
+            }
+          },
+          "signature_cosine": 0.8461,
+          "mean_share_r": 0.551
+        },
+        "M1": {
+          "per_dim": {
+            "top10_sprint": {
+              "n": 685,
+              "r": 0.805,
+              "mae": 0.1274
+            },
+            "top10_mountain": {
+              "n": 685,
+              "r": 0.718,
+              "mae": 0.0736
+            },
+            "top10_hilly": {
+              "n": 685,
+              "r": 0.312,
+              "mae": 0.0833
+            },
+            "top10_rolling": {
+              "n": 685,
+              "r": 0.636,
+              "mae": 0.0965
+            },
+            "top10_breakaway": {
+              "n": 685,
+              "r": 0.415,
+              "mae": 0.0914
+            },
+            "top10_time_trial": {
+              "n": 685,
+              "r": 0.422,
+              "mae": 0.1046
+            },
+            "wg_prop": {
+              "n": 685,
+              "r": 0.376,
+              "mae": 0.1082
+            }
+          },
+          "signature_cosine": 0.8535,
+          "mean_share_r": 0.551
+        }
+      }
+    },
+    "cold_start": {
+      "n_rows": 38,
+      "predictors": {
+        "B0": {
+          "per_dim": {
+            "top10_sprint": {
+              "n": 38,
+              "r": 0.061,
+              "mae": 0.2251
+            },
+            "top10_mountain": {
+              "n": 38,
+              "r": -0.002,
+              "mae": 0.1315
+            },
+            "top10_hilly": {
+              "n": 38,
+              "r": -0.292,
+              "mae": 0.1021
+            },
+            "top10_rolling": {
+              "n": 38,
+              "r": -0.115,
+              "mae": 0.1169
+            },
+            "top10_breakaway": {
+              "n": 38,
+              "r": -0.214,
+              "mae": 0.0974
+            },
+            "top10_time_trial": {
+              "n": 38,
+              "r": 0.101,
+              "mae": 0.107
+            },
+            "wg_prop": {
+              "n": 38,
+              "r": -0.254,
+              "mae": 0.1109
+            }
+          },
+          "signature_cosine": 0.726,
+          "mean_share_r": -0.077
+        },
+        "B3": {
+          "per_dim": {
+            "top10_sprint": {
+              "n": 38,
+              "r": 0.721,
+              "mae": 0.1492
+            },
+            "top10_mountain": {
+              "n": 38,
+              "r": 0.616,
+              "mae": 0.0878
+            },
+            "top10_hilly": {
+              "n": 38,
+              "r": 0.168,
+              "mae": 0.0922
+            },
+            "top10_rolling": {
+              "n": 38,
+              "r": 0.591,
+              "mae": 0.0995
+            },
+            "top10_breakaway": {
+              "n": 38,
+              "r": 0.521,
+              "mae": 0.0794
+            },
+            "top10_time_trial": {
+              "n": 38,
+              "r": 0.171,
+              "mae": 0.1318
+            }
+          },
+          "signature_cosine": 0.8138,
+          "mean_share_r": 0.465
+        },
+        "M1": {
+          "per_dim": {
+            "top10_sprint": {
+              "n": 38,
+              "r": 0.74,
+              "mae": 0.1208
+            },
+            "top10_mountain": {
+              "n": 38,
+              "r": 0.446,
+              "mae": 0.103
+            },
+            "top10_hilly": {
+              "n": 38,
+              "r": -0.006,
+              "mae": 0.1154
+            },
+            "top10_rolling": {
+              "n": 38,
+              "r": 0.564,
+              "mae": 0.0884
+            },
+            "top10_breakaway": {
+              "n": 38,
+              "r": 0.411,
+              "mae": 0.0912
+            },
+            "top10_time_trial": {
+              "n": 38,
+              "r": 0.239,
+              "mae": 0.1136
+            },
+            "wg_prop": {
+              "n": 38,
+              "r": 0.105,
+              "mae": 0.1266
+            }
+          },
+          "signature_cosine": 0.7943,
+          "mean_share_r": 0.399
+        }
+      }
+    }
+  }
+}

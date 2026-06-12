@@ -149,7 +149,8 @@ class OrdinalBucketPredictor:
         self,
         train_df: pd.DataFrame,
         val_df: Optional[pd.DataFrame] = None,
-        verbose: bool = True
+        verbose: bool = True,
+        external_weights: Optional[np.ndarray] = None
     ) -> Dict[str, Any]:
         """
         Train the bucket prediction model.
@@ -158,6 +159,9 @@ class OrdinalBucketPredictor:
             train_df: Training data with features and place_bucket
             val_df: Validation data for early stopping
             verbose: Print training progress
+            external_weights: Optional per-row weights aligned to train_df row
+                order (e.g. placement-informativeness weights). Multiplied
+                with class-balance weights when both are enabled.
 
         Returns:
             Training history/metrics dict
@@ -172,6 +176,13 @@ class OrdinalBucketPredictor:
         sample_weights = None
         if self.config.use_sample_weights:
             sample_weights = self.compute_sample_weights(y_train)
+        if external_weights is not None:
+            ext = np.asarray(external_weights, dtype=float)
+            if len(ext) != len(y_train):
+                raise ValueError(
+                    f"external_weights length {len(ext)} != train rows {len(y_train)}"
+                )
+            sample_weights = ext if sample_weights is None else sample_weights * ext
 
         # Create LightGBM datasets
         train_data = lgb.Dataset(

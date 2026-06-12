@@ -464,6 +464,67 @@ class Top4ProbabilityEvaluator:
         return metrics
 
 
+class MarketProbabilityEvaluator:
+    """
+    Market-aligned probability evaluation (the probability gate, 2026-06-11).
+
+    Scores EVERY evaluated rider against each cumulative market as a binary
+    outcome — unlike Top4ProbabilityEvaluator's top4_log_loss, which
+    conditions on the outcome (only riders who finished top-15) and therefore
+    under-penalizes overconfidence on riders who finished poorly.
+
+    Markets are the bucket-boundary cumulative events the suite prices:
+    win, podium, top5, top15. Per market: binary log loss, Brier,
+    calibration ratio (sum of predicted / count of actual). Headline:
+    market_avg_log_loss (equal-weight mean over the four markets).
+    """
+
+    MARKETS = {
+        'win': [0],
+        'podium': [0, 1],
+        'top5': [0, 1, 2],
+        'top15': [0, 1, 2, 3],
+    }
+
+    @staticmethod
+    def evaluate(
+        y_true: np.ndarray,
+        y_proba: np.ndarray,
+        competition_ids: Optional[np.ndarray] = None,
+    ) -> Dict[str, float]:
+        """
+        Args:
+            y_true: True bucket values (already class-clipped is fine — only
+                membership in classes 0..3 is used)
+            y_proba: Predicted probabilities, shape (n_samples, n_classes)
+            competition_ids: Unused; accepted for call-site symmetry
+
+        Returns:
+            {<market>_log_loss, <market>_brier, <market>_cal_ratio, ...,
+             market_avg_log_loss, market_avg_brier, n_evaluated}
+        """
+        y_true = np.asarray(y_true, dtype=int)
+        y_proba = np.asarray(y_proba)
+        eps = 1e-12
+        metrics: Dict[str, float] = {'n_evaluated': int(len(y_true))}
+
+        log_losses, briers = [], []
+        for market, classes in MarketProbabilityEvaluator.MARKETS.items():
+            p = np.clip(y_proba[:, classes].sum(axis=1), eps, 1 - eps)
+            y = np.isin(y_true, classes).astype(float)
+            ll = float(-np.mean(y * np.log(p) + (1 - y) * np.log(1 - p)))
+            br = float(np.mean((p - y) ** 2))
+            metrics[f'{market}_log_loss'] = ll
+            metrics[f'{market}_brier'] = br
+            metrics[f'{market}_cal_ratio'] = float(p.sum() / max(y.sum(), 1.0))
+            log_losses.append(ll)
+            briers.append(br)
+
+        metrics['market_avg_log_loss'] = float(np.mean(log_losses))
+        metrics['market_avg_brier'] = float(np.mean(briers))
+        return metrics
+
+
 class RankingEvaluator:
     """
     Evaluation metrics for race ranking prediction.

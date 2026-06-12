@@ -1,0 +1,1072 @@
+{
+  "generated_at": "2026-06-11T09:33:07",
+  "n_competitions": 5055,
+  "k_chosen": 10,
+  "bic_by_k": {
+    "4": -64600,
+    "5": -73776,
+    "6": -74363,
+    "7": -79836,
+    "8": -81488,
+    "9": -81656,
+    "10": -91083,
+    "11": -90547,
+    "12": -90973
+  },
+  "library": {
+    "0": {
+      "profile": {
+        "sprint": 0.0,
+        "mountain": 0.443,
+        "hilly": 0.038,
+        "rolling": 0.208,
+        "breakaway": 0.081,
+        "time_trial": 0.23
+      },
+      "auto_label": "mountain 44% + time_trial 23%",
+      "share_of_comps": 0.234,
+      "pct_stage": 0.85,
+      "mean_wg_prop": 0.027,
+      "mean_wg_size": 3.3,
+      "coarse_mix": {
+        "solo": 0.52,
+        "selective": 0.34,
+        "itt": 0.11,
+        "sprint": 0.03
+      },
+      "examples": [
+        "Crit\u00e9rium du Dauphin\u00e9 2021 st7",
+        "Trofeo Andratx - Pollen\u00e7a 2017",
+        "Tour of Japan 2017 st5",
+        "Tour of Sharjah 2018 st3",
+        "Tour of California 2018 st2"
+      ]
+    },
+    "1": {
+      "profile": {
+        "sprint": 0.295,
+        "mountain": 0.1,
+        "hilly": 0.155,
+        "rolling": 0.124,
+        "breakaway": 0.152,
+        "time_trial": 0.173
+      },
+      "auto_label": "sprint 30% + time_trial 17%",
+      "share_of_comps": 0.104,
+      "pct_stage": 0.75,
+      "mean_wg_prop": 0.243,
+      "mean_wg_size": 28.8,
+      "coarse_mix": {
+        "sprint": 0.4,
+        "selective": 0.36,
+        "solo": 0.23,
+        "itt": 0.01
+      },
+      "examples": [
+        "Tour of Britain 2021 st2",
+        "Czech Tour 2019 st2",
+        "Giro d'Italia 2026 st12",
+        "Tour de Wallonie 2024 st2",
+        "Tour of California 2017 st4"
+      ]
+    },
+    "2": {
+      "profile": {
+        "sprint": 0.224,
+        "mountain": 0.439,
+        "hilly": 0.079,
+        "rolling": 0.097,
+        "breakaway": 0.066,
+        "time_trial": 0.092
+      },
+      "auto_label": "mountain 44% + sprint 22%",
+      "share_of_comps": 0.008,
+      "pct_stage": 0.82,
+      "mean_wg_prop": 0.083,
+      "mean_wg_size": 8.8,
+      "coarse_mix": {
+        "selective": 0.66,
+        "solo": 0.18,
+        "sprint": 0.11,
+        "itt": 0.05
+      },
+      "examples": [
+        "Tour of Qinghai Lake 2019 st8",
+        "Tour of Iran 2019 st3",
+        "Tour d'Azerba\u00efdjan 2016 st4",
+        "Vuelta a Madrid 2016 st1",
+        "Tour du Limousin 2016 st1"
+      ]
+    },
+    "3": {
+      "profile": {
+        "sprint": 0.336,
+        "mountain": 0.0,
+        "hilly": 0.15,
+        "rolling": 0.16,
+        "breakaway": 0.145,
+        "time_trial": 0.206
+      },
+      "auto_label": "sprint 34% + time_trial 21%",
+      "share_of_comps": 0.156,
+      "pct_stage": 0.68,
+      "mean_wg_prop": 0.284,
+      "mean_wg_size": 34.8,
+      "coarse_mix": {
+        "sprint": 0.47,
+        "selective": 0.32,
+        "solo": 0.21,
+        "itt": 0.0
+      },
+      "examples": [
+        "Figueira Champions Classic 2024",
+        "GP Beiras e Serra da Estrela 2016 st2",
+        "Famenne Ardenne Classic 2018",
+        "Tour de Korea 2018 st3",
+        "Coppi e Bartali 2020 st5"
+      ]
+    },
+    "4": {
+      "profile": {
+        "sprint": 0.068,
+        "mountain": 0.129,
+        "hilly": 0.028,
+        "rolling": 0.057,
+        "breakaway": 0.0,
+        "time_trial": 0.718
+      },
+      "auto_label": "time_trial 72% + mountain 13%",
+      "share_of_comps": 0.04,
+      "pct_stage": 0.97,
+      "mean_wg_prop": 0.033,
+      "mean_wg_size": 4.2,
+      "coarse_mix": {
+        "solo": 0.64,
+        "selective": 0.22,
+        "itt": 0.11,
+        "sprint": 0.04
+      },
+      "examples": [
+        "Tour de Romandie 2018 st2",
+        "Tour de Suisse 2016 st8",
+        "Tirreno-Adriatico 2025 st1",
+        "UAE Tour 2025 st2",
+        "UAE Tour 2022 st3"
+      ]
+    },
+    "5": {
+      "profile": {
+        "sprint": 0.1,
+        "mountain": 0.316,
+        "hilly": 0.062,
+        "rolling": 0.216,
+        "breakaway": 0.099,
+        "time_trial": 0.207
+      },
+      "auto_label": "mountain 32% + rolling 22%",
+      "share_of_comps": 0.059,
+      "pct_stage": 0.82,
+      "mean_wg_prop": 0.044,
+      "mean_wg_size": 5.2,
+      "coarse_mix": {
+        "solo": 0.5,
+        "selective": 0.39,
+        "sprint": 0.07,
+        "itt": 0.04
+      },
+      "examples": [
+        "Tour des Alpes-Maritimes 2024 st2",
+        "Boucles de l'Aulne 2018",
+        "Vuelta a Espa\u00f1a 2023 st9",
+        "Volta Comunitat Valenciana 2021 st3",
+        "Route d'Occitanie 2021 st4"
+      ]
+    },
+    "6": {
+      "profile": {
+        "sprint": 0.189,
+        "mountain": 0.2,
+        "hilly": 0.161,
+        "rolling": 0.137,
+        "breakaway": 0.153,
+        "time_trial": 0.157
+      },
+      "auto_label": "mountain 20% + sprint 19%",
+      "share_of_comps": 0.054,
+      "pct_stage": 0.79,
+      "mean_wg_prop": 0.152,
+      "mean_wg_size": 16.9,
+      "coarse_mix": {
+        "selective": 0.43,
+        "solo": 0.31,
+        "sprint": 0.25,
+        "itt": 0.01
+      },
+      "examples": [
+        "Tour of China II 2017 st1",
+        "Tour of Hainan 2025 st3",
+        "Gran Premio di Lugano 2017",
+        "4 Jours de Dunkerque 2016 st4",
+        "Tour of Indonesia 2019 st3"
+      ]
+    },
+    "7": {
+      "profile": {
+        "sprint": 0.172,
+        "mountain": 0.3,
+        "hilly": 0.154,
+        "rolling": 0.117,
+        "breakaway": 0.125,
+        "time_trial": 0.13
+      },
+      "auto_label": "mountain 30% + sprint 17%",
+      "share_of_comps": 0.022,
+      "pct_stage": 0.83,
+      "mean_wg_prop": 0.142,
+      "mean_wg_size": 15.2,
+      "coarse_mix": {
+        "selective": 0.39,
+        "solo": 0.33,
+        "sprint": 0.26,
+        "itt": 0.02
+      },
+      "examples": [
+        "Muscat Classic 2025",
+        "Tour of Japan 2023 st3",
+        "Tour de Pologne 2020 st3",
+        "Turul Romaniei 2021 st3",
+        "Tour Colombia 2019 st3"
+      ]
+    },
+    "8": {
+      "profile": {
+        "sprint": 0.325,
+        "mountain": 0.12,
+        "hilly": 0.162,
+        "rolling": 0.0,
+        "breakaway": 0.1,
+        "time_trial": 0.29
+      },
+      "auto_label": "sprint 33% + time_trial 29%",
+      "share_of_comps": 0.048,
+      "pct_stage": 0.89,
+      "mean_wg_prop": 0.279,
+      "mean_wg_size": 33.4,
+      "coarse_mix": {
+        "sprint": 0.46,
+        "selective": 0.31,
+        "solo": 0.2,
+        "itt": 0.03
+      },
+      "examples": [
+        "Antwerp Port Epic 2026",
+        "Okolo Slovenska 2017 st3",
+        "Tour de Taiwan 2016 st4",
+        "Tour du Rwanda 2025 st2",
+        "Tropicale Amissa Bongo 2016 st5"
+      ]
+    },
+    "9": {
+      "profile": {
+        "sprint": 0.665,
+        "mountain": 0.0,
+        "hilly": 0.132,
+        "rolling": 0.0,
+        "breakaway": 0.111,
+        "time_trial": 0.089
+      },
+      "auto_label": "sprint 67% + hilly 13%",
+      "share_of_comps": 0.275,
+      "pct_stage": 0.8,
+      "mean_wg_prop": 0.565,
+      "mean_wg_size": 73.5,
+      "coarse_mix": {
+        "sprint": 0.85,
+        "selective": 0.1,
+        "solo": 0.05,
+        "itt": 0.0
+      },
+      "examples": [
+        "Tirreno-Adriatico 2024 st2",
+        "Tour de France 2023 st7",
+        "Renewi Tour 2021 st1",
+        "Tour of Qinghai Lake 2016 st8",
+        "Elfstedenronde 2024"
+      ]
+    }
+  },
+  "quantization_fidelity": {
+    "overall_mean_cosine": 0.8813,
+    "stage_mean_cosine": 0.8882,
+    "one_day_mean_cosine": 0.8543
+  },
+  "leak_delta": {
+    "n_train": 3858,
+    "n_test": 1180,
+    "accuracy_from_existing_race_features": 0.493,
+    "majority_baseline": 0.259,
+    "test_years": "2024+"
+  },
+  "positional_distributions": {
+    "0": {
+      "1": {
+        "breakaway": 0.074,
+        "hilly": 0.039,
+        "mountain": 0.419,
+        "rolling": 0.179,
+        "time_trial": 0.289
+      },
+      "2": {
+        "breakaway": 0.077,
+        "hilly": 0.045,
+        "mountain": 0.44,
+        "rolling": 0.196,
+        "time_trial": 0.242
+      },
+      "3": {
+        "breakaway": 0.075,
+        "hilly": 0.045,
+        "mountain": 0.437,
+        "rolling": 0.197,
+        "time_trial": 0.247
+      },
+      "4": {
+        "breakaway": 0.083,
+        "hilly": 0.041,
+        "mountain": 0.432,
+        "rolling": 0.198,
+        "time_trial": 0.245
+      },
+      "5": {
+        "breakaway": 0.084,
+        "hilly": 0.037,
+        "mountain": 0.438,
+        "rolling": 0.212,
+        "time_trial": 0.229
+      },
+      "6": {
+        "breakaway": 0.08,
+        "hilly": 0.029,
+        "mountain": 0.443,
+        "rolling": 0.235,
+        "time_trial": 0.213
+      },
+      "7": {
+        "breakaway": 0.084,
+        "hilly": 0.032,
+        "mountain": 0.444,
+        "rolling": 0.22,
+        "time_trial": 0.219
+      },
+      "8": {
+        "breakaway": 0.083,
+        "hilly": 0.033,
+        "mountain": 0.465,
+        "rolling": 0.211,
+        "time_trial": 0.209
+      },
+      "9": {
+        "breakaway": 0.082,
+        "hilly": 0.035,
+        "mountain": 0.469,
+        "rolling": 0.22,
+        "time_trial": 0.193
+      },
+      "10": {
+        "breakaway": 0.091,
+        "hilly": 0.046,
+        "mountain": 0.441,
+        "rolling": 0.209,
+        "time_trial": 0.211
+      }
+    },
+    "1": {
+      "1": {
+        "breakaway": 0.152,
+        "hilly": 0.136,
+        "mountain": 0.064,
+        "rolling": 0.125,
+        "sprint": 0.303,
+        "time_trial": 0.218
+      },
+      "2": {
+        "breakaway": 0.169,
+        "hilly": 0.176,
+        "mountain": 0.07,
+        "rolling": 0.108,
+        "sprint": 0.314,
+        "time_trial": 0.163
+      },
+      "3": {
+        "breakaway": 0.153,
+        "hilly": 0.188,
+        "mountain": 0.076,
+        "rolling": 0.098,
+        "sprint": 0.331,
+        "time_trial": 0.153
+      },
+      "4": {
+        "breakaway": 0.153,
+        "hilly": 0.142,
+        "mountain": 0.066,
+        "rolling": 0.129,
+        "sprint": 0.328,
+        "time_trial": 0.182
+      },
+      "5": {
+        "breakaway": 0.153,
+        "hilly": 0.176,
+        "mountain": 0.093,
+        "rolling": 0.123,
+        "sprint": 0.286,
+        "time_trial": 0.167
+      },
+      "6": {
+        "breakaway": 0.125,
+        "hilly": 0.159,
+        "mountain": 0.087,
+        "rolling": 0.14,
+        "sprint": 0.312,
+        "time_trial": 0.176
+      },
+      "7": {
+        "breakaway": 0.17,
+        "hilly": 0.138,
+        "mountain": 0.115,
+        "rolling": 0.136,
+        "sprint": 0.289,
+        "time_trial": 0.147
+      },
+      "8": {
+        "breakaway": 0.165,
+        "hilly": 0.123,
+        "mountain": 0.142,
+        "rolling": 0.144,
+        "sprint": 0.264,
+        "time_trial": 0.161
+      },
+      "9": {
+        "breakaway": 0.138,
+        "hilly": 0.163,
+        "mountain": 0.121,
+        "rolling": 0.125,
+        "sprint": 0.273,
+        "time_trial": 0.18
+      },
+      "10": {
+        "breakaway": 0.142,
+        "hilly": 0.144,
+        "mountain": 0.165,
+        "rolling": 0.116,
+        "sprint": 0.252,
+        "time_trial": 0.18
+      }
+    },
+    "2": {
+      "1": {
+        "breakaway": 0.105,
+        "hilly": 0.132,
+        "mountain": 0.237,
+        "rolling": 0.079,
+        "sprint": 0.316,
+        "time_trial": 0.132
+      },
+      "2": {
+        "breakaway": 0.105,
+        "hilly": 0.105,
+        "mountain": 0.421,
+        "sprint": 0.184,
+        "time_trial": 0.184
+      },
+      "3": {
+        "breakaway": 0.132,
+        "hilly": 0.026,
+        "mountain": 0.553,
+        "rolling": 0.105,
+        "sprint": 0.158,
+        "time_trial": 0.026
+      },
+      "4": {
+        "breakaway": 0.079,
+        "hilly": 0.053,
+        "mountain": 0.421,
+        "rolling": 0.132,
+        "sprint": 0.158,
+        "time_trial": 0.158
+      },
+      "5": {
+        "breakaway": 0.053,
+        "hilly": 0.132,
+        "mountain": 0.395,
+        "rolling": 0.132,
+        "sprint": 0.237,
+        "time_trial": 0.053
+      },
+      "6": {
+        "breakaway": 0.079,
+        "hilly": 0.079,
+        "mountain": 0.368,
+        "rolling": 0.184,
+        "sprint": 0.184,
+        "time_trial": 0.105
+      },
+      "7": {
+        "breakaway": 0.026,
+        "hilly": 0.079,
+        "mountain": 0.447,
+        "rolling": 0.079,
+        "sprint": 0.289,
+        "time_trial": 0.053,
+        "unknown": 0.026
+      },
+      "8": {
+        "breakaway": 0.026,
+        "hilly": 0.026,
+        "mountain": 0.579,
+        "rolling": 0.053,
+        "sprint": 0.211,
+        "time_trial": 0.105
+      },
+      "9": {
+        "breakaway": 0.026,
+        "hilly": 0.053,
+        "mountain": 0.447,
+        "rolling": 0.105,
+        "sprint": 0.342,
+        "time_trial": 0.026
+      },
+      "10": {
+        "breakaway": 0.026,
+        "hilly": 0.105,
+        "mountain": 0.526,
+        "rolling": 0.105,
+        "sprint": 0.158,
+        "time_trial": 0.079
+      }
+    },
+    "3": {
+      "1": {
+        "breakaway": 0.129,
+        "hilly": 0.129,
+        "rolling": 0.128,
+        "sprint": 0.377,
+        "time_trial": 0.235
+      },
+      "2": {
+        "breakaway": 0.13,
+        "hilly": 0.141,
+        "rolling": 0.143,
+        "sprint": 0.37,
+        "time_trial": 0.216
+      },
+      "3": {
+        "breakaway": 0.137,
+        "hilly": 0.135,
+        "rolling": 0.153,
+        "sprint": 0.373,
+        "time_trial": 0.2
+      },
+      "4": {
+        "breakaway": 0.163,
+        "hilly": 0.138,
+        "rolling": 0.152,
+        "sprint": 0.347,
+        "time_trial": 0.197
+      },
+      "5": {
+        "breakaway": 0.157,
+        "hilly": 0.177,
+        "rolling": 0.133,
+        "sprint": 0.329,
+        "time_trial": 0.199
+      },
+      "6": {
+        "breakaway": 0.142,
+        "hilly": 0.17,
+        "rolling": 0.135,
+        "sprint": 0.354,
+        "time_trial": 0.196
+      },
+      "7": {
+        "breakaway": 0.149,
+        "hilly": 0.158,
+        "rolling": 0.172,
+        "sprint": 0.323,
+        "time_trial": 0.194
+      },
+      "8": {
+        "breakaway": 0.143,
+        "hilly": 0.159,
+        "rolling": 0.176,
+        "sprint": 0.311,
+        "time_trial": 0.208
+      },
+      "9": {
+        "breakaway": 0.146,
+        "hilly": 0.141,
+        "rolling": 0.203,
+        "sprint": 0.301,
+        "time_trial": 0.208
+      },
+      "10": {
+        "breakaway": 0.152,
+        "hilly": 0.156,
+        "rolling": 0.206,
+        "sprint": 0.275,
+        "time_trial": 0.204
+      }
+    },
+    "4": {
+      "1": {
+        "hilly": 0.01,
+        "mountain": 0.14,
+        "rolling": 0.035,
+        "sprint": 0.045,
+        "time_trial": 0.765
+      },
+      "2": {
+        "hilly": 0.025,
+        "mountain": 0.085,
+        "rolling": 0.04,
+        "sprint": 0.055,
+        "time_trial": 0.795
+      },
+      "3": {
+        "hilly": 0.025,
+        "mountain": 0.09,
+        "rolling": 0.055,
+        "sprint": 0.08,
+        "time_trial": 0.75
+      },
+      "4": {
+        "hilly": 0.05,
+        "mountain": 0.155,
+        "rolling": 0.06,
+        "sprint": 0.045,
+        "time_trial": 0.69
+      },
+      "5": {
+        "hilly": 0.02,
+        "mountain": 0.155,
+        "rolling": 0.08,
+        "sprint": 0.075,
+        "time_trial": 0.67
+      },
+      "6": {
+        "hilly": 0.03,
+        "mountain": 0.115,
+        "rolling": 0.05,
+        "sprint": 0.075,
+        "time_trial": 0.73
+      },
+      "7": {
+        "hilly": 0.03,
+        "mountain": 0.185,
+        "rolling": 0.045,
+        "sprint": 0.095,
+        "time_trial": 0.645
+      },
+      "8": {
+        "hilly": 0.03,
+        "mountain": 0.114,
+        "rolling": 0.08,
+        "sprint": 0.055,
+        "time_trial": 0.721
+      },
+      "9": {
+        "hilly": 0.025,
+        "mountain": 0.125,
+        "rolling": 0.05,
+        "sprint": 0.07,
+        "time_trial": 0.73
+      },
+      "10": {
+        "hilly": 0.035,
+        "mountain": 0.121,
+        "rolling": 0.075,
+        "sprint": 0.085,
+        "time_trial": 0.683
+      }
+    },
+    "5": {
+      "1": {
+        "breakaway": 0.093,
+        "hilly": 0.04,
+        "mountain": 0.26,
+        "rolling": 0.233,
+        "sprint": 0.093,
+        "time_trial": 0.28
+      },
+      "2": {
+        "breakaway": 0.113,
+        "hilly": 0.07,
+        "mountain": 0.29,
+        "rolling": 0.21,
+        "sprint": 0.1,
+        "time_trial": 0.217
+      },
+      "3": {
+        "breakaway": 0.1,
+        "hilly": 0.067,
+        "mountain": 0.317,
+        "rolling": 0.233,
+        "sprint": 0.057,
+        "time_trial": 0.227
+      },
+      "4": {
+        "breakaway": 0.1,
+        "hilly": 0.07,
+        "mountain": 0.333,
+        "rolling": 0.21,
+        "sprint": 0.1,
+        "time_trial": 0.187
+      },
+      "5": {
+        "breakaway": 0.12,
+        "hilly": 0.066,
+        "mountain": 0.322,
+        "rolling": 0.209,
+        "sprint": 0.086,
+        "time_trial": 0.193
+      },
+      "6": {
+        "breakaway": 0.12,
+        "hilly": 0.07,
+        "mountain": 0.318,
+        "rolling": 0.201,
+        "sprint": 0.09,
+        "time_trial": 0.201
+      },
+      "7": {
+        "breakaway": 0.107,
+        "hilly": 0.06,
+        "mountain": 0.3,
+        "rolling": 0.207,
+        "sprint": 0.123,
+        "time_trial": 0.203
+      },
+      "8": {
+        "breakaway": 0.073,
+        "hilly": 0.06,
+        "mountain": 0.34,
+        "rolling": 0.207,
+        "sprint": 0.113,
+        "time_trial": 0.207
+      },
+      "9": {
+        "breakaway": 0.083,
+        "hilly": 0.067,
+        "mountain": 0.32,
+        "rolling": 0.22,
+        "sprint": 0.11,
+        "time_trial": 0.2
+      },
+      "10": {
+        "breakaway": 0.08,
+        "hilly": 0.053,
+        "mountain": 0.357,
+        "rolling": 0.227,
+        "sprint": 0.127,
+        "time_trial": 0.157
+      }
+    },
+    "6": {
+      "1": {
+        "breakaway": 0.129,
+        "hilly": 0.129,
+        "mountain": 0.173,
+        "rolling": 0.114,
+        "sprint": 0.199,
+        "time_trial": 0.257
+      },
+      "2": {
+        "breakaway": 0.143,
+        "hilly": 0.14,
+        "mountain": 0.165,
+        "rolling": 0.151,
+        "sprint": 0.221,
+        "time_trial": 0.18
+      },
+      "3": {
+        "breakaway": 0.154,
+        "hilly": 0.151,
+        "mountain": 0.202,
+        "rolling": 0.118,
+        "sprint": 0.213,
+        "time_trial": 0.162
+      },
+      "4": {
+        "breakaway": 0.162,
+        "hilly": 0.162,
+        "mountain": 0.169,
+        "rolling": 0.136,
+        "sprint": 0.176,
+        "time_trial": 0.195
+      },
+      "5": {
+        "breakaway": 0.154,
+        "hilly": 0.191,
+        "mountain": 0.18,
+        "rolling": 0.162,
+        "sprint": 0.18,
+        "time_trial": 0.132
+      },
+      "6": {
+        "breakaway": 0.136,
+        "hilly": 0.206,
+        "mountain": 0.191,
+        "rolling": 0.147,
+        "sprint": 0.191,
+        "time_trial": 0.125
+      },
+      "7": {
+        "breakaway": 0.176,
+        "hilly": 0.199,
+        "mountain": 0.195,
+        "rolling": 0.107,
+        "sprint": 0.191,
+        "time_trial": 0.129
+      },
+      "8": {
+        "breakaway": 0.121,
+        "hilly": 0.162,
+        "mountain": 0.243,
+        "rolling": 0.151,
+        "sprint": 0.191,
+        "time_trial": 0.129
+      },
+      "9": {
+        "breakaway": 0.21,
+        "hilly": 0.154,
+        "mountain": 0.243,
+        "rolling": 0.118,
+        "sprint": 0.158,
+        "time_trial": 0.114
+      },
+      "10": {
+        "breakaway": 0.147,
+        "hilly": 0.114,
+        "mountain": 0.239,
+        "rolling": 0.173,
+        "sprint": 0.173,
+        "time_trial": 0.151
+      }
+    },
+    "7": {
+      "1": {
+        "breakaway": 0.109,
+        "hilly": 0.209,
+        "mountain": 0.173,
+        "rolling": 0.1,
+        "sprint": 0.191,
+        "time_trial": 0.218
+      },
+      "2": {
+        "breakaway": 0.164,
+        "hilly": 0.2,
+        "mountain": 0.282,
+        "rolling": 0.109,
+        "sprint": 0.155,
+        "time_trial": 0.091
+      },
+      "3": {
+        "breakaway": 0.173,
+        "hilly": 0.155,
+        "mountain": 0.227,
+        "rolling": 0.173,
+        "sprint": 0.145,
+        "time_trial": 0.127
+      },
+      "4": {
+        "breakaway": 0.109,
+        "hilly": 0.164,
+        "mountain": 0.309,
+        "rolling": 0.118,
+        "sprint": 0.145,
+        "time_trial": 0.155
+      },
+      "5": {
+        "breakaway": 0.082,
+        "hilly": 0.218,
+        "mountain": 0.327,
+        "rolling": 0.136,
+        "sprint": 0.155,
+        "time_trial": 0.082
+      },
+      "6": {
+        "breakaway": 0.109,
+        "hilly": 0.2,
+        "mountain": 0.373,
+        "rolling": 0.091,
+        "sprint": 0.136,
+        "time_trial": 0.091
+      },
+      "7": {
+        "breakaway": 0.164,
+        "hilly": 0.127,
+        "mountain": 0.291,
+        "rolling": 0.109,
+        "sprint": 0.182,
+        "time_trial": 0.118
+      },
+      "8": {
+        "breakaway": 0.127,
+        "hilly": 0.082,
+        "mountain": 0.345,
+        "rolling": 0.082,
+        "sprint": 0.236,
+        "time_trial": 0.118
+      },
+      "9": {
+        "breakaway": 0.109,
+        "hilly": 0.1,
+        "mountain": 0.336,
+        "rolling": 0.173,
+        "sprint": 0.136,
+        "time_trial": 0.145
+      },
+      "10": {
+        "breakaway": 0.109,
+        "hilly": 0.082,
+        "mountain": 0.336,
+        "rolling": 0.082,
+        "sprint": 0.236,
+        "time_trial": 0.155
+      }
+    },
+    "8": {
+      "1": {
+        "breakaway": 0.05,
+        "hilly": 0.141,
+        "mountain": 0.079,
+        "sprint": 0.402,
+        "time_trial": 0.328
+      },
+      "2": {
+        "breakaway": 0.075,
+        "hilly": 0.166,
+        "mountain": 0.079,
+        "sprint": 0.365,
+        "time_trial": 0.315
+      },
+      "3": {
+        "breakaway": 0.129,
+        "hilly": 0.141,
+        "mountain": 0.108,
+        "sprint": 0.32,
+        "time_trial": 0.303
+      },
+      "4": {
+        "breakaway": 0.12,
+        "hilly": 0.191,
+        "mountain": 0.062,
+        "sprint": 0.349,
+        "time_trial": 0.274
+      },
+      "5": {
+        "breakaway": 0.091,
+        "hilly": 0.141,
+        "mountain": 0.12,
+        "sprint": 0.303,
+        "time_trial": 0.336
+      },
+      "6": {
+        "breakaway": 0.079,
+        "hilly": 0.199,
+        "mountain": 0.178,
+        "sprint": 0.295,
+        "time_trial": 0.249
+      },
+      "7": {
+        "breakaway": 0.091,
+        "hilly": 0.191,
+        "mountain": 0.124,
+        "sprint": 0.29,
+        "time_trial": 0.299
+      },
+      "8": {
+        "breakaway": 0.12,
+        "hilly": 0.145,
+        "mountain": 0.137,
+        "sprint": 0.328,
+        "time_trial": 0.266
+      },
+      "9": {
+        "breakaway": 0.137,
+        "hilly": 0.129,
+        "mountain": 0.162,
+        "sprint": 0.307,
+        "time_trial": 0.261
+      },
+      "10": {
+        "breakaway": 0.108,
+        "hilly": 0.174,
+        "mountain": 0.154,
+        "sprint": 0.295,
+        "time_trial": 0.266
+      }
+    },
+    "9": {
+      "1": {
+        "breakaway": 0.071,
+        "hilly": 0.061,
+        "sprint": 0.8,
+        "time_trial": 0.067
+      },
+      "2": {
+        "breakaway": 0.093,
+        "hilly": 0.088,
+        "sprint": 0.745,
+        "time_trial": 0.071
+      },
+      "3": {
+        "breakaway": 0.101,
+        "hilly": 0.122,
+        "sprint": 0.689,
+        "time_trial": 0.081
+      },
+      "4": {
+        "breakaway": 0.098,
+        "hilly": 0.133,
+        "sprint": 0.695,
+        "time_trial": 0.074
+      },
+      "5": {
+        "breakaway": 0.113,
+        "hilly": 0.134,
+        "sprint": 0.674,
+        "time_trial": 0.078
+      },
+      "6": {
+        "breakaway": 0.127,
+        "hilly": 0.147,
+        "sprint": 0.643,
+        "time_trial": 0.079
+      },
+      "7": {
+        "breakaway": 0.119,
+        "hilly": 0.157,
+        "sprint": 0.614,
+        "time_trial": 0.104
+      },
+      "8": {
+        "breakaway": 0.125,
+        "hilly": 0.176,
+        "sprint": 0.601,
+        "time_trial": 0.096
+      },
+      "9": {
+        "breakaway": 0.126,
+        "hilly": 0.156,
+        "sprint": 0.607,
+        "time_trial": 0.109
+      },
+      "10": {
+        "breakaway": 0.134,
+        "hilly": 0.149,
+        "sprint": 0.585,
+        "time_trial": 0.129
+      }
+    }
+  }
+}

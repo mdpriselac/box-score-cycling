@@ -1,0 +1,137 @@
+{
+  "generated_at": "2026-06-11T08:40:44",
+  "n_competitions": 5055,
+  "unknown_share_in_top10": 0.0018,
+  "mean_top10_shares_by_coarse_class": {
+    "itt": {
+      "top10_sprint": 0.027,
+      "top10_mountain": 0.446,
+      "top10_hilly": 0.035,
+      "top10_rolling": 0.154,
+      "top10_breakaway": 0.06,
+      "top10_time_trial": 0.277,
+      "top10_unknown": 0.0
+    },
+    "selective": {
+      "top10_sprint": 0.185,
+      "top10_mountain": 0.204,
+      "top10_hilly": 0.11,
+      "top10_rolling": 0.152,
+      "top10_breakaway": 0.127,
+      "top10_time_trial": 0.221,
+      "top10_unknown": 0.001
+    },
+    "solo": {
+      "top10_sprint": 0.103,
+      "top10_mountain": 0.273,
+      "top10_hilly": 0.076,
+      "top10_rolling": 0.164,
+      "top10_breakaway": 0.099,
+      "top10_time_trial": 0.282,
+      "top10_unknown": 0.002
+    },
+    "sprint": {
+      "top10_sprint": 0.555,
+      "top10_mountain": 0.036,
+      "top10_hilly": 0.14,
+      "top10_rolling": 0.045,
+      "top10_breakaway": 0.111,
+      "top10_time_trial": 0.109,
+      "top10_unknown": 0.003
+    }
+  },
+  "coarse_x_dominant_archetype": {
+    "('itt', 'breakaway')": 2,
+    "('itt', 'hilly')": 2,
+    "('itt', 'mountain')": 122,
+    "('itt', 'rolling')": 12,
+    "('itt', 'sprint')": 3,
+    "('itt', 'time_trial')": 41,
+    "('selective', 'breakaway')": 98,
+    "('selective', 'hilly')": 88,
+    "('selective', 'mountain')": 400,
+    "('selective', 'rolling')": 175,
+    "('selective', 'sprint')": 391,
+    "('selective', 'time_trial')": 256,
+    "('solo', 'breakaway')": 59,
+    "('solo', 'hilly')": 51,
+    "('solo', 'mountain')": 547,
+    "('solo', 'rolling')": 194,
+    "('solo', 'sprint')": 192,
+    "('solo', 'time_trial')": 376,
+    "('sprint', 'breakaway')": 50,
+    "('sprint', 'hilly')": 110,
+    "('sprint', 'mountain')": 63,
+    "('sprint', 'rolling')": 47,
+    "('sprint', 'sprint')": 1704,
+    "('sprint', 'time_trial')": 72
+  },
+  "stability": {
+    "one_day_races_4plus_editions": 112,
+    "n_editions": 939,
+    "icc_wg_prop_benchmark": 0.333,
+    "icc_top10_shares": {
+      "sprint": 0.638,
+      "mountain": 0.561,
+      "hilly": 0.131,
+      "rolling": 0.4,
+      "breakaway": 0.16,
+      "time_trial": 0.253,
+      "unknown": 0.034
+    },
+    "icc_enrichment": {
+      "sprint": 0.431,
+      "mountain": 0.23,
+      "hilly": 0.062,
+      "rolling": 0.172,
+      "breakaway": 0.119,
+      "time_trial": 0.194,
+      "unknown": 0.338
+    },
+    "signature_cosine_within_race": 0.7435,
+    "signature_cosine_null_mean": 0.5506,
+    "signature_cosine_null_sd": 0.0052,
+    "signature_cosine_z": 36.8,
+    "winner_archetype_modal_agreement": 0.51,
+    "winner_archetype_modal_null": 0.415,
+    "dominant_archetype_modal_agreement": 0.634,
+    "dominant_archetype_modal_null": 0.477,
+    "forward_prediction": {
+      "top10_sprint": {
+        "n": 728,
+        "corr_last": 0.693,
+        "corr_mean_priors": 0.739
+      },
+      "top10_mountain": {
+        "n": 728,
+        "corr_last": 0.648,
+        "corr_mean_priors": 0.678
+      },
+      "wg_prop": {
+        "n": 728,
+        "corr_last": 0.386,
+        "corr_mean_priors": 0.452
+      }
+    },
+    "least_stable_signatures": [
+      "Milano - Torino: 0.456",
+      "Gran Piemonte: 0.514",
+      "GP Kanton Aargau: 0.517",
+      "Cl\u00e0ssica Comunitat Valenciana 1969: 0.543",
+      "Eschborn-Frankfurt: 0.551",
+      "Giro del Veneto: 0.558",
+      "Boucles de l'Aulne: 0.582",
+      "GP la Marseillaise: 0.582"
+    ],
+    "most_stable_signatures": [
+      "Gooikse Pijl: 0.918",
+      "Omloop van het Houtland: 0.925",
+      "Paris - Bourges: 0.928",
+      "Van Merksteijn Fences Classic: 0.932",
+      "Trofeo Palma: 0.937",
+      "Clasica de Almeria: 0.947",
+      "Scheldeprijs: 0.953",
+      "GP de Fourmies: 0.961"
+    ]
+  }
+}

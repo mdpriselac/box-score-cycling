@@ -559,6 +559,19 @@ def run_stage_race_state(config: PipelineConfig) -> str:
 
 
 # ---------------------------------------------------------------------------
+# Step 9c: Contested-rating (Elo) snapshots artifact (incremental)
+# ---------------------------------------------------------------------------
+
+def run_elo_snapshot_update(config: PipelineConfig) -> str:
+    from cycling_project.prediction_tools.contested_rating import (
+        PRODUCTION_SNAPSHOT_PATH,
+        build_or_update_snapshots,
+    )
+    snaps = build_or_update_snapshots(db_path=config.db_path)
+    return f"{len(snaps):,} snapshot rows -> {PRODUCTION_SNAPSHOT_PATH.name}"
+
+
+# ---------------------------------------------------------------------------
 # Step 10: Train production model
 # ---------------------------------------------------------------------------
 
@@ -595,13 +608,30 @@ def run_gc_outlook_training(config: PipelineConfig) -> str:
 
 
 # ---------------------------------------------------------------------------
+# Step 13: Train DNF head (P(finish) multiplier for the pricing layer)
+# ---------------------------------------------------------------------------
+
+def run_dnf_training(config: PipelineConfig) -> str:
+    from cycling_project.prediction_tools.dnf_predictor import (
+        train_production_dnf_head,
+    )
+    meta = train_production_dnf_head(db_path=str(config.db_path))
+    es = meta.get("early_stop_metrics", {})
+    return (
+        f"best_iter={meta.get('best_iteration')} "
+        f"AUC={es.get('auc', float('nan')):.3f} cal={es.get('cal_ratio', float('nan')):.3f}"
+    )
+
+
+# ---------------------------------------------------------------------------
 # CLI
 # ---------------------------------------------------------------------------
 
 STEP_NAMES = [
     "scrape-lists", "scrape-data", "migrate", "place-bucket",
     "bib", "experience", "percentiles", "gradients", "features",
-    "race-state", "train", "train-lambdarank", "train-gc-outlook",
+    "race-state", "elo-snapshots", "train", "train-lambdarank",
+    "train-gc-outlook", "train-dnf",
 ]
 
 
@@ -648,7 +678,9 @@ def should_run(step: str, args: argparse.Namespace) -> bool:
     scrape_steps = {"scrape-lists", "scrape-data"}
     migrate_steps = {"migrate", "place-bucket", "bib", "experience"}
     feature_steps = {"percentiles", "gradients", "features", "race-state"}
-    train_steps = {"train", "train-gc-outlook"}
+    # elo-snapshots and train-dnf ride with --skip-train: the Elo artifact
+    # exists to feed training, and the DNF head is a (re)trained model.
+    train_steps = {"train", "train-gc-outlook", "elo-snapshots", "train-dnf"}
     lambdarank_steps = {"train-lambdarank"}
 
     if args.skip_scrape and step in scrape_steps:
@@ -787,6 +819,13 @@ def run_pipeline(args: argparse.Namespace):
             run_step("Stage-Race State", run_stage_race_state, config)
         )
 
+    # Step 9c: Contested-rating snapshots (non-fatal: training falls back
+    # to building/updating the artifact itself when the stack is enabled)
+    if should_run("elo-snapshots", args):
+        results.append(
+            run_step("Elo Rating Snapshots", run_elo_snapshot_update, config)
+        )
+
     # Step 10: Train model
     if should_run("train", args):
         results.append(
@@ -804,6 +843,13 @@ def run_pipeline(args: argparse.Namespace):
     if should_run("train-gc-outlook", args):
         results.append(
             run_step("Train GC Outlook Head", run_gc_outlook_training, config)
+        )
+
+    # Step 13: Train DNF head (non-fatal — the app's pricing layer degrades
+    # to unadjusted prices when the head is absent)
+    if should_run("train-dnf", args):
+        results.append(
+            run_step("Train DNF Head", run_dnf_training, config)
         )
 
     print_summary(results)
