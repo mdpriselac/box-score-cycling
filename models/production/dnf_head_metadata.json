@@ -1,21 +1,21 @@
 {
-  "trained_at": "2026-06-11T21:10:35",
-  "labels_file": "experiments/dnf_labels_20260611_210926.csv.gz",
-  "n_rows": 774690,
-  "n_train_rows": 736794,
-  "early_stop_cutoff": "2026-01-31",
-  "best_iteration": 139,
+  "trained_at": "2026-06-28T13:28:14",
+  "labels_file": "experiments/dnf_labels_20260628_132728.csv.gz",
+  "n_rows": 778217,
+  "n_train_rows": 739713,
+  "early_stop_cutoff": "2026-02-13",
+  "best_iteration": 145,
   "n_features": 84,
   "early_stop_metrics": {
-    "n": 37896,
-    "base_rate": 0.09312328477939624,
-    "mean_pred": 0.09683036678675734,
-    "auc": 0.8730091453706039,
-    "log_loss": 0.22148337111931596,
-    "brier": 0.06532605256611294,
-    "cal_ratio": 1.0398083252340482
+    "n": 38504,
+    "base_rate": 0.09936629960523582,
+    "mean_pred": 0.09883064933324483,
+    "auc": 0.8721224135167279,
+    "log_loss": 0.23121693372552027,
+    "brier": 0.068862177932623,
+    "cal_ratio": 0.9946093366250023
   },
-  "n_event_rows": 1089484,
+  "n_event_rows": 1092452,
   "dnf_prior_rate": 0.1,
   "dnf_prior_strength": 20.0
 }
