@@ -47,6 +47,8 @@ from cycling_project.webscrape_tools.get_race_results import (
     extract_race_date,
     extract_race_time,
     extract_results,
+    find_table_head_order,
+    parse_rider_row,
 )
 from cycling_project.webscrape_tools.logging_config import get_logger
 
@@ -61,6 +63,36 @@ def write_results_csv(path: Path, results: list) -> None:
         w = csv.DictWriter(f, fieldnames=RESULT_FIELDS, extrasaction="ignore")
         w.writeheader()
         w.writerows(results)
+
+
+def parse_classification_tables(soup: BeautifulSoup) -> dict:
+    """Parse every standings table on a stage page, keyed by its container
+    div id. FirstCycling wraps each one in an identified div: #sta (stage
+    result), #gc (GC after the stage, full field, individual gaps incl.
+    bonus seconds), #youth, #teamcomp, and points/KOM equivalents.
+    Rider tables parse to the usual result dicts; team-only tables (TTT
+    stage result, team classification) to raw cell lists.
+    """
+    out = {}
+    for table in soup.find_all("table"):
+        div = table.find_parent("div", id=True)
+        if div is None:
+            continue
+        did = div["id"]
+        if did in out or did in ("cont720", "wrapper"):
+            continue
+        ths = [th.get_text(strip=True).lower() for th in table.find_all("th")]
+        if "pos" not in ths:
+            continue
+        rows = table.find_all("tr")
+        if "rider" in ths:
+            head_order = find_table_head_order(table)
+            parsed = [parse_rider_row(r, head_order) for r in rows[1:]]
+            out[did] = [p for p in parsed if p]
+        else:
+            out[did] = [[c.get_text(strip=True, separator=" ")
+                         for c in r.find_all("td")] for r in rows[1:]]
+    return out
 
 
 def stage_dir_for(e_val: str) -> Path:
@@ -121,6 +153,20 @@ def capture_stage(client: WebClient, stage_num: str, stage_name: str, url: str,
     write_results_csv(stage_dir / "results.csv", results)
     print(f"  archived {len(results)} results "
           f"(winner: {results[0].get('name')}, date: {date})")
+
+    try:
+        classifications = parse_classification_tables(soup)
+    except Exception as e:
+        logger.warning(f"Error parsing classification tables for {stage_name}: {e}")
+        classifications = {}
+    if classifications:
+        (stage_dir / "classifications.json").write_text(json.dumps(
+            {"stage": stage_num, "fetched_at": payload["fetched_at"],
+             "tables": classifications}, indent=1))
+        gc = classifications.get("gc")
+        if gc and isinstance(gc[0], dict):
+            write_results_csv(stage_dir / "gc.csv", gc)
+        print(f"  classifications archived: {', '.join(sorted(classifications))}")
     return True
 
 

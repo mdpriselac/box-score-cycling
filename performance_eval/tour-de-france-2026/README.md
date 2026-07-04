@@ -36,11 +36,22 @@ Archive-only (does NOT touch the pickle store or the SQLite DB — the weekly
 `update_pipeline` remains the path into the training data). Each run:
 
 1. Snapshots the race page (`results/race_page/race_page_DATE.html` +
-   `standings_DATE.json/csv`) — the dated snapshots are the running-GC record.
+   `standings_DATE.json/csv` once FirstCycling populates it — mid-race the
+   main page shows "No data"; final GC appears after Paris).
 2. Fetches any stage not yet archived with results and writes
-   `results/stage_NN/` (raw HTML per fetch date, `results.json`,
-   `results.csv`). Stops at the first stage with no results, so a normal
-   daily run is ~3 rate-limited requests.
+   `results/stage_NN/`: raw HTML per fetch date, `results.json` /
+   `results.csv` (stage result), `classifications.json` (every standings
+   table on the page, keyed by FirstCycling's div ids: `sta` stage result,
+   `gc` GC after the stage, `youth`, `teamcomp`, points/KOM when present)
+   and `gc.csv` — **full-field individual GC gaps after each stage**,
+   official times incl. bonus seconds. Stops at the first stage with no
+   results, so a normal daily run is ~3 rate-limited requests.
+
+The per-stage `gc.csv` is the running-GC record (individual, not team
+gaps) — enough to run the in-race GC/stage-race-state features mid-Tour.
+Note `stage_race_state.py` training features reconstruct GC as bonus-free
+cumulative stage time; the archived `gc.csv` is the official (bonus-inclusive)
+standing, so prefer the same reconstruction at inference for consistency.
 
 Flags: `--force` (re-fetch archived stages), `--all` (scan every stage),
 `--stage 05` (just one stage), `--race-id/--year` (reuse for another race).
