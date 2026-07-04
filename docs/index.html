@@ -1,0 +1,526 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Cycling Race Predictor — How It Works</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+:root {
+  --bg: #0f1419;
+  --panel: #151c24;
+  --panel-2: #1c252f;
+  --border: #2a3642;
+  --text: #e5edf5;
+  --text-dim: #94a3b8;
+  --text-faint: #64748b;
+  --accent: #60a5fa;
+  --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Monaco, Consolas, monospace;
+
+  /* Family colors shared across the docs site */
+  --c-race:   #f472b6;  /* pink   — race-side knowledge */
+  --c-rider:  #34d399;  /* green  — rider-side knowledge */
+  --c-duel:   #fbbf24;  /* yellow — head-to-head + risk */
+  --c-model:  #60a5fa;  /* blue   — models */
+  --c-output: #22d3ee;  /* cyan   — predictions */
+}
+
+* { box-sizing: border-box; }
+html, body {
+  margin: 0; padding: 0;
+  background: var(--bg); color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  font-size: 15.5px; line-height: 1.6;
+}
+body { padding: 20px 36px 80px; max-width: 1200px; margin: 0 auto; }
+[id] { scroll-margin-top: 96px; }
+
+h1 { margin: 26px 0 6px; font-size: 30px; font-weight: 700; letter-spacing: -0.02em; }
+h2 { margin: 48px 0 14px; font-size: 21px; font-weight: 700; letter-spacing: -0.01em;
+     padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+h3 { margin: 0 0 6px; font-size: 16px; font-weight: 700; }
+p  { margin: 8px 0; }
+code, .mono { font-family: var(--mono); font-size: 12.5px; color: #e2e8f0;
+              background: #0b1118; padding: 1px 6px; border-radius: 4px;
+              border: 1px solid var(--border); }
+ul { margin: 6px 0 10px; padding-left: 20px; }
+li { margin: 4px 0; }
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+.subtitle { color: var(--text-dim); font-size: 13.5px; margin: 0 0 18px; }
+.dim { color: var(--text-dim); }
+.small { font-size: 13px; }
+
+/* ---------- Site navigation (shared across all docs pages) ---------- */
+.site-nav {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 4px;
+  padding: 10px 14px; margin: 0 0 8px;
+  background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
+  position: sticky; top: 12px; z-index: 50;
+}
+.site-nav .nav-brand { font-weight: 700; font-size: 13px; margin-right: 10px; }
+.site-nav a { font-size: 12.5px; color: var(--text-dim); padding: 5px 10px; border-radius: 6px; }
+.site-nav a:hover { color: var(--text); background: var(--panel-2); text-decoration: none; }
+.site-nav a.active { color: var(--text); background: var(--panel-2); border: 1px solid var(--border); }
+.site-nav .nav-updated { margin-left: auto; font-size: 11px; color: var(--text-faint);
+                         font-family: var(--mono); }
+@media (max-width: 800px) { .site-nav .nav-updated { display: none; } }
+
+/* ---------- Status chips ---------- */
+.chip { display: inline-block; font-size: 10px; font-weight: 700; text-transform: uppercase;
+        letter-spacing: 0.07em; padding: 2px 8px; border-radius: 99px; vertical-align: 2px; }
+.chip.live { background: #0d2818; color: #4ade80; border: 1px solid #1d4a2e; }
+.chip.next { background: #251d04; color: #fbbf24; border: 1px solid #4a3c10; }
+.chip.lab  { background: #101b33; color: #93c5fd; border: 1px solid #1e3a5f; }
+
+/* ---------- Hero ---------- */
+.hero {
+  background: linear-gradient(135deg, #131a23 0%, #18222e 100%);
+  border: 1px solid var(--border); border-radius: 12px;
+  padding: 22px 26px; margin: 14px 0 8px;
+}
+.hero p { font-size: 16px; max-width: 62em; }
+.hero .stats { display: flex; flex-wrap: wrap; gap: 10px 26px; margin-top: 14px; }
+.hero .stat .v { font-family: var(--mono); font-size: 20px; font-weight: 700; color: var(--accent); }
+.hero .stat .k { font-size: 11.5px; color: var(--text-faint); text-transform: uppercase;
+                 letter-spacing: 0.06em; }
+
+/* ---------- Result-sheet diagram ---------- */
+.sheet-flow { display: grid; grid-template-columns: 300px 56px 1fr; gap: 0;
+              align-items: center; margin: 18px 0; }
+.sheet {
+  background: #fdfbf4; color: #2a2a2a; border-radius: 8px; padding: 14px 16px;
+  font-family: var(--mono); font-size: 11.5px; line-height: 1.65;
+  box-shadow: 0 6px 22px rgba(0,0,0,0.45); transform: rotate(-1deg);
+}
+.sheet .sh-title { font-weight: 700; font-size: 12.5px; border-bottom: 2px solid #2a2a2a;
+                   padding-bottom: 4px; margin-bottom: 6px; font-family: inherit; }
+.sheet .r { display: flex; justify-content: space-between; gap: 8px; }
+.sheet .r span:first-child { white-space: nowrap; }
+.sheet .r.grp { background: #f3ecd9; margin: 0 -6px; padding: 0 6px; border-radius: 3px; }
+.sheet .r.dnf { color: #a33; }
+.flow-arrow { text-align: center; color: var(--text-faint); font-size: 26px; }
+.readings { display: flex; flex-direction: column; gap: 10px; }
+.reading { background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
+           padding: 12px 16px; border-left: 4px solid var(--accent); }
+.reading.race  { border-left-color: var(--c-race); }
+.reading.rider { border-left-color: var(--c-rider); }
+.reading.duel  { border-left-color: var(--c-duel); }
+.reading h3 { font-size: 14.5px; }
+.reading p { font-size: 13px; color: var(--text-dim); margin: 3px 0 0; }
+
+/* ---------- Two-library cards ---------- */
+.lib-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 16px 0; }
+.lib { background: var(--panel); border: 1px solid var(--border); border-radius: 12px;
+       padding: 18px 20px; }
+.lib h3 { display: flex; align-items: center; gap: 8px; font-size: 17px; }
+.lib .dot { width: 12px; height: 12px; border-radius: 3px; }
+.lib ul { margin-top: 10px; }
+.lib li { font-size: 13.5px; color: var(--text-dim); margin: 7px 0; }
+.lib li strong { color: var(--text); font-weight: 600; }
+
+/* ---------- Model table ---------- */
+table.heads { width: 100%; border-collapse: collapse; font-size: 13px;
+              background: var(--panel); border: 1px solid var(--border);
+              border-radius: 10px; overflow: hidden; }
+table.heads th, table.heads td { text-align: left; padding: 10px 14px;
+              border-bottom: 1px solid var(--border); vertical-align: top; }
+table.heads th { background: var(--panel-2); color: var(--text-dim); font-size: 11px;
+                 text-transform: uppercase; letter-spacing: 0.06em; }
+table.heads tr:last-child td { border-bottom: none; }
+table.heads .q { color: var(--c-model); font-weight: 700; white-space: nowrap; }
+table.heads td.what { color: var(--text-dim); }
+
+/* ---------- Honesty rules ---------- */
+.rules { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+         gap: 12px; margin: 14px 0; }
+.rule { background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
+        padding: 14px 16px; }
+.rule h3 { font-size: 14px; color: var(--c-output); }
+.rule p { font-size: 13px; color: var(--text-dim); margin: 4px 0 0; }
+
+/* ---------- What's new ---------- */
+.new-list { display: flex; flex-direction: column; gap: 8px; margin: 14px 0; }
+.new-item { display: grid; grid-template-columns: 130px 1fr; gap: 12px; align-items: baseline;
+            background: var(--panel); border: 1px solid var(--border); border-radius: 8px;
+            padding: 10px 14px; }
+.new-item .when { font-family: var(--mono); font-size: 11px; color: var(--text-faint); }
+.new-item .what { font-size: 13.5px; }
+.new-item .what strong { color: var(--text); }
+.new-item .what span.expl { color: var(--text-dim); }
+@media (max-width: 700px) { .new-item { grid-template-columns: 1fr; } }
+
+/* ---------- Site map cards ---------- */
+.pages { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+         gap: 12px; margin: 16px 0; }
+.page-card { background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
+             padding: 16px 18px; display: block; transition: transform 0.12s ease, background 0.12s ease; }
+.page-card:hover { background: var(--panel-2); transform: translateY(-2px); text-decoration: none; }
+.page-card h3 { color: var(--text); font-size: 15px; }
+.page-card .aud { font-size: 10.5px; font-weight: 700; text-transform: uppercase;
+                  letter-spacing: 0.07em; color: var(--c-output); }
+.page-card p { font-size: 12.5px; color: var(--text-dim); margin: 6px 0 0; }
+
+hr { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
+
+@media (max-width: 900px) {
+  .sheet-flow { grid-template-columns: 1fr; }
+  .flow-arrow { transform: rotate(90deg); margin: 4px 0; }
+  .lib-grid { grid-template-columns: 1fr; }
+}
+@media print {
+  body { background: white; color: black; }
+  .hero, .lib, .reading, .rule, .new-item, .page-card, table.heads { background: white;
+    color: black; border-color: #bbb; }
+  .site-nav { display: none; }
+  h2 { border-color: #bbb; }
+  a { color: #1a4fb8; }
+}
+</style>
+</head>
+<body>
+
+<nav class="site-nav">
+  <span class="nav-brand">🚴 Race Predictor Docs</span>
+  <a href="index.html" class="active">How It Works</a>
+  <a href="predictions_guide.html">Reading the Predictions</a>
+  <a href="pipeline_overview.html">Pipeline</a>
+  <a href="race_features_reference.html">Race Features</a>
+  <a href="metrics_reference.html">Metrics Reference</a>
+  <span class="nav-updated">updated 2026-06-11</span>
+</nav>
+
+<h1>How the Race Predictor Works</h1>
+<p class="subtitle">
+  A plain-language tour: from raw result sheets, to what the system learns about races
+  and riders, to the predictions it makes — and how to read them.
+  No machine-learning background needed.
+</p>
+
+<div class="hero">
+  <p>
+    This system predicts professional road-cycling results: <strong>who is likely to win,
+    make the podium, or place in the top 5/15</strong> of any World Tour, Pro Series, or
+    .1-level race — expressed as probabilities and sportsbook-style odds. It learns from a
+    decade of race results scraped from FirstCycling, and it makes predictions for upcoming
+    races from nothing more than the startlist and the race's own history.
+  </p>
+  <div class="stats">
+    <div class="stat"><div class="v">643K</div><div class="k">rider-race results learned from</div></div>
+    <div class="stat"><div class="v">5,724</div><div class="k">races (2016 – present)</div></div>
+    <div class="stat"><div class="v">1M+</div><div class="k">"rider as of race day" snapshots</div></div>
+    <div class="stat"><div class="v">164</div><div class="k">facts considered per rider per race</div></div>
+    <div class="stat"><div class="v">~1 in 4</div><div class="k">winners named correctly (top pick)</div></div>
+  </div>
+</div>
+
+<!-- =========================================================== -->
+<h2 id="sheet">1. Everything starts with the result sheet</h2>
+
+<p>
+  Almost everything the system knows comes from one humble document: the
+  <strong>finishing sheet</strong> of past races — each rider's name, team, finishing
+  position, and time gap to the winner. We have those sheets for every race back to 2010.
+  The trick is that a result sheet can be read <strong>three different ways</strong>,
+  and each reading teaches us something different:
+</p>
+
+<div class="sheet-flow">
+  <div class="sheet">
+    <div class="sh-title">MILANO–SANREMO — RESULT</div>
+    <div class="r grp"><span>1. M. van der Poel</span><span>6:21:14</span></div>
+    <div class="r grp"><span>2. T. Pogačar</span><span>+ 0:00</span></div>
+    <div class="r grp"><span>3. F. Ganna</span><span>+ 0:00</span></div>
+    <div class="r"><span>4. M. Matthews</span><span>+ 0:21</span></div>
+    <div class="r"><span>5. T. Pidcock</span><span>+ 0:21</span></div>
+    <div class="r"><span>…</span><span></span></div>
+    <div class="r"><span>97. J. Doe</span><span>+ 12:44</span></div>
+    <div class="r dnf"><span>— R. Smith</span><span>DNF</span></div>
+  </div>
+  <div class="flow-arrow">→</div>
+  <div class="readings">
+    <div class="reading race">
+      <h3>Read the gaps → what kind of race was it?</h3>
+      <p>If 80 riders finish together, it was a sprint. If the sheet shatters into small
+         groups minutes apart, it was a mountain day. The <em>pattern of time gaps</em> is a
+         fingerprint of the course — no GPS or elevation data needed.</p>
+    </div>
+    <div class="reading rider">
+      <h3>Read the names → how good is each rider, and at what?</h3>
+      <p>Every sheet adds one line to each rider's career ledger: how they fare in sprints
+         vs. mountains, at World Tour vs. smaller races, whether their form is rising
+         or fading right now.</p>
+    </div>
+    <div class="reading duel">
+      <h3>Read the order up front → who beat whom when it counted?</h3>
+      <p>The first ten riders of the winning group genuinely raced each other — that finishing
+         order is a real head-to-head result, like a chess game. Deep in the bunch, order is
+         meaningless and we ignore it. Abandons (DNF) get their own ledger too.</p>
+    </div>
+  </div>
+</div>
+
+<p class="dim small">
+  That third reading — and the abandon ledger — are the newest additions (June 2026).
+  They recover information the older system threw away: it used to treat "8th place" and
+  "85th place, rolled in with the gruppetto" with the same seriousness.
+</p>
+
+<!-- =========================================================== -->
+<h2 id="libraries">2. Two libraries: one about races, one about riders</h2>
+
+<p>
+  From thousands of sheets the system builds two bodies of knowledge.
+  Both are rebuilt automatically every week as new results arrive.
+</p>
+
+<div class="lib-grid">
+  <div class="lib">
+    <h3><span class="dot" style="background:var(--c-race)"></span>The race library — every race's character</h3>
+    <p class="dim small">"What kind of bike race is this, really?"</p>
+    <ul>
+      <li><strong>Race profile scores.</strong> Each past race gets six scores summing to 1 —
+        sprint, mountain, hilly, rolling, breakaway, time-trial — computed purely from how
+        its finishing gaps were distributed. We measure the gap pattern 19 times (front 10%
+        of the field, front 15%, … whole field) and watch how it changes; that curve
+        separates a bunch sprint from a summit finish remarkably well.</li>
+      <li><strong>Front-group depth.</strong> How much of the field finished in the winner's
+        group — the single best "how selective was it?" number on the sheet.</li>
+      <li><strong>Selection signatures <span class="chip next">next retrain</span>.</strong>
+        Not just <em>how many</em> contested the finale but <em>who</em>: what mix of
+        sprinters / climbers / puncheurs filled the top 10. It turns out the <em>kind</em> of
+        rider who contests a given race is about twice as stable year-over-year as the size
+        of the front group — Sanremo keeps selecting the same kind of finisher even when the
+        race plays out differently.</li>
+      <li><strong>Forecasting a future race's character.</strong> An upcoming edition has no
+        result sheet yet, so the system looks at the same race's past editions <em>plus</em>
+        who actually showed up this year. A startlist stacked with sprinters pulls the
+        forecast toward a sprint; history says how much this course usually resists that.</li>
+    </ul>
+  </div>
+
+  <div class="lib">
+    <h3><span class="dot" style="background:var(--c-rider)"></span>The rider library — every rider's story so far</h3>
+    <p class="dim small">"Who is this rider, as of this morning?"</p>
+    <ul>
+      <li><strong>The career ledger.</strong> Average results split by race type (one-day /
+        stage / GC), level (WT / Pro / .1), and terrain — each race counts toward the
+        terrains it actually featured.</li>
+      <li><strong>Form &amp; trajectory <span class="chip live">live</span>.</strong> Beyond
+        "last 5 races": an exponentially-weighted recent-percentile curve (last month counts
+        much more than three months ago), season-over-season trajectory, distance from career
+        peak. Added June 2026 — it fixed a long-standing bias where fading veterans were
+        rated on their glory years. These features are also <strong>re-aged to race
+        morning</strong>: a rider idle for six weeks is predicted as rusty <em>today</em>,
+        not as fresh as their last start.</li>
+      <li><strong>Contested-duel rating <span class="chip next">next retrain</span>.</strong>
+        A chess-style Elo rating built only from finishes where riders genuinely raced each
+        other (front of the winning group, group-vs-group). Currently rates Pogačar #1 —
+        and spots hot neo-pros the career averages haven't caught up with.</li>
+      <li><strong>Finishing risk <span class="chip next">next retrain</span>.</strong> A
+        dedicated abandon model: 1.26M start records (10.6% DNFs) teach it who tends not to
+        finish — crash-prone riders, riders deep into a grand tour, classics crashers.</li>
+      <li><strong>Team context.</strong> Strength and depth of the rider's squad at this
+        race, leadership (bib number 1), protected-rider status.</li>
+    </ul>
+  </div>
+</div>
+
+<div class="rule" style="margin-top:6px">
+  <h3>The golden rule: frozen in time</h3>
+  <p>
+    Every fact about a rider is computed <strong>as of the morning of the race being
+    predicted</strong> — never using anything that happened later. When the system trains on
+    a 2021 race, the riders look exactly as they looked in 2021. This "no peeking" rule is
+    enforced everywhere: career stats, form, Elo ratings, abandon history, even mid-race
+    standings. It's why accuracy measured on past races is an honest estimate of accuracy
+    on next week's.
+  </p>
+</div>
+
+<!-- =========================================================== -->
+<h2 id="predictions">3. From libraries to predictions</h2>
+
+<p>
+  For an upcoming race, the system pulls each starter's rider-library entry (re-aged to
+  today), the race-library fingerprint (from reference editions you pick — typically the
+  last few years of the same race), and facts about the field itself. That bundle —
+  about 164 facts per rider — goes to a set of specialist models. Each model answers
+  one question:
+</p>
+
+<table class="heads">
+  <thead><tr><th style="width:24%">Question</th><th style="width:21%">Model</th><th>What it produces</th></tr></thead>
+  <tbody>
+    <tr>
+      <td class="q">Who finishes ahead of whom?</td>
+      <td>Ranking model <span class="chip live">live</span></td>
+      <td class="what">A score for every starter, sorted into the predicted finishing order.
+          This drives the main table's rank column.</td>
+    </tr>
+    <tr>
+      <td class="q">Will they win? Podium? Top 5? Top 15?</td>
+      <td>Contender model <span class="chip live">live</span></td>
+      <td class="what">Probabilities for the riders who plausibly matter (top ~15 by the
+          ranking model). Sharpest at <em>naming the winner</em> — the "scout".</td>
+    </tr>
+    <tr>
+      <td class="q">What's a fair price on each rider?</td>
+      <td>LambdaRank model <span class="chip live">live</span></td>
+      <td class="what">Win/podium probabilities for the <em>whole field</em>, tuned so the
+          percentages are honest (10% chances really happen ~1 time in 10) — the
+          "bookmaker". Shown side-by-side with the scout; disagreements ≥ 2 points are
+          highlighted.</td>
+    </tr>
+    <tr>
+      <td class="q">How far behind the winner?</td>
+      <td>Time-gap model <span class="chip live">live</span></td>
+      <td class="what">Expected seconds behind the winner for each finisher.</td>
+    </tr>
+    <tr>
+      <td class="q">Mid-race: who wins the GC from here?</td>
+      <td>GC outlook model <span class="chip live">live</span></td>
+      <td class="what">During a stage race, re-forecasts the final general classification
+          from the <em>live situation</em>: current standings, gaps, who's looked strong,
+          stages left, rest days. Uses only the race situation — it knows a 4-minute lead
+          with two flat stages left is nearly decisive regardless of who holds it.</td>
+    </tr>
+    <tr>
+      <td class="q">Will they even finish?</td>
+      <td>Abandon (DNF) model <span class="chip next">next retrain</span></td>
+      <td class="what">Probability each rider finishes at all. Used to mark down prices on
+          fragile riders: a podium price becomes
+          P(podium <em>if they finish</em>) × P(they finish).</td>
+    </tr>
+  </tbody>
+</table>
+
+<p class="dim small" style="margin-top:10px">
+  Under the hood all of these are gradient-boosted decision-tree models (LightGBM) — the
+  same family that wins most tabular-data competitions — trained on the 643K historical
+  rider-race results. The newest upgrade (June 2026) also lets the main models see each
+  other's outputs: the contender model now receives the time-gap and bookmaker estimates,
+  the duel ratings, and the selection signatures as additional inputs.
+</p>
+
+<!-- =========================================================== -->
+<h2 id="honesty">4. How we keep ourselves honest</h2>
+
+<div class="rules">
+  <div class="rule">
+    <h3>Probability quality is the bar</h3>
+    <p>Since June 2026, an upgrade ships only if it improves the <strong>quality of the
+       prices</strong> — measured across the win, podium, top-5 and top-15 markets for
+       <em>every</em> rider, not just the ones who happened to finish well. "Did we name
+       the winner?" is still reported, but it's a diagnostic, not the gate.</p>
+  </div>
+  <div class="rule">
+    <h3>Honest test design</h3>
+    <p>Candidate upgrades are tested on five full held-out years the models never saw,
+       train-on-past / test-on-future only. Most ideas fail this bar and are documented
+       as failures — the experiment log records every dead end.</p>
+  </div>
+  <div class="rule">
+    <h3>Calibration, not bravado</h3>
+    <p>The bookmaker model's stated percentages match reality almost exactly (when it
+       says 10%, it happens 9.9–10.2% of the time). Where a model runs hot or cold —
+       e.g. early-race GC win odds — the docs say so.</p>
+  </div>
+  <div class="rule">
+    <h3>Every prediction is logged</h3>
+    <p>Each prediction run is written to a permanent log with both models' probabilities,
+       so we can audit later how the system performed against the books — with no ability
+       to quietly forget bad calls.</p>
+  </div>
+</div>
+
+<!-- =========================================================== -->
+<h2 id="new">5. What changed recently (June 2026)</h2>
+
+<div class="new-list">
+  <div class="new-item"><div class="when">JUN 9</div>
+    <div class="what"><strong>Stage-race awareness.</strong> <span class="expl">Models now see the live race
+    situation mid-stage-race (standings, gaps, attrition, rest days), and a dedicated GC outlook
+    model re-forecasts the final classification from any point in the race.</span>
+    <span class="chip live">live</span></div></div>
+  <div class="new-item"><div class="when">JUN 10</div>
+    <div class="what"><strong>Form trajectory &amp; race-day re-aging.</strong> <span class="expl">Recency-weighted
+    form curves and multi-season trajectory fixed the "fading veteran" bias; all form features
+    are recomputed as of the day you ask for a prediction, not the rider's last start.</span>
+    <span class="chip live">live</span></div></div>
+  <div class="new-item"><div class="when">JUN 10</div>
+    <div class="what"><strong>Scraper survives Cloudflare.</strong> <span class="expl">FirstCycling added a
+    bot challenge; data collection now runs through a real, visible Chrome window at a polite,
+    rate-limited pace. Database is current again.</span>
+    <span class="chip live">live</span></div></div>
+  <div class="new-item"><div class="when">JUN 11</div>
+    <div class="what"><strong>New quality gate.</strong> <span class="expl">Market-price quality (all four
+    markets, every rider) replaced winner-naming as the bar an upgrade must clear.</span>
+    <span class="chip live">live</span></div></div>
+  <div class="new-item"><div class="when">JUN 11</div>
+    <div class="what"><strong>Contested-duel Elo ratings.</strong> <span class="expl">Head-to-head ratings from
+    finishes that were genuinely raced — first feature in months to improve winner-naming
+    (+1.25 points, positive in all five test years).</span>
+    <span class="chip next">next retrain</span></div></div>
+  <div class="new-item"><div class="when">JUN 11</div>
+    <div class="what"><strong>Selection signatures.</strong> <span class="expl">One-day races now carry a
+    forecast of <em>who contests the finale</em> (sprinter/climber/puncheur mix), built from this
+    year's startlist plus the race's history.</span>
+    <span class="chip next">next retrain</span></div></div>
+  <div class="new-item"><div class="when">JUN 11</div>
+    <div class="what"><strong>Abandon model.</strong> <span class="expl">Recovered 1.26M start/abandon records
+    from the archive and trained a dedicated did-they-finish model (separates "didn't start" from
+    "didn't finish"); will mark down prices on riders unlikely to finish.</span>
+    <span class="chip next">next retrain</span></div></div>
+  <div class="new-item"><div class="when">JUN 11</div>
+    <div class="what"><strong>Model stacking.</strong> <span class="expl">The contender model now consumes the
+    time-gap and bookmaker models' outputs as inputs — better prices across the board in
+    five-year backtests, uniformly across race types.</span>
+    <span class="chip next">next retrain</span></div></div>
+</div>
+
+<p class="dim small">
+  <span class="chip live">live</span> = in the running system now &nbsp;·&nbsp;
+  <span class="chip next">next retrain</span> = code is merged and validated; becomes active when the
+  weekly pipeline next retrains the models &nbsp;·&nbsp;
+  <span class="chip lab">research</span> = validated analysis informing the roadmap, not yet a model input.
+</p>
+
+<!-- =========================================================== -->
+<h2 id="map">6. Where to go next</h2>
+
+<div class="pages">
+  <a class="page-card" href="predictions_guide.html">
+    <div class="aud">For everyone</div>
+    <h3>Reading the Predictions →</h3>
+    <p>Column-by-column guide to the prediction table: the two probability models, odds
+       formats, time gaps, GC outlook — and how much to trust each number.</p>
+  </a>
+  <a class="page-card" href="pipeline_overview.html">
+    <div class="aud">Semi-technical</div>
+    <h3>Pipeline Overview →</h3>
+    <p>The weekly machine: scrape → database → feature building → training → inference →
+       web app, stage by stage, with file references.</p>
+  </a>
+  <a class="page-card" href="race_features_reference.html">
+    <div class="aud">Technical</div>
+    <h3>Race Feature Reference →</h3>
+    <p>Exactly how a finishing sheet becomes a race fingerprint: percentile trimming,
+       distribution statistics, gradients, profile scores, selection signatures.</p>
+  </a>
+  <a class="page-card" href="metrics_reference.html">
+    <div class="aud">Technical</div>
+    <h3>Metrics Reference →</h3>
+    <p>Every feature and output with its exact formula, value range, and source file —
+       from <code>place_bucket</code> to the contested-Elo update rule.</p>
+  </a>
+</div>
+
+<hr>
+<p class="subtitle">
+  Part of the Cycling Race Predictor documentation · generated from the
+  <span class="mono">webscrape-refactor</span> branch, 2026-06-11 ·
+  data current to 2026-06-10.
+</p>
+
+</body>
+</html>

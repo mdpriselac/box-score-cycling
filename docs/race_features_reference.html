@@ -35,6 +35,7 @@ html, body {
   font-size: 15px; line-height: 1.55;
 }
 body { padding: 28px 36px 80px; max-width: 1400px; margin: 0 auto; }
+[id] { scroll-margin-top: 96px; }
 
 h1 { margin: 0 0 4px; font-size: 28px; font-weight: 700; letter-spacing: -0.02em; }
 h2 { margin: 40px 0 14px; font-size: 20px; font-weight: 700; letter-spacing: -0.01em;
@@ -202,6 +203,28 @@ hr { border: none; border-top: 1px solid var(--border); margin: 14px 0; }
 .arrow-down { text-align: center; color: var(--text-faint);
               font-size: 18px; margin: -4px 0; line-height: 1; }
 
+/* ---------- Site navigation (shared) ---------- */
+.site-nav {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 4px;
+  padding: 10px 14px; margin: 0 0 8px;
+  background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
+  position: sticky; top: 12px; z-index: 50;
+}
+.site-nav .nav-brand { font-weight: 700; font-size: 13px; margin-right: 10px; }
+.site-nav a { font-size: 12.5px; color: var(--text-dim); padding: 5px 10px; border-radius: 6px; }
+.site-nav a:hover { color: var(--text); background: var(--panel-2); text-decoration: none; }
+.site-nav a.active { color: var(--text); background: var(--panel-2); border: 1px solid var(--border); }
+.site-nav .nav-updated { margin-left: auto; font-size: 11px; color: var(--text-faint);
+                         font-family: var(--mono); }
+@media (max-width: 800px) { .site-nav .nav-updated { display: none; } }
+
+/* ---------- Status chips ---------- */
+.chip { display: inline-block; font-size: 10px; font-weight: 700; text-transform: uppercase;
+        letter-spacing: 0.07em; padding: 2px 8px; border-radius: 99px; vertical-align: 2px; }
+.chip.live { background: #0d2818; color: #4ade80; border: 1px solid #1d4a2e; }
+.chip.next { background: #251d04; color: #fbbf24; border: 1px solid #4a3c10; }
+.chip.lab  { background: #101b33; color: #93c5fd; border: 1px solid #1e3a5f; }
+
 @media (max-width: 1200px) {
   .pipeline { grid-template-columns: repeat(2, 1fr); }
   .p-card::after { display: none; }
@@ -220,16 +243,25 @@ hr { border: none; border-top: 1px solid var(--border); margin: 14px 0; }
 </head>
 <body>
 
+<nav class="site-nav">
+  <span class="nav-brand">🚴 Race Predictor Docs</span>
+  <a href="index.html">How It Works</a>
+  <a href="predictions_guide.html">Reading the Predictions</a>
+  <a href="pipeline_overview.html">Pipeline</a>
+  <a href="race_features_reference.html" class="active">Race Features</a>
+  <a href="metrics_reference.html">Metrics Reference</a>
+  <span class="nav-updated">updated 2026-06-11</span>
+</nav>
+
 <h1>Race Feature Reference</h1>
 <p class="subtitle">
-  From raw finishing-time distributions to the four gradient scalars that drive
-  race profile classification. Every transformation between
-  <span class="mono">rider_results.time_gap</span> and
-  <span class="mono">calculate_race_profile_scores()</span> is documented here
-  with exact formulas and source locations.<br>
-  Branch: <span class="mono">webscrape-refactor</span> @ <span class="mono">7e0b167</span> — sibling to
-  <a href="pipeline_overview.html">pipeline_overview.html</a> and
-  <a href="metrics_reference.html">metrics_reference.html</a>.
+  How a finishing sheet becomes a race fingerprint: from raw time-gap distributions,
+  through the 19-percentile shape analysis and gradient extraction, to profile scores —
+  and (new, June 2026) what those shape features <em>really</em> measure, plus the
+  selection-signature layer that captures <strong>who</strong> contests the front.
+  Every transformation between <span class="mono">rider_results.time_gap</span> and
+  the serving features is documented with exact formulas and source locations.<br>
+  Branch: <span class="mono">webscrape-refactor</span> @ <span class="mono">4e87815</span>+ (2026-06-11).
 </p>
 
 <!-- =========================================================== -->
@@ -762,6 +794,15 @@ directional_changes = <span class="fn">sum</span>(<span class="num">1</span> <sp
         kurtosis_null_percentile = p    <span class="cmt"># ★ becomes breakdown_percentile</span>
     lowest_valid_percentile = p         <span class="cmt"># last loop pass = lowest with data</span></div>
     <p class="meta-line"><span class="lbl">src:</span> gradient_calculator.py → find_data_quality_indicators()</p>
+    <div class="note">
+      <strong>Bug fix (2026-06-11, commit <span class="mono">4e87815</span>):</strong> a loop bug had
+      left <span class="mono">variance_zero_percentile</span> mostly NULL/wrong; the column has been
+      repopulated for all competitions. Post-fix it is an <em>exact duplicate</em> of
+      <span class="mono">kurtosis_null_percentile</span> (a trimmed front subset has zero variance
+      precisely when its kurtosis is undefined), so it adds no new signal — models simply pick up the
+      corrected column at the next retrain. Both markers measure the same physical thing:
+      <strong>how deep into the field the winner's same-time group extends</strong> (see §9).
+    </div>
   </div>
 
   <div class="metric">
@@ -897,10 +938,161 @@ race_dominant_profile = <span class="fn">argmax</span>(all six)</div>
 </div>
 
 <!-- =========================================================== -->
+<!-- WHAT THE SHAPE REALLY MEASURES (2026-06) -->
+<!-- =========================================================== -->
+
+<h2 id="s9">9. What the shape features really measure <span class="chip lab">research · 2026-06</span></h2>
+
+<div class="stage s-gradient">
+  <div class="stage-head">
+    <div class="stage-num">FINDINGS</div>
+    <h3>Result-sheet information recovery — what June 2026 analysis established</h3>
+  </div>
+  <p class="stage-purpose">
+    A systematic audit of how much race-typing information the finishing sheet actually
+    contains, and which of our features capture it. These findings reshaped the roadmap;
+    the parts that survived gating shipped as the selection-signature features (§10).
+  </p>
+
+  <div class="metric">
+    <div class="metric-head"><h4>kurtosis_null_percentile ≈ winner-group depth ("blob depth")</h4></div>
+    <p class="desc">
+      The breakdown marker is not an abstract data-quality statistic — it tracks the
+      <strong>proportion of the field that finished in the winner's same-time group</strong>
+      almost perfectly (r ≈ 0.986 against the exactly-computed winner-group proportion).
+      A value of 50 means half the field sprinted together; 10 means the race shattered.
+      This single number is the best "how selective was it?" scalar on the sheet.
+    </p>
+  </div>
+
+  <div class="metric">
+    <div class="metric-head"><h4>Two macro-attractors, not six crisp types</h4></div>
+    <p class="desc">
+      Clustering full result-sheet shapes finds two dominant basins — <strong>sprint</strong>
+      (field together) vs <strong>selective</strong> (field broken) — with solo-vs-group
+      outcomes inside the selective basin driven by race <em>dynamics</em>, not course. The
+      six-way profile scores remain useful as soft coordinates, but the sheet does not
+      support six sharply-separated classes. ~80% of races previously fell into one GMM
+      cluster blob; front-of-sheet features split it (largest cluster → 14.6%).
+    </p>
+  </div>
+
+  <div class="metric">
+    <div class="metric-head"><h4>Year-over-year stability is moderate for shape, strong for <em>who</em></h4></div>
+    <p class="desc">
+      Same-race editions repeat their coarse shape class only moderately (0.615 vs 0.50
+      chance; ICC ≈ 0.33 for winner-group proportion; mean-of-prior-editions r ≈ 0.45 beats
+      last-edition-only r ≈ 0.39). But the <em>archetype mix of who contests the front</em>
+      is about twice as stable (§10) — the durable identity of a race is its selection
+      pattern, not its gap pattern.
+    </p>
+  </div>
+
+  <div class="metric">
+    <div class="metric-head"><h4>Train/serve skew, found and scoped</h4></div>
+    <p class="desc">
+      Training rows historically carried the race's <em>own</em> result-sheet shape features,
+      while serving uses <em>reference editions</em> — a real skew. Experiments that tried to
+      serve stage races with reference-keyed canonical shape profiles made stages
+      <em>worse</em> (−1.25pp, 5/5 folds), so the shipped signature features are
+      <strong>one-day-scoped only</strong>; stage rows get NaN.
+    </p>
+  </div>
+
+  <div class="metric">
+    <div class="metric-head"><h4>Dead ends, documented</h4></div>
+    <p class="desc">
+      <strong>Informativeness weighting</strong> (down-weighting deep-blob rows in bucket
+      training) — falsified: deep-blob rows are useful negative examples
+      (W1 −0.26pp ± 0.68, W2 −0.43pp ± 1.48; <span class="mono">external_weights</span>
+      plumbing kept, off by default). <strong>Canonical-profile head integration</strong>
+      (GMM k=10 archetype features as model inputs) — did not clear the gate
+      (winner +0.37pp ± 0.60); the archetype library remains a research artifact
+      (quantization fidelity 0.881; pure-sprint 27.5% and climber-selective 23.4% are the
+      giant clusters).
+    </p>
+  </div>
+</div>
+
+<!-- =========================================================== -->
+<!-- SELECTION SIGNATURES (2026-06) -->
+<!-- =========================================================== -->
+
+<h2 id="s10">10. Selection signatures — <em>who</em> contests the front <span class="chip next">next retrain</span></h2>
+
+<div class="stage s-score">
+  <div class="stage-head">
+    <div class="stage-num">STAGE 08</div>
+    <h3>From "how big was the front group" to "who was in it"</h3>
+  </div>
+  <p class="stage-purpose">
+    A second, newer reading of the same result sheet: classify the top-10 finishers by
+    their rider archetype (<span class="mono">best_profile</span>, as-of-then) and record the
+    mix — e.g. "70% sprinters, 20% rolling, 10% breakaway". This 6-dimensional
+    <strong>contesting signature</strong> is the most repeatable thing about a race, and it
+    feeds 11 serving features for one-day races.
+  </p>
+
+  <div class="metric">
+    <div class="metric-head"><h4>Why it works: stability of WHO ≫ stability of SHAPE</h4></div>
+    <div class="formula"><span class="cmt"># Year-over-year, same race entity:</span>
+ICC(sprinter share of top-10)  ≈ 0.638   <span class="cmt"># strongly repeatable</span>
+ICC(mountain share of top-10)  ≈ 0.561
+ICC(winner-group proportion)   ≈ 0.333   <span class="cmt"># the shape, ~half as stable</span>
+
+<span class="cmt"># Forward prediction (rolling-origin CV, 2019+):</span>
+mean-of-prior-edition signatures   r ≈ 0.739  <span class="cmt"># vs 0.452 for shape</span>
+signature cosine similarity        z = 36.8 vs shuffled-race null</div>
+    <p class="desc">Races that score unstable are the ones that literally changed character (e.g. Milano-Torino's route flips) — the metric is detecting reality, not noise.</p>
+  </div>
+
+  <div class="metric">
+    <div class="metric-head"><h4>The B4 forward rule (serving formula)</h4></div>
+    <p class="desc">
+      For an upcoming one-day race we predict the contesting signature with a deliberately
+      simple additive rule — "wisdom of the startlist" plus course memory. A LightGBM model
+      was tested against it and matched but did not beat it (cosine 0.854 vs 0.846), so the
+      app ships the rule, with no model artifact to maintain.
+    </p>
+    <div class="formula"><span class="cmt"># per archetype a ∈ {sprint, mountain, hilly, rolling, breakaway, time_trial}</span>
+field_share[a]   = archetype share of THIS year's startlist
+enrichment[a]    = mean over reference editions of
+                     (top-10 share[a] − that edition's field share[a])
+
+sig_[a]          = <span class="fn">clip</span>(field_share[a] + enrichment[a], <span class="num">0</span>, <span class="num">1</span>)
+
+<span class="cmt"># cold start (first edition, no references): sig_[a] = field_share[a]  (r ≈ 0.72)</span>
+<span class="cmt"># shape stays at mean-of-priors: sig_wg_prop = mean reference winner-group proportion</span></div>
+  </div>
+
+  <div class="metric">
+    <div class="metric-head"><h4>The 11 serving features (one-day races only; stage/GC rows = NaN)</h4></div>
+    <div class="formula"><span class="cmt"># race-level (same for every rider in the race)</span>
+sig_sprint, sig_mountain, sig_hilly,
+sig_rolling, sig_breakaway, sig_time_trial   <span class="cmt"># predicted contesting shares</span>
+sig_wg_prop                                  <span class="cmt"># mean prior-edition winner-group prop</span>
+sig_n_refs                                   <span class="cmt"># how many references fed enrichment</span>
+
+<span class="cmt"># rider-level interactions</span>
+rider_sig_share    = sig_[rider's best_profile]
+rider_contest_fit  = Σ_a (4 − rider_avg_bucket[a]) * sig_[a]   <span class="cmt"># ability · shares</span>
+rider_sig_vs_field = rider_sig_share − field_share[rider's best_profile]</div>
+    <p class="meta-line"><span class="lbl">src:</span> prediction_tools/contest_signature_features.py — build_oneday_signature_features() (training, as-of-then), build_serving_signature_context() + attach_serving_signature_features() (app)</p>
+    <p class="meta-line"><span class="lbl">gate:</span> part of the combined stack that passed 2026-06-11 — market_avg_log_loss −0.0039 ± 0.0010 (5/5 folds); strongest single market: one-day top-15 (−0.0049 ± 0.0009)</p>
+  </div>
+
+  <div class="note">
+    Scoping is deliberate: stage races serve these as NaN because reference-keyed stage
+    serving tested at +0.078 log loss (worse). LightGBM's native NaN handling routes stage
+    rows down the trained "no signature available" branch — do not zero-fill these columns.
+  </div>
+</div>
+
+<!-- =========================================================== -->
 <!-- SUMMARY -->
 <!-- =========================================================== -->
 
-<h2>9. One-line summary of the chain</h2>
+<h2>11. One-line summary of the chain</h2>
 
 <div class="section-intro" style="font-family:var(--mono); font-size:12px; color:#cbd5e1;">
 rider_results.time_gap<br>
@@ -918,10 +1110,18 @@ calculate_race_profile_scores(breakdown, variance_slope, clumpiness_slope, bigge
 RaceProfileScores(sprint, mountain, hilly, rolling, breakaway, time_trial) &nbsp;→&nbsp; sum = 1.0
 </div>
 
+<div class="section-intro" style="font-family:var(--mono); font-size:12px; color:#cbd5e1;">
+<span style="color:var(--text-faint)">// the second reading (one-day races, since 2026-06):</span><br>
+rider_results (top-10) &nbsp;+&nbsp; best_profile snapshots (as-of-then)<br>
+&nbsp;&nbsp;↓ &nbsp;&nbsp; contesting signature = archetype mix of the front 10<br>
+&nbsp;&nbsp;↓ &nbsp;&nbsp; B4 rule: clip(startlist field share + mean reference enrichment, 0, 1)<br>
+sig_sprint … sig_time_trial, sig_wg_prop, sig_n_refs, rider_sig_share, rider_contest_fit, rider_sig_vs_field
+</div>
+
 <hr>
 
 <p class="subtitle">
-  Sources (all read from <span class="mono">webscrape-refactor @ 7e0b167</span>):
+  Sources (all read from <span class="mono">webscrape-refactor</span>, 2026-06-11):
   <span class="mono">webscrape_tools/database/race_feature_extraction.py</span>
   (trim, calculate_statistical_features, calculate_engineered_features),
   <span class="mono">webscrape_tools/database/statistical_measures.py</span>
@@ -929,11 +1129,17 @@ RaceProfileScores(sprint, mountain, hilly, rolling, breakaway, time_trial) &nbsp
   <span class="mono">webscrape_tools/database/engineered_metrics.py</span>
   (identify_groups, biggest_group_metric, clumpiness_score, time_gap_evenness, selection_metric),
   <span class="mono">webscrape_tools/database/gradient_calculator.py</span>
-  (calculate_gradient_metrics, imputation cascade, find_data_quality_indicators),
+  (calculate_gradient_metrics, imputation cascade, find_data_quality_indicators —
+  variance_zero_percentile fix <span class="mono">4e87815</span>),
   <span class="mono">webscrape_tools/database/populate_all_gradients_safe.py</span>
   (parallel worker entry, INSERT OR REPLACE),
   <span class="mono">prediction_tools/race_profile_scoring.py</span>
-  (final scoring function).
+  (final scoring function),
+  <span class="mono">prediction_tools/contest_signature_features.py</span>
+  (signatures, B4 rule, serving attachment),
+  <span class="mono">prediction_tools/experiments/{selection_signatures, forward_race_character,
+  contest_archetype_library, front_local_race_typing}.py</span>
+  (the 2026-06 analyses behind §9–10).
 </p>
 
 <script>

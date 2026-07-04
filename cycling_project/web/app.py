@@ -1046,6 +1046,19 @@ passed the probability gate. Three pricing additions on top:
                     )
                     return float(lambdarank_pred.config.temperature)
 
+                def _attach_elo(result_df: pd.DataFrame, pred_df: pd.DataFrame):
+                    """Map contested-Elo rating + comparison count onto result_df.
+
+                    As-of-today rider rating from the production snapshots
+                    (attached to pred_df by attach_stack_features); silently
+                    no-ops if the rating columns aren't present.
+                    """
+                    for col in ('contested_rating', 'contested_rating_n'):
+                        if col in pred_df.columns:
+                            result_df[col] = result_df['rider_id'].map(
+                                pred_df.set_index('rider_id')[col]
+                            )
+
                 # ── Arm-C signature context: one-day targets only.
                 # Stage / gc targets keep all signature columns NaN — the
                 # models' trained out-of-scope state (ref-keyed stage serving
@@ -1135,6 +1148,7 @@ passed the probability gate. Three pricing additions on top:
                         lambda rid: name_map.get(rid, {}).get('team_name', '')
                     )
                     lr_temp = _attach_lambdarank(result, pred_df)
+                    _attach_elo(result, pred_df)
                     result = _apply_pricing_layer(result, pred_df, profile)
 
                     label = f"{profile['competition_name']} ({profile['competition_date']})"
@@ -1158,6 +1172,7 @@ passed the probability gate. Three pricing additions on top:
                     lambda rid: name_map.get(rid, {}).get('team_name', '')
                 )
                 lr_temp = _attach_lambdarank(result, pred_df)
+                _attach_elo(result, pred_df)
                 result = _apply_pricing_layer(result, pred_df, avg_profile)
                 all_predictions['Averaged Reference Races'] = result
                 _append_log_rows('Averaged Reference Races', result, lr_temp)
@@ -1382,6 +1397,10 @@ passed the probability gate. Three pricing additions on top:
                     and result['blend_win_p'].notna().any()
                 )
                 has_dnf = 'dnf_p' in result.columns and result['dnf_p'].notna().any()
+                has_elo = (
+                    'contested_rating' in result.columns
+                    and result['contested_rating'].notna().any()
+                )
 
                 if has_probs:
                     cols_to_show.extend(['prob_win', 'prob_podium', 'prob_top5', 'prob_top15'])
@@ -1403,6 +1422,10 @@ passed the probability gate. Three pricing additions on top:
                 if has_dnf:
                     cols_to_show.append('dnf_p')
                     col_rename['dnf_p'] = 'DNF %'
+                if has_elo:
+                    cols_to_show.extend(['contested_rating', 'contested_rating_n'])
+                    col_rename['contested_rating'] = 'Elo'
+                    col_rename['contested_rating_n'] = 'Elo n'
 
                 display = result[cols_to_show].copy().rename(columns=col_rename)
                 display['Expected Bucket'] = display['Expected Bucket'].round(2)
@@ -1429,6 +1452,9 @@ passed the probability gate. Three pricing additions on top:
                     ).round(1)
                 if has_dnf:
                     display['DNF %'] = (result['dnf_p'].astype(float) * 100).round(1)
+                if has_elo:
+                    display['Elo'] = result['contested_rating'].round(0)
+                    display['Elo n'] = result['contested_rating_n'].round(0)
 
                 if has_probs and has_lambdarank:
                     # Highlight rows where the two heads disagree materially on win probability.

@@ -1,0 +1,533 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Cycling Race Predictor — Reading the Predictions</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+:root {
+  --bg: #0f1419;
+  --panel: #151c24;
+  --panel-2: #1c252f;
+  --border: #2a3642;
+  --text: #e5edf5;
+  --text-dim: #94a3b8;
+  --text-faint: #64748b;
+  --accent: #60a5fa;
+  --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Monaco, Consolas, monospace;
+
+  --c-scout: #f472b6;   /* pink — contender / multiclass head */
+  --c-book:  #34d399;   /* green — LambdaRank head */
+  --c-gap:   #fbbf24;   /* yellow — time gap */
+  --c-gc:    #22d3ee;   /* cyan — GC outlook */
+  --c-dnf:   #fb7185;   /* rose — abandon risk */
+}
+
+* { box-sizing: border-box; }
+html, body {
+  margin: 0; padding: 0;
+  background: var(--bg); color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  font-size: 15.5px; line-height: 1.6;
+}
+body { padding: 20px 36px 80px; max-width: 1200px; margin: 0 auto; }
+[id] { scroll-margin-top: 96px; }
+
+h1 { margin: 26px 0 6px; font-size: 28px; font-weight: 700; letter-spacing: -0.02em; }
+h2 { margin: 46px 0 14px; font-size: 20px; font-weight: 700; letter-spacing: -0.01em;
+     padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+h3 { margin: 0 0 6px; font-size: 15.5px; font-weight: 700; }
+p  { margin: 8px 0; }
+code, .mono { font-family: var(--mono); font-size: 12.5px; color: #e2e8f0;
+              background: #0b1118; padding: 1px 6px; border-radius: 4px;
+              border: 1px solid var(--border); }
+ul { margin: 6px 0 10px; padding-left: 20px; }
+li { margin: 4px 0; }
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+.subtitle { color: var(--text-dim); font-size: 13.5px; margin: 0 0 18px; }
+.dim { color: var(--text-dim); }
+.small { font-size: 13px; }
+
+/* ---------- Site navigation (shared) ---------- */
+.site-nav {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 4px;
+  padding: 10px 14px; margin: 0 0 8px;
+  background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
+  position: sticky; top: 12px; z-index: 50;
+}
+.site-nav .nav-brand { font-weight: 700; font-size: 13px; margin-right: 10px; }
+.site-nav a { font-size: 12.5px; color: var(--text-dim); padding: 5px 10px; border-radius: 6px; }
+.site-nav a:hover { color: var(--text); background: var(--panel-2); text-decoration: none; }
+.site-nav a.active { color: var(--text); background: var(--panel-2); border: 1px solid var(--border); }
+.site-nav .nav-updated { margin-left: auto; font-size: 11px; color: var(--text-faint);
+                         font-family: var(--mono); }
+@media (max-width: 800px) { .site-nav .nav-updated { display: none; } }
+
+/* ---------- Status chips ---------- */
+.chip { display: inline-block; font-size: 10px; font-weight: 700; text-transform: uppercase;
+        letter-spacing: 0.07em; padding: 2px 8px; border-radius: 99px; vertical-align: 2px; }
+.chip.live { background: #0d2818; color: #4ade80; border: 1px solid #1d4a2e; }
+.chip.next { background: #251d04; color: #fbbf24; border: 1px solid #4a3c10; }
+
+/* ---------- Mock prediction table ---------- */
+.mock-wrap { overflow-x: auto; margin: 16px 0 6px; }
+table.mock { border-collapse: collapse; font-size: 12px; min-width: 880px;
+             background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
+             overflow: hidden; }
+table.mock th, table.mock td { padding: 7px 10px; border-bottom: 1px solid var(--border);
+             text-align: right; white-space: nowrap; font-family: var(--mono); }
+table.mock th { background: var(--panel-2); color: var(--text-dim); font-size: 10px;
+                text-transform: uppercase; letter-spacing: 0.05em; }
+table.mock td.l, table.mock th.l { text-align: left; font-family: inherit; }
+table.mock tr.hl td { background: #2b2410; }
+table.mock tr:last-child td { border-bottom: none; }
+.col-scout { color: var(--c-scout); }
+.col-book  { color: var(--c-book); }
+.col-gap   { color: var(--c-gap); }
+.legend-row { display: flex; flex-wrap: wrap; gap: 16px; font-size: 12px;
+              color: var(--text-dim); margin: 6px 0 0; }
+.legend-row .sw { display: inline-block; width: 10px; height: 10px; border-radius: 2px;
+                  margin-right: 5px; vertical-align: -1px; }
+
+/* ---------- Column guide ---------- */
+.colguide { display: flex; flex-direction: column; gap: 10px; margin: 14px 0; }
+.colcard { background: var(--panel); border: 1px solid var(--border);
+           border-left: 4px solid var(--accent); border-radius: 10px; padding: 13px 18px; }
+.colcard.scout { border-left-color: var(--c-scout); }
+.colcard.book  { border-left-color: var(--c-book); }
+.colcard.gap   { border-left-color: var(--c-gap); }
+.colcard.gc    { border-left-color: var(--c-gc); }
+.colcard.dnf   { border-left-color: var(--c-dnf); }
+.colcard h3 .cols { font-family: var(--mono); font-size: 12.5px; color: var(--text-dim);
+                    font-weight: 400; margin-left: 8px; }
+.colcard p { font-size: 13.5px; color: var(--text-dim); margin: 5px 0; }
+.colcard p strong { color: var(--text); }
+
+/* ---------- Two-heads comparison ---------- */
+.heads2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 16px 0; }
+.head-card { background: var(--panel); border: 1px solid var(--border); border-radius: 12px;
+             padding: 16px 20px; }
+.head-card.scout { border-top: 3px solid var(--c-scout); }
+.head-card.book  { border-top: 3px solid var(--c-book); }
+.head-card h3 { font-size: 16px; }
+.head-card .tagline { font-size: 12px; color: var(--text-faint); font-style: italic; }
+.head-card ul { margin-top: 8px; }
+.head-card li { font-size: 13px; color: var(--text-dim); margin: 6px 0; }
+.head-card li strong { color: var(--text); }
+@media (max-width: 900px) { .heads2 { grid-template-columns: 1fr; } }
+
+/* ---------- Calibration strip ---------- */
+.calib { background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
+         padding: 16px 20px; margin: 14px 0; }
+.calib-bars { display: flex; flex-direction: column; gap: 10px; margin-top: 12px; }
+.calib-row { display: grid; grid-template-columns: 170px 1fr 90px; gap: 12px; align-items: center;
+             font-size: 12.5px; }
+.calib-row .lbl { color: var(--text-dim); text-align: right; }
+.bar-track { background: #0b1118; border: 1px solid var(--border); border-radius: 5px;
+             height: 18px; position: relative; }
+.bar-fill { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 4px; }
+.calib-row .val { font-family: var(--mono); font-size: 11.5px; color: var(--text-dim); }
+
+/* ---------- Odds table ---------- */
+table.odds { width: 100%; border-collapse: collapse; font-size: 13px;
+             background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
+             overflow: hidden; }
+table.odds th, table.odds td { text-align: left; padding: 9px 14px;
+             border-bottom: 1px solid var(--border); }
+table.odds th { background: var(--panel-2); color: var(--text-dim); font-size: 11px;
+                text-transform: uppercase; letter-spacing: 0.06em; }
+table.odds td.n { font-family: var(--mono); }
+table.odds tr:last-child td { border-bottom: none; }
+
+/* ---------- Do / Don't ---------- */
+.dodont { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 16px 0; }
+.dd { border-radius: 12px; padding: 16px 20px; border: 1px solid var(--border); }
+.dd.do  { background: #0e1f15; border-color: #1d4a2e; }
+.dd.dont{ background: #241114; border-color: #4a1d24; }
+.dd h3 { font-size: 14px; }
+.dd.do h3 { color: #4ade80; }
+.dd.dont h3 { color: #fb7185; }
+.dd li { font-size: 13px; color: var(--text-dim); margin: 7px 0; }
+.dd li strong { color: var(--text); }
+@media (max-width: 900px) { .dodont { grid-template-columns: 1fr; } }
+
+.note {
+  font-size: 12.5px; color: var(--text-dim);
+  background: #11161c; border-left: 2px solid var(--text-faint);
+  padding: 8px 12px; margin: 10px 0; border-radius: 0 4px 4px 0;
+}
+
+hr { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
+
+@media print {
+  body { background: white; color: black; }
+  .colcard, .head-card, .calib, .dd, table.mock, table.odds { background: white; color: black;
+    border-color: #bbb; }
+  .site-nav { display: none; }
+  h2 { border-color: #bbb; }
+  a { color: #1a4fb8; }
+}
+</style>
+</head>
+<body>
+
+<nav class="site-nav">
+  <span class="nav-brand">🚴 Race Predictor Docs</span>
+  <a href="index.html">How It Works</a>
+  <a href="predictions_guide.html" class="active">Reading the Predictions</a>
+  <a href="pipeline_overview.html">Pipeline</a>
+  <a href="race_features_reference.html">Race Features</a>
+  <a href="metrics_reference.html">Metrics Reference</a>
+  <span class="nav-updated">updated 2026-06-11</span>
+</nav>
+
+<h1>Reading the Predictions</h1>
+<p class="subtitle">
+  What every number in the prediction table means, which model produced it, how much to
+  trust it, and how the numbers become betting-style odds. Companion to
+  <a href="index.html">How It Works</a>.
+</p>
+
+<!-- =========================================================== -->
+<h2 id="table">1. The prediction table at a glance</h2>
+
+<p>
+  When you paste a race URL into the app and run a prediction, you get one row per starter,
+  sorted by predicted finishing position. Here's a condensed example with the columns
+  colour-coded by which model produced them:
+</p>
+
+<div class="mock-wrap">
+<table class="mock">
+  <thead>
+    <tr>
+      <th>Rank</th><th class="l">Rider</th><th class="l">Team</th>
+      <th>Expected Bucket</th><th class="col-gap">Time Gap (s)</th>
+      <th class="col-scout">Win %</th><th class="col-scout">Podium %</th>
+      <th class="col-scout">Top 5 %</th><th class="col-scout">Top 15 %</th>
+      <th class="col-book">LR Win %</th><th class="col-book">LR Podium %</th>
+      <th>Δ Win pp</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>1</td><td class="l">T. Pogačar</td><td class="l">UAE</td>
+      <td>1.62</td><td class="col-gap">0</td>
+      <td class="col-scout">28.4</td><td class="col-scout">52.1</td><td class="col-scout">63.0</td><td class="col-scout">85.2</td>
+      <td class="col-book">26.9</td><td class="col-book">49.8</td><td>1.5</td>
+    </tr>
+    <tr class="hl">
+      <td>2</td><td class="l">R. Evenepoel</td><td class="l">Soudal</td>
+      <td>1.94</td><td class="col-gap">14</td>
+      <td class="col-scout">19.7</td><td class="col-scout">41.3</td><td class="col-scout">55.8</td><td class="col-scout">79.4</td>
+      <td class="col-book">14.2</td><td class="col-book">36.0</td><td><strong>5.5</strong> ⚠</td>
+    </tr>
+    <tr>
+      <td>3</td><td class="l">M. van der Poel</td><td class="l">Alpecin</td>
+      <td>2.21</td><td class="col-gap">14</td>
+      <td class="col-scout">11.2</td><td class="col-scout">30.6</td><td class="col-scout">44.1</td><td class="col-scout">71.0</td>
+      <td class="col-book">12.0</td><td class="col-book">31.4</td><td>0.8</td>
+    </tr>
+    <tr>
+      <td>…</td><td class="l">…</td><td class="l"></td>
+      <td>…</td><td class="col-gap">…</td>
+      <td class="col-scout">…</td><td class="col-scout">…</td><td class="col-scout">…</td><td class="col-scout">…</td>
+      <td class="col-book">…</td><td class="col-book">…</td><td>…</td>
+    </tr>
+    <tr>
+      <td>54</td><td class="l">J. Doe</td><td class="l">DevTeam</td>
+      <td>5.07</td><td class="col-gap">512</td>
+      <td class="col-scout">0.1</td><td class="col-scout">0.4</td><td class="col-scout">1.0</td><td class="col-scout">4.6</td>
+      <td class="col-book">0.2</td><td class="col-book">0.7</td><td>0.1</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+<div class="legend-row">
+  <span><span class="sw" style="background:var(--c-scout)"></span>Scout (contender cascade)</span>
+  <span><span class="sw" style="background:var(--c-book)"></span>Bookmaker (LambdaRank)</span>
+  <span><span class="sw" style="background:var(--c-gap)"></span>Time-gap model</span>
+  <span>⚠ yellow row = the two models disagree by ≥ 2 win points</span>
+</div>
+
+<div class="colguide">
+  <div class="colcard">
+    <h3>Rank <span class="cols">predicted_rank</span></h3>
+    <p>The predicted finishing order, from a score that blends the ranking model's
+       expected finishing bucket with the predicted time gap. <strong>Treat the top of the
+       list as meaningful and the middle as fuzzy</strong>: the difference between rank 2
+       and rank 5 is real signal; the difference between rank 38 and rank 45 is noise.</p>
+  </div>
+  <div class="colcard">
+    <h3>Expected Bucket <span class="cols">expected_bucket</span></h3>
+    <p>The ranking model's raw output on a 0–7 scale, where 0 = winner, 1 = podium,
+       2 = top 5, 3 = top 15, 4 = top 30, 5 = top 50, 6 = finisher outside the top 50.
+       A value of 1.6 reads as "between a podium and a top-5 type ride". Lower is better.
+       It's the sort key behind the rank column — useful for seeing <em>how close</em>
+       neighbouring riders really are.</p>
+  </div>
+  <div class="colcard scout">
+    <h3>Win / Podium / Top 5 / Top 15 % <span class="cols">multiclass cascade</span></h3>
+    <p>The <strong>scout</strong>'s probabilities (see §2). These are cumulative: "Podium %"
+       means top-3 <em>including</em> winning, "Top 15 %" includes all of the above. Riders
+       outside the plausible-contender pool get small probabilities by construction.</p>
+  </div>
+  <div class="colcard book">
+    <h3>LR Win / LR Podium % <span class="cols">LambdaRank head</span></h3>
+    <p>The <strong>bookmaker</strong>'s view of the same two questions (see §2). These are
+       the calibrated, price-grade numbers — the ones to compare against actual
+       sportsbook odds.</p>
+  </div>
+  <div class="colcard">
+    <h3>Δ Win pp <span class="cols">|scout − bookmaker|</span></h3>
+    <p>The gap between the two win estimates, in percentage points. Rows at
+       <strong>≥ 2.0 points are highlighted yellow</strong>. A big gap isn't an error —
+       it means the two models read the race differently, and that's worth a human look:
+       the scout leans on "who wins races like this", the bookmaker on the whole field's
+       pecking order.</p>
+  </div>
+  <div class="colcard gap">
+    <h3>Time Gap (s) <span class="cols">time-gap model</span></h3>
+    <p>Expected seconds behind the winner, for riders expected to finish. Predictions are made
+       in log-space (the model is much surer about "2 minutes vs 10 minutes" than "12:10 vs
+       12:40"), so read large values as orders of magnitude, not stopwatch times. Capped
+       at one hour in training.</p>
+  </div>
+  <div class="colcard">
+    <h3>Contender flag <span class="cols">is_contender</span></h3>
+    <p>Marks the ~15 riders per race the scout actually evaluated in detail. Everyone
+       else's win/podium numbers come from the field-level fallback and are deliberately
+       conservative.</p>
+  </div>
+</div>
+
+<!-- =========================================================== -->
+<h2 id="two-heads">2. Why two probability models?</h2>
+
+<p>
+  Naming winners and pricing the field are different jobs, and optimizing one hurts the
+  other. So the system runs both and shows them side by side:
+</p>
+
+<div class="heads2">
+  <div class="head-card scout">
+    <h3>The Scout <span class="dim small">— contender cascade</span></h3>
+    <div class="tagline">"Who wins races like this one?"</div>
+    <ul>
+      <li>First narrows the field to the <strong>~15 plausible contenders</strong>, then
+          studies only them with a dedicated model.</li>
+      <li><strong>Sharpest at the very top:</strong> its #1 pick wins about
+          <strong>1 race in 4</strong> — in fields of 120–180 riders.</li>
+      <li>Probabilities are good but run slightly <em>bold</em>: it will say 28% where
+          the fair number is closer to 25%.</li>
+      <li>Use it for: who to watch, talking points, "who's the danger man".</li>
+    </ul>
+  </div>
+  <div class="head-card book">
+    <h3>The Bookmaker <span class="dim small">— LambdaRank head</span></h3>
+    <div class="tagline">"What's the fair price on every rider?"</div>
+    <ul>
+      <li>Scores the <strong>entire startlist</strong> in one pass and converts scores to
+          probabilities that sum correctly across the race.</li>
+      <li><strong>Honest percentages:</strong> across thousands of held-out predictions its
+          stated chances match observed frequencies within about 1% relative
+          (calibration ratio ≈ 1.01).</li>
+      <li>Slightly less sharp at naming the single winner than the scout.</li>
+      <li>Use it for: comparing against sportsbook odds, expected value, anything where
+          the <em>number itself</em> matters.</li>
+    </ul>
+  </div>
+</div>
+
+<div class="note">
+  <strong>Rule of thumb:</strong> read the <em>order</em> from the scout, read the
+  <em>prices</em> from the bookmaker, and pay attention wherever they disagree by more
+  than 2 points — that's where the race has a genuine open question.
+</div>
+
+<!-- =========================================================== -->
+<h2 id="calibration">3. Calibration in one minute</h2>
+
+<div class="calib">
+  <p style="margin-top:0">
+    A model is <strong>calibrated</strong> if, whenever it says "X%", the thing happens
+    X% of the time. Calibration is measured on years of races the models never trained on.
+    The <em>calibration ratio</em> below is predicted ÷ actual — 1.00 is perfect,
+    above 1.00 means overconfident (says 10%, happens less often), below means shy.
+  </p>
+  <div class="calib-bars">
+    <div class="calib-row">
+      <div class="lbl">Bookmaker (LambdaRank)</div>
+      <div class="bar-track"><div class="bar-fill" style="width:50.7%; background:var(--c-book)"></div>
+        <div class="bar-fill" style="left:50%; width:2px; background:#fff; opacity:0.7"></div></div>
+      <div class="val">≈ 1.01</div>
+    </div>
+    <div class="calib-row">
+      <div class="lbl">Scout (contender)</div>
+      <div class="bar-track"><div class="bar-fill" style="width:57%; background:var(--c-scout)"></div>
+        <div class="bar-fill" style="left:50%; width:2px; background:#fff; opacity:0.7"></div></div>
+      <div class="val">≈ 1.1 (bold)</div>
+    </div>
+    <div class="calib-row">
+      <div class="lbl">GC outlook, early race</div>
+      <div class="bar-track"><div class="bar-fill" style="width:41%; background:var(--c-gc)"></div>
+        <div class="bar-fill" style="left:50%; width:2px; background:#fff; opacity:0.7"></div></div>
+      <div class="val">≈ 0.83 (shy)</div>
+    </div>
+  </div>
+  <p class="dim small" style="margin-bottom:0">
+    White tick = perfect. These are honest, measured numbers, refreshed as the evaluation
+    framework reruns — not promises. Where a model runs hot or shy, lean on its
+    <em>ordering</em> and let the bookmaker set the price.
+  </p>
+</div>
+
+<!-- =========================================================== -->
+<h2 id="odds">4. From probabilities to odds</h2>
+
+<p>
+  The odds expander shows every probability as a price, in three formats. These are
+  <strong>fair-value odds</strong> — straight conversions with no bookmaker margin baked
+  in. If a real book offers longer odds than the fair price, the bet has positive expected
+  value <em>if you trust the model's number</em> (use the bookmaker column for that reason).
+</p>
+
+<table class="odds">
+  <thead><tr><th>Model says</th><th>Decimal</th><th>American</th><th>Fractional</th><th>Read as</th></tr></thead>
+  <tbody>
+    <tr><td>50%</td><td class="n">2.00</td><td class="n">+100</td><td class="n">1/1</td><td class="dim">Coin flip</td></tr>
+    <tr><td>25%</td><td class="n">4.00</td><td class="n">+300</td><td class="n">3/1</td><td class="dim">Strong favourite territory in cycling</td></tr>
+    <tr><td>10%</td><td class="n">10.00</td><td class="n">+900</td><td class="n">9/1</td><td class="dim">Live outsider</td></tr>
+    <tr><td>2%</td><td class="n">50.00</td><td class="n">+4900</td><td class="n">49/1</td><td class="dim">Longshot</td></tr>
+    <tr><td>≤ 0.1%</td><td class="n">999.00 (cap)</td><td class="n">—</td><td class="n">—</td><td class="dim">Displayed cap, not a real price</td></tr>
+  </tbody>
+</table>
+
+<p class="dim small">
+  Decimal odds = 1 ÷ probability (capped at 999). American: positive numbers are profit on
+  a 100 stake, negative are stake needed to win 100. Every prediction run is also written to
+  a permanent <code>prediction_log</code> so model prices can be audited against closing
+  book prices later.
+</p>
+
+<!-- =========================================================== -->
+<h2 id="gc">5. The GC Outlook (stage races only)</h2>
+
+<div class="colcard gc" style="margin: 14px 0">
+  <h3>What it is</h3>
+  <p>
+    When you predict the general classification of a stage race <em>already underway</em>,
+    a separate "GC Outlook" section appears. It re-forecasts the final GC from the
+    <strong>live race situation</strong>: current standings and time gaps, who has looked
+    strong on the road, how much racing is left, attrition, rest days. It deliberately
+    ignores reputations — a 4-minute lead with two flat stages left is nearly decisive
+    whether the leader is a superstar or a surprise.
+  </p>
+  <p>
+    <strong>Why it exists:</strong> pre-race models keep predicting from reputation even
+    when the road has already decided otherwise. Mid-race, the outlook model names the
+    eventual GC winner dramatically more often than carrying forward pre-race picks
+    (+18 percentage points in early-race tests, improving as the race goes on).
+  </p>
+  <p>
+    <strong>How to read it:</strong> trust the <em>ordering</em> and the cliff-edges (who
+    is genuinely still in contention). Early in a race its win percentages run shy
+    (calibration ≈ 0.83) — the favourite's true chance is usually a bit <em>higher</em>
+    than shown. By the final stages the numbers tighten up.
+  </p>
+</div>
+
+<!-- =========================================================== -->
+<h2 id="dnf">6. Finishing risk — the abandon model <span class="chip next">next retrain</span></h2>
+
+<div class="colcard dnf" style="margin: 14px 0">
+  <h3>What's changing</h3>
+  <p>
+    Today's probabilities largely assume the rider completes the race. A dedicated
+    <strong>abandon model</strong> (trained on 1.26M start records, of which 10.6% ended in
+    a DNF) is validated and being wired into the pricing layer. Once live, displayed prices
+    become:
+  </p>
+  <p style="font-family:var(--mono); font-size:13px; color:var(--text)">
+    P(podium) = P(podium <em>given they finish</em>) × P(they finish)
+  </p>
+  <p>
+    In backtests this matters most for <strong>one-day classics</strong> — crash-heavy
+    races where some fast finishers carry real abandon risk — and it changes little for
+    most stage-race favourites. The model separates "did not start" from "did not finish",
+    and knows each rider's abandon history, age, and how deep into a stage race they are.
+  </p>
+</div>
+
+<!-- =========================================================== -->
+<h2 id="trust">7. How good is it, really?</h2>
+
+<ul>
+  <li><strong>Winner naming:</strong> the top pick wins ~24–25% of races on held-out years
+      (random guessing in a 150-rider field: under 1%; picking the bookmakers' favourite
+      gets roughly 20–25% depending on race type — the system is competitive with the
+      market on its best surfaces and behind on others; the audit log will settle this
+      precisely over time).</li>
+  <li><strong>Price quality:</strong> the bookmaker head's probabilities are calibrated to
+      ≈ 1% relative error across win/podium markets, measured on five held-out years.</li>
+  <li><strong>Podium hit rate:</strong> the top pick lands on the podium in ~44% of races.</li>
+  <li><strong>Known soft spots:</strong> first-year neo-pros with no result history (the
+      duel-rating upgrade helps); chaotic crosswind/crash races; tactics the sheet can't
+      see (team orders, sprint trains failing); 2023 as a test year is mysteriously harder
+      than its neighbours (documented, unexplained).</li>
+</ul>
+
+<p>
+  Every upgrade must clear a five-year backtest gate on <strong>market price quality</strong>
+  (win, podium, top-5, top-15 — scored for <em>every</em> rider, so overconfident prices on
+  flops are punished). Improvements of even half a percent are rare and treated as wins;
+  most candidate ideas fail and are archived in the experiment log.
+</p>
+
+<!-- =========================================================== -->
+<h2 id="dodont">8. Sensible use</h2>
+
+<div class="dodont">
+  <div class="dd do">
+    <h3>Do</h3>
+    <ul>
+      <li><strong>Compare bookmaker-column prices to real books</strong> — that's the
+          number built for it.</li>
+      <li><strong>Mine the disagreements.</strong> Yellow rows (Δ ≥ 2pp) are the most
+          informative thing on the page.</li>
+      <li><strong>Pick reference races thoughtfully.</strong> The race fingerprint comes
+          from the editions you select; a course change makes old editions misleading.</li>
+      <li><strong>Use the GC outlook mid-race</strong> — that's exactly when pre-race
+          opinions go stale.</li>
+      <li><strong>Check the contender flag</strong> before quoting a longshot's win
+          probability.</li>
+    </ul>
+  </div>
+  <div class="dd dont">
+    <h3>Don't</h3>
+    <ul>
+      <li><strong>Don't read mid-pack ranks literally.</strong> Rank 38 vs 45 is noise;
+          buckets and probabilities carry the real information.</li>
+      <li><strong>Don't treat 999 odds as a price</strong> — it's a display cap on
+          "essentially zero".</li>
+      <li><strong>Don't expect tactics.</strong> The model prices ability and fit, not
+          team orders, weather, or a sprint train misfiring.</li>
+      <li><strong>Don't bet the scout's percentages.</strong> It's tuned to find winners,
+          and pays for that with slightly bold probabilities.</li>
+      <li><strong>Don't average the two heads yourself</strong> — a validated blend is
+          already part of the next-retrain stack.</li>
+    </ul>
+  </div>
+</div>
+
+<hr>
+<p class="subtitle">
+  Companion pages: <a href="index.html">How It Works</a> (the big picture) ·
+  <a href="pipeline_overview.html">Pipeline Overview</a> (how predictions are produced) ·
+  <a href="metrics_reference.html">Metrics Reference</a> (exact formulas, including odds
+  conversion and cumulative-probability definitions).
+</p>
+
+</body>
+</html>
