@@ -39,3 +39,10 @@ under the view toggle on index.html. Per stage:
    (`performance_eval/tour-de-france-2026/capture_results.py`), then rerun
    step 3 — the page picks up the archived results and appends the
    "After the stage" section with per-scenario scoring.
+
+`build_stage_page.py` also regenerates `stages.html` — the Tour-diary hub
+(one card per stage: scenario picks, book favourite, status chip, winner +
+reflection once settled), linked from the strip on index.html. To add a
+post-stage reflection, put a `"reflection"` field (string or list of
+paragraphs) in the stage's scenarios.json and rerun step 3 — it renders on
+both the stage page and its hub card.

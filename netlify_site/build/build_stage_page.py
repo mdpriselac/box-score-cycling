@@ -276,6 +276,27 @@ results capture runs after the finish.</p>
 </section>"""
 
 
+def reflection_html(config):
+    refl = config.get("reflection")
+    if not refl:
+        return ""
+    paras = [refl] if isinstance(refl, str) else list(refl)
+    body = "".join(f"<p>{esc(p)}</p>" for p in paras)
+    return f"""<section>
+<p class="kicker">Reflection</p>
+<h2>What we make of it</h2>
+{body}
+</section>"""
+
+
+def all_stage_entries():
+    """(config, scenario JSONs, results-or-None) for every configured stage."""
+    entries = []
+    for cfg in sorted(PREDICTIONS_ROOT.glob("stage_*/scenarios.json")):
+        entries.append(load_stage(cfg))
+    return entries
+
+
 def stage_strip():
     """Rebuild the stage-links strip from every generated stage page."""
     items = []
@@ -289,8 +310,116 @@ def stage_strip():
             items.append(f'<a href="stage{n:02d}.html">Stage {n}</a>{mark}')
     if not items:
         return ""
+    lead = ('<a href="stages.html"><b>Stage-by-stage predictions '
+            '&amp; reflections →</b></a>')
     return (STRIP_CSS + '\n<div class="stage-strip"><b style="color:var(--ink)">'
-            'Daily stage predictions:</b> ' + " · ".join(items) + "</div>")
+            'Tour diary:</b> ' + lead + " · " + " · ".join(items) + "</div>")
+
+
+def hub_card(config, scen, results):
+    n = int(config["stage"])
+    picks = []
+    for key, data in scen.items():
+        spec = config["scenarios"][key]
+        top = max(data["riders"], key=lambda r: r["blend_win_p"] or 0)
+        picks.append(
+            f'<div class="pickline"><span class="scen">{esc(spec.get("short", key))}</span>'
+            f'{esc(top["rider_name"])} <b>{pct(top["blend_win_p"])}</b></div>')
+
+    any_scen = next(iter(scen.values()))
+    priced = [r for r in any_scen["riders"] if r.get("book_odds")]
+    fav = min(priced, key=lambda r: r["book_odds"]) if priced else None
+    fav_html = (f'<div class="pickline"><span class="scen">Book favourite</span>'
+                f'{esc(fav["rider_name"])} <b>{fav["book_odds"]:.2f}</b> '
+                f'({pct(fav["book_devig"])} devig)</div>' if fav else "")
+
+    if results:
+        finishers = [r for r in results["results"]
+                     if str(r.get("place", "")).isdigit()]
+        winner = min(finishers, key=lambda r: int(r["place"])) if finishers else None
+        status = (f'<span class="chip done-chip">Won by {esc(winner["name"])}</span>'
+                  if winner else '<span class="chip">results in</span>')
+    else:
+        status = '<span class="chip wait-chip">awaiting results</span>'
+
+    refl = config.get("reflection")
+    refl_html = ""
+    if refl and results:
+        paras = [refl] if isinstance(refl, str) else list(refl)
+        refl_html = ('<div class="refl">' +
+                     "".join(f"<p>{esc(p)}</p>" for p in paras) + "</div>")
+
+    return f"""<div class="card stage-card">
+<div class="stage-head"><h3><a href="stage{n:02d}.html">Stage {n} — {esc(config.get('date', ''))}</a></h3>{status}</div>
+{"".join(picks)}
+{fav_html}
+{refl_html}
+<div class="note"><a href="stage{n:02d}.html">Full board, all scenarios →</a></div>
+</div>"""
+
+
+HUB_EXTRA_CSS = """
+  .stage-card{margin:0 0 16px}
+  .stage-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:6px}
+  .stage-head h3{margin:0;font-size:18px}
+  .stage-head a{color:var(--ink);text-decoration:none;border-bottom:1px solid var(--line)}
+  .chip{font-family:var(--sans);font-size:11.5px;font-weight:600;letter-spacing:.05em;
+        text-transform:uppercase;padding:2px 9px;border-radius:99px;border:1px solid var(--line);color:var(--slate)}
+  .done-chip{background:var(--green-soft);color:var(--green);border-color:var(--green-soft)}
+  .wait-chip{background:var(--yellow-soft);border-color:var(--yellow-soft);color:#7a6410}
+  .pickline{font-family:var(--sans);font-size:14px;padding:3px 0;font-variant-numeric:tabular-nums}
+  .pickline .scen{display:inline-block;min-width:170px;padding-right:12px;
+                  color:var(--slate);font-size:12.5px;
+                  font-weight:600;letter-spacing:.04em;text-transform:uppercase}
+  .refl{border-left:3px solid var(--yellow);padding:2px 0 2px 14px;margin:12px 0 4px}
+  .refl p{font-size:15.5px;margin:0 0 8px}
+  .note a{color:var(--blue);text-decoration:none;font-family:var(--sans);font-size:13px}
+"""
+
+
+def build_stages_hub():
+    entries = [e for e in all_stage_entries() if e[1]]
+    if not entries:
+        return
+    settled = sum(1 for _, _, res in entries if res)
+    cards = "".join(hub_card(c, s, r) for c, s, r in entries)
+    page = f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TdF 2026 · Stage-by-stage predictions &amp; reflections</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚴</text></svg>">
+<style>{CSS}{HUB_EXTRA_CSS}</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div class="eyebrow">Cycling race predictor · Tour de France 2026</div>
+  <h1>The Tour, stage by stage</h1>
+  <p class="standfirst">Every stage gets priced the morning before under several
+  course readings, compared with the bookmaker's line, and settled against the
+  result — with a reflection on what the model got right and why.</p>
+  <div class="meta">
+    <span><b>{len(entries)}</b>&nbsp;stages predicted</span>
+    <span><b>{settled}</b>&nbsp;settled</span>
+    <span>updated&nbsp;<b>{datetime.now().strftime('%Y-%m-%d')}</b></span>
+  </div>
+  <p class="backlink"><a href="index.html">← System overview, season boards &amp; the full Tour views</a></p>
+</header>
+<section>
+{cards}
+</section>
+<div class="footer">Predictions logged pre-stage to prediction_log; odds from the
+Kambi (Unibet) archive; results from FirstCycling. Full methodology on the
+<a href="index.html">main page</a>.</div>
+</div>
+</body>
+</html>
+"""
+    out = SITE_DIR / "stages.html"
+    out.write_text(page)
+    print(f"Wrote {out} ({out.stat().st_size/1024:.0f} KB)")
 
 
 def inject_strip():
@@ -364,6 +493,8 @@ def main():
 
 {results_section(config, scen, results)}
 
+{reflection_html(config)}
+
 <div class="footer">Generated {datetime.now().strftime('%Y-%m-%d %H:%M')} ·
 prediction JSONs in performance_eval/tour-de-france-2026/predictions/stage_{n:02d}/ ·
 odds archive {esc(book_note)} · all runs logged to prediction_log for settlement.</div>
@@ -375,6 +506,7 @@ odds archive {esc(book_note)} · all runs logged to prediction_log for settlemen
     out.write_text(page)
     print(f"Wrote {out} ({out.stat().st_size/1024:.0f} KB)")
 
+    build_stages_hub()
     inject_strip()
     print("Refreshed stage strip in predictor-architecture.html")
     runpy.run_path(str(HERE / "make_netlify.py"))
