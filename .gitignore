@@ -117,7 +117,13 @@ models/history/
 models/production_backup_*/
 
 #performance evals
-performance_eval/
+performance_eval/*
+# ...except the TdF 2026 daily capture scripts (data snapshots stay local)
+!performance_eval/tour-de-france-2026/
+performance_eval/tour-de-france-2026/*
+!performance_eval/tour-de-france-2026/capture_odds.py
+!performance_eval/tour-de-france-2026/capture_results.py
+!performance_eval/tour-de-france-2026/README.md
 # Database backups (multi-GB copies)
 cycling_project/webscrape_tools/database/backups/
 
