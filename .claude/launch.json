@@ -1,0 +1,23 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "docs",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-m", "http.server", "8407", "--directory", "docs"],
+      "port": 8407
+    },
+    {
+      "name": "scratchpad",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-m", "http.server", "8409", "--directory", "/tmp/scratchpad"],
+      "port": 8409
+    },
+    {
+      "name": "netlify-site",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-m", "http.server", "8411", "--directory", "netlify_site"],
+      "port": 8411
+    }
+  ]
+}
