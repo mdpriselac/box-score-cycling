@@ -1,0 +1,1153 @@
+<meta charset="utf-8">
+<title>How the Cycling Race Predictor Prices a Race</title>
+<style>
+  :root{
+    --ink:#22272F;
+    --paper:#FBFAF7;
+    --slate:#5C6470;
+    --line:#E5E3DB;
+    --yellow:#F5C518;
+    --yellow-soft:#FBF0C4;
+    --blue:#3E6B8F;
+    --blue-soft:#E7EEF4;
+    --green:#47705A;
+    --green-soft:#E6EEE9;
+    --card:#FFFFFF;
+    --mono:ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,monospace;
+    --sans:"Avenir Next","Avenir","Segoe UI",-apple-system,BlinkMacSystemFont,"Helvetica Neue",sans-serif;
+    --serif:"Charter","Iowan Old Style","Palatino Linotype",Georgia,serif;
+  }
+  html{scroll-behavior:smooth}
+  @media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:var(--serif);
+    font-size:17px;
+    line-height:1.65;
+    margin:0;
+  }
+  .wrap{max-width:1020px;margin:0 auto;padding:0 24px 96px}
+  .col{max-width:680px;margin-left:auto;margin-right:auto}
+  .wide{max-width:1020px;margin-left:auto;margin-right:auto}
+  .col .wide{
+    width:min(1020px, calc(100vw - 48px));
+    max-width:none;
+    position:relative;
+    left:50%;
+    transform:translateX(-50%);
+  }
+
+  /* ---------- header ---------- */
+  header{padding:64px 0 8px}
+  .eyebrow{
+    font-family:var(--sans);font-size:12px;font-weight:600;
+    letter-spacing:.14em;text-transform:uppercase;color:var(--slate);
+    display:flex;align-items:center;gap:10px;
+  }
+  .eyebrow::before{content:"";display:inline-block;width:26px;height:8px;background:var(--yellow)}
+  h1{
+    font-family:var(--sans);font-weight:700;font-size:clamp(30px,5vw,46px);
+    line-height:1.08;letter-spacing:-.015em;margin:.5em 0 .35em;text-wrap:balance;
+  }
+  .standfirst{font-size:20px;line-height:1.55;color:var(--slate);max-width:640px;margin:0 0 20px}
+  .meta{
+    font-family:var(--sans);font-size:13px;color:var(--slate);
+    display:flex;flex-wrap:wrap;gap:6px 22px;padding:14px 0;
+    border-top:1px solid var(--line);border-bottom:1px solid var(--line);
+  }
+  .meta b{color:var(--ink);font-weight:600;font-variant-numeric:tabular-nums}
+
+  /* ---------- section furniture ---------- */
+  section{margin-top:72px}
+  .kicker{
+    font-family:var(--sans);font-size:12px;font-weight:600;
+    letter-spacing:.14em;text-transform:uppercase;color:var(--blue);margin:0 0 6px;
+  }
+  h2{
+    font-family:var(--sans);font-weight:700;font-size:27px;letter-spacing:-.01em;
+    line-height:1.15;margin:0 0 14px;text-wrap:balance;
+  }
+  h3{font-family:var(--sans);font-weight:600;font-size:18px;margin:28px 0 8px}
+  p{margin:0 0 16px}
+  .divider{margin:72px auto 0;max-width:1020px;display:block}
+  .divider svg{display:block;width:100%;height:34px}
+  a{color:var(--blue)}
+  code{
+    font-family:var(--mono);font-size:.86em;background:#F1EFE8;
+    padding:1px 5px;border-radius:3px;white-space:nowrap;
+  }
+  .note{
+    font-family:var(--sans);font-size:14.5px;line-height:1.55;color:var(--slate);
+    border-left:3px solid var(--yellow);padding:4px 0 4px 16px;margin:22px 0;
+  }
+  .note b{color:var(--ink)}
+
+  /* ---------- diagram ---------- */
+  .diagram-frame{
+    background:var(--card);border:1px solid var(--line);border-radius:6px;
+    padding:20px 12px 8px;margin:26px 0 10px;overflow-x:auto;
+  }
+  .diagram-frame svg{display:block;min-width:760px;width:100%;height:auto}
+  .caption{
+    font-family:var(--sans);font-size:13.5px;color:var(--slate);
+    line-height:1.5;margin:8px 2px 0;
+  }
+
+  /* ---------- head cards ---------- */
+  .cards{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:26px}
+  @media(max-width:760px){.cards{grid-template-columns:1fr}}
+  .card{
+    background:var(--card);border:1px solid var(--line);border-radius:6px;
+    padding:20px 22px 18px;display:flex;flex-direction:column;gap:8px;
+  }
+  .card h4{
+    font-family:var(--sans);font-weight:700;font-size:16.5px;margin:0;
+    display:flex;align-items:baseline;justify-content:space-between;gap:10px;
+  }
+  .card .q{font-style:italic;color:var(--slate);font-size:15.5px;line-height:1.5}
+  .card p{font-size:15px;line-height:1.6;margin:0}
+  .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:2px}
+  .chip{
+    font-family:var(--sans);font-size:11px;font-weight:600;letter-spacing:.05em;
+    text-transform:uppercase;padding:3px 9px;border-radius:99px;white-space:nowrap;
+  }
+  .chip.pop-full{background:var(--blue-soft);color:var(--blue)}
+  .chip.pop-top15{background:var(--yellow-soft);color:#8a6d00}
+  .chip.pop-starters{background:var(--green-soft);color:var(--green)}
+  .chip.pop-state{background:#EFE9F5;color:#5E4B7B}
+  .chip.obj{background:#F1EFE8;color:var(--slate)}
+
+  /* ---------- tables ---------- */
+  .table-frame{overflow-x:auto;border:1px solid var(--line);border-radius:6px;background:var(--card);margin:24px 0 8px}
+  table{border-collapse:collapse;width:100%;font-family:var(--sans);font-size:14.5px;line-height:1.5}
+  th{
+    text-align:left;font-size:11.5px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;
+    color:var(--slate);padding:12px 16px 10px;border-bottom:2px solid var(--ink);white-space:nowrap;
+  }
+  td{padding:10px 16px;border-bottom:1px solid var(--line);vertical-align:top}
+  tr:last-child td{border-bottom:none}
+  td.mono{font-family:var(--mono);font-size:13px;white-space:nowrap}
+  td .tag{
+    font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;
+    padding:2px 8px;border-radius:99px;white-space:nowrap;
+  }
+  .tag.t-rank{background:#F1EFE8;color:var(--slate)}
+  .tag.t-mc{background:var(--yellow-soft);color:#8a6d00}
+  .tag.t-lr{background:var(--blue-soft);color:var(--blue)}
+  .tag.t-dnf{background:var(--green-soft);color:var(--green)}
+  .tag.t-mix{background:#EFE9F5;color:#5E4B7B}
+
+  /* ---------- pricing steps ---------- */
+  .steps{counter-reset:step;margin:26px 0 0;display:flex;flex-direction:column;gap:0}
+  .step{
+    display:grid;grid-template-columns:56px 1fr;gap:0 18px;position:relative;
+    padding:0 0 30px;
+  }
+  .step::before{
+    counter-increment:step;content:counter(step);
+    font-family:var(--sans);font-weight:700;font-size:17px;
+    width:40px;height:40px;border-radius:50%;
+    background:var(--ink);color:var(--yellow);
+    display:flex;align-items:center;justify-content:center;
+  }
+  .step:not(:last-child)::after{
+    content:"";position:absolute;left:19.5px;top:44px;bottom:4px;width:1px;background:var(--line);
+  }
+  .step h4{font-family:var(--sans);font-size:16.5px;font-weight:700;margin:8px 0 6px;grid-column:2;grid-row:1}
+  .step div{grid-column:2}
+  .step p{font-size:15.5px;margin:0 0 8px}
+  .formula{
+    font-family:var(--mono);font-size:13.5px;background:#F1EFE8;border-radius:4px;
+    padding:10px 14px;margin:6px 0 10px;overflow-x:auto;white-space:nowrap;
+  }
+
+  /* ---------- two-column compare ---------- */
+  .compare{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin:24px 0}
+  @media(max-width:700px){.compare{grid-template-columns:1fr}}
+  .compare .box{border-radius:6px;padding:18px 20px;font-family:var(--sans);font-size:14.5px;line-height:1.55}
+  .compare .box h4{margin:0 0 6px;font-size:15px;font-weight:700}
+  .compare .box p{margin:0;font-family:var(--serif);font-size:15px}
+  .box.mc{background:var(--yellow-soft)}
+  .box.lr{background:var(--blue-soft)}
+
+  /* ---------- footer ---------- */
+  footer{
+    margin-top:88px;border-top:1px solid var(--line);padding-top:22px;
+    font-family:var(--sans);font-size:13px;color:var(--slate);line-height:1.6;
+  }
+
+  /* ---------- view toggle ---------- */
+  .toggle-row{
+    display:flex;flex-wrap:wrap;align-items:center;gap:14px;
+    margin:26px auto 0;max-width:680px;
+  }
+  .toggle{
+    display:inline-flex;border:1px solid var(--ink);border-radius:99px;
+    padding:3px;background:var(--card);
+  }
+  .toggle button{
+    font-family:var(--sans);font-size:13.5px;font-weight:600;letter-spacing:.02em;
+    border:none;background:transparent;color:var(--slate);
+    padding:7px 18px;border-radius:99px;cursor:pointer;
+  }
+  .toggle button[aria-pressed="true"]{background:var(--ink);color:var(--yellow)}
+  .toggle button:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+  @media(max-width:680px){
+    .toggle{flex-wrap:wrap;border-radius:14px;justify-content:center}
+    .toggle button{padding:7px 12px}
+  }
+  .toggle-hint{font-family:var(--sans);font-size:12.5px;color:var(--slate)}
+  .toggle-hint code{white-space:nowrap}
+
+  /* ---------- plain view ---------- */
+  .plain-steps{
+    display:grid;grid-template-columns:repeat(4,1fr);gap:10px;
+    margin:26px 0 8px;font-family:var(--sans);
+  }
+  @media(max-width:760px){.plain-steps{grid-template-columns:1fr 1fr}}
+  .pstep{
+    background:var(--card);border:1px solid var(--line);border-radius:6px;
+    padding:14px 16px;position:relative;
+  }
+  .pstep .n{
+    font-weight:700;font-size:12px;color:#8a6d00;background:var(--yellow-soft);
+    width:22px;height:22px;border-radius:50%;display:flex;align-items:center;
+    justify-content:center;margin-bottom:8px;
+  }
+  .pstep h5{font-size:14px;font-weight:700;margin:0 0 4px}
+  .pstep p{font-size:12.5px;line-height:1.5;color:var(--slate);margin:0}
+  .card .aka{
+    font-family:var(--sans);font-size:11px;font-weight:600;letter-spacing:.07em;
+    text-transform:uppercase;color:var(--slate);opacity:.75;white-space:nowrap;
+  }
+  .example{
+    background:var(--card);border:1px solid var(--line);border-left:4px solid var(--yellow);
+    border-radius:6px;padding:22px 26px;margin:26px 0;
+  }
+  .example h4{font-family:var(--sans);font-size:16px;font-weight:700;margin:0 0 12px}
+  .example ol{margin:0;padding-left:20px;font-size:15.5px;line-height:1.65}
+  .example li{margin-bottom:10px}
+  .example li:last-child{margin-bottom:0}
+  .example .num{font-family:var(--mono);font-size:.9em;background:#F1EFE8;padding:1px 5px;border-radius:3px;white-space:nowrap}
+
+  /* ---------- TdF 2026 view ---------- */
+  .tdf-scenario{margin-top:56px}
+  .tdf-h{
+    font-family:var(--sans);font-weight:700;font-size:21px;margin:0 0 8px;
+    padding-top:18px;border-top:2px solid var(--ink);
+  }
+  .tdf-blurb{font-size:15.5px;color:var(--slate);margin:0 0 6px}
+  .tdf-grid{display:grid;grid-template-columns:300px 1fr;gap:22px;margin-top:16px;align-items:start}
+  .tdf-grid > *{min-width:0}
+  @media(max-width:860px){.tdf-grid{grid-template-columns:1fr}}
+  .tdf-side{
+    background:var(--card);border:1px solid var(--line);border-radius:6px;
+    padding:16px 18px;font-family:var(--sans);
+  }
+  .tdf-side-h{
+    font-size:11px;font-weight:600;letter-spacing:.11em;text-transform:uppercase;
+    color:var(--slate);margin:0 0 10px;
+  }
+  .pbars{display:flex;flex-direction:column;gap:5px}
+  .pbar-row{display:grid;grid-template-columns:74px 1fr 34px;gap:8px;align-items:center}
+  .pbar-label{font-size:11.5px;color:var(--slate)}
+  .pbar{height:8px;background:#F1EFE8;border-radius:99px;overflow:hidden}
+  .pbar-fill{display:block;height:100%;background:#B9BDB1;border-radius:99px}
+  .pbar-fill.dom{background:var(--yellow)}
+  .pbar-val{font-family:var(--mono);font-size:10.5px;color:var(--slate);text-align:right;font-variant-numeric:tabular-nums}
+  .tdf-meta{
+    display:flex;flex-direction:column;gap:3px;margin-top:12px;
+    font-size:12px;color:var(--slate);
+  }
+  .tdf-meta b{color:var(--ink);font-weight:600}
+  .refchips{display:flex;flex-wrap:wrap;gap:5px}
+  .refchip{
+    font-size:11px;font-weight:600;background:#F1EFE8;color:var(--slate);
+    padding:3px 9px;border-radius:99px;white-space:nowrap;
+  }
+  .tdf-tf{margin:0}
+  .tdf-table td,.tdf-table th{padding:8px 10px}
+  .tdf-table td.num,.tdf-table th.num{
+    text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap;
+  }
+  .tdf-table td.num{font-family:var(--mono);font-size:12.5px}
+  .tdf-table td.num.hl{background:var(--yellow-soft);font-weight:600}
+  .tdf-table td.rk{color:var(--slate);font-size:12px;font-variant-numeric:tabular-nums}
+  .tdf-table td.nm{font-weight:600;min-width:150px}
+  .tdf-table .tm{display:block;font-weight:400;font-size:11px;color:var(--slate)}
+  .tdf-table td.sc{font-size:12px;color:var(--slate)}
+  .sidechip{font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;padding:2px 9px;border-radius:99px;white-space:nowrap}
+  .side-cascade{background:var(--yellow-soft);color:#8a6d00}
+  .side-lr{background:var(--blue-soft);color:var(--blue)}
+  td.edge-pos{background:var(--green-soft);color:var(--green);font-weight:600}
+  td.edge-neg{background:#F5E4E1;color:#96544A;font-weight:600}
+  .miniboards{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+  @media(max-width:900px){.miniboards{grid-template-columns:1fr 1fr}}
+  @media(max-width:620px){.miniboards{grid-template-columns:1fr}}
+  .miniboard{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:12px 14px}
+  .miniboard table{font-size:13px}
+  .miniboard td,.miniboard th{padding:5px 8px}
+  .miniboard .tdf-side-h{margin-bottom:6px}
+</style>
+
+<div class="wrap">
+
+<header class="col">
+  <div class="eyebrow">Cycling Race Predictor · System overview</div>
+  <h1>How the model prices a bike race</h1>
+  <p class="standfirst">Seven LightGBM heads, one pricing layer, and a decade of result sheets — a tour of every number the prediction app shows, what each one actually measures, and how they fit together.</p>
+  <div class="meta">
+    <span><b>643K</b>&nbsp;rider-race training rows</span>
+    <span><b>5,724</b>&nbsp;competitions, 2016–2026</span>
+    <span><b>141</b>&nbsp;features per rider</span>
+    <span><b>7</b>&nbsp;model heads</span>
+  </div>
+</header>
+
+<div class="toggle-row">
+  <div class="toggle" role="group" aria-label="Choose a version">
+    <button type="button" id="btn-tech" aria-pressed="true" onclick="setView('tech')">Technical version</button>
+    <button type="button" id="btn-plain" aria-pressed="false" onclick="setView('plain')">Plain-English version</button>
+    <button type="button" id="btn-tdf" aria-pressed="false" onclick="setView('tdf')">Tour de France 2026</button>
+    <button type="button" id="btn-books" aria-pressed="false" onclick="setView('books')">vs the Books</button>
+    <button type="button" id="btn-heads" aria-pressed="false" onclick="setView('heads')">Head vs Head</button>
+  </div>
+  <span class="toggle-hint">Direct links: <code>#plain</code> (friendly version), <code>#tdf</code> (Tour predictions), <code>#books</code> (model vs bookmakers), <code>#heads</code> (how the heads disagree).</span>
+</div>
+
+<!-- STAGES:START -->
+<style>
+.stage-strip{max-width:1020px;margin:10px auto 0;font-family:var(--sans);
+  font-size:13px;color:var(--slate);display:flex;flex-wrap:wrap;gap:6px 14px;
+  align-items:center;justify-content:center}
+.stage-strip a{color:var(--blue);text-decoration:none;border-bottom:1px solid var(--blue-soft);font-weight:600}
+.stage-strip .done{color:var(--green)}
+</style>
+<div class="stage-strip"><b style="color:var(--ink)">Daily stage predictions:</b> <a href="stage02.html">Stage 2</a></div>
+<!-- STAGES:END -->
+
+<!-- ================= HEADS VIEW ================= -->
+<div id="view-heads" hidden>
+<!-- HEADS:BEGIN -->
+<section class="col">
+  <p class="kicker">Same field, seven opinions</p>
+  <h2>How the heads disagree with each other</h2>
+  <p>Every head saw identical inputs on 3 July — the same 184 riders, the same form, the same course profiles. Whatever differs between their outputs is pure architecture: what each head was trained to predict, over which population, with which loss. The Tour runs give us seven parallel experiments, and for GC the devigged book acts as an outside referee.</p>
+</section>
+
+<section class="col tdf-scenario">
+  <h3 class="tdf-h">Finding 1 — nobody here is as sure as the market</h3>
+  <p class="tdf-blurb">"Effective contenders" = exp(entropy) of a win book: how many riders meaningfully share it. Top-3 % = probability mass on the three favorites.</p>
+  <div class="wide"><div class="table-frame tdf-tf"><table class="tdf-table">
+<thead><tr><th>Scenario</th>
+<th class="num">Cascade top-3&nbsp;%</th><th class="num" title="exp(entropy) of the normalized win book — how many riders effectively share it">Cascade eff.&nbsp;contenders</th>
+<th class="num">LR top-3&nbsp;%</th><th class="num">LR eff.&nbsp;contenders</th>
+<th class="num">Book top-3&nbsp;%</th><th class="num">Book eff.&nbsp;contenders</th></tr></thead>
+<tbody><tr><td class="nm">GC</td><td class="num">65</td><td class="num">10.8</td><td class="num">60</td><td class="num">10.9</td><td class="num hl">84</td><td class="num hl">4.4</td></tr><tr><td class="nm">Flat sprint</td><td class="num">78</td><td class="num">7.8</td><td class="num">67</td><td class="num">10.8</td><td class="num">–</td><td class="num">–</td></tr><tr><td class="nm">Reduced sprint</td><td class="num">68</td><td class="num">10.6</td><td class="num">57</td><td class="num">14.8</td><td class="num">–</td><td class="num">–</td></tr><tr><td class="nm">Punchy</td><td class="num">59</td><td class="num">15.3</td><td class="num">56</td><td class="num">15.0</td><td class="num">–</td><td class="num">–</td></tr><tr><td class="nm">Mountain</td><td class="num">58</td><td class="num">16.9</td><td class="num">55</td><td class="num">14.8</td><td class="num">–</td><td class="num">–</td></tr><tr><td class="nm">TT ~30 min</td><td class="num">62</td><td class="num">13.4</td><td class="num">59</td><td class="num">12.0</td><td class="num">–</td><td class="num">–</td></tr><tr><td class="nm">Queen stage</td><td class="num">57</td><td class="num">17.4</td><td class="num">52</td><td class="num">17.7</td><td class="num">–</td><td class="num">–</td></tr></tbody></table></div></div>
+  <p style="margin-top:14px">The headline surprise: the two heads' famous disagreement mostly <em>isn't about shape</em>. Force the cascade's quotes into a coherent book (they sum to 1.65 on GC — it's a per-rider conditional head, not a book) and it spreads the race across ~11 effective contenders, almost exactly like LambdaRank. The bookmaker spreads it across <strong>4.4</strong>. The cascade's per-rider quote on Pogačar (62.7%) matches the book's 63.0% — but it achieves that while also quoting everyone else generously, which a coherent book can't do. So the deep systematic pattern is not "cascade sharp, LR flat"; it's <strong>both heads hedge harder than the market</strong>, and the cascade hides it in an inflated book.</p>
+</section>
+
+<section class="col tdf-scenario">
+  <h3 class="tdf-h">Finding 2 — where our probability mass goes instead</h3>
+  <p class="tdf-blurb">GC win probability, grouped by the book's own odds bands (all books normalized over the same 40 priced riders).</p>
+  <div class="wide"><div class="table-frame tdf-tf"><table class="tdf-table">
+<thead><tr><th>Odds band</th><th class="num">Book&nbsp;%</th>
+<th class="num">Cascade&nbsp;%</th><th class="num">LR&nbsp;%</th><th class="num">Blend&nbsp;%</th></tr></thead>
+<tbody><tr><td class="nm">Favorites (odds &lt; 10)<span class="tm">2 riders</span></td><td class="num hl">78.6</td><td class="num">53.5</td><td class="num">47.1</td><td class="num">48.9</td></tr><tr><td class="nm">Contenders (10–50)<span class="tm">4 riders</span></td><td class="num hl">13.0</td><td class="num">32.1</td><td class="num">36.2</td><td class="num">35.0</td></tr><tr><td class="nm">Longshots (51–200)<span class="tm">4 riders</span></td><td class="num hl">3.7</td><td class="num">3.2</td><td class="num">6.6</td><td class="num">5.6</td></tr><tr><td class="nm">Extreme (&gt; 200)<span class="tm">30 riders</span></td><td class="num hl">4.7</td><td class="num">11.2</td><td class="num">10.1</td><td class="num">10.4</td></tr></tbody></table></div></div>
+  <p style="margin-top:14px">Every head makes the same two transfers, in the same direction: out of the top two favorites (book 78.6%, ours ~47–54%) and into the 10–50 band and the extreme tail. The middle-band excess is mostly the <em>information gap</em> — Evenepoel and Lipowitz live there, and our heads don't know what the market knows. The tail excess (11% vs 4.7% on 200/1+ shots) is the models' trained caution: three-week races have delivered enough chaos in the training data that no head will zero out 30 riders the way a bookmaker will. Note how uniform the three columns are — this is a property of the <em>stack</em>, not of any one head.</p>
+</section>
+
+<section class="col tdf-scenario">
+  <h3 class="tdf-h">Finding 3 — when the heads argue, the market referees</h3>
+  <p class="tdf-blurb">The ten biggest cascade-vs-LambdaRank gaps on GC, with the book's verdict on each.</p>
+  <div class="wide"><div class="table-frame tdf-tf"><table class="tdf-table">
+<thead><tr><th>Rider</th><th class="num">Book&nbsp;%&nbsp;(devig)</th>
+<th class="num" title="Cascade win book normalized to sum to 1 over the 40 priced riders">Cascade&nbsp;%</th>
+<th class="num">LR&nbsp;%</th><th>Book sides with</th></tr></thead>
+<tbody><tr><td class="nm">Pogacar Tadej<span class="tm">book odds 1.3</span></td><td class="num hl">63.0</td><td class="num">39.6</td><td class="num">34.5</td><td class="sc"><span class="sidechip side-cascade">Cascade</span></td></tr><tr><td class="nm">del Toro Isaac<span class="tm">book odds 26</span></td><td class="num hl">3.1</td><td class="num">2.3</td><td class="num">5.3</td><td class="sc"><span class="sidechip side-cascade">Cascade</span></td></tr><tr><td class="nm">Ayuso Juan<span class="tm">book odds 51</span></td><td class="num hl">1.6</td><td class="num">2.0</td><td class="num">3.8</td><td class="sc"><span class="sidechip side-cascade">Cascade</span></td></tr><tr><td class="nm">Vingegaard Jonas<span class="tm">book odds 5.25</span></td><td class="num hl">15.6</td><td class="num">13.9</td><td class="num">12.6</td><td class="sc"><span class="sidechip side-cascade">Cascade</span></td></tr><tr><td class="nm">Lipowitz Florian<span class="tm">book odds 41</span></td><td class="num hl">2.0</td><td class="num">9.3</td><td class="num">10.4</td><td class="sc"><span class="sidechip side-cascade">Cascade</span></td></tr><tr><td class="nm">van der Poel Mathieu<span class="tm">book odds 2001</span></td><td class="num hl">0.0</td><td class="num">1.1</td><td class="num">0.2</td><td class="sc"><span class="sidechip side-lr">LambdaRank</span></td></tr><tr><td class="nm">Pidcock Tom<span class="tm">book odds 151</span></td><td class="num hl">0.5</td><td class="num">0.4</td><td class="num">1.1</td><td class="sc"><span class="sidechip side-cascade">Cascade</span></td></tr><tr><td class="nm">Martinez Lenny<span class="tm">book odds 201</span></td><td class="num hl">0.4</td><td class="num">1.2</td><td class="num">0.6</td><td class="sc"><span class="sidechip side-lr">LambdaRank</span></td></tr><tr><td class="nm">Johannessen Tobias Halland<span class="tm">book odds 81</span></td><td class="num hl">1.0</td><td class="num">0.3</td><td class="num">0.8</td><td class="sc"><span class="sidechip side-lr">LambdaRank</span></td></tr><tr><td class="nm">McNulty Brandon<span class="tm">book odds 801</span></td><td class="num hl">0.1</td><td class="num">0.8</td><td class="num">0.3</td><td class="sc"><span class="sidechip side-lr">LambdaRank</span></td></tr></tbody></table></div></div>
+  <p style="margin-top:14px">Score it across the whole market and the split is clean: among favorites and contenders (odds ≤ 50) the book sides with the <strong>cascade 5 times out of 6</strong>; among longshots it sides with <strong>LambdaRank 17 times out of 34</strong>. That is the two-head design thesis — sharp head for the top, calibrated head for the field — endorsed by an independent market. It's also exactly the split the pricing layer already encodes: the corrector fixes the cascade at the top, while the blend leans 80% on LambdaRank everywhere else.</p>
+</section>
+
+<section class="col tdf-scenario">
+  <h3 class="tdf-h">Finding 4 — the heads agree on <em>who</em>, argue about <em>how much</em></h3>
+  <p class="tdf-blurb">Rank correlation (Spearman) between heads, per scenario. 1.00 = identical ordering.</p>
+  <div class="wide"><div class="table-frame tdf-tf"><table class="tdf-table">
+<thead><tr><th>Scenario</th><th class="num" title="Rank correlation between the two probability heads">Cascade&nbsp;~&nbsp;LR</th>
+<th class="num" title="Rank correlation between the bucket head and the time-gap head">Bucket&nbsp;~&nbsp;Stopwatch</th>
+<th class="num" title="Rank correlation between cascade win prob and contested Elo">Cascade&nbsp;~&nbsp;Elo</th></tr></thead>
+<tbody><tr><td class="nm">GC</td><td class="num">0.96</td><td class="num">0.87</td><td class="num">0.41</td></tr><tr><td class="nm">Flat sprint</td><td class="num">0.92</td><td class="num hl">0.30</td><td class="num">0.42</td></tr><tr><td class="nm">Reduced sprint</td><td class="num">0.91</td><td class="num hl">0.23</td><td class="num">0.56</td></tr><tr><td class="nm">Punchy</td><td class="num">0.95</td><td class="num">0.89</td><td class="num">0.52</td></tr><tr><td class="nm">Mountain</td><td class="num">0.95</td><td class="num">0.96</td><td class="num">0.40</td></tr><tr><td class="nm">TT ~30 min</td><td class="num">0.92</td><td class="num">0.94</td><td class="num">0.37</td></tr><tr><td class="nm">Queen stage</td><td class="num">0.95</td><td class="num">0.95</td><td class="num">0.42</td></tr></tbody></table></div></div>
+  <p style="margin-top:14px">Cascade and LambdaRank order the field near-identically everywhere (0.91–0.96) — their disagreement is magnitude, never ranking. The interesting column is the middle one: the bucket head and the time-gap head agree almost perfectly on mountain days and time trials (0.87–0.96) and <strong>decouple completely on sprint days (0.23–0.30)</strong>. That's physics, not a bug: in a bunch sprint the entire peloton records the same finishing time, so "seconds behind the winner" stops encoding finishing order — the stopwatch goes blind exactly when the sorter still sees fine. It's the clearest demonstration in the data that the heads measure different physical quantities, which is why stacking them as features works. Elo, meanwhile, is the <em>least</em> redundant signal in the stack: rank agreement with the cascade of only 0.37–0.56, highest on the sprint-and-punchy profiles where finishes are literally contested duels (which is what Elo counts) and lowest on time trials, where nothing is. Low redundancy is exactly why it earned its place as a feature.</p>
+</section>
+
+<section class="col tdf-scenario">
+  <h3 class="tdf-h">Finding 5 — the DNF head is the only one that changes level, not allocation</h3>
+  <p class="tdf-blurb">Every other head redistributes ~1.0 of win probability between riders. The DNF head's output moves with the scenario itself.</p>
+  <div class="wide"><div class="table-frame tdf-tf"><table class="tdf-table">
+<thead><tr><th>Scenario</th><th class="num">Mean&nbsp;DNF&nbsp;%</th>
+<th class="num">Max&nbsp;DNF&nbsp;%</th><th class="num">Mountain score (input)</th></tr></thead>
+<tbody><tr><td class="nm">GC</td><td class="num">7.2</td><td class="num">20.3</td><td class="num">0.22</td></tr><tr><td class="nm">Flat sprint</td><td class="num">0.4</td><td class="num">0.7</td><td class="num">0.00</td></tr><tr><td class="nm">Reduced sprint</td><td class="num">0.4</td><td class="num">0.9</td><td class="num">0.01</td></tr><tr><td class="nm">Punchy</td><td class="num">0.6</td><td class="num">1.2</td><td class="num">0.27</td></tr><tr><td class="nm">Mountain</td><td class="num">0.6</td><td class="num">1.3</td><td class="num">0.53</td></tr><tr><td class="nm">TT ~30 min</td><td class="num">0.2</td><td class="num">0.8</td><td class="num">0.00</td></tr><tr><td class="nm">Queen stage</td><td class="num">0.5</td><td class="num">1.1</td><td class="num">0.51</td></tr></tbody></table></div></div>
+  <p style="margin-top:14px">Single stages barely register (0.2–0.6% mean — you rarely abandon on the day itself), the time trial is the safest of all, and the GC scenario jumps to <strong>7.3% mean</strong> with individual riders above 20% — because finishing a three-week race is a genuinely different proposition than finishing a Tuesday. This is why DNF multiplication lives at the pricing layer: it's a per-scenario survival discount, orthogonal to the who-beats-whom question every other head answers.</p>
+</section>
+
+<section class="col tdf-scenario">
+  <h3 class="tdf-h">The systematic patterns, in one list</h3>
+  <div class="example">
+    <ol>
+      <li><strong>Both probability heads hedge harder than the market.</strong> ~11 effective GC contenders for us, 4.4 for the book. The cascade's sharp top quote coexists with an inflated book (sum 1.65); as a coherent book it's as flat as LambdaRank.</li>
+      <li><strong>The mass we shave off favorites goes two places</strong>: the 10–50 odds band (mostly the Evenepoel/Lipowitz information gap) and the extreme tail (trained three-week-chaos caution the book doesn't share).</li>
+      <li><strong>The market endorses the two-head split</strong>: cascade closer to the book at the top (5/6), LambdaRank closer in the tail (17/34) — the corrector-plus-blend pricing layer already implements exactly this.</li>
+      <li><strong>Ordering is consensus, magnitude is contested.</strong> Cascade~LR rank agreement is 0.92+ in every scenario; every visible disagreement is about confidence, not ranking.</li>
+      <li><strong>The time-gap head goes blind on sprint days</strong> (rank agreement with the bucket head: ~0.95 in the mountains, ~0.25 in sprints) — same-time bunch finishes carry no gap signal. Its stack-feature value is concentrated on selective terrain.</li>
+      <li><strong>DNF is a level, not an allocation</strong>: ~0.4% on a stage, 7.3% over three weeks — the only head whose scenario response is about survival rather than hierarchy.</li>
+    </ol>
+  </div>
+</section>
+<!-- HEADS:END -->
+</div>
+
+<!-- ================= BOOKS VIEW ================= -->
+<div id="view-books" hidden>
+<!-- BOOKS:BEGIN -->
+<section class="col">
+  <p class="kicker">Model vs market</p>
+  <h2>Our numbers against the book</h2>
+  <p>Odds captured <strong>3 July 2026</strong> (the day before the Grand Départ) from the Kambi feed that powers Unibet — the same numbers shown on the consumer site, taken in one API snapshot and archived. Bookmaker odds carry a margin (this win market sums to 22% over a fair book), so every "Book %" below is <em>devigged</em>: rescaled so the market's probabilities sum to what a fair book would.</p>
+  <p class="note"><b>Which of our heads to compare:</b> the LambdaRank column is our calibrated book — that's the honest apples-to-apples line. The cascade is our winner-picker, sharp at the top but not book-normalized. One known artifact matters here: LambdaRank's per-race softmax refuses extreme favorites, so its Pogačar number is a floor, not an opinion — at the very top of the market, the cascade is our real quote.</p>
+</section>
+
+<section class="col tdf-scenario">
+  <h3 class="tdf-h">General classification — the main market</h3>
+  <p class="tdf-blurb">40 riders priced by the book, all matched to our board. Sorted by book odds.</p>
+  <div class="wide"><div class="table-frame tdf-tf"><table class="tdf-table">
+<thead><tr><th>Rider</th><th class="num">Book odds</th>
+<th class="num" title="Implied probability with the 22% overround removed">Book&nbsp;%&nbsp;(devig)</th>
+<th class="num">Blend&nbsp;%</th><th class="num">Cascade&nbsp;%</th><th class="num">LR&nbsp;%</th>
+<th class="num" title="LambdaRank minus devigged book — positive means our calibrated head prices the rider above the market">LR&nbsp;−&nbsp;book&nbsp;(pp)</th></tr></thead>
+<tbody><tr><td class="nm">Pogacar Tadej<span class="tm">UAE Team Emirates-XRG</span></td><td class="num">1.3</td><td class="num hl">63.0</td><td class="num">57.8</td><td class="num">62.7</td><td class="num">33.7</td><td class="num edge-neg">-29.3</td></tr><tr><td class="nm">Vingegaard Jonas<span class="tm">Team Visma | Lease a Bike</span></td><td class="num">5.25</td><td class="num hl">15.6</td><td class="num">20.9</td><td class="num">22.1</td><td class="num">12.4</td><td class="num edge-neg">-3.2</td></tr><tr><td class="nm">Seixas Paul<span class="tm">Decathlon CMA CGM Team</span></td><td class="num">15</td><td class="num hl">5.5</td><td class="num">10.2</td><td class="num">10.4</td><td class="num">6.1</td><td class="num edge-pos">+0.7</td></tr><tr><td class="nm">del Toro Isaac<span class="tm">UAE Team Emirates-XRG</span></td><td class="num">26</td><td class="num hl">3.1</td><td class="num">7.2</td><td class="num">3.7</td><td class="num">5.2</td><td class="num edge-pos">+2.0</td></tr><tr><td class="nm">Evenepoel Remco<span class="tm">Red Bull-BORA-hansgrohe</span></td><td class="num">34</td><td class="num hl">2.4</td><td class="num">22.7</td><td class="num">22.0</td><td class="num">13.9</td><td class="num edge-pos">+11.5</td></tr><tr><td class="nm">Lipowitz Florian<span class="tm">Red Bull-BORA-hansgrohe</span></td><td class="num">41</td><td class="num hl">2.0</td><td class="num">16.2</td><td class="num">14.7</td><td class="num">10.1</td><td class="num edge-pos">+8.1</td></tr><tr><td class="nm">Ayuso Juan<span class="tm">Lidl-Trek</span></td><td class="num">51</td><td class="num hl">1.6</td><td class="num">5.3</td><td class="num">3.1</td><td class="num">3.7</td><td class="num edge-pos">+2.1</td></tr><tr><td class="nm">Johannessen Tobias Halland<span class="tm">Uno-X Mobility</span></td><td class="num">81</td><td class="num hl">1.0</td><td class="num">1.0</td><td class="num">0.4</td><td class="num">0.8</td><td class="num ">-0.2</td></tr><tr><td class="nm">Carapaz Richard<span class="tm">EF Education-EasyPost</span></td><td class="num">151</td><td class="num hl">0.5</td><td class="num">1.2</td><td class="num">0.9</td><td class="num">0.8</td><td class="num ">+0.2</td></tr><tr><td class="nm">Pidcock Tom<span class="tm">Pinarello-Q36.5 Pro Cycling Team</span></td><td class="num">151</td><td class="num hl">0.5</td><td class="num">1.5</td><td class="num">0.7</td><td class="num">1.1</td><td class="num edge-pos">+0.6</td></tr><tr><td class="nm">Tiberi Antonio<span class="tm">Bahrain Victorious</span></td><td class="num">201</td><td class="num hl">0.4</td><td class="num">0.2</td><td class="num">0.1</td><td class="num">0.1</td><td class="num ">-0.3</td></tr><tr><td class="nm">Martinez Lenny<span class="tm">Bahrain Victorious</span></td><td class="num">201</td><td class="num hl">0.4</td><td class="num">1.3</td><td class="num">1.9</td><td class="num">0.6</td><td class="num ">+0.2</td></tr><tr><td class="nm">Skjelmose Mattias<span class="tm">Lidl-Trek</span></td><td class="num">201</td><td class="num hl">0.4</td><td class="num">1.7</td><td class="num">1.2</td><td class="num">1.2</td><td class="num edge-pos">+0.8</td></tr><tr><td class="nm">Uijtdebroeks Cian<span class="tm">Movistar Team</span></td><td class="num">251</td><td class="num hl">0.3</td><td class="num">0.5</td><td class="num">0.5</td><td class="num">0.3</td><td class="num ">-0.0</td></tr><tr><td class="nm">Arensman Thymen<span class="tm">Netcompany INEOS</span></td><td class="num">251</td><td class="num hl">0.3</td><td class="num">1.0</td><td class="num">0.9</td><td class="num">0.7</td><td class="num ">+0.3</td></tr><tr><td class="nm">Gee Derek<span class="tm">Lidl-Trek</span></td><td class="num">301</td><td class="num hl">0.3</td><td class="num">0.7</td><td class="num">0.7</td><td class="num">0.5</td><td class="num ">+0.2</td></tr></tbody></table></div></div>
+</section>
+
+<section class="col tdf-scenario">
+  <h3 class="tdf-h">Three stories in this table</h3>
+  <div class="wide cards">
+    <div class="card">
+      <h4>Where we agree</h4>
+      <p class="q">The two systems shake hands at the very top.</p>
+      <p>Book devig on Pogačar: <strong>63.0%</strong>. Our cascade: <strong>62.7%</strong>. Two completely different machines — a global betting market and a LightGBM stack trained on result sheets — land within a point of each other on the biggest question. Seixas is the same story in miniature: the book makes the 19-year-old third favorite (5.5%), and our heads have him 6–10%. Del Toro, Ayuso, Johannessen, Carapaz: all within ~1pp of the book. When we agree this closely, both systems are probably right, and there is no bet.</p>
+    </div>
+    <div class="card">
+      <h4>What the books see that we don't</h4>
+      <p class="q">The giant gaps are information, not value.</p>
+      <p><strong>Evenepoel: book 2.4%, our blend 22.7%.</strong> <strong>Lipowitz: book 2.0%, blend 16.2%.</strong> And in the "winner without Pogačar" market the book gives Vingegaard <strong>47.9%</strong> of the non-Pogačar race where we give him 19%. Read together, the market is telling one coherent story — it believes only one rider genuinely challenges Pogačar, and that Evenepoel and Lipowitz will not contest GC at full strength. One important self-correction on Vingegaard specifically: a backtest run after this snapshot found the model systematically underprices riders who finished a grand tour within ~45 days (they win GC at ~1.6× our quote) — Vingegaard won the Giro 33 days ago, so much of <em>his</em> gap is our measured bias, not the book's private information. Our database runs to 21 June but contains results, not news: no crash reports, no leadership announcements, no route knowledge — and Evenepoel has not raced since 26 April, a fact our model can only see as stale form while the market knows the reason. A 10× gap on a headline rider means the market knows a fact we don't — the move is to find the fact, not to bet against it.</p>
+    </div>
+    <div class="card">
+      <h4>Where we'd explore for edges</h4>
+      <p class="q">Small, calibrated disagreements — not the screaming gaps.</p>
+      <p>The credible candidates are where our <em>calibrated</em> head sits modestly above the devigged book with no obvious news story: <strong>Ayuso +2.1pp</strong> and <strong>del Toro +2.0pp</strong> — notably the pair who just finished 3rd and 1st at the Dauphiné, a result the model has digested and this odds snapshot predates — plus Seixas (+0.7pp) and Pidcock fractionally. Structurally, the softer targets are the secondary markets — top-6 and top-10 carry ~41% margins (vs 22% on the win market), and place probabilities are exactly what our DNF-adjusted, calibrated stack does best. That's where a retail book is most likely to be lazy, and where our honest prices have teeth.</p>
+    </div>
+  </div>
+</section>
+
+<section class="col tdf-scenario">
+  <h3 class="tdf-h">Winner without Pogačar — the market's second opinion</h3>
+  <p class="tdf-blurb">The book's conditional race (margin 44%, devigged) against our blend with Pogačar removed and renormalized. This is the cleanest view of the disagreement about who the real challenger is.</p>
+  <div class="wide"><div class="table-frame tdf-tf"><table class="tdf-table">
+<thead><tr><th>Rider</th><th class="num">Book odds</th><th class="num">Book&nbsp;%&nbsp;(devig)</th>
+<th class="num" title="Our blend win probabilities with Pogacar removed and the rest renormalized">Ours,&nbsp;renormed&nbsp;%</th>
+<th class="num">Δ&nbsp;(pp)</th></tr></thead><tbody><tr><td class="nm">Jonas Vingegaard</td><td class="num">1.45</td><td class="num hl">47.9</td><td class="num">19.4</td><td class="num edge-neg">-28.4</td></tr><tr><td class="nm">Paul Seixas</td><td class="num">5</td><td class="num hl">13.9</td><td class="num">9.5</td><td class="num edge-neg">-4.4</td></tr><tr><td class="nm">Remco Evenepoel</td><td class="num">9</td><td class="num hl">7.7</td><td class="num">21.1</td><td class="num edge-pos">+13.4</td></tr><tr><td class="nm">Isaac Del Toro</td><td class="num">12</td><td class="num hl">5.8</td><td class="num">6.6</td><td class="num edge-pos">+0.9</td></tr><tr><td class="nm">Florian Lipowitz</td><td class="num">13</td><td class="num hl">5.3</td><td class="num">15.0</td><td class="num edge-pos">+9.7</td></tr><tr><td class="nm">Juan Ayuso</td><td class="num">17</td><td class="num hl">4.1</td><td class="num">4.9</td><td class="num edge-pos">+0.8</td></tr><tr><td class="nm">Richard Carapaz</td><td class="num">21</td><td class="num hl">3.3</td><td class="num">1.1</td><td class="num edge-neg">-2.2</td></tr><tr><td class="nm">Tobias Halland Johannessen</td><td class="num">26</td><td class="num hl">2.7</td><td class="num">1.0</td><td class="num edge-neg">-1.7</td></tr></tbody></table></div></div>
+</section>
+
+<section class="col tdf-scenario">
+  <h3 class="tdf-h">What the book prices that we can't</h3>
+  <p class="tdf-blurb">Stage 1 is a <strong>team time trial</strong> — a discipline our rider-level models don't price at all. The book also runs three-week jersey markets that need the full route and points structure. These boards are shown as book-implied probabilities (devigged); we have no counter-quote.</p>
+  <div class="wide miniboards">
+    <div class="miniboard"><p class="tdf-side-h">Stage 1 TTT — winning team (margin 21%)</p>
+<table class="tdf-table"><thead><tr><th>Outcome</th><th class="num">Odds</th><th class="num">%</th></tr></thead>
+<tbody><tr><td class="nm">Netcompany INEOS</td><td class="num">1.85</td><td class="num">44.8</td></tr><tr><td class="nm">UAE Team Emirates - XRG</td><td class="num">4.25</td><td class="num">19.5</td></tr><tr><td class="nm">Red Bull - BORA - hansgrohe</td><td class="num">6.5</td><td class="num">12.7</td></tr><tr><td class="nm">Team Visma | Lease a Bike</td><td class="num">7.5</td><td class="num">11.0</td></tr><tr><td class="nm">Lidl - Trek</td><td class="num">15</td><td class="num">5.5</td></tr></tbody></table></div>
+    <div class="miniboard"><p class="tdf-side-h">Yellow after stage 1</p>
+<table class="tdf-table"><thead><tr><th>Outcome</th><th class="num">Odds</th><th class="num">%</th></tr></thead>
+<tbody><tr><td class="nm">Kévin Vauquelin</td><td class="num">2.25</td><td class="num">28.7</td></tr><tr><td class="nm">Tadej Pogačar</td><td class="num">4.25</td><td class="num">15.2</td></tr><tr><td class="nm">Remco Evenepoel</td><td class="num">7</td><td class="num">9.2</td></tr><tr><td class="nm">Jonas Vingegaard</td><td class="num">9</td><td class="num">7.2</td></tr><tr><td class="nm">Thymen Arensman</td><td class="num">9</td><td class="num">7.2</td></tr></tbody></table></div>
+    <div class="miniboard"><p class="tdf-side-h">Points jersey</p>
+<table class="tdf-table"><thead><tr><th>Outcome</th><th class="num">Odds</th><th class="num">%</th></tr></thead>
+<tbody><tr><td class="nm">Jasper Philipsen</td><td class="num">2.1</td><td class="num">31.4</td></tr><tr><td class="nm">Mads Pedersen</td><td class="num">4.5</td><td class="num">14.6</td></tr><tr><td class="nm">Tim Merlier</td><td class="num">4.5</td><td class="num">14.6</td></tr><tr><td class="nm">Olav Kooij</td><td class="num">6</td><td class="num">11.0</td></tr><tr><td class="nm">Biniam Girmay</td><td class="num">7</td><td class="num">9.4</td></tr></tbody></table></div>
+    <div class="miniboard"><p class="tdf-side-h">Mountains jersey</p>
+<table class="tdf-table"><thead><tr><th>Outcome</th><th class="num">Odds</th><th class="num">%</th></tr></thead>
+<tbody><tr><td class="nm">Tadej Pogačar</td><td class="num">2.1</td><td class="num">30.6</td></tr><tr><td class="nm">Lenny Martinez</td><td class="num">3.75</td><td class="num">17.2</td></tr><tr><td class="nm">Richard Carapaz</td><td class="num">5</td><td class="num">12.9</td></tr><tr><td class="nm">Jonas Vingegaard</td><td class="num">15</td><td class="num">4.3</td></tr><tr><td class="nm">Valentin Paret-Peintre</td><td class="num">17</td><td class="num">3.8</td></tr></tbody></table></div>
+    <div class="miniboard"><p class="tdf-side-h">Youth jersey</p>
+<table class="tdf-table"><thead><tr><th>Outcome</th><th class="num">Odds</th><th class="num">%</th></tr></thead>
+<tbody><tr><td class="nm">Paul Seixas</td><td class="num">2.25</td><td class="num">35.0</td></tr><tr><td class="nm">Isaac Del Toro</td><td class="num">2.75</td><td class="num">28.7</td></tr><tr><td class="nm">Juan Ayuso</td><td class="num">5</td><td class="num">15.8</td></tr><tr><td class="nm">Matthew Riccitello</td><td class="num">19</td><td class="num">4.1</td></tr><tr><td class="nm">Antonio Tiberi</td><td class="num">21</td><td class="num">3.8</td></tr></tbody></table></div>
+    <div class="miniboard"><p class="tdf-side-h">Teams classification</p>
+<table class="tdf-table"><thead><tr><th>Outcome</th><th class="num">Odds</th><th class="num">%</th></tr></thead>
+<tbody><tr><td class="nm">UAE Team Emirates - XRG</td><td class="num">1.7</td><td class="num">46.8</td></tr><tr><td class="nm">Red Bull - BORA - hansgrohe</td><td class="num">5</td><td class="num">15.9</td></tr><tr><td class="nm">Team Visma | Lease a Bike</td><td class="num">8</td><td class="num">9.9</td></tr><tr><td class="nm">Lidl - Trek</td><td class="num">9</td><td class="num">8.8</td></tr><tr><td class="nm">Netcompany INEOS</td><td class="num">11</td><td class="num">7.2</td></tr></tbody></table></div>
+  </div>
+  <p style="margin-top:14px">Two structural blind spots of ours show up here. The book knows the <em>actual 2026 route</em> — which archetypes occur on which days, and that the race opens with a TTT feeding the yellow-jersey market. And the jersey markets price <em>three-week arcs</em>: the points jersey has Philipsen (2.1) ahead of Merlier (4.5) even though Merlier beats him on our single flat-day board — because the green jersey is won by surviving hills and hoovering intermediate sprints for three weeks, not by being fastest on one day.</p>
+</section>
+
+<section class="col tdf-scenario">
+  <h3 class="tdf-h">"Wins a stage" — the specials market vs our best-day boards</h3>
+  <p class="tdf-blurb">The book prices each rider to win at least one of 21 stages; our number is the single best day we could find for them across the six archetypes. These are different bets — the gap between the columns is mostly the value of having 21 chances, breakaway luck, and route knowledge. Where the book's "yes" is rich <em>and</em> our best day is tiny (van der Poel, Pedersen, Healy, Carapaz), the book is pricing opportunism our stage boards structurally under-count.</p>
+  <div class="wide"><div class="table-frame tdf-tf"><table class="tdf-table">
+<thead><tr><th>Rider</th><th class="num">Book "yes"</th>
+<th class="num" title="Raw implied probability — one-sided market, no clean devig">Implied&nbsp;%</th>
+<th class="num" title="Our highest single-day blend win probability across the six archetypes">Our&nbsp;best&nbsp;day&nbsp;%</th>
+<th>Best archetype</th></tr></thead><tbody><tr><td class="nm">Tadej Pogačar</td><td class="num">1.09</td><td class="num hl">91.7</td><td class="num">45.8</td><td class="sc">Individual time trial (~30 min)</td></tr><tr><td class="nm">Tim Merlier</td><td class="num">1.33</td><td class="num hl">75.2</td><td class="num">42.9</td><td class="sc">Flat stage, big bunch sprint</td></tr><tr><td class="nm">Remco Evenepoel</td><td class="num">1.45</td><td class="num hl">69.0</td><td class="num">18.9</td><td class="sc">Individual time trial (~30 min)</td></tr><tr><td class="nm">Mathieu van der Poel</td><td class="num">1.6</td><td class="num hl">62.5</td><td class="num">3.3</td><td class="sc">Reduced-group hilly sprint</td></tr><tr><td class="nm">Mads Pedersen</td><td class="num">1.6</td><td class="num hl">62.5</td><td class="num">2.4</td><td class="sc">Reduced-group hilly sprint</td></tr><tr><td class="nm">Richard Carapaz</td><td class="num">1.65</td><td class="num hl">60.6</td><td class="num">1.6</td><td class="sc">Mountain stage, summit finish</td></tr><tr><td class="nm">Olav Kooij</td><td class="num">1.65</td><td class="num hl">60.6</td><td class="num">35.8</td><td class="sc">Flat stage, big bunch sprint</td></tr><tr><td class="nm">Jasper Philipsen</td><td class="num">1.65</td><td class="num hl">60.6</td><td class="num">21.0</td><td class="sc">Flat stage, big bunch sprint</td></tr><tr><td class="nm">Lenny Martinez</td><td class="num">1.7</td><td class="num hl">58.8</td><td class="num">2.1</td><td class="sc">Mountain stage, summit finish</td></tr><tr><td class="nm">Ben Healy</td><td class="num">2</td><td class="num hl">50.0</td><td class="num">0.5</td><td class="sc">Queen stage, long, brutal mountains</td></tr><tr><td class="nm">Tom Pidcock</td><td class="num">2</td><td class="num hl">50.0</td><td class="num">1.5</td><td class="sc">Punchy hilly stage</td></tr><tr><td class="nm">Romain Grégoire</td><td class="num">2.1</td><td class="num hl">47.6</td><td class="num">0.8</td><td class="sc">Punchy hilly stage</td></tr><tr><td class="nm">Isaac Del Toro</td><td class="num">2.25</td><td class="num hl">44.4</td><td class="num">7.6</td><td class="sc">Punchy hilly stage</td></tr><tr><td class="nm">Jonas Vingegaard</td><td class="num">2.5</td><td class="num hl">40.0</td><td class="num">12.2</td><td class="sc">Mountain stage, summit finish</td></tr></tbody></table></div></div>
+</section>
+
+<section class="col tdf-scenario">
+  <h3 class="tdf-h">What happens next</h3>
+  <p>This snapshot is archived (raw API payloads + parsed markets + margin diagnostics) as the first entry of a going-forward odds archive, alongside our own logged predictions. After Paris, the two get settled against results — per-market log loss for us and for the devigged book, the same yardstick our experiment gate uses. That, repeated over races, is the only honest answer to "can this model beat the books" — one Tour is a single sample. Until then: the model's job this month is to be well-calibrated; the market's job is to know things. The interesting work lives in the gap.</p>
+</section>
+<!-- BOOKS:END -->
+</div>
+
+<!-- ================= TDF 2026 VIEW ================= -->
+<div id="view-tdf" hidden>
+<!-- TDF:BEGIN -->
+<section class="col">
+  <p class="kicker">Tour de France 2026</p>
+  <h2>The startlist, priced seven ways</h2>
+  <p>These are live predictions from the production stack, generated on <strong>3 July 2026</strong> from the official startlist (184 riders, 23 teams; 184 matched to the database). One general-classification forecast, plus the same field run through six <em>stage archetypes</em> — hypothetical stage profiles built by averaging real Tour stages from 2021–2025 that the model itself scores as that type of day.</p>
+  <p class="note"><b>Read it honestly:</b> archetypes are course profiles, not the actual 2026 route — think "if Wednesday is a pure bunch-sprint day, here's the board." The database is current through 21 June 2026 — Giro, Tour de Suisse, and (after a same-day backfill) the full rebranded Dauphiné are all in; these boards were regenerated on 3 July with that complete picture. ★ marks the model's top-15 contender gate. Model estimates, not betting advice.</p>
+</section>
+
+<section class="col tdf-scenario" id="tdf-gc">
+  <h3 class="tdf-h">General Classification</h3>
+  <p class="tdf-blurb">Final overall standings after three weeks. References: the last five Tour GC outcomes (2021–2025), so the model prices the yellow jersey the way those editions actually resolved.</p>
+  <div class="wide tdf-grid">
+    <div class="tdf-side">
+      <p class="tdf-side-h">The archetype, as the model sees it</p>
+      <div class="pbars"><div class="pbar-row"><span class="pbar-label">Sprint</span><span class="pbar"><span class="pbar-fill" style="width:2%"></span></span><span class="pbar-val">0.00</span></div><div class="pbar-row"><span class="pbar-label">Mountain</span><span class="pbar"><span class="pbar-fill" style="width:22%"></span></span><span class="pbar-val">0.22</span></div><div class="pbar-row"><span class="pbar-label">Hilly</span><span class="pbar"><span class="pbar-fill" style="width:2%"></span></span><span class="pbar-val">0.00</span></div><div class="pbar-row"><span class="pbar-label">Rolling</span><span class="pbar"><span class="pbar-fill dom" style="width:78%"></span></span><span class="pbar-val">0.78</span></div><div class="pbar-row"><span class="pbar-label">Breakaway</span><span class="pbar"><span class="pbar-fill" style="width:2%"></span></span><span class="pbar-val">0.00</span></div><div class="pbar-row"><span class="pbar-label">Time trial</span><span class="pbar"><span class="pbar-fill" style="width:2%"></span></span><span class="pbar-val">0.00</span></div></div>
+      <div class="tdf-meta"><span>dominant: <b>rolling</b></span><span>ref winning time: <b>4851 min</b></span><span>ref abandon rate: <b>0.0%</b></span><span>cascade win book: <b>1.65</b></span></div>
+      <p class="tdf-side-h" style="margin-top:14px">Built from</p>
+      <div class="refchips"><span class="refchip">GC · 2021</span><span class="refchip">GC · 2022</span><span class="refchip">GC · 2023</span><span class="refchip">GC · 2024</span><span class="refchip">GC · 2025</span></div>
+    </div>
+    <div class="tdf-main"><div class="table-frame tdf-tf"><table class="tdf-table">
+<thead><tr><th></th><th>Rider</th>
+<th class="num" title="0.2 x cascade + 0.8 x LambdaRank, book-preserving">Blend&nbsp;Win&nbsp;%</th>
+<th class="num" title="Contender cascade, win corrector applied">Win&nbsp;%</th>
+<th class="num" title="Full-field LambdaRank book">LR&nbsp;Win&nbsp;%</th>
+<th class="num">Podium&nbsp;%</th><th class="num">Top&nbsp;5&nbsp;%</th>
+<th class="num" title="P(does not finish | starts)">DNF&nbsp;%</th>
+<th class="num" title="Win x P(finish), win book preserved">Honest&nbsp;Win&nbsp;%</th><th class="num" title="Contested-comparison Elo rating">Elo</th></tr></thead>
+<tbody><tr><td class="rk">1</td><td class="nm">★ Pogacar Tadej<span class="tm">UAE Team Emirates-XRG</span></td><td class="num hl">57.8</td><td class="num">62.7</td><td class="num">33.7</td><td class="num">85.8</td><td class="num">89.3</td><td class="num">6.8</td><td class="num">63.1</td><td class="num">1,874</td></tr><tr><td class="rk">3</td><td class="nm">★ Evenepoel Remco<span class="tm">Red Bull-BORA-hansgrohe</span></td><td class="num hl">22.7</td><td class="num">22.0</td><td class="num">13.9</td><td class="num">52.3</td><td class="num">64.7</td><td class="num">7.7</td><td class="num">21.9</td><td class="num">1,704</td></tr><tr><td class="rk">2</td><td class="nm">★ Vingegaard Jonas<span class="tm">Team Visma | Lease a Bike</span></td><td class="num hl">20.9</td><td class="num">22.1</td><td class="num">12.4</td><td class="num">58.6</td><td class="num">69.7</td><td class="num">7.9</td><td class="num">21.9</td><td class="num">1,751</td></tr><tr><td class="rk">4</td><td class="nm">★ Lipowitz Florian<span class="tm">Red Bull-BORA-hansgrohe</span></td><td class="num hl">16.2</td><td class="num">14.7</td><td class="num">10.1</td><td class="num">48.9</td><td class="num">63.1</td><td class="num">5.7</td><td class="num">15.0</td><td class="num">1,624</td></tr><tr><td class="rk">5</td><td class="nm">★ Seixas Paul<span class="tm">Decathlon CMA CGM Team</span></td><td class="num hl">10.2</td><td class="num">10.4</td><td class="num">6.1</td><td class="num">23.1</td><td class="num">36.1</td><td class="num">13.1</td><td class="num">9.8</td><td class="num">1,602</td></tr><tr><td class="rk">6</td><td class="nm">★ del Toro Isaac<span class="tm">UAE Team Emirates-XRG</span></td><td class="num hl">7.2</td><td class="num">3.7</td><td class="num">5.2</td><td class="num">15.5</td><td class="num">29.1</td><td class="num">7.5</td><td class="num">3.7</td><td class="num">1,665</td></tr><tr><td class="rk">7</td><td class="nm">★ Ayuso Juan<span class="tm">Lidl-Trek</span></td><td class="num hl">5.3</td><td class="num">3.1</td><td class="num">3.7</td><td class="num">14.5</td><td class="num">22.8</td><td class="num">8.6</td><td class="num">3.1</td><td class="num">1,638</td></tr><tr><td class="rk">13</td><td class="nm">★ Skjelmose Mattias<span class="tm">Lidl-Trek</span></td><td class="num hl">1.7</td><td class="num">1.2</td><td class="num">1.2</td><td class="num">3.7</td><td class="num">6.5</td><td class="num">8.9</td><td class="num">1.2</td><td class="num">1,661</td></tr><tr><td class="rk">22</td><td class="nm">Pidcock Tom<span class="tm">Pinarello-Q36.5 Pro Cycling Team</span></td><td class="num hl">1.5</td><td class="num">0.7</td><td class="num">1.1</td><td class="num">12.0</td><td class="num">19.5</td><td class="num">7.2</td><td class="num">0.7</td><td class="num">1,623</td></tr><tr><td class="rk">17</td><td class="nm">Vauquelin Kévin<span class="tm">Netcompany INEOS</span></td><td class="num hl">1.4</td><td class="num">1.3</td><td class="num">0.9</td><td class="num">4.9</td><td class="num">12.2</td><td class="num">6.0</td><td class="num">1.3</td><td class="num">1,628</td></tr><tr><td class="rk">12</td><td class="nm">★ Jorgenson Matteo<span class="tm">Team Visma | Lease a Bike</span></td><td class="num hl">1.3</td><td class="num">0.8</td><td class="num">0.9</td><td class="num">3.6</td><td class="num">7.7</td><td class="num">6.5</td><td class="num">0.9</td><td class="num">1,621</td></tr><tr><td class="rk">19</td><td class="nm">Martinez Lenny<span class="tm">Bahrain Victorious</span></td><td class="num hl">1.3</td><td class="num">1.9</td><td class="num">0.6</td><td class="num">10.1</td><td class="num">35.4</td><td class="num">5.9</td><td class="num">2.0</td><td class="num">1,606</td></tr><tr><td class="rk">8</td><td class="nm">★ Carapaz Richard<span class="tm">EF Education-EasyPost</span></td><td class="num hl">1.2</td><td class="num">0.9</td><td class="num">0.8</td><td class="num">4.4</td><td class="num">11.3</td><td class="num">7.0</td><td class="num">0.9</td><td class="num">1,662</td></tr><tr><td class="rk">16</td><td class="nm">★ Yates Adam<span class="tm">UAE Team Emirates-XRG</span></td><td class="num hl">1.2</td><td class="num">0.9</td><td class="num">0.8</td><td class="num">3.5</td><td class="num">8.2</td><td class="num">7.3</td><td class="num">0.9</td><td class="num">1,602</td></tr><tr><td class="rk">18</td><td class="nm">Johannessen Tobias Halland<span class="tm">Uno-X Mobility</span></td><td class="num hl">1.0</td><td class="num">0.4</td><td class="num">0.8</td><td class="num">11.9</td><td class="num">27.1</td><td class="num">6.0</td><td class="num">0.4</td><td class="num">1,588</td></tr></tbody></table></div></div>
+  </div>
+</section>
+<section class="col tdf-scenario" id="tdf-flat_sprint">
+  <h3 class="tdf-h">Flat stage — big bunch sprint</h3>
+  <p class="tdf-blurb">Pan-flat run-in, full bunch gallop. Built from stages the model itself scores as pure sprint (score 1.0): Cavendish, Philipsen and Merlier wins.</p>
+  <div class="wide tdf-grid">
+    <div class="tdf-side">
+      <p class="tdf-side-h">The archetype, as the model sees it</p>
+      <div class="pbars"><div class="pbar-row"><span class="pbar-label">Sprint</span><span class="pbar"><span class="pbar-fill dom" style="width:100%"></span></span><span class="pbar-val">1.00</span></div><div class="pbar-row"><span class="pbar-label">Mountain</span><span class="pbar"><span class="pbar-fill" style="width:2%"></span></span><span class="pbar-val">0.00</span></div><div class="pbar-row"><span class="pbar-label">Hilly</span><span class="pbar"><span class="pbar-fill" style="width:2%"></span></span><span class="pbar-val">0.00</span></div><div class="pbar-row"><span class="pbar-label">Rolling</span><span class="pbar"><span class="pbar-fill" style="width:2%"></span></span><span class="pbar-val">0.00</span></div><div class="pbar-row"><span class="pbar-label">Breakaway</span><span class="pbar"><span class="pbar-fill" style="width:2%"></span></span><span class="pbar-val">0.00</span></div><div class="pbar-row"><span class="pbar-label">Time trial</span><span class="pbar"><span class="pbar-fill" style="width:2%"></span></span><span class="pbar-val">0.00</span></div></div>
+      <div class="tdf-meta"><span>dominant: <b>sprint</b></span><span>ref winning time: <b>233 min</b></span><span>ref abandon rate: <b>0.0%</b></span><span>cascade win book: <b>1.43</b></span></div>
+      <p class="tdf-side-h" style="margin-top:14px">Built from</p>
+      <div class="refchips"><span class="refchip">Stage: 04 · 2021</span><span class="refchip">Stage: 06 · 2021</span><span class="refchip">Stage: 05 · 2024</span><span class="refchip">Stage: 10 · 2024</span><span class="refchip">Stage: 03 · 2025</span></div>
+    </div>
+    <div class="tdf-main"><div class="table-frame tdf-tf"><table class="tdf-table">
+<thead><tr><th></th><th>Rider</th>
+<th class="num" title="0.2 x cascade + 0.8 x LambdaRank, book-preserving">Blend&nbsp;Win&nbsp;%</th>
+<th class="num" title="Contender cascade, win corrector applied">Win&nbsp;%</th>
+<th class="num" title="Full-field LambdaRank book">LR&nbsp;Win&nbsp;%</th>
+<th class="num">Podium&nbsp;%</th><th class="num">Top&nbsp;5&nbsp;%</th>
+<th class="num" title="P(does not finish | starts)">DNF&nbsp;%</th>
+<th class="num" title="Win x P(finish), win book preserved">Honest&nbsp;Win&nbsp;%</th></tr></thead>
+<tbody><tr><td class="rk">5</td><td class="nm">★ Merlier Tim<span class="tm">Soudal Quick-Step</span></td><td class="num hl">42.9</td><td class="num">51.9</td><td class="num">27.7</td><td class="num">71.6</td><td class="num">80.1</td><td class="num">0.4</td><td class="num">51.9</td></tr><tr><td class="rk">4</td><td class="nm">★ Kooij Olav<span class="tm">Decathlon CMA CGM Team</span></td><td class="num hl">35.8</td><td class="num">42.5</td><td class="num">23.4</td><td class="num">64.9</td><td class="num">72.9</td><td class="num">0.4</td><td class="num">42.5</td></tr><tr><td class="rk">1</td><td class="nm">★ Philipsen Jasper<span class="tm">Alpecin-Premier Tech</span></td><td class="num hl">21.0</td><td class="num">17.3</td><td class="num">15.6</td><td class="num">45.2</td><td class="num">58.0</td><td class="num">0.4</td><td class="num">17.3</td></tr><tr><td class="rk">16</td><td class="nm">★ Gaviria Fernando<span class="tm">Caja Rural-Seguros RGA</span></td><td class="num hl">4.8</td><td class="num">1.2</td><td class="num">4.2</td><td class="num">8.6</td><td class="num">17.3</td><td class="num">0.5</td><td class="num">1.2</td></tr><tr><td class="rk">10</td><td class="nm">★ De Lie Arnaud<span class="tm">Lotto-Intermarché</span></td><td class="num hl">4.3</td><td class="num">1.7</td><td class="num">3.7</td><td class="num">11.9</td><td class="num">25.6</td><td class="num">0.4</td><td class="num">1.7</td></tr><tr><td class="rk">2</td><td class="nm">★ Kanter Max<span class="tm">XDS Astana Team</span></td><td class="num hl">4.0</td><td class="num">2.7</td><td class="num">3.1</td><td class="num">15.4</td><td class="num">30.7</td><td class="num">0.4</td><td class="num">2.7</td></tr><tr><td class="rk">7</td><td class="nm">★ Girmay Biniam<span class="tm">NSN Cycling Team</span></td><td class="num hl">3.7</td><td class="num">2.4</td><td class="num">2.9</td><td class="num">13.3</td><td class="num">24.2</td><td class="num">0.4</td><td class="num">2.4</td></tr><tr><td class="rk">18</td><td class="nm">★ de Kleijn Arvid<span class="tm">Tudor Pro Cycling Team</span></td><td class="num hl">3.6</td><td class="num">2.0</td><td class="num">2.9</td><td class="num">9.5</td><td class="num">20.2</td><td class="num">0.6</td><td class="num">2.0</td></tr><tr><td class="rk">15</td><td class="nm">★ Ackermann Pascal<span class="tm">Team Jayco-AlUla</span></td><td class="num hl">2.7</td><td class="num">1.3</td><td class="num">2.2</td><td class="num">8.1</td><td class="num">16.8</td><td class="num">0.6</td><td class="num">1.3</td></tr><tr><td class="rk">12</td><td class="nm">★ Wærenskjold Søren<span class="tm">Uno-X Mobility</span></td><td class="num hl">2.0</td><td class="num">2.0</td><td class="num">1.4</td><td class="num">8.3</td><td class="num">16.5</td><td class="num">0.4</td><td class="num">2.0</td></tr></tbody></table></div></div>
+  </div>
+</section>
+<section class="col tdf-scenario" id="tdf-reduced_sprint">
+  <h3 class="tdf-h">Reduced-group hilly sprint</h3>
+  <p class="tdf-blurb">Enough lumps to drop half the fast men — a sprint, but from a thinned group of durable sprinters and classics riders.</p>
+  <div class="wide tdf-grid">
+    <div class="tdf-side">
+      <p class="tdf-side-h">The archetype, as the model sees it</p>
+      <div class="pbars"><div class="pbar-row"><span class="pbar-label">Sprint</span><span class="pbar"><span class="pbar-fill" style="width:42%"></span></span><span class="pbar-val">0.42</span></div><div class="pbar-row"><span class="pbar-label">Mountain</span><span class="pbar"><span class="pbar-fill" style="width:2%"></span></span><span class="pbar-val">0.01</span></div><div class="pbar-row"><span class="pbar-label">Hilly</span><span class="pbar"><span class="pbar-fill dom" style="width:49%"></span></span><span class="pbar-val">0.49</span></div><div class="pbar-row"><span class="pbar-label">Rolling</span><span class="pbar"><span class="pbar-fill" style="width:2%"></span></span><span class="pbar-val">0.02</span></div><div class="pbar-row"><span class="pbar-label">Breakaway</span><span class="pbar"><span class="pbar-fill" style="width:6%"></span></span><span class="pbar-val">0.06</span></div><div class="pbar-row"><span class="pbar-label">Time trial</span><span class="pbar"><span class="pbar-fill" style="width:2%"></span></span><span class="pbar-val">0.00</span></div></div>
+      <div class="tdf-meta"><span>dominant: <b>hilly</b></span><span>ref winning time: <b>227 min</b></span><span>ref abandon rate: <b>0.0%</b></span><span>cascade win book: <b>1.44</b></span></div>
+      <p class="tdf-side-h" style="margin-top:14px">Built from</p>
+      <div class="refchips"><span class="refchip">Stage: 10 · 2021</span><span class="refchip">Stage: 07 · 2023</span><span class="refchip">Stage: 18 · 2023</span><span class="refchip">Stage: 21 · 2023</span><span class="refchip">Stage: 08 · 2025</span></div>
+    </div>
+    <div class="tdf-main"><div class="table-frame tdf-tf"><table class="tdf-table">
+<thead><tr><th></th><th>Rider</th>
+<th class="num" title="0.2 x cascade + 0.8 x LambdaRank, book-preserving">Blend&nbsp;Win&nbsp;%</th>
+<th class="num" title="Contender cascade, win corrector applied">Win&nbsp;%</th>
+<th class="num" title="Full-field LambdaRank book">LR&nbsp;Win&nbsp;%</th>
+<th class="num">Podium&nbsp;%</th><th class="num">Top&nbsp;5&nbsp;%</th>
+<th class="num" title="P(does not finish | starts)">DNF&nbsp;%</th>
+<th class="num" title="Win x P(finish), win book preserved">Honest&nbsp;Win&nbsp;%</th></tr></thead>
+<tbody><tr><td class="rk">3</td><td class="nm">★ Kooij Olav<span class="tm">Decathlon CMA CGM Team</span></td><td class="num hl">34.4</td><td class="num">37.2</td><td class="num">23.2</td><td class="num">59.8</td><td class="num">67.0</td><td class="num">0.4</td><td class="num">37.2</td></tr><tr><td class="rk">2</td><td class="nm">★ Merlier Tim<span class="tm">Soudal Quick-Step</span></td><td class="num hl">31.0</td><td class="num">44.2</td><td class="num">18.2</td><td class="num">63.4</td><td class="num">72.5</td><td class="num">0.4</td><td class="num">44.2</td></tr><tr><td class="rk">1</td><td class="nm">★ Philipsen Jasper<span class="tm">Alpecin-Premier Tech</span></td><td class="num hl">21.0</td><td class="num">16.4</td><td class="num">15.7</td><td class="num">40.8</td><td class="num">52.4</td><td class="num">0.4</td><td class="num">16.4</td></tr><tr><td class="rk">8</td><td class="nm">★ Girmay Biniam<span class="tm">NSN Cycling Team</span></td><td class="num hl">7.8</td><td class="num">3.8</td><td class="num">6.4</td><td class="num">21.8</td><td class="num">32.5</td><td class="num">0.4</td><td class="num">3.8</td></tr><tr><td class="rk">7</td><td class="nm">★ De Lie Arnaud<span class="tm">Lotto-Intermarché</span></td><td class="num hl">7.2</td><td class="num">2.4</td><td class="num">6.2</td><td class="num">14.9</td><td class="num">30.5</td><td class="num">0.4</td><td class="num">2.4</td></tr><tr><td class="rk">5</td><td class="nm">★ Kanter Max<span class="tm">XDS Astana Team</span></td><td class="num hl">4.6</td><td class="num">2.9</td><td class="num">3.6</td><td class="num">15.7</td><td class="num">31.1</td><td class="num">0.4</td><td class="num">2.9</td></tr><tr><td class="rk">25</td><td class="nm">★ Gaviria Fernando<span class="tm">Caja Rural-Seguros RGA</span></td><td class="num hl">3.9</td><td class="num">1.0</td><td class="num">3.4</td><td class="num">7.6</td><td class="num">14.8</td><td class="num">0.5</td><td class="num">1.0</td></tr><tr><td class="rk">6</td><td class="nm">★ Pogacar Tadej<span class="tm">UAE Team Emirates-XRG</span></td><td class="num hl">3.8</td><td class="num">10.5</td><td class="num">1.0</td><td class="num">14.3</td><td class="num">17.1</td><td class="num">0.4</td><td class="num">10.5</td></tr><tr><td class="rk">4</td><td class="nm">★ van der Poel Mathieu<span class="tm">Alpecin-Premier Tech</span></td><td class="num hl">3.3</td><td class="num">3.1</td><td class="num">2.4</td><td class="num">11.7</td><td class="num">18.6</td><td class="num">0.5</td><td class="num">3.1</td></tr><tr><td class="rk">10</td><td class="nm">★ Wærenskjold Søren<span class="tm">Uno-X Mobility</span></td><td class="num hl">2.5</td><td class="num">2.7</td><td class="num">1.7</td><td class="num">10.6</td><td class="num">19.2</td><td class="num">0.5</td><td class="num">2.7</td></tr></tbody></table></div></div>
+  </div>
+</section>
+<section class="col tdf-scenario" id="tdf-punchy">
+  <h3 class="tdf-h">Punchy hilly stage</h3>
+  <p class="tdf-blurb">Short steep finish or spiky final hour — Mur-de-Bretagne, Bologna, Rouen. In the model's inputs these read as rolling stages with moderate mountain score; the puncheur signal comes from rider-course fit, not the course score alone.</p>
+  <div class="wide tdf-grid">
+    <div class="tdf-side">
+      <p class="tdf-side-h">The archetype, as the model sees it</p>
+      <div class="pbars"><div class="pbar-row"><span class="pbar-label">Sprint</span><span class="pbar"><span class="pbar-fill" style="width:2%"></span></span><span class="pbar-val">0.00</span></div><div class="pbar-row"><span class="pbar-label">Mountain</span><span class="pbar"><span class="pbar-fill" style="width:27%"></span></span><span class="pbar-val">0.27</span></div><div class="pbar-row"><span class="pbar-label">Hilly</span><span class="pbar"><span class="pbar-fill" style="width:2%"></span></span><span class="pbar-val">0.00</span></div><div class="pbar-row"><span class="pbar-label">Rolling</span><span class="pbar"><span class="pbar-fill dom" style="width:63%"></span></span><span class="pbar-val">0.63</span></div><div class="pbar-row"><span class="pbar-label">Breakaway</span><span class="pbar"><span class="pbar-fill" style="width:10%"></span></span><span class="pbar-val">0.10</span></div><div class="pbar-row"><span class="pbar-label">Time trial</span><span class="pbar"><span class="pbar-fill" style="width:2%"></span></span><span class="pbar-val">0.00</span></div></div>
+      <div class="tdf-meta"><span>dominant: <b>rolling</b></span><span>ref winning time: <b>265 min</b></span><span>ref abandon rate: <b>0.0%</b></span><span>cascade win book: <b>1.16</b></span></div>
+      <p class="tdf-side-h" style="margin-top:14px">Built from</p>
+      <div class="refchips"><span class="refchip">Stage: 02 · 2021</span><span class="refchip">Stage: 06 · 2022</span><span class="refchip">Stage: 02 · 2023</span><span class="refchip">Stage: 02 · 2024</span><span class="refchip">Stage: 04 · 2025</span></div>
+    </div>
+    <div class="tdf-main"><div class="table-frame tdf-tf"><table class="tdf-table">
+<thead><tr><th></th><th>Rider</th>
+<th class="num" title="0.2 x cascade + 0.8 x LambdaRank, book-preserving">Blend&nbsp;Win&nbsp;%</th>
+<th class="num" title="Contender cascade, win corrector applied">Win&nbsp;%</th>
+<th class="num" title="Full-field LambdaRank book">LR&nbsp;Win&nbsp;%</th>
+<th class="num">Podium&nbsp;%</th><th class="num">Top&nbsp;5&nbsp;%</th>
+<th class="num" title="P(does not finish | starts)">DNF&nbsp;%</th>
+<th class="num" title="Win x P(finish), win book preserved">Honest&nbsp;Win&nbsp;%</th></tr></thead>
+<tbody><tr><td class="rk">1</td><td class="nm">★ Pogacar Tadej<span class="tm">UAE Team Emirates-XRG</span></td><td class="num hl">42.9</td><td class="num">47.1</td><td class="num">36.0</td><td class="num">75.8</td><td class="num">80.7</td><td class="num">0.5</td><td class="num">47.1</td></tr><tr><td class="rk">4</td><td class="nm">★ Seixas Paul<span class="tm">Decathlon CMA CGM Team</span></td><td class="num hl">11.5</td><td class="num">9.6</td><td class="num">10.4</td><td class="num">17.6</td><td class="num">26.3</td><td class="num">1.2</td><td class="num">9.5</td></tr><tr><td class="rk">2</td><td class="nm">★ Evenepoel Remco<span class="tm">Red Bull-BORA-hansgrohe</span></td><td class="num hl">11.4</td><td class="num">12.3</td><td class="num">9.7</td><td class="num">30.9</td><td class="num">38.7</td><td class="num">0.7</td><td class="num">12.3</td></tr><tr><td class="rk">5</td><td class="nm">★ del Toro Isaac<span class="tm">UAE Team Emirates-XRG</span></td><td class="num hl">7.6</td><td class="num">4.8</td><td class="num">7.3</td><td class="num">12.3</td><td class="num">22.6</td><td class="num">0.6</td><td class="num">4.8</td></tr><tr><td class="rk">3</td><td class="nm">★ Vingegaard Jonas<span class="tm">Team Visma | Lease a Bike</span></td><td class="num hl">6.5</td><td class="num">7.3</td><td class="num">5.4</td><td class="num">22.1</td><td class="num">30.5</td><td class="num">0.6</td><td class="num">7.3</td></tr><tr><td class="rk">7</td><td class="nm">★ Lipowitz Florian<span class="tm">Red Bull-BORA-hansgrohe</span></td><td class="num hl">4.4</td><td class="num">2.6</td><td class="num">4.3</td><td class="num">10.3</td><td class="num">15.8</td><td class="num">0.5</td><td class="num">2.6</td></tr><tr><td class="rk">6</td><td class="nm">★ Ayuso Juan<span class="tm">Lidl-Trek</span></td><td class="num hl">3.0</td><td class="num">1.7</td><td class="num">2.9</td><td class="num">8.4</td><td class="num">12.2</td><td class="num">0.8</td><td class="num">1.7</td></tr><tr><td class="rk">11</td><td class="nm">★ Pidcock Tom<span class="tm">Pinarello-Q36.5 Pro Cycling Team</span></td><td class="num hl">1.5</td><td class="num">0.8</td><td class="num">1.5</td><td class="num">4.4</td><td class="num">9.5</td><td class="num">0.7</td><td class="num">0.8</td></tr><tr><td class="rk">10</td><td class="nm">★ Yates Adam<span class="tm">UAE Team Emirates-XRG</span></td><td class="num hl">1.3</td><td class="num">0.9</td><td class="num">1.2</td><td class="num">3.9</td><td class="num">8.1</td><td class="num">0.6</td><td class="num">0.9</td></tr><tr><td class="rk">12</td><td class="nm">★ Martinez Lenny<span class="tm">Bahrain Victorious</span></td><td class="num hl">1.2</td><td class="num">0.9</td><td class="num">1.2</td><td class="num">3.9</td><td class="num">7.5</td><td class="num">0.5</td><td class="num">0.9</td></tr></tbody></table></div></div>
+  </div>
+</section>
+<section class="col tdf-scenario" id="tdf-mountain">
+  <h3 class="tdf-h">Mountain stage — summit finish</h3>
+  <p class="tdf-blurb">A real summit finish (Luz Ardiden, Cauterets, Pla d'Adet, Hautacam-style) at standard length. GC riders decide it.</p>
+  <div class="wide tdf-grid">
+    <div class="tdf-side">
+      <p class="tdf-side-h">The archetype, as the model sees it</p>
+      <div class="pbars"><div class="pbar-row"><span class="pbar-label">Sprint</span><span class="pbar"><span class="pbar-fill" style="width:2%"></span></span><span class="pbar-val">0.00</span></div><div class="pbar-row"><span class="pbar-label">Mountain</span><span class="pbar"><span class="pbar-fill dom" style="width:53%"></span></span><span class="pbar-val">0.53</span></div><div class="pbar-row"><span class="pbar-label">Hilly</span><span class="pbar"><span class="pbar-fill" style="width:2%"></span></span><span class="pbar-val">0.00</span></div><div class="pbar-row"><span class="pbar-label">Rolling</span><span class="pbar"><span class="pbar-fill" style="width:47%"></span></span><span class="pbar-val">0.47</span></div><div class="pbar-row"><span class="pbar-label">Breakaway</span><span class="pbar"><span class="pbar-fill" style="width:2%"></span></span><span class="pbar-val">0.01</span></div><div class="pbar-row"><span class="pbar-label">Time trial</span><span class="pbar"><span class="pbar-fill" style="width:2%"></span></span><span class="pbar-val">0.00</span></div></div>
+      <div class="tdf-meta"><span>dominant: <b>mountain</b></span><span>ref winning time: <b>237 min</b></span><span>ref abandon rate: <b>0.0%</b></span><span>cascade win book: <b>1.27</b></span></div>
+      <p class="tdf-side-h" style="margin-top:14px">Built from</p>
+      <div class="refchips"><span class="refchip">Stage: 18 · 2021</span><span class="refchip">Stage: 05 · 2023</span><span class="refchip">Stage: 06 · 2023</span><span class="refchip">Stage: 14 · 2024</span><span class="refchip">Stage: 10 · 2025</span></div>
+    </div>
+    <div class="tdf-main"><div class="table-frame tdf-tf"><table class="tdf-table">
+<thead><tr><th></th><th>Rider</th>
+<th class="num" title="0.2 x cascade + 0.8 x LambdaRank, book-preserving">Blend&nbsp;Win&nbsp;%</th>
+<th class="num" title="Contender cascade, win corrector applied">Win&nbsp;%</th>
+<th class="num" title="Full-field LambdaRank book">LR&nbsp;Win&nbsp;%</th>
+<th class="num">Podium&nbsp;%</th><th class="num">Top&nbsp;5&nbsp;%</th>
+<th class="num" title="P(does not finish | starts)">DNF&nbsp;%</th>
+<th class="num" title="Win x P(finish), win book preserved">Honest&nbsp;Win&nbsp;%</th></tr></thead>
+<tbody><tr><td class="rk">1</td><td class="nm">★ Pogacar Tadej<span class="tm">UAE Team Emirates-XRG</span></td><td class="num hl">44.1</td><td class="num">47.1</td><td class="num">34.1</td><td class="num">76.1</td><td class="num">81.5</td><td class="num">0.5</td><td class="num">47.2</td></tr><tr><td class="rk">3</td><td class="nm">★ Evenepoel Remco<span class="tm">Red Bull-BORA-hansgrohe</span></td><td class="num hl">14.5</td><td class="num">14.3</td><td class="num">11.5</td><td class="num">38.2</td><td class="num">48.9</td><td class="num">0.7</td><td class="num">14.3</td></tr><tr><td class="rk">2</td><td class="nm">★ Vingegaard Jonas<span class="tm">Team Visma | Lease a Bike</span></td><td class="num hl">12.2</td><td class="num">11.6</td><td class="num">9.8</td><td class="num">39.0</td><td class="num">49.6</td><td class="num">0.7</td><td class="num">11.6</td></tr><tr><td class="rk">5</td><td class="nm">★ Seixas Paul<span class="tm">Decathlon CMA CGM Team</span></td><td class="num hl">9.1</td><td class="num">8.2</td><td class="num">7.4</td><td class="num">15.0</td><td class="num">25.0</td><td class="num">1.3</td><td class="num">8.1</td></tr><tr><td class="rk">4</td><td class="nm">★ del Toro Isaac<span class="tm">UAE Team Emirates-XRG</span></td><td class="num hl">6.2</td><td class="num">3.8</td><td class="num">5.5</td><td class="num">12.1</td><td class="num">24.5</td><td class="num">0.6</td><td class="num">3.8</td></tr><tr><td class="rk">6</td><td class="nm">★ Lipowitz Florian<span class="tm">Red Bull-BORA-hansgrohe</span></td><td class="num hl">6.2</td><td class="num">4.1</td><td class="num">5.4</td><td class="num">16.5</td><td class="num">28.2</td><td class="num">0.5</td><td class="num">4.1</td></tr><tr><td class="rk">7</td><td class="nm">★ Ayuso Juan<span class="tm">Lidl-Trek</span></td><td class="num hl">2.4</td><td class="num">1.9</td><td class="num">2.0</td><td class="num">7.7</td><td class="num">12.0</td><td class="num">0.8</td><td class="num">1.9</td></tr><tr><td class="rk">8</td><td class="nm">★ Martinez Lenny<span class="tm">Bahrain Victorious</span></td><td class="num hl">2.1</td><td class="num">2.2</td><td class="num">1.6</td><td class="num">6.5</td><td class="num">12.2</td><td class="num">0.5</td><td class="num">2.2</td></tr><tr><td class="rk">9</td><td class="nm">★ Carapaz Richard<span class="tm">EF Education-EasyPost</span></td><td class="num hl">1.6</td><td class="num">1.3</td><td class="num">1.3</td><td class="num">5.5</td><td class="num">11.0</td><td class="num">0.6</td><td class="num">1.3</td></tr><tr><td class="rk">13</td><td class="nm">★ Johannessen Tobias Halland<span class="tm">Uno-X Mobility</span></td><td class="num hl">1.5</td><td class="num">0.8</td><td class="num">1.4</td><td class="num">4.2</td><td class="num">11.0</td><td class="num">0.5</td><td class="num">0.8</td></tr></tbody></table></div></div>
+  </div>
+</section>
+<section class="col tdf-scenario" id="tdf-tt30">
+  <h3 class="tdf-h">Individual time trial (~30 min)</h3>
+  <p class="tdf-blurb">A ~30-minute individual race against the clock, from the Tour's recent mid-length TTs.</p>
+  <div class="wide tdf-grid">
+    <div class="tdf-side">
+      <p class="tdf-side-h">The archetype, as the model sees it</p>
+      <div class="pbars"><div class="pbar-row"><span class="pbar-label">Sprint</span><span class="pbar"><span class="pbar-fill" style="width:2%"></span></span><span class="pbar-val">0.00</span></div><div class="pbar-row"><span class="pbar-label">Mountain</span><span class="pbar"><span class="pbar-fill" style="width:2%"></span></span><span class="pbar-val">0.00</span></div><div class="pbar-row"><span class="pbar-label">Hilly</span><span class="pbar"><span class="pbar-fill" style="width:2%"></span></span><span class="pbar-val">0.00</span></div><div class="pbar-row"><span class="pbar-label">Rolling</span><span class="pbar"><span class="pbar-fill" style="width:2%"></span></span><span class="pbar-val">0.00</span></div><div class="pbar-row"><span class="pbar-label">Breakaway</span><span class="pbar"><span class="pbar-fill" style="width:2%"></span></span><span class="pbar-val">0.00</span></div><div class="pbar-row"><span class="pbar-label">Time trial</span><span class="pbar"><span class="pbar-fill dom" style="width:100%"></span></span><span class="pbar-val">1.00</span></div></div>
+      <div class="tdf-meta"><span>dominant: <b>time_trial</b></span><span>ref winning time: <b>33 min</b></span><span>ref abandon rate: <b>0.0%</b></span><span>cascade win book: <b>1.23</b></span></div>
+      <p class="tdf-side-h" style="margin-top:14px">Built from</p>
+      <div class="refchips"><span class="refchip">Stage: 05 · 2021</span><span class="refchip">Stage: 16 · 2023</span><span class="refchip">Stage: 07 · 2024</span><span class="refchip">Stage: 05 · 2025</span></div>
+    </div>
+    <div class="tdf-main"><div class="table-frame tdf-tf"><table class="tdf-table">
+<thead><tr><th></th><th>Rider</th>
+<th class="num" title="0.2 x cascade + 0.8 x LambdaRank, book-preserving">Blend&nbsp;Win&nbsp;%</th>
+<th class="num" title="Contender cascade, win corrector applied">Win&nbsp;%</th>
+<th class="num" title="Full-field LambdaRank book">LR&nbsp;Win&nbsp;%</th>
+<th class="num">Podium&nbsp;%</th><th class="num">Top&nbsp;5&nbsp;%</th>
+<th class="num" title="P(does not finish | starts)">DNF&nbsp;%</th>
+<th class="num" title="Win x P(finish), win book preserved">Honest&nbsp;Win&nbsp;%</th></tr></thead>
+<tbody><tr><td class="rk">1</td><td class="nm">★ Pogacar Tadej<span class="tm">UAE Team Emirates-XRG</span></td><td class="num hl">45.8</td><td class="num">47.8</td><td class="num">36.8</td><td class="num">82.0</td><td class="num">85.7</td><td class="num">0.5</td><td class="num">47.7</td></tr><tr><td class="rk">2</td><td class="nm">★ Evenepoel Remco<span class="tm">Red Bull-BORA-hansgrohe</span></td><td class="num hl">18.9</td><td class="num">20.5</td><td class="num">15.0</td><td class="num">49.1</td><td class="num">57.0</td><td class="num">0.5</td><td class="num">20.5</td></tr><tr><td class="rk">3</td><td class="nm">★ Tarling Joshua<span class="tm">Netcompany INEOS</span></td><td class="num hl">8.4</td><td class="num">8.0</td><td class="num">7.0</td><td class="num">23.4</td><td class="num">32.1</td><td class="num">0.3</td><td class="num">8.0</td></tr><tr><td class="rk">5</td><td class="nm">★ Lipowitz Florian<span class="tm">Red Bull-BORA-hansgrohe</span></td><td class="num hl">7.1</td><td class="num">3.4</td><td class="num">6.7</td><td class="num">15.9</td><td class="num">25.6</td><td class="num">0.2</td><td class="num">3.4</td></tr><tr><td class="rk">6</td><td class="nm">★ Seixas Paul<span class="tm">Decathlon CMA CGM Team</span></td><td class="num hl">7.1</td><td class="num">5.4</td><td class="num">6.2</td><td class="num">11.9</td><td class="num">20.9</td><td class="num">0.8</td><td class="num">5.4</td></tr><tr><td class="rk">4</td><td class="nm">★ Vingegaard Jonas<span class="tm">Team Visma | Lease a Bike</span></td><td class="num hl">5.3</td><td class="num">4.6</td><td class="num">4.5</td><td class="num">17.0</td><td class="num">26.0</td><td class="num">0.5</td><td class="num">4.6</td></tr><tr><td class="rk">8</td><td class="nm">★ Ayuso Juan<span class="tm">Lidl-Trek</span></td><td class="num hl">3.4</td><td class="num">2.0</td><td class="num">3.2</td><td class="num">8.0</td><td class="num">12.5</td><td class="num">0.6</td><td class="num">1.9</td></tr><tr><td class="rk">7</td><td class="nm">★ Ganna Filippo<span class="tm">Netcompany INEOS</span></td><td class="num hl">2.7</td><td class="num">2.5</td><td class="num">2.2</td><td class="num">13.5</td><td class="num">22.5</td><td class="num">0.2</td><td class="num">2.5</td></tr><tr><td class="rk">10</td><td class="nm">★ Foss Tobias<span class="tm">Netcompany INEOS</span></td><td class="num hl">2.2</td><td class="num">1.0</td><td class="num">2.1</td><td class="num">4.5</td><td class="num">9.8</td><td class="num">0.2</td><td class="num">1.0</td></tr><tr><td class="rk">9</td><td class="nm">★ Vacek Mathias<span class="tm">Lidl-Trek</span></td><td class="num hl">1.9</td><td class="num">1.2</td><td class="num">1.8</td><td class="num">5.5</td><td class="num">10.6</td><td class="num">0.2</td><td class="num">1.2</td></tr></tbody></table></div></div>
+  </div>
+</section>
+<section class="col tdf-scenario" id="tdf-queen">
+  <h3 class="tdf-h">Queen stage — long, brutal mountains</h3>
+  <p class="tdf-blurb">The hardest day of the race: 4–5 hours, multiple giant passes — double Ventoux, Granon, Col de la Loze, Bonette.</p>
+  <div class="wide tdf-grid">
+    <div class="tdf-side">
+      <p class="tdf-side-h">The archetype, as the model sees it</p>
+      <div class="pbars"><div class="pbar-row"><span class="pbar-label">Sprint</span><span class="pbar"><span class="pbar-fill" style="width:2%"></span></span><span class="pbar-val">0.00</span></div><div class="pbar-row"><span class="pbar-label">Mountain</span><span class="pbar"><span class="pbar-fill dom" style="width:51%"></span></span><span class="pbar-val">0.51</span></div><div class="pbar-row"><span class="pbar-label">Hilly</span><span class="pbar"><span class="pbar-fill" style="width:2%"></span></span><span class="pbar-val">0.00</span></div><div class="pbar-row"><span class="pbar-label">Rolling</span><span class="pbar"><span class="pbar-fill" style="width:49%"></span></span><span class="pbar-val">0.49</span></div><div class="pbar-row"><span class="pbar-label">Breakaway</span><span class="pbar"><span class="pbar-fill" style="width:2%"></span></span><span class="pbar-val">0.00</span></div><div class="pbar-row"><span class="pbar-label">Time trial</span><span class="pbar"><span class="pbar-fill" style="width:2%"></span></span><span class="pbar-val">0.00</span></div></div>
+      <div class="tdf-meta"><span>dominant: <b>mountain</b></span><span>ref winning time: <b>267 min</b></span><span>ref abandon rate: <b>0.0%</b></span><span>cascade win book: <b>1.24</b></span></div>
+      <p class="tdf-side-h" style="margin-top:14px">Built from</p>
+      <div class="refchips"><span class="refchip">Stage: 11 · 2021</span><span class="refchip">Stage: 18 · 2022</span><span class="refchip">Stage: 17 · 2023</span><span class="refchip">Stage: 19 · 2024</span><span class="refchip">Stage: 20 · 2024</span></div>
+    </div>
+    <div class="tdf-main"><div class="table-frame tdf-tf"><table class="tdf-table">
+<thead><tr><th></th><th>Rider</th>
+<th class="num" title="0.2 x cascade + 0.8 x LambdaRank, book-preserving">Blend&nbsp;Win&nbsp;%</th>
+<th class="num" title="Contender cascade, win corrector applied">Win&nbsp;%</th>
+<th class="num" title="Full-field LambdaRank book">LR&nbsp;Win&nbsp;%</th>
+<th class="num">Podium&nbsp;%</th><th class="num">Top&nbsp;5&nbsp;%</th>
+<th class="num" title="P(does not finish | starts)">DNF&nbsp;%</th>
+<th class="num" title="Win x P(finish), win book preserved">Honest&nbsp;Win&nbsp;%</th></tr></thead>
+<tbody><tr><td class="rk">1</td><td class="nm">★ Pogacar Tadej<span class="tm">UAE Team Emirates-XRG</span></td><td class="num hl">42.9</td><td class="num">48.6</td><td class="num">33.2</td><td class="num">78.6</td><td class="num">83.6</td><td class="num">0.6</td><td class="num">48.6</td></tr><tr><td class="rk">2</td><td class="nm">★ Evenepoel Remco<span class="tm">Red Bull-BORA-hansgrohe</span></td><td class="num hl">13.1</td><td class="num">13.0</td><td class="num">10.6</td><td class="num">36.5</td><td class="num">46.2</td><td class="num">0.7</td><td class="num">13.0</td></tr><tr><td class="rk">4</td><td class="nm">★ Seixas Paul<span class="tm">Decathlon CMA CGM Team</span></td><td class="num hl">10.0</td><td class="num">8.5</td><td class="num">8.5</td><td class="num">15.3</td><td class="num">24.2</td><td class="num">1.1</td><td class="num">8.5</td></tr><tr><td class="rk">3</td><td class="nm">★ Vingegaard Jonas<span class="tm">Team Visma | Lease a Bike</span></td><td class="num hl">7.8</td><td class="num">7.2</td><td class="num">6.4</td><td class="num">25.6</td><td class="num">36.6</td><td class="num">0.6</td><td class="num">7.2</td></tr><tr><td class="rk">5</td><td class="nm">★ del Toro Isaac<span class="tm">UAE Team Emirates-XRG</span></td><td class="num hl">6.7</td><td class="num">3.1</td><td class="num">6.4</td><td class="num">11.6</td><td class="num">21.9</td><td class="num">0.5</td><td class="num">3.1</td></tr><tr><td class="rk">6</td><td class="nm">★ Lipowitz Florian<span class="tm">Red Bull-BORA-hansgrohe</span></td><td class="num hl">5.0</td><td class="num">2.9</td><td class="num">4.6</td><td class="num">13.6</td><td class="num">21.6</td><td class="num">0.4</td><td class="num">2.9</td></tr><tr><td class="rk">10</td><td class="nm">★ Martinez Lenny<span class="tm">Bahrain Victorious</span></td><td class="num hl">2.0</td><td class="num">1.8</td><td class="num">1.7</td><td class="num">5.2</td><td class="num">9.6</td><td class="num">0.4</td><td class="num">1.8</td></tr><tr><td class="rk">11</td><td class="nm">★ Arensman Thymen<span class="tm">Netcompany INEOS</span></td><td class="num hl">1.8</td><td class="num">1.5</td><td class="num">1.5</td><td class="num">5.9</td><td class="num">10.7</td><td class="num">0.4</td><td class="num">1.5</td></tr><tr><td class="rk">7</td><td class="nm">★ Ayuso Juan<span class="tm">Lidl-Trek</span></td><td class="num hl">1.6</td><td class="num">1.2</td><td class="num">1.4</td><td class="num">6.0</td><td class="num">9.3</td><td class="num">0.6</td><td class="num">1.2</td></tr><tr><td class="rk">8</td><td class="nm">★ Hindley Jai<span class="tm">Red Bull-BORA-hansgrohe</span></td><td class="num hl">1.6</td><td class="num">1.2</td><td class="num">1.4</td><td class="num">7.0</td><td class="num">13.0</td><td class="num">0.5</td><td class="num">1.2</td></tr></tbody></table></div></div>
+  </div>
+</section>
+<section class="col">
+  <p class="kicker">Reading notes</p>
+  <h3 class="tdf-h" style="margin-top:0">Why the boards look different per archetype</h3>
+  <p>Only two things change between scenarios: the course profile fed to the models (the bars on each card) and the stage-context the DNF head sees. The startlist, every rider's form, Elo, and team context stay identical — so the differences between boards are purely the model's view of <em>rider-course fit</em>. The win books also behave differently by design: the cascade's book is unconstrained (it's a per-rider conditional head), widest on open sprint days and most concentrated when one rider dominates a profile.</p>
+</section>
+<!-- TDF:END -->
+</div>
+
+<!-- ================= PLAIN-ENGLISH VIEW ================= -->
+<div id="view-plain" hidden>
+
+<section class="col">
+  <p class="kicker">The friendly tour</p>
+  <h2>What is this thing?</h2>
+  <p>It's a computer program that has studied ten years of professional bike-race results — over 600,000 of them — and uses what it learned to estimate each rider's chances before a race: chance of winning, of finishing on the podium, of making the top 5, and so on.</p>
+  <p>Think of it like a weather forecast, but for bike races. A forecast doesn't tell you <em>it will definitely rain</em>; it says "70% chance of rain," and a good forecaster is right about 7 times out of 10 when they say that. This system aims for the same thing: percentages you can actually trust, race after race.</p>
+
+  <div class="plain-steps wide">
+    <div class="pstep"><div class="n">1</div><h5>Line them up</h5><p>Put all ~180 starters in expected finishing order.</p></div>
+    <div class="pstep"><div class="n">2</div><h5>Zoom in on the favorites</h5><p>Take the top 15 and split the winning chances between them.</p></div>
+    <div class="pstep"><div class="n">3</div><h5>Double-check the math</h5><p>A second, more cautious estimate keeps the percentages honest.</p></div>
+    <div class="pstep"><div class="n">4</div><h5>Reality check</h5><p>Factor in the chance a rider crashes out or quits before the finish.</p></div>
+  </div>
+</section>
+
+<section class="col">
+  <p class="kicker">The team behind the forecast</p>
+  <h2>Seven specialists, one prediction</h2>
+  <p>Under the hood it isn't one big brain — it's a panel of seven specialists, each trained to answer one question really well. Like a good cycling team, each has a job:</p>
+
+  <div class="wide cards">
+    <div class="card">
+      <h4>The Sorter <span class="aka">bucket model</span></h4>
+      <p class="q">"Roughly where does each rider finish?"</p>
+      <p>Looks at every starter's history and lines the whole field up in expected finishing order — like a talent scout ranking the startlist from 1 to 180. Whoever lands in its top 15 is treated as a genuine favorite by everyone else on the panel.</p>
+    </div>
+
+    <div class="card">
+      <h4>The Stopwatch <span class="aka">time-gap model</span></h4>
+      <p class="q">"OK, but by how much?"</p>
+      <p>Two riders can both "lose" a race — one by 2 seconds in a photo finish, the other rolling in 12 minutes later. The Stopwatch predicts the actual time behind the winner, which tells the panel how close the race really was for each rider.</p>
+    </div>
+
+    <div class="card">
+      <h4>The Bold Tipster <span class="aka">contender model</span></h4>
+      <p class="q">"Of the favorites, who actually wins?"</p>
+      <p>Ignores everyone except the ~15 genuine favorites and divides the winning chances between them. Opinionated and sharp — this is the specialist that's best at actually naming the winner, and its numbers are the headline percentages in the app.</p>
+    </div>
+
+    <div class="card">
+      <h4>The Careful Accountant <span class="aka">LambdaRank model</span></h4>
+      <p class="q">"Are those percentages actually fair?"</p>
+      <p>Prices <em>every</em> rider, not just favorites, and its specialty is percentages that mean what they say: across all the riders it gives "10%" to, almost exactly 1 in 10 win. Less flashy than the Tipster, but this is who you'd trust when comparing against a bookmaker.</p>
+    </div>
+
+    <div class="card">
+      <h4>The Crash Forecaster <span class="aka">DNF model</span></h4>
+      <p class="q">"Will they even reach the finish?"</p>
+      <p>About 1 rider in 10 doesn't finish a pro race — crashes, illness, exhaustion, or quitting to save energy for another day. This specialist estimates that risk for each rider, so the other predictions can be adjusted for it.</p>
+    </div>
+
+    <div class="card">
+      <h4>The Race Director <span class="aka">GC outlook model</span></h4>
+      <p class="q">"Halfway through a 3-week race — now who wins?"</p>
+      <p>Only wakes up during multi-day races like the Tour de France. Once real stages have been ridden, it uses the actual standings — who's leading, by how many seconds — instead of pretending the race hasn't started yet.</p>
+    </div>
+
+    <div class="card">
+      <h4>The Duel Judge <span class="aka">contested Elo rating</span></h4>
+      <p class="q">"When it came down to a real fight, who won?"</p>
+      <p>Keeps a chess-style rating for every rider, but only counts moments that were genuinely contested — a sprint decided at the line, one group distancing another. Beating 50 riders who'd already given up doesn't move your rating; outkicking the world champion does.</p>
+    </div>
+
+    <div class="card">
+      <h4>The Fairness Adjuster <span class="aka">win corrector</span></h4>
+      <p class="q">"Is the Tipster selling winners short?"</p>
+      <p>Over thousands of races we measured that the Bold Tipster is slightly too shy about winners' chances. This is a single, carefully measured nudge that corrects for it — like knowing your bathroom scale reads a pound heavy and adjusting accordingly.</p>
+    </div>
+  </div>
+</section>
+
+<div class="divider" aria-hidden="true">
+  <svg viewBox="0 0 1020 34" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M0,30 L120,30 L200,12 L260,26 L400,26 L520,4 L600,22 L760,22 L860,10 L1020,28" fill="none" stroke="#E5E3DB" stroke-width="2"/>
+    <path d="M0,30 L120,30 L200,12 L260,26 L400,26 L520,4 L600,22 L760,22 L860,10 L1020,28 L1020,34 L0,34 Z" fill="#F1EFE8" opacity=".6"/>
+  </svg>
+</div>
+
+<section class="col">
+  <p class="kicker">Worked example</p>
+  <h2>Follow one rider through the machine</h2>
+  <p>Say it's the morning of a big one-day race, and we follow a star sprinter — call him Rider X — through the whole pipeline:</p>
+
+  <div class="example">
+    <h4>Rider X's morning, step by step</h4>
+    <ol>
+      <li><strong>The Sorter</strong> looks at his results, his recent form, and how well the course suits a sprinter, and ranks him <span class="num">2nd</span> of 180 starters. He's officially a favorite.</li>
+      <li><strong>The Bold Tipster</strong> weighs him against the other 14 favorites and says: <span class="num">24%</span> to win, <span class="num">55%</span> to finish on the podium. The <strong>Fairness Adjuster</strong> nudges the win number up to <span class="num">25%</span>.</li>
+      <li><strong>The Careful Accountant</strong> is more conservative: <span class="num">19%</span> to win.</li>
+      <li>The app <strong>blends</strong> the two, leaning toward the Accountant (whose percentages are more trustworthy): about <span class="num">20%</span>.</li>
+      <li><strong>The Crash Forecaster</strong> gives him a <span class="num">4%</span> chance of not finishing. You can't stand on a podium if you're in the ambulance — so his <em>honest</em> podium chance becomes 55% × 96% ≈ <span class="num">53%</span>.</li>
+    </ol>
+  </div>
+
+  <p>And here's the important part: the app shows you <em>every one of those numbers</em>, not just the final one. If you want the bold pick, it's there. If you want the cautious price, it's there too. Nothing gets hidden inside the machine.</p>
+</section>
+
+<section class="col">
+  <p class="kicker">A fair question</p>
+  <h2>Why show two different win percentages?</h2>
+  <p>Because they're good at different things — like two friends you'd ask about the race.</p>
+  <p>One friend is <strong>bold</strong>: fantastic at calling the winner, but when he says "40% chance," he's often overexcited. The other is <strong>careful</strong>: her percentages are almost eerily reliable, but she spreads her confidence so evenly that she rarely pounds the table for anyone.</p>
+  <p>You wouldn't average your friends into one bland opinion and throw away the originals. So the app shows both, plus a blend — and when the two friends <em>disagree strongly</em> about a rider (more than 2 percentage points on the win chance), it highlights that rider in yellow. Big disagreement is useful information: it means "look closer at this one."</p>
+</section>
+
+<section class="col">
+  <p class="kicker">Keeping it honest</p>
+  <h2>Can it see the future? How good is it really?</h2>
+  <p>The model learned by replaying ten years of races under one strict rule: when predicting any race from the past, it's only allowed to use what was knowable <em>the day before</em> that race. No peeking at results that hadn't happened yet — the software equivalent of predicting last Sunday's race using only the previous Saturday's newspaper.</p>
+  <p>How often does it name the actual winner of a one-day race? About <strong>1 time in 4</strong>. If that sounds low, consider: a pro race has ~180 riders, crosswinds, crashes, punctures, and team tactics. Even the bookmakers' favorite <em>usually loses</em>. The real goal isn't naming every winner — it's percentages that hold up over a whole season, so that the riders given "20%" really do win about a fifth of the time. That's the standard every one of the seven specialists is graded against.</p>
+  <p class="note"><b>And one disclaimer:</b> these are model estimates for research and fun — not betting advice.</p>
+</section>
+
+</div>
+<!-- ================= TECHNICAL VIEW ================= -->
+<div id="view-tech">
+
+<section class="col" id="pipeline">
+  <p class="kicker">The 30-second version</p>
+  <h2>One race, one pass through the stack</h2>
+  <p>Paste a race URL into the app and it scrapes the startlist, attaches each rider's history as-of today, and runs the field through a stack of models. Each model answers a different question — <em>who's strongest, by how much, will they finish at all</em> — and a final pricing layer turns those answers into a coherent set of sportsbook-style probabilities.</p>
+
+  <div class="wide">
+    <div class="diagram-frame">
+      <svg viewBox="0 0 980 520" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Flow diagram of the prediction stack">
+        <defs>
+          <marker id="arr" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto">
+            <path d="M0,0 L8,4 L0,8 z" fill="#5C6470"/>
+          </marker>
+          <marker id="arrY" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto">
+            <path d="M0,0 L8,4 L0,8 z" fill="#B8930F"/>
+          </marker>
+          <marker id="arrB" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto">
+            <path d="M0,0 L8,4 L0,8 z" fill="#3E6B8F"/>
+          </marker>
+          <marker id="arrG" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto">
+            <path d="M0,0 L8,4 L0,8 z" fill="#47705A"/>
+          </marker>
+        </defs>
+        <style>
+          .lbl{font-family:"Avenir Next","Segoe UI",sans-serif;font-size:13px;font-weight:600;fill:#22272F}
+          .sub{font-family:"Avenir Next","Segoe UI",sans-serif;font-size:10.5px;fill:#5C6470}
+          .lane{font-family:"Avenir Next","Segoe UI",sans-serif;font-size:10px;font-weight:600;letter-spacing:.12em;fill:#9AA0AA}
+          .bx{fill:#FFFFFF;stroke:#C9CBC3;stroke-width:1.2;rx:5}
+          .bxY{fill:#FBF0C4;stroke:#D9B32A;stroke-width:1.2}
+          .bxB{fill:#E7EEF4;stroke:#7B9DBB;stroke-width:1.2}
+          .bxG{fill:#E6EEE9;stroke:#7FA08F;stroke-width:1.2}
+          .bxI{fill:#22272F;stroke:#22272F}
+          .flow{stroke:#5C6470;stroke-width:1.4;fill:none}
+          .flowY{stroke:#B8930F;stroke-width:1.4;fill:none}
+          .flowB{stroke:#3E6B8F;stroke-width:1.4;fill:none}
+          .flowG{stroke:#47705A;stroke-width:1.4;fill:none}
+          .feed{stroke:#9AA0AA;stroke-width:1.2;fill:none;stroke-dasharray:4 3}
+        </style>
+
+        <!-- lane labels -->
+        <text class="lane" x="10" y="52">MAIN LINE</text>
+        <text class="lane" x="10" y="262">CALIBRATION LINE</text>
+        <text class="lane" x="10" y="352">FINISHING LINE</text>
+
+        <!-- startlist -->
+        <rect class="bx" x="10" y="70" width="118" height="64" rx="5"/>
+        <text class="lbl" x="69" y="97" text-anchor="middle">Startlist</text>
+        <text class="sub" x="69" y="114" text-anchor="middle">+ 141 features/rider</text>
+
+        <!-- bucket head -->
+        <rect class="bx" x="168" y="70" width="140" height="64" rx="5"/>
+        <text class="lbl" x="238" y="91" text-anchor="middle">Bucket head</text>
+        <text class="sub" x="238" y="107" text-anchor="middle">ranks the whole field</text>
+        <text class="sub" x="238" y="121" text-anchor="middle">(+ time-gap head)</text>
+
+        <!-- gate -->
+        <rect class="bx" x="348" y="70" width="108" height="64" rx="5"/>
+        <text class="lbl" x="402" y="97" text-anchor="middle">Top-15 gate</text>
+        <text class="sub" x="402" y="114" text-anchor="middle">contenders only</text>
+
+        <!-- cascade -->
+        <rect class="bxY" x="496" y="58" width="168" height="88" rx="5"/>
+        <text class="lbl" x="580" y="84" text-anchor="middle">Contender cascade</text>
+        <text class="sub" x="580" y="101" text-anchor="middle">Win · Podium · Top 5 · Top 15</text>
+        <text class="sub" x="580" y="116" text-anchor="middle">sharp, discriminative</text>
+        <text class="sub" x="580" y="131" text-anchor="middle">probabilities</text>
+
+        <!-- pricing layer -->
+        <rect class="bxI" x="712" y="42" width="152" height="240" rx="5"/>
+        <text x="788" y="68" text-anchor="middle" style="font-family:'Avenir Next','Segoe UI',sans-serif;font-size:13px;font-weight:700;fill:#F5C518">Pricing layer</text>
+        <rect x="726" y="84" width="124" height="46" rx="4" fill="#3A4150"/>
+        <text x="788" y="103" text-anchor="middle" style="font-family:'Avenir Next',sans-serif;font-size:11.5px;font-weight:600;fill:#FBFAF7">1 · Win corrector</text>
+        <text x="788" y="119" text-anchor="middle" style="font-family:'Avenir Next',sans-serif;font-size:9.5px;fill:#B8BDC7">logit shift, fixes bias</text>
+        <rect x="726" y="140" width="124" height="46" rx="4" fill="#3A4150"/>
+        <text x="788" y="159" text-anchor="middle" style="font-family:'Avenir Next',sans-serif;font-size:11.5px;font-weight:600;fill:#FBFAF7">2 · Blend</text>
+        <text x="788" y="175" text-anchor="middle" style="font-family:'Avenir Next',sans-serif;font-size:9.5px;fill:#B8BDC7">0.2 mc + 0.8 LR</text>
+        <rect x="726" y="196" width="124" height="46" rx="4" fill="#3A4150"/>
+        <text x="788" y="215" text-anchor="middle" style="font-family:'Avenir Next',sans-serif;font-size:11.5px;font-weight:600;fill:#FBFAF7">3 · DNF adjust</text>
+        <text x="788" y="231" text-anchor="middle" style="font-family:'Avenir Next',sans-serif;font-size:9.5px;fill:#B8BDC7">honest prices</text>
+        <text x="788" y="266" text-anchor="middle" style="font-family:'Avenir Next',sans-serif;font-size:9.5px;fill:#B8BDC7">each step book-preserving</text>
+
+        <!-- displayed -->
+        <rect class="bx" x="898" y="90" width="72" height="144" rx="5"/>
+        <text class="lbl" x="934" y="118" text-anchor="middle">What</text>
+        <text class="lbl" x="934" y="134" text-anchor="middle">you</text>
+        <text class="lbl" x="934" y="150" text-anchor="middle">see</text>
+        <text class="sub" x="934" y="176" text-anchor="middle">prices,</text>
+        <text class="sub" x="934" y="190" text-anchor="middle">odds,</text>
+        <text class="sub" x="934" y="204" text-anchor="middle">every layer</text>
+        <text class="sub" x="934" y="218" text-anchor="middle">visible</text>
+
+        <!-- main flow arrows -->
+        <line class="flow" x1="128" y1="102" x2="162" y2="102" marker-end="url(#arr)"/>
+        <line class="flow" x1="308" y1="102" x2="342" y2="102" marker-end="url(#arr)"/>
+        <line class="flow" x1="456" y1="102" x2="490" y2="102" marker-end="url(#arrY)"/>
+        <line class="flowY" x1="664" y1="102" x2="706" y2="102" marker-end="url(#arrY)"/>
+        <line class="flow" x1="864" y1="162" x2="892" y2="162" marker-end="url(#arr)"/>
+
+        <!-- feeder features into cascade -->
+        <rect class="bx" x="380" y="176" width="248" height="58" rx="5"/>
+        <text class="sub" x="504" y="197" text-anchor="middle" style="font-weight:600;fill:#22272F">Stack features fed into the cascade</text>
+        <text class="sub" x="504" y="213" text-anchor="middle">time-gap + LambdaRank out-of-fold picks,</text>
+        <text class="sub" x="504" y="226" text-anchor="middle">contested Elo, one-day contest signatures</text>
+        <path class="feed" d="M 560 176 L 572 150" marker-end="url(#arr)"/>
+
+        <!-- LambdaRank lane -->
+        <rect class="bxB" x="168" y="278" width="180" height="58" rx="5"/>
+        <text class="lbl" x="258" y="300" text-anchor="middle">LambdaRank head</text>
+        <text class="sub" x="258" y="317" text-anchor="middle">full-field, calibrated win book</text>
+        <path class="flow" d="M 100 134 L 100 307 L 162 307" marker-end="url(#arr)"/>
+        <path class="flowB" d="M 348 307 L 788 307 L 788 288" marker-end="url(#arrB)"/>
+        <text class="sub" x="480" y="300" text-anchor="middle" style="fill:#3E6B8F">LR Win % → blend (step 2)</text>
+        <path class="feed" d="M 300 278 L 420 236" marker-end="url(#arr)"/>
+
+        <!-- DNF lane -->
+        <rect class="bxG" x="168" y="368" width="180" height="58" rx="5"/>
+        <text class="lbl" x="258" y="390" text-anchor="middle">DNF head</text>
+        <text class="sub" x="258" y="407" text-anchor="middle">will they finish at all?</text>
+        <path class="flow" d="M 100 307 L 100 397 L 162 397" marker-end="url(#arr)"/>
+        <path class="flowG" d="M 348 397 L 830 397 L 830 288" marker-end="url(#arrG)"/>
+        <text class="sub" x="560" y="390" text-anchor="middle" style="fill:#47705A">DNF % → honest prices (step 3)</text>
+
+        <!-- GC outlook aside -->
+        <rect class="bx" x="168" y="452" width="500" height="56" rx="5" stroke-dasharray="5 4"/>
+        <text class="lbl" x="418" y="474" text-anchor="middle">GC outlook head (separate panel)</text>
+        <text class="sub" x="418" y="491" text-anchor="middle">mid-race only: final GC given standings after stage k — runs beside the stack, not through it</text>
+      </svg>
+    </div>
+    <p class="caption">The main line ranks, gates, and prices. Two side lines — a calibration head and a finishing head — join at the pricing layer rather than being averaged in earlier. The GC outlook head runs beside the stack, not through it.</p>
+  </div>
+
+  <p style="margin-top:18px">A one-line mental model: <em>the bucket head ranks the field → the cascade prices the top → the corrector fixes its win bias → the blend borrows LambdaRank's calibration → the DNF adjustment makes the prices honest</em> — and every intermediate number stays visible in the table rather than being swallowed by the final one.</p>
+</section>
+
+<div class="divider" aria-hidden="true">
+  <svg viewBox="0 0 1020 34" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M0,30 L120,30 L200,12 L260,26 L400,26 L520,4 L600,22 L760,22 L860,10 L1020,28" fill="none" stroke="#E5E3DB" stroke-width="2"/>
+    <path d="M0,30 L120,30 L200,12 L260,26 L400,26 L520,4 L600,22 L760,22 L860,10 L1020,28 L1020,34 L0,34 Z" fill="#F1EFE8" opacity=".6"/>
+  </svg>
+</div>
+
+<section class="col" id="heads">
+  <p class="kicker">The riders on this team</p>
+  <h2>Seven heads, seven different questions</h2>
+  <p>Every head is a LightGBM model, but each differs on three axes: <strong>what it predicts</strong>, <strong>who it compares</strong> (the whole field? only contenders? riders who didn't finish?), and <strong>what loss it optimizes</strong>. Those choices determine what its number means — and why no single head is enough.</p>
+  <p>Results are scored on a tier scale: winner → podium → top 5 → top 15 → top 30 → top 50 → finisher, referred to below as <em>buckets</em>.</p>
+
+  <div class="wide cards">
+    <div class="card">
+      <h4>Bucket head</h4>
+      <p class="q">"Roughly where in the result sheet does this rider land?"</p>
+      <div class="chips">
+        <span class="chip pop-full">Full field</span>
+        <span class="chip obj">Ordinal regression</span>
+      </div>
+      <p>The ranking backbone. Predicts a continuous finishing tier for every starter and sorts the field. It is also the gatekeeper: its top 15 defines who counts as a <em>contender</em> everywhere downstream.</p>
+    </div>
+
+    <div class="card">
+      <h4>Time-gap head</h4>
+      <p class="q">"How far behind the winner, in seconds?"</p>
+      <div class="chips">
+        <span class="chip pop-full">Full field</span>
+        <span class="chip obj">Regression</span>
+      </div>
+      <p>Same ordering intuition as the bucket head, but in physical units — a 2-second gap and a 12-minute gap can be the same tier, and this head knows the difference. That magnitude signal is why its prediction is also fed back into the cascade as a feature.</p>
+    </div>
+
+    <div class="card">
+      <h4>Contender cascade</h4>
+      <p class="q">"Among the genuine contenders, how do the top placings split?"</p>
+      <div class="chips">
+        <span class="chip pop-top15">Top-15 finishers</span>
+        <span class="chip obj">5-class softmax</span>
+      </div>
+      <p>The headline pricing head. Trained only on gated contenders, with the bucket head's own opinion as an input, it is sharp at separating winner from podium from top 5. Its probabilities are conditional — on being a contender, and on finishing. Drives the displayed Win / Podium / Top 5 / Top 15 % and the odds.</p>
+    </div>
+
+    <div class="card">
+      <h4>LambdaRank head</h4>
+      <p class="q">"Over the entire startlist, what's one coherent win book?"</p>
+      <div class="chips">
+        <span class="chip pop-full">Full field</span>
+        <span class="chip obj">Ranking loss</span>
+      </div>
+      <p>Trained with a learning-to-rank objective and converted to probabilities by a per-race softmax with a fitted temperature. It never beat the cascade at picking winners — but its probabilities are almost perfectly calibrated, which is exactly what you want when comparing against a bookmaker's line.</p>
+    </div>
+
+    <div class="card">
+      <h4>DNF head</h4>
+      <p class="q">"Will they finish at all?"</p>
+      <div class="chips">
+        <span class="chip pop-starters">All starters</span>
+        <span class="chip obj">Binary classifier</span>
+      </div>
+      <p>The only head whose training population includes riders who abandoned. Every other probability is implicitly "given that they finish" — this head supplies the missing factor (AUC ≈ 0.88). Applied only at the pricing layer; mixing it into the finish-conditioned heads was tested and made things worse.</p>
+    </div>
+
+    <div class="card">
+      <h4>GC outlook head</h4>
+      <p class="q">"Given the standings after stage k, who wins the overall?"</p>
+      <div class="chips">
+        <span class="chip pop-state">Mid-race state</span>
+        <span class="chip obj">Bucket + cascade</span>
+      </div>
+      <p>A state-aware re-run of the main architecture for stage races: it sees each rider's current GC time, rank, and gap. Mid-race it beats simply carrying pre-race predictions forward by ~18 points of winner accuracy. Deliberately shown as its own panel, never merged into the pre-race table.</p>
+    </div>
+
+    <div class="card">
+      <h4>Contested Elo</h4>
+      <p class="q">"How strong is this rider when a result was actually disputed?"</p>
+      <div class="chips">
+        <span class="chip pop-full">All riders</span>
+        <span class="chip obj">Rating system</span>
+      </div>
+      <p>Not a model head but a measurement: an Elo rating built only from <em>informative</em> comparisons — contested sprints within the winner's group, splits between adjacent groups. It enters the models as a feature; the app also shows it raw, with the number of comparisons behind it.</p>
+    </div>
+
+    <div class="card">
+      <h4>Win corrector</h4>
+      <p class="q">"Is the cascade systematically shy about winners?"</p>
+      <div class="chips">
+        <span class="chip pop-top15">Contender rows</span>
+        <span class="chip obj">Logit shift</span>
+      </div>
+      <p>A single fitted parameter, not a model: a logit-scale shift that fixes the cascade's measured win-market under-confidence (validation calibration 0.95 → 1.00 at the last training run). Applied before anything else in the pricing layer.</p>
+    </div>
+  </div>
+</section>
+
+<div class="divider" aria-hidden="true">
+  <svg viewBox="0 0 1020 34" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M0,26 L160,26 L280,8 L360,24 L540,24 L640,6 L720,20 L900,20 L1020,30" fill="none" stroke="#E5E3DB" stroke-width="2"/>
+    <path d="M0,26 L160,26 L280,8 L360,24 L540,24 L640,6 L720,20 L900,20 L1020,30 L1020,34 L0,34 Z" fill="#F1EFE8" opacity=".6"/>
+  </svg>
+</div>
+
+<section class="col" id="combine">
+  <p class="kicker">Team tactics</p>
+  <h2>How the heads combine — two distinct mechanisms</h2>
+
+  <h3>Inside the models: feature stacking</h3>
+  <p>The cascade doesn't work alone. At training time, out-of-fold predictions from the time-gap and LambdaRank heads are added to its feature set, alongside the contested Elo rating and — for one-day races — <em>contest signatures</em>: a forecast of which kind of rider (sprinter, climber, puncheur…) will actually contest the finish, built from the startlist's composition and the race's history. At prediction time the same 17 columns are attached from the live heads, so training and serving see the same world.</p>
+
+  <h3>After the models: the pricing layer</h3>
+  <p>Three post-processing steps, each <strong>book-preserving</strong> — they reshape who gets which share of probability without inflating the total implied over the field.</p>
+
+  <div class="steps">
+    <div class="step">
+      <h4>Win corrector</h4>
+      <div>
+        <p>The fitted logit shift is applied to contender win probabilities and the odds are recomputed. Deliberately <em>not</em> renormalized — pinning the book here was the root cause of an earlier calibration bug.</p>
+      </div>
+    </div>
+    <div class="step">
+      <h4>Blend win market</h4>
+      <div>
+        <p>The sharp cascade and the calibrated LambdaRank book are combined into a third number, then rescaled so the field's total win probability still matches the cascade's book:</p>
+        <div class="formula">blend = 0.2 × cascade + 0.8 × LambdaRank &nbsp;→&nbsp; renormalized to the cascade book</div>
+        <p>An overlay that borrows LambdaRank's calibration without changing the total vig.</p>
+      </div>
+    </div>
+    <div class="step">
+      <h4>DNF adjustment — honest prices</h4>
+      <div>
+        <p>Every market is multiplied by the probability of finishing:</p>
+        <div class="formula">P(podium) = P(podium | finishes) × P(finishes)</div>
+        <p>Podium / top-5 / top-15 shrink directly (you can't podium if you don't finish); the win market is renormalized within the race so the total win book is preserved. The result is the price you'd actually want to compare against a bookmaker, whose "did not finish" is just a losing ticket.</p>
+      </div>
+    </div>
+  </div>
+
+  <h3>Where heads deliberately stay separate</h3>
+  <p>The cascade's Win % and LambdaRank's Win % are shown <strong>side by side</strong>, and any rider where they disagree by 2+ percentage points is highlighted. That disagreement is a feature, not a bug — the two heads carry genuinely different signal, and a large gap is the app telling you to look closer.</p>
+
+  <div class="compare">
+    <div class="box mc">
+      <h4>Win % — the cascade</h4>
+      <p>Use it to <strong>pick winners</strong>. Sharpest at separating the very best riders from each other; conditioned on contending and finishing.</p>
+    </div>
+    <div class="box lr">
+      <h4>LR Win % — LambdaRank</h4>
+      <p>Use it to <strong>compare against a book</strong>. Near-perfectly calibrated across the whole field; the honest baseline for value hunting.</p>
+    </div>
+  </div>
+
+  <p>Likewise, the GC outlook stays a separate panel, the Elo rating stays a raw column, and every run — both heads' probabilities, the blend, DNF, adjusted prices — is logged to a prediction database for long-term comparison against real results and real odds.</p>
+</section>
+
+<div class="divider" aria-hidden="true">
+  <svg viewBox="0 0 1020 34" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M0,28 L140,28 L240,10 L320,24 L480,24 L580,5 L680,22 L840,22 L940,12 L1020,26" fill="none" stroke="#E5E3DB" stroke-width="2"/>
+    <path d="M0,28 L140,28 L240,10 L320,24 L480,24 L580,5 L680,22 L840,22 L940,12 L1020,26 L1020,34 L0,34 Z" fill="#F1EFE8" opacity=".6"/>
+  </svg>
+</div>
+
+<section class="col" id="table">
+  <p class="kicker">Reading the app</p>
+  <h2>Every column in a prediction run</h2>
+  <p>One table per reference race (plus an averaged tab). Each column traces back to exactly one place in the stack:</p>
+
+  <div class="wide table-frame">
+    <table>
+      <thead>
+        <tr><th>Column</th><th>Comes from</th><th>How to read it</th></tr>
+      </thead>
+      <tbody>
+        <tr><td class="mono">Rank · Predicted Bucket</td><td><span class="tag t-rank">Ranking</span></td><td>The field sorted by the bucket head (optionally ensembled with the time-gap head)</td></tr>
+        <tr><td class="mono">Expected Bucket</td><td><span class="tag t-rank">Ranking</span></td><td>Continuous finishing-tier estimate; lower is better</td></tr>
+        <tr><td class="mono">Time Gap (s)</td><td><span class="tag t-rank">Ranking</span></td><td>Predicted seconds behind the winner</td></tr>
+        <tr><td class="mono">Contender</td><td><span class="tag t-rank">Ranking</span></td><td>Inside the bucket head's top 15 — eligible for cascade pricing</td></tr>
+        <tr><td class="mono">Win / Podium / Top 5 / Top 15 %</td><td><span class="tag t-mc">Cascade</span></td><td>Discriminative probabilities, win corrector already applied</td></tr>
+        <tr><td class="mono">LR Win / LR Podium %</td><td><span class="tag t-lr">LambdaRank</span></td><td>Calibrated full-field book; the sportsbook-comparison line</td></tr>
+        <tr><td class="mono">Δ Win pp</td><td><span class="tag t-mix">Both</span></td><td>Cascade vs LambdaRank disagreement; highlighted at ≥ 2pp</td></tr>
+        <tr><td class="mono">Blend Win %</td><td><span class="tag t-mix">Pricing</span></td><td>0.2 × cascade + 0.8 × LambdaRank, book-preserving</td></tr>
+        <tr><td class="mono">DNF %</td><td><span class="tag t-dnf">DNF head</span></td><td>Probability of not finishing, given a start</td></tr>
+        <tr><td class="mono">Win…Top 15 % (adj)</td><td><span class="tag t-dnf">Pricing</span></td><td>Honest prices: markets × probability of finishing</td></tr>
+        <tr><td class="mono">Elo · Elo n</td><td><span class="tag t-rank">Rating</span></td><td>Contested-comparison rating and how many duels back it</td></tr>
+        <tr><td class="mono">Odds (win…top 30)</td><td><span class="tag t-mc">Cascade</span></td><td>Decimal / American / fractional, from corrected probabilities</td></tr>
+        <tr><td class="mono">GC Outlook panel</td><td><span class="tag t-mix">GC head</span></td><td>Mid-race only: final-GC probabilities given current standings</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p class="note"><b>Everything degrades gracefully.</b> Each head is optional — if an artifact is missing, its columns disappear and a provenance panel says exactly which layers engaged: which references were used, whether live form re-aging ran, whether signatures applied (one-day races only), whether the corrector, DNF head, and blend were active.</p>
+</section>
+
+<section class="col" id="data">
+  <p class="kicker">The engine room</p>
+  <h2>What it's all built on</h2>
+  <p>A weekly pipeline scrapes results from FirstCycling, migrates them into SQLite, and precomputes ~1.1M point-in-time rider snapshots back to 2010 — every feature strictly "as of the day before the race," so the models never peek at the future. Training covers 2016–2026: about 643K rider-race rows across 5,724 competitions at the WorldTour, ProSeries, and .1 levels.</p>
+  <p>Each rider carries 141 features into a prediction: long-run quality percentiles, recent-form trajectories (recomputed live as of prediction day), team context, race-profile fit against the course's gradients, contested Elo, and the stacked head outputs described above. Every prediction run is persisted, so the system continuously builds the dataset needed to judge itself against real books.</p>
+</section>
+
+</div>
+<!-- ================= end technical view ================= -->
+
+<footer class="col">
+  Cycling Race Predictor — system overview. LightGBM heads over FirstCycling historical data, 2016–2026. Probabilities are model estimates, not betting advice.
+</footer>
+
+</div>
+
+<script>
+  var VIEWS = ['tech', 'plain', 'tdf', 'books', 'heads'];
+  function setView(mode){
+    if (VIEWS.indexOf(mode) < 0) mode = 'tech';
+    VIEWS.forEach(function(v){
+      document.getElementById('view-' + v).hidden = (v !== mode);
+      document.getElementById('btn-' + v).setAttribute('aria-pressed', String(v === mode));
+    });
+    if (history.replaceState) history.replaceState(null, '', '#' + mode);
+    window.scrollTo(0, 0);
+  }
+  function applyHash(){
+    var h = location.hash.replace('#', '');
+    if (VIEWS.indexOf(h) >= 0) setView(h);
+  }
+  window.addEventListener('hashchange', applyHash);
+  applyHash();
+</script>

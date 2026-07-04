@@ -1,0 +1,258 @@
+"""
+Config-driven TdF 2026 stage prediction runner — headless arm-C serving path.
+
+Reads a per-stage scenario config (performance_eval/tour-de-france-2026/
+predictions/stage_NN/scenarios.json), runs each scenario, writes one JSON per
+scenario next to the config, and logs every run to prediction_log with a
+tagged model_version (same fields as the web app writes).
+
+    uv run python netlify_site/build/predict_stage_scenarios.py \
+        performance_eval/tour-de-france-2026/predictions/stage_02/scenarios.json \
+        [--only key1,key2] [--no-log]
+
+Scenario spec (in the config's "scenarios" map):
+    refs:      [competition_ids]  -> averaged real reference profile
+    base_refs + scores:           -> synthetic: terrain scores overridden on
+                                     the averaged base_refs profile (short
+                                     keys: sprint, mountain, hilly, rolling,
+                                     breakaway, time_trial); gradients and
+                                     metadata inherited from the base average.
+    tag:       suffix appended to model_version in prediction_log — rerunning
+               a scenario logs a NEW opinion under the same tag, so use --only
+               to avoid duplicate logging of unchanged scenarios.
+"""
+
+import argparse
+import json
+import sqlite3
+import sys
+import unicodedata
+from pathlib import Path
+
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(PROJECT_ROOT))
+
+from cycling_project.prediction_tools.dnf_predictor import load_production_dnf_head
+from cycling_project.prediction_tools.future_race_loader import (
+    assemble_prediction_df,
+    attach_stack_features,
+    average_race_profiles,
+    compute_field_features,
+    get_latest_rider_snapshots,
+    get_reference_race_profile,
+    load_production_rating_snapshots,
+    match_riders_to_db,
+    scrape_or_load_startlist,
+)
+from cycling_project.prediction_tools.model_registry import ModelRegistry
+from cycling_project.prediction_tools.prediction_log import (
+    PredictionLogRow,
+    log_predictions,
+    resolve_competition_id,
+)
+from cycling_project.prediction_tools.pricing_layer import apply_pricing_layer
+from cycling_project.prediction_tools.win_calibration import load_corrector
+
+MODEL_DIR = PROJECT_ROOT / "models" / "production"
+DB_PATH = str(PROJECT_ROOT / "cycling_project" / "webscrape_tools" / "database"
+              / "database" / "cycling_races.db")
+ODDS_ROOT = PROJECT_ROOT / "performance_eval" / "tour-de-france-2026" / "odds"
+
+SCORE_KEY_MAP = {
+    "sprint": "race_sprint_score", "mountain": "race_mountain_score",
+    "hilly": "race_hilly_score", "rolling": "race_rolling_score",
+    "breakaway": "race_breakaway_score", "time_trial": "race_time_trial_score",
+}
+
+RESULT_COLS = [
+    "rider_id", "rider_name", "predicted_rank", "expected_bucket",
+    "is_contender", "predicted_time_gap",
+    "prob_win", "prob_podium", "prob_top5", "prob_top15",
+    "lambdarank_win_p", "blend_win_p",
+    "dnf_p", "dnf_adj_win_p", "dnf_adj_podium_p", "dnf_adj_top5_p",
+    "dnf_adj_top15_p", "odds_win",
+    "contested_rating", "contested_rating_n",
+]
+
+
+def norm_name(s):
+    s = unicodedata.normalize("NFKD", s)
+    s = "".join(c for c in s if not unicodedata.combining(c))
+    s = s.lower().replace("'", "").replace("-", " ").replace(".", " ")
+    return " ".join(sorted(s.split()))
+
+
+def load_book(config):
+    """Rider -> win-market outcome from the archived Kambi capture."""
+    odds_file = ODDS_ROOT / config["odds_capture"]
+    if not odds_file.exists():
+        return {}, None
+    mk = json.loads(odds_file.read_text())
+    for bo in mk.get(str(config["event_id"]), {}).get("betoffers", []):
+        if bo["criterion"] == "Winnaar" and bo["bet_offer_type"] == "Winnaar":
+            return {norm_name(o["name"]): o for o in bo["outcomes"]}, odds_file.name
+    return {}, odds_file.name
+
+
+def find_book(book, rider_name):
+    k = norm_name(rider_name)
+    if k in book:
+        return book[k]
+    bt = set(k.split())
+    cands = [v for bk, v in book.items()
+             if set(bk.split()) <= bt or bt <= set(bk.split())]
+    return cands[0] if len(cands) == 1 else None
+
+
+def build_profile(spec, db_path):
+    """Averaged real profile (refs) or synthetic override (base_refs+scores)."""
+    ref_ids = spec.get("refs") or spec["base_refs"]
+    profiles = [get_reference_race_profile(c, db_path) for c in ref_ids]
+    avg = average_race_profiles(profiles)
+    ref_meta = [{"competition_id": int(c), "name": p["competition_name"],
+                 "date": p["competition_date"]}
+                for c, p in zip(ref_ids, profiles)]
+    if spec.get("scores"):
+        overrides = {SCORE_KEY_MAP[k]: float(v)
+                     for k, v in spec["scores"].items()}
+        avg.update(overrides)
+        best = max(SCORE_KEY_MAP.values(), key=lambda k: avg.get(k) or 0)
+        avg["race_dominant_profile"] = best.replace("race_", "").replace("_score", "")
+        avg["competition_name"] = spec["label"]
+    return avg, ref_meta, ref_ids
+
+
+def main():
+    ap = argparse.ArgumentParser(description=__doc__.splitlines()[1])
+    ap.add_argument("config", help="path to stage scenarios.json")
+    ap.add_argument("--only", default=None,
+                    help="comma-separated scenario keys to run (default: all)")
+    ap.add_argument("--no-log", action="store_true",
+                    help="skip prediction_log writes")
+    args = ap.parse_args()
+
+    config_path = Path(args.config).resolve()
+    config = json.loads(config_path.read_text())
+    out_dir = config_path.parent
+    only = set(args.only.split(",")) if args.only else None
+    todo = {k: v for k, v in config["scenarios"].items()
+            if only is None or k in only}
+    if not todo:
+        sys.exit(f"No scenarios matched --only={args.only}")
+
+    print("Loading production registry + serving artifacts...", flush=True)
+    registry = ModelRegistry(str(MODEL_DIR))
+    bucket_pred, time_gap_pred, race_ranker, lambdarank_pred = registry.load_with_ranker(
+        ranking_method="ensemble")
+    win_corrector = load_corrector(MODEL_DIR)
+    dnf_bundle = load_production_dnf_head(MODEL_DIR)
+    rating_snaps = load_production_rating_snapshots()
+    saved_at = registry.get_metadata().get("saved_at", "")
+    lr_temp = getattr(lambdarank_pred, "temperature", None)
+
+    teams, from_cache = scrape_or_load_startlist(
+        int(config["fc_race_id"]), int(config["year"]), db_path=DB_PATH)
+    assert from_cache, "startlist should come from cache"
+    matched, unmatched = match_riders_to_db(teams, DB_PATH)
+    print(f"Startlist: {len(matched)} matched, {len(unmatched)} unmatched", flush=True)
+
+    snapshots = get_latest_rider_snapshots(matched["rider_id"].tolist(), DB_PATH)
+    field_features = compute_field_features(snapshots)
+    team_map = matched.set_index("rider_id")["team_name"].to_dict()
+    book, book_source = load_book(config)
+
+    conn = sqlite3.connect(DB_PATH)
+    stage_number = int(config["stage"])
+    comp_id = resolve_competition_id(conn, str(config["fc_race_id"]),
+                                     int(config["year"]), stage_number)
+
+    for key, spec in todo.items():
+        prof, ref_meta, ref_ids = build_profile(spec, DB_PATH)
+        print(f"\n=== {key}: {spec['label']} ===", flush=True)
+        print("  profile:", ", ".join(
+            f"{sk}={prof[fk]:.2f}" for sk, fk in SCORE_KEY_MAP.items()
+            if prof.get(fk) is not None), flush=True)
+
+        form_status = {}
+        pred_df = assemble_prediction_df(snapshots, matched, field_features,
+                                         prof, form_status=form_status)
+        pred_df = attach_stack_features(pred_df, time_gap_pred, lambdarank_pred,
+                                        rating_snapshots=rating_snaps,
+                                        signature_context=None)
+        result = race_ranker.predict_race(pred_df, return_details=True)
+        lr_map = dict(zip(pred_df["rider_id"].astype(int),
+                          pred_df["oof_lambdarank_win_p"].astype(float)))
+        result["lambdarank_win_p"] = result["rider_id"].astype(int).map(lr_map)
+        for col in ("contested_rating", "contested_rating_n"):
+            elo_map = dict(zip(pred_df["rider_id"].astype(int), pred_df[col]))
+            result[col] = result["rider_id"].astype(int).map(elo_map)
+
+        priced, warnings = apply_pricing_layer(result, pred_df, prof,
+                                               win_corrector=win_corrector,
+                                               dnf_bundle=dnf_bundle,
+                                               stage_number=stage_number,
+                                               db_path=DB_PATH)
+        for w in warnings:
+            print(f"  [warn] {w}", flush=True)
+
+        cols = [c for c in RESULT_COLS if c in priced.columns]
+        tab = priced.sort_values("predicted_rank")[cols].copy()
+        tab["team_name"] = tab["rider_id"].map(team_map)
+        records = json.loads(tab.to_json(orient="records"))
+        for r in records:
+            b = find_book(book, r["rider_name"])
+            r["book_odds"] = b["odds"] if b else None
+            r["book_devig"] = b.get("devig") if b else None
+
+        out_path = out_dir / f"{key}.json"
+        out_path.write_text(json.dumps({
+            "scenario": spec["label"],
+            "scenario_key": key,
+            "stage_number": stage_number,
+            "references": ref_meta,
+            "note": spec.get("note"),
+            "model_version": f"{saved_at}|{spec['tag']}",
+            "avg_profile": {k: prof.get(k) for k in prof
+                            if not hasattr(prof.get(k), "shape")},
+            "form_status": form_status,
+            "book_source": book_source,
+            "riders": records,
+        }, indent=1, default=str))
+
+        if not args.no_log:
+            log_rows = [PredictionLogRow(
+                fc_race_id=str(config["fc_race_id"]), year=int(config["year"]),
+                stage_number=stage_number, competition_id=comp_id,
+                rider_id=int(r["rider_id"]), rider_name=r["rider_name"],
+                reference_comp_ids=list(ref_ids),
+                model_version=f"{saved_at}|{spec['tag']}",
+                multiclass_win_p=r.get("prob_win"),
+                multiclass_podium_p=r.get("prob_podium"),
+                multiclass_top5_p=r.get("prob_top5"),
+                multiclass_top15_p=r.get("prob_top15"),
+                lambdarank_win_p=r.get("lambdarank_win_p"),
+                lambdarank_temperature=lr_temp,
+                dnf_p=r.get("dnf_p"),
+                dnf_adj_win_p=r.get("dnf_adj_win_p"),
+                dnf_adj_podium_p=r.get("dnf_adj_podium_p"),
+                dnf_adj_top5_p=r.get("dnf_adj_top5_p"),
+                dnf_adj_top15_p=r.get("dnf_adj_top15_p"),
+                blend_win_p=r.get("blend_win_p"),
+            ) for r in records]
+            n = log_predictions(conn, log_rows)
+            print(f"  saved {out_path.name}; logged {n} rows "
+                  f"(...|{spec['tag']}, comp_id={comp_id})", flush=True)
+        else:
+            print(f"  saved {out_path.name} (logging skipped)", flush=True)
+
+        top = records[:8]
+        print("  top-8: " + " | ".join(
+            f"{r['rider_name']} bl={100*(r['blend_win_p'] or 0):.1f}%"
+            for r in sorted(top, key=lambda r: -(r['blend_win_p'] or 0))),
+            flush=True)
+
+    conn.close()
+
+
+if __name__ == "__main__":
+    main()
