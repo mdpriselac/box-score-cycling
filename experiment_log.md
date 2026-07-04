@@ -1962,3 +1962,241 @@ FirstCycling's Cloudflare began 403-blocking cloudscraper on 2026-06-10
 2026-05-03 until the scraper is fixed (curl_cffi impersonation the likely
 route). Models/features were retrained on unchanged data, so the re-gate
 is unaffected.
+
+---
+
+## 2026-07-03 — Step 0: grand-tour recency bias in win calibration (GT-coasting form dilution)
+
+**Motivation.** During TdF-2026 prediction review, the model ranked Evenepoel
+(no race since Apr 26) above Vingegaard (won Giro + Paris-Nice + Catalunya,
+3-for-3 GCs) on the GC board. Live-form probe showed why: Vingegaard's
+v2_ema_pct_h60 = 83.4 (lowest of the five favorites) because a grand tour
+emits ~21 result rows of which a GC winner legitimately coasts ~14 (Giro
+stage rows avg percentile 81, min 31, around three GC rows at 100). Per-row
+form treats strategic coasting as bad form. Hypothesis: systematic
+underpricing of riders who recently finished a GT.
+
+**Method.** Reused the per-row records from the 2026-06-10 age-bias backtest
+(5 folds, 2016 start, production-config heads, test 2021-2025, 280K rows;
+pre-trajectory heads — mechanism exists in both form generations, confirmed
+in v2v3 by the live probe). Joined GT participation from DB (≥10 stage rows
+in a Giro/TdF/Vuelta edition; same-edition rows excluded), banded by days
+since GT end. Metric: LambdaRank win cal ratio (Σp/Σwins; <1 = underpriced).
+Script: scratchpad `gt_recency_backtest.py`; JSON:
+`experiments/gt_recency_backtest_20260703.json`.
+
+**Result — monotone dose-response, clean 5/5-fold direction:**
+
+| band | n | LR win cal (all) | LR win cal (GC targets) |
+|---|---|---|---|
+| GT ended ≤45d ago | 9.6K | **0.762** (5/5 under) | **0.510** (5/5 under) |
+| GT 46–90d ago | 9.7K | 0.846 (5/5) | 0.718 (3/4) |
+| GT 91–365d ago | 82K | 0.966 (4/5) | 0.918 (4/5) |
+| no GT in 12mo | 180K | **1.120** (0/5) | **1.274** (0/5) |
+
+Contender head, same direction: 0.875 (≤45d) → 1.036 (no GT). The model
+shifts win probability *from* recent-GT riders *to* GT-naive riders; on GC
+targets a rider who finished a grand tour ≤45 days ago wins at **2×** the
+model's price. This is exactly the Vingegaard cell (Giro ended 33 days
+before the TdF). Larger than the veteran bias that motivated v2v3 (worst
+band there: 1.327).
+
+**Verdict: green light for a GT-aware form experiment.** Candidate designs
+(user-preferred, in sweep order): (1) contested-rows-only form — EMA over
+rows where the rider was in an informative comparison, reusing the
+contested-Elo machinery ("form when it mattered"); (2) comp-type-scoped
+form — parallel EMA over gc + one_day rows only. Same v2v3 conventions
+(NULL when no history, no imputation), gate = market_avg_log_loss (5-fold,
+honest frame) with the GT-recency cal table above as the bias diagnostic.
+
+---
+
+## 2026-07-03 — GT-aware form sweep: v5 contested-rows / v6 comp-type-scoped (+ one-day scoping)
+
+**Goal.** Fix the GT-coasting dilution quantified in the step-0 entry above.
+Two feature designs, both computed in `prediction_tools/experiments/form_feature_lab.py`
+(V5/V6 blocks, cache `form_lab_features_v2.csv.gz`, 699K rows), added
+ADDITIVELY to the current production feature set (which already carries the
+v2/v3 EMA/trajectory block natively — the lab v2/v3 columns are excluded from
+the merge to avoid a name collision):
+
+- **v5 — contested-rows-only EMA.** Percentile EMA (h30/h60 + eff_n +
+  season-cur) over only the rider's result rows where they appeared in ≥1
+  informative comparison, using the contested-Elo pair rules
+  (`contested_rating._competition_pairs`: sprint order in the first 10 of the
+  winner's group + adjacent group-vs-group). 562K contested (rider,comp)
+  keys, derived straight from the DB (no dependency on the Elo snapshot
+  artifact). Coasting GT rows drop out because the rider wasn't contesting.
+- **v6 — comp-type-scoped EMA.** Parallel percentile EMA over gc + one_day
+  rows only (stage rows excluded) + a scoped season-delta. A grand tour
+  contributes just its single GC result, not 21 stage rows.
+
+Column names avoid the `avg_bucket`/`_count` imputation-trap substrings (use
+`eff_n`); NULL when no qualifying history, never imputed.
+
+**Method / harness.** `form_feature_sweep.py` rebuilt for round 2: 5-fold
+expanding window (2016 start, test 2021–2025), production contender config.
+Per config per fold it now trains bucket + contender + LambdaRank and reports
+(a) standard Top4 metrics, (b) MarketProbabilityEvaluator on the top-15 pool,
+(c) **honest-frame market metrics** (startlist pool incl. DNF'd starters,
+P(market|finish)×P(finish) via a fold-safe DNF head, AUC 0.872–0.884) — the
+PRIMARY gate — and (d) the GT-recency cal tables
+(`gt_recency_backtest.gt_band_tables`, refactored to importable functions;
+regression-checked bit-identical to the committed step-0 JSON). DNF'd-starter
+rows in the honest pool get real lab features via a new
+`FormFeatureLab.features_for_targets` (as-of-then history for arbitrary
+non-finisher keys). Baseline is bit-reproducible across all three runs
+(max |Δ honest_all| = 0.000000).
+
+A second axis emerged mid-experiment and was added: **one-day scoping** —
+NaN the feature on one_day TARGET rows so it acts only on gc/stage racing
+(mirrors the shipped one-day-scoped signature features). Motivated by v5's
+one-day regression (below). `*scoped` = feature NaN'd on one-days;
+`v5v6mixed` = only v5 scoped, v6 left active on one-days.
+
+Result JSONs: `experiments/form_feature_sweep_20260703_160819.json`
+(baseline/v5/v6/v5v6), `_164706.json` (baseline/v5scoped),
+`_181823.json` (baseline/v6scoped/v5v6scoped/v5v6mixed).
+
+**Honest-frame market_avg_log_loss Δ vs baseline (neg = better; 5 folds):**
+
+| config | all | one_day | stage | gc |
+|---|---|---|---|---|
+| v5 | +0.0003 (3/5) | **+0.0033 (0/5)** | −0.0001 | −0.0025 |
+| v6 | −0.0007 (4/5) | −0.0002 | −0.0006 | −0.0028 |
+| v5v6 | +0.0003 (1/5) | +0.0013 | +0.0003 | −0.0020 |
+| **v5scoped** | **+0.0000 (3/5)** | +0.0007 | −0.0000 | −0.0009 |
+| **v6scoped** | **−0.0015 (5/5)** | +0.0001 | −0.0013 (5/5) | **−0.0052 (5/5)** |
+| v5v6scoped | +0.0005 (2/5) | +0.0013 | +0.0008 | −0.0030 (5/5) |
+| v5v6mixed | +0.0001 (2/5) | +0.0002 | +0.0005 | −0.0024 (5/5) |
+
+**GT-recency LambdaRank win cal (bias diagnostic; ≤45d → 1.0, no-GT should
+not overshoot):**
+
+| config | ALL ≤45d | ALL noGT | GC ≤45d | GC noGT |
+|---|---|---|---|---|
+| baseline | 0.788 | 1.100 | 0.591 | 1.228 |
+| v5 | 0.847 | 1.094 | 0.640 | 1.213 |
+| v6 | 0.776 | 1.103 | **0.565** ⚠ | 1.239 |
+| v5v6 | 0.834 | 1.092 | 0.644 | 1.209 |
+| **v5scoped** | **0.836** | **1.083** | **0.654** | **1.194** |
+| v6scoped | 0.790 | 1.099 | 0.576 ⚠ | 1.233 |
+| v5v6scoped | 0.829 | 1.084 | 0.625 | 1.206 |
+| v5v6mixed | 0.833 | 1.089 | 0.638 | 1.208 |
+
+**Feature-importance ranks (contender, mean across folds):**
+`v5_cont_ema_eff_n_h60` #4.8 (strongest new feature — "how much did this
+rider actually contest" is exactly the signal), `v5_cont_ema_pct_h30` #14.8,
+`v5_cont_season_pct_cur` #19.2. For v6scoped: `v6_scoped_season_delta` #6.4,
+`v6_scoped_ema_eff_n_h60` #6.8. All heavily used.
+
+**Findings.**
+1. **v5 is the bias fix; v6 is not.** Only the contested-rows signal moves the
+   GT ≤45d cell toward 1.0. v6 (comp-type-scoped) actually *worsens* it
+   (0.591→0.565) while improving general market quality — a textbook case of
+   the v4 lesson (wins standard metrics, dilutes the bias fix), so v6-family
+   configs do NOT satisfy the experiment's objective.
+2. **v5 needs one-day scoping.** Unscoped v5 regresses one-day market LL
+   +0.0033 (5/5 worse; worst on the podium market) — the v2 all-rows EMA
+   already suffices on one-days, and v5 adds variance there. Scoping v5 off
+   one-day targets removes the regression AND *strengthens* the bias fix
+   (GC ≤45d 0.640→**0.654**, the best of any config) because the contested
+   signal stops being diluted by one-day usage. no-GT overshoot also eases
+   (GC 1.228→1.194) — a proper two-sided correction.
+3. **The combos don't stack; they dilute.** v5v6scoped/v5v6mixed give a
+   weaker bias fix than v5scoped alone (0.625 / 0.638 vs 0.654) and no market
+   gain — v5scoped strictly dominates both. v6's market gain does not survive
+   combination with v5.
+4. **v6scoped is a strong, unexpected, SEPARATE market-quality find.** all
+   −0.0015 (5/5), stage −0.0013 (5/5), gc **−0.0052 (5/5)** — the cleanest
+   market improvement in the grid, stronger than several shipped features —
+   but it is a general gc/stage form-quality upgrade, NOT a GT fix (it nudges
+   the ≤45d cell the wrong way). Winner capture also up (+0.0031, diagnostic).
+
+**Verdict.**
+- **SHIP v5scoped** → next stop the full-stack integration CV
+  (`full_stack_integration_cv.py` pattern) before any production wiring. It
+  does exactly what the experiment set out to do: biggest ≤45d correction
+  (0.591→0.654 GC, 0.788→0.836 all), two-sided (no-GT eased), market-neutral
+  on the primary gate (+0.0000 all, −0.0009 gc), and marginally positive on
+  winner capture (+0.0010, 4/5). Production twin would be a
+  `form_team_features.py` block + snapshot schema migration + 2010 rebuild +
+  retrain (same checklist as the v2v3 productionization), with the one-day
+  NaN scoping baked in.
+- **FLAG v6scoped** as its own candidate for a later probability-quality pass
+  (not a GT fix — do not conflate). Worth a dedicated gate on its own merits;
+  the naive v5+v6 combination is not the way to capture it (it dilutes).
+- **SHELVE** v5, v6, v5v6, v5v6scoped, v5v6mixed (each dominated: v5/v5v6 by
+  the one-day cost scoping removes; v6 by v6scoped; the combos by v5scoped).
+
+---
+
+## 2026-07-03 — v5scoped full-stack integration gate: REDUNDANT with contested Elo (shelved)
+
+**Question.** The sweep above picked v5scoped (contested-rows-only EMA, NaN'd
+on one-day targets) as the GT-bias fix — but tested against the *plain*
+baseline. The production stack already runs contested Elo, which is itself
+partly GT-aware (it measures the same "was this rider contesting" signal). So
+before wiring v5scoped in, does it add anything *on top of the shipped stack*?
+
+**Method.** New gate `prediction_tools/experiments/v5scoped_integration_cv.py`
+(smoke-validated, 5 folds, 2016 start, full budget, 61.5 min under caffeinate).
+Three paired arms per fold, each training bucket + contender + its own
+LambdaRank head (so the GT-recency win-cal table reflects the arm's
+calibration); OOF meta features generated once and reused:
+- **A** = plain production baseline (no stack).
+- **C** = shipped arm-C stack (meta-OOF + one-day B4 signatures + contested Elo).
+- **D** = C + the 4 v5 columns, NaN'd on one_day targets (the v5scoped design).
+Reuses the full-stack gate's tested `eval_arm` / `honest_eval`; DNF'd starters
+in the honest pool get real v5 features via `FormFeatureLab.features_for_targets`.
+Result JSON `experiments/v5scoped_integration_cv_20260703_195330.json`.
+
+**Market gate — D−C (v5scoped's increment on the stack), 5-fold:**
+
+| subset | D−C market_avg_ll | honest-frame D−C | C−A (what the stack gives) |
+|---|---|---|---|
+| all | −0.0002±0.0015 (2/5) | +0.0001±0.0017 (3/5) | **−0.0041 (5/5)** |
+| one_day | −0.0010±0.0013 (4/5) | −0.0013±0.0017 (4/5) | −0.0023 (5/5) |
+| stage | +0.0003±0.0020 (3/5) | +0.0003±0.0020 (3/5) | −0.0042 (5/5) |
+| gc | — | **+0.0015±0.0032 (1/5)** | (honest −, strong) |
+
+v5scoped is market-**neutral** on top of the stack (all −0.0002 / honest
++0.0001), and specifically **worse on the GC honest frame** (+0.0015, 4/5
+folds worse) — the exact subset it was meant to help. Winner capture D−C
++0.0002±0.0088 (neutral, noisy: −0.0088…+0.0160). The one-day −0.0010 is
+noise from tree restructuring (v5 is NaN there). By contrast C−A is −0.0041
+(5/5) — the stack itself is a large, clean win; v5scoped adds nothing to it.
+
+**GT-recency bias diagnostic — A → C → D (LR win cal, ≤45d → 1.0):**
+
+| band | A plain | C stack | D stack+v5scoped | stack gives | v5scoped adds |
+|---|---|---|---|---|---|
+| GC ≤45d | 0.591 | **0.628** | 0.624 | **+0.037** | **−0.004** |
+| ALL ≤45d | 0.788 | 0.818 | 0.818 | +0.030 | +0.000 |
+| Stage ≤45d | 0.897 | 0.930 | 0.938 | +0.033 | +0.008 |
+| GC noGT | 1.228 | 1.206 | 1.207 | −0.022 | +0.001 |
+
+**The contested Elo already in production delivers ~60% of the GT-bias fix
+that v5scoped gave on the plain baseline** (stack GC ≤45d +0.037 vs
+v5scoped-on-baseline +0.063), and **v5scoped on top of the stack adds
+essentially zero** (GC −0.004, all +0.000, stage +0.008). v5's features are
+still *used* (`v5_cont_ema_eff_n_h60` ranks #5–11 across folds) — but they
+substitute for signal Elo already provides rather than adding new signal.
+Both are encodings of "form measured only when the rider was contesting", so
+once Elo is in the stack v5 is redundant.
+
+**Verdict: SHELVE v5scoped for production — redundant with contested Elo.**
+The standalone sweep result (v5scoped fixes the GT bias on the plain
+baseline) is real but does not transfer: the production stack already
+captures that fix through Elo. Productionizing v5scoped (form_team_features
+twin + snapshot schema migration + 2010 rebuild + retrain) would buy no
+measurable market or bias improvement over what ships today. **This is why
+integration-on-the-full-stack is gated before wiring — the standalone sweep
+alone would have sent a redundant feature to production.**
+
+**Residual open item.** The stack *reduces* but does not *eliminate* the GT
+bias: GC ≤45d sits at 0.628 (still well under 1.0 — recent-GT GC riders still
+win at ~1.6× the model's price). Neither Elo nor v5 closes it. A future fix
+must be **orthogonal to the contesting signal** (candidates: the deferred v7
+characteristic-weighted form; a GT-recency-aware term; explicit
+"days-since-GT" context). v5-family contested form is done.

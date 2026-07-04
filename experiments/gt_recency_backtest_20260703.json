@@ -1,0 +1,206 @@
+{
+ "headline": {
+  "all_rows": {
+   "GT ended <=45d ago": {
+    "n": 9602,
+    "wins": 177,
+    "cal": 0.762,
+    "folds_under": 5,
+    "folds": 5,
+    "fold_cals": [
+     0.717,
+     0.705,
+     0.789,
+     0.768,
+     0.91
+    ]
+   },
+   "GT 46-90d ago": {
+    "n": 9718,
+    "wins": 203,
+    "cal": 0.846,
+    "folds_under": 5,
+    "folds": 5,
+    "fold_cals": [
+     0.801,
+     0.898,
+     0.984,
+     0.79,
+     0.79
+    ]
+   },
+   "GT 91-365d ago": {
+    "n": 81527,
+    "wins": 1015,
+    "cal": 0.966,
+    "folds_under": 4,
+    "folds": 5,
+    "fold_cals": [
+     1.064,
+     0.958,
+     0.921,
+     0.92,
+     0.97
+    ]
+   },
+   "no GT last 12mo": {
+    "n": 179546,
+    "wins": 1095,
+    "cal": 1.12,
+    "folds_under": 0,
+    "folds": 5,
+    "fold_cals": [
+     1.145,
+     1.095,
+     1.105,
+     1.177,
+     1.088
+    ]
+   }
+  }
+ },
+ "subsets": {
+  "gc_targets": {
+   "GT ended <=45d ago": {
+    "n": 769,
+    "wins": 27,
+    "cal": 0.51,
+    "folds_under": 5,
+    "folds": 5,
+    "fold_cals": [
+     0.61,
+     0.485,
+     0.64,
+     0.422,
+     0.397
+    ]
+   },
+   "GT 46-90d ago": {
+    "n": 881,
+    "wins": 26,
+    "cal": 0.718,
+    "folds_under": 3,
+    "folds": 4,
+    "fold_cals": [
+     0.677,
+     0.707,
+     0.524,
+     1.2
+    ]
+   },
+   "GT 91-365d ago": {
+    "n": 7247,
+    "wins": 122,
+    "cal": 0.918,
+    "folds_under": 4,
+    "folds": 5,
+    "fold_cals": [
+     1.061,
+     0.833,
+     0.973,
+     0.866,
+     0.898
+    ]
+   },
+   "no GT last 12mo": {
+    "n": 20151,
+    "wins": 115,
+    "cal": 1.274,
+    "folds_under": 0,
+    "folds": 5,
+    "fold_cals": [
+     1.329,
+     1.192,
+     1.142,
+     1.621,
+     1.207
+    ]
+   }
+  },
+  "stage_targets": {
+   "GT ended <=45d ago": {
+    "n": 6772,
+    "wins": 103,
+    "cal": 0.868,
+    "folds_under": 4,
+    "folds": 5,
+    "fold_cals": [
+     0.898,
+     0.715,
+     0.892,
+     0.813,
+     1.215
+    ]
+   },
+   "GT 46-90d ago": {
+    "n": 6260,
+    "wins": 115,
+    "cal": 0.805,
+    "folds_under": 4,
+    "folds": 5,
+    "fold_cals": [
+     0.799,
+     1.305,
+     0.836,
+     0.756,
+     0.752
+    ]
+   },
+   "GT 91-365d ago": {
+    "n": 62411,
+    "wins": 673,
+    "cal": 0.99,
+    "folds_under": 4,
+    "folds": 5,
+    "fold_cals": [
+     1.084,
+     0.997,
+     0.902,
+     0.986,
+     0.982
+    ]
+   },
+   "no GT last 12mo": {
+    "n": 128963,
+    "wins": 807,
+    "cal": 1.076,
+    "folds_under": 0,
+    "folds": 5,
+    "fold_cals": [
+     1.041,
+     1.049,
+     1.129,
+     1.099,
+     1.04
+    ]
+   }
+  },
+  "contender_head": {
+   "GT ended <=45d ago": {
+    "n": 2133,
+    "wins": 139,
+    "cal": 0.875
+   },
+   "GT 46-90d ago": {
+    "n": 2480,
+    "wins": 173,
+    "cal": 0.907
+   },
+   "GT 91-365d ago": {
+    "n": 14350,
+    "wins": 833,
+    "cal": 0.977
+   },
+   "no GT last 12mo": {
+    "n": 18732,
+    "wins": 792,
+    "cal": 1.036
+   }
+  }
+ },
+ "notes": {
+  "records_source": "age_bias_backtest_records_20260610_081757.csv.gz",
+  "caveat": "records from 2026-06-10 backtest = pre-trajectory (v2v3) heads; mechanism exists in both form generations (live probe confirmed in v2v3)",
+  "gt_definition": ">=10 stage rows in Giro/TdF/Vuelta edition; same-edition rows excluded"
+ }
+}
