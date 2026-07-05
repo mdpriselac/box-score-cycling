@@ -125,11 +125,15 @@ performance_eval/tour-de-france-2026/*
 !performance_eval/tour-de-france-2026/capture_odds.py
 !performance_eval/tour-de-france-2026/capture_results.py
 !performance_eval/tour-de-france-2026/README.md
+!performance_eval/tour-de-france-2026/seed_state_cache.py
 !performance_eval/tour-de-france-2026/predictions/
 performance_eval/tour-de-france-2026/predictions/*
 !performance_eval/tour-de-france-2026/predictions/stage_*/
 performance_eval/tour-de-france-2026/predictions/stage_*/*
 !performance_eval/tour-de-france-2026/predictions/stage_*/scenarios.json
+!performance_eval/tour-de-france-2026/predictions/gc/
+performance_eval/tour-de-france-2026/predictions/gc/*
+!performance_eval/tour-de-france-2026/predictions/gc/scenarios.json
 # Database backups (multi-GB copies)
 cycling_project/webscrape_tools/database/backups/
 

@@ -40,6 +40,15 @@ under the view toggle on index.html. Per stage:
    step 3 — the page picks up the archived results and appends the
    "After the stage" section with per-scenario scoring.
 
+Within-race state: stage targets >= 2 automatically attach live race state
+(completed stages, local-first). Seed the state cache from the daily archive
+with `uv run python performance_eval/tour-de-france-2026/seed_state_cache.py`
+after each results capture — no re-scrape, immune to flaky page loads. A
+config with `"target": "gc"` (see `predictions/gc/scenarios.json`) keeps the
+main heads pre-race and adds the state-aware GC outlook head
+(gc_outlook_* in JSON + prediction_log); the hub then shows a "GC picture"
+card from the latest GC run.
+
 `build_stage_page.py` also regenerates `stages.html` — the Tour-diary hub
 (one card per stage: scenario picks, book favourite, status chip, winner +
 reflection once settled), linked from the strip on index.html. To add a

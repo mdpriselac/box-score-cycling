@@ -377,12 +377,61 @@ HUB_EXTRA_CSS = """
 """
 
 
+def gc_card():
+    """Compact GC-picture card for the hub, from the latest GC run."""
+    gc_dir = PREDICTIONS_ROOT / "gc"
+    preds = [p for p in gc_dir.glob("*.json") if p.name != "scenarios.json"]
+    if not preds:
+        return ""
+    data = json.loads(max(preds, key=lambda p: p.stat().st_mtime).read_text())
+    state = data.get("state") or {}
+    through = state.get("through_stage")
+
+    gaps = {}
+    if through:
+        gc_file = RESULTS_ROOT / f"stage_{int(through):02d}" / "gc.csv"
+        if gc_file.exists():
+            import csv as _csv
+            with open(gc_file) as f:
+                for row in _csv.DictReader(f):
+                    gaps[" ".join(sorted(row["name"].lower().split()))] = row["gap"]
+
+    def gap_for(name):
+        g = gaps.get(" ".join(sorted(name.lower().split())))
+        if g in (None, ""):
+            return "–"
+        s = float(g)
+        return "0:00" if s == 0 else f"+{int(s//60)}:{int(s%60):02d}"
+
+    top = sorted(data["riders"], key=lambda r: -(r.get("blend_win_p") or 0))[:6]
+    rows = "".join(
+        "<tr>"
+        f"<td>{esc(r['rider_name'])}</td>"
+        f"<td class='num'>{gap_for(r['rider_name'])}</td>"
+        f"<td class='num'>{pct(r.get('blend_win_p'))}</td>"
+        f"<td class='num'>{pct(r.get('gc_outlook_win_p'))}</td>"
+        f"<td class='num'>{pct(r.get('book_devig'))}</td>"
+        "</tr>" for r in top)
+    return f"""<div class="card stage-card">
+<div class="stage-head"><h3>The GC picture</h3>
+<span class="chip">through stage {through if through else '?'}</span></div>
+<div class="tablewrap" style="margin:10px 0"><table>
+<tr><th>Rider</th><th class="num">GC gap</th><th class="num">Model win</th>
+<th class="num">Outlook head</th><th class="num">Book devig</th></tr>
+{rows}</table></div>
+<div class="note">Model win = pre-race heads with live form (book-preserving).
+The outlook head is state-aware but per-rider — its probabilities don't sum
+to one book, and {through if through else 'few'}/21 stages is the thinnest
+state it sees; read it as "how safe is the current position", not as odds.</div>
+</div>"""
+
+
 def build_stages_hub():
     entries = [e for e in all_stage_entries() if e[1]]
     if not entries:
         return
     settled = sum(1 for _, _, res in entries if res)
-    cards = "".join(hub_card(c, s, r) for c, s, r in entries)
+    cards = gc_card() + "".join(hub_card(c, s, r) for c, s, r in entries)
     page = f"""<!DOCTYPE html>
 <html lang="en">
 <head>

@@ -20,6 +20,12 @@ Scenario spec (in the config's "scenarios" map):
     tag:       suffix appended to model_version in prediction_log — rerunning
                a scenario logs a NEW opinion under the same tag, so use --only
                to avoid duplicate logging of unchanged scenarios.
+
+Within-race state (mirrors the web app): stage targets >= 2 attach the live
+race state (completed stages via DB/cache/scrape) to the MAIN models; a
+config with "target": "gc" keeps the main heads pre-race and feeds the state
+to the separate GC outlook head instead (gc_outlook_* columns in the JSON and
+prediction_log, stage_number logged NULL).
 """
 
 import argparse
@@ -33,6 +39,11 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(PROJECT_ROOT))
 
 from cycling_project.prediction_tools.dnf_predictor import load_production_dnf_head
+from cycling_project.prediction_tools.gc_outlook import GCOutlookHead
+from cycling_project.prediction_tools.live_race_state import (
+    attach_race_state,
+    fetch_live_race_state,
+)
 from cycling_project.prediction_tools.future_race_loader import (
     assemble_prediction_df,
     attach_stack_features,
@@ -162,9 +173,34 @@ def main():
     book, book_source = load_book(config)
 
     conn = sqlite3.connect(DB_PATH)
-    stage_number = int(config["stage"])
+    target = config.get("target", "stage")   # "stage" or "gc"
+    stage_number = None if target == "gc" else int(config["stage"])
     comp_id = resolve_competition_id(conn, str(config["fc_race_id"]),
                                      int(config["year"]), stage_number)
+
+    # ── within-race state (mirrors web app step 3) ──
+    # stage >= 2: state feeds the MAIN models; gc: state feeds only the
+    # separate GC outlook head — main GC prediction stays pre-race.
+    state_df, state_info, gc_outlook_head = None, None, None
+    want_state = (target == "gc") or (stage_number and stage_number >= 2)
+    if want_state:
+        state_df, state_info = fetch_live_race_state(
+            int(config["fc_race_id"]), int(config["year"]),
+            target_stage_number=stage_number if target == "stage" else None,
+            db_path=DB_PATH,
+        )
+        print(f"race state: available={state_info.get('available')} "
+              f"through stage {state_info.get('stages_completed')} "
+              f"(sources {state_info.get('sources')}; "
+              f"missing {state_info.get('missing_stages')}; "
+              f"leader {state_info.get('leader_name')})", flush=True)
+    if target == "gc":
+        gc_outlook_head = GCOutlookHead.load(str(MODEL_DIR))
+        if gc_outlook_head is None:
+            print("[warn] GC outlook head not installed", flush=True)
+    state_through = (int(state_info["stages_completed"])
+                     if state_info and state_info.get("available") else None)
+    main_state_df = state_df if target == "stage" else None
 
     for key, spec in todo.items():
         prof, ref_meta, ref_ids = build_profile(spec, DB_PATH)
@@ -176,6 +212,7 @@ def main():
         form_status = {}
         pred_df = assemble_prediction_df(snapshots, matched, field_features,
                                          prof, form_status=form_status)
+        pred_df = attach_race_state(pred_df, main_state_df)
         pred_df = attach_stack_features(pred_df, time_gap_pred, lambdarank_pred,
                                         rating_snapshots=rating_snaps,
                                         signature_context=None)
@@ -204,6 +241,22 @@ def main():
             r["book_odds"] = b["odds"] if b else None
             r["book_devig"] = b.get("devig") if b else None
 
+        # GC targets: state-aware outlook head alongside the pre-race heads
+        outlook_by_rider = {}
+        if gc_outlook_head is not None and state_df is not None:
+            outlook_frame = assemble_prediction_df(
+                snapshots, matched, field_features, prof,
+                form_status=form_status)
+            outlook_frame = attach_race_state(outlook_frame, state_df)
+            gco = gc_outlook_head.predict(outlook_frame)
+            if not gco.empty:
+                outlook_by_rider = gco.set_index("rider_id").to_dict("index")
+            for r in records:
+                o = outlook_by_rider.get(int(r["rider_id"]), {})
+                for k2 in ("gc_outlook_win_p", "gc_outlook_podium_p",
+                           "gc_outlook_top5_p", "gc_outlook_top15_p"):
+                    r[k2] = o.get(k2)
+
         out_path = out_dir / f"{key}.json"
         out_path.write_text(json.dumps({
             "scenario": spec["label"],
@@ -216,6 +269,12 @@ def main():
                             if not hasattr(prof.get(k), "shape")},
             "form_status": form_status,
             "book_source": book_source,
+            "target": target,
+            "state": ({"through_stage": state_through,
+                       "leader": state_info.get("leader_name"),
+                       "sources": state_info.get("sources"),
+                       "missing": state_info.get("missing_stages")}
+                      if state_info else None),
             "riders": records,
         }, indent=1, default=str))
 
@@ -232,6 +291,11 @@ def main():
                 multiclass_top15_p=r.get("prob_top15"),
                 lambdarank_win_p=r.get("lambdarank_win_p"),
                 lambdarank_temperature=lr_temp,
+                state_through_stage=state_through,
+                gc_outlook_win_p=r.get("gc_outlook_win_p"),
+                gc_outlook_podium_p=r.get("gc_outlook_podium_p"),
+                gc_outlook_top5_p=r.get("gc_outlook_top5_p"),
+                gc_outlook_top15_p=r.get("gc_outlook_top15_p"),
                 dnf_p=r.get("dnf_p"),
                 dnf_adj_win_p=r.get("dnf_adj_win_p"),
                 dnf_adj_podium_p=r.get("dnf_adj_podium_p"),
