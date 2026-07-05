@@ -125,6 +125,7 @@ performance_eval/tour-de-france-2026/*
 !performance_eval/tour-de-france-2026/capture_odds.py
 !performance_eval/tour-de-france-2026/capture_results.py
 !performance_eval/tour-de-france-2026/README.md
+!performance_eval/tour-de-france-2026/DAILY_RUNBOOK.md
 !performance_eval/tour-de-france-2026/seed_state_cache.py
 !performance_eval/tour-de-france-2026/predictions/
 performance_eval/tour-de-france-2026/predictions/*

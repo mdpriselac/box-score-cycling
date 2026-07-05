@@ -218,6 +218,27 @@ def scenario_details(scen):
     return "".join(blocks)
 
 
+def analysis_sections(config):
+    """Render config['analysis'] blocks (written by build_stage_analysis.py)."""
+    blocks = config.get("analysis") or []
+    out = []
+    for b in blocks:
+        head = "".join(f'<th class="num">{esc(c)}</th>' if i else f"<th>{esc(c)}</th>"
+                       for i, c in enumerate(b["columns"]))
+        body = "".join(
+            "<tr>" + "".join(
+                f'<td class="num">{esc(c)}</td>' if i else f"<td>{esc(c)}</td>"
+                for i, c in enumerate(row)) + "</tr>"
+            for row in b["rows"])
+        out.append(f"""<section>
+<p class="kicker">Angle</p>
+<h2>{esc(b['title'])}</h2>
+<p>{esc(b['note'])}</p>
+<div class="tablewrap"><table><tr>{head}</tr>{body}</table></div>
+</section>""")
+    return "".join(out)
+
+
 def results_section(config, scen, results):
     if not results:
         return """<section>
@@ -539,6 +560,8 @@ def main():
   {board_table(config, scen)}
   {scenario_details(scen)}
 </section>
+
+{analysis_sections(config)}
 
 {results_section(config, scen, results)}
 
