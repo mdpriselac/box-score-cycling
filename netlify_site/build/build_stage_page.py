@@ -20,6 +20,7 @@ import json
 import runpy
 import sys
 from datetime import datetime
+from functools import lru_cache
 from pathlib import Path
 
 HERE = Path(__file__).parent
@@ -114,6 +115,36 @@ def pct(v, digits=1):
     return f"{100*v:.{digits}f}%" if v is not None else "–"
 
 
+@lru_cache(maxsize=None)
+def gc_pool_ids(n):
+    """Rider ids of the top-n GC contenders by the latest GC-model blend — the
+    captains who won't be given freedom or let up the road in a breakaway."""
+    gc_dir = PREDICTIONS_ROOT / "gc"
+    preds = [p for p in gc_dir.glob("*.json") if p.name != "scenarios.json"]
+    if not preds:
+        return frozenset()
+    data = json.loads(max(preds, key=lambda p: p.stat().st_mtime).read_text())
+    ranked = sorted(data["riders"], key=lambda r: -(r.get("blend_win_p") or 0))
+    return frozenset(int(r["rider_id"]) for r in ranked[:n])
+
+
+def display_riders(spec, data):
+    """Riders as *presented* for a scenario (never mutates the logged JSON).
+
+    Break-type readings carry ``exclude_top_gc: N`` in the config: the top-N GC
+    contenders are dropped (they won't be in a break) and the remaining field is
+    renormalized into a conditional 'if the break wins' win probability
+    (``display_p``). Ordinary scenarios pass through with display_p = blend."""
+    riders = data["riders"]
+    n = spec.get("exclude_top_gc")
+    if not n:
+        return [dict(r, display_p=r.get("blend_win_p")) for r in riders]
+    pool = gc_pool_ids(int(n))
+    kept = [r for r in riders if int(r["rider_id"]) not in pool]
+    mass = sum(r.get("blend_win_p") or 0 for r in kept) or 1.0
+    return [dict(r, display_p=(r.get("blend_win_p") or 0) / mass) for r in kept]
+
+
 def load_stage(config_path: Path):
     config = json.loads(config_path.read_text())
     scen = {}
@@ -141,43 +172,57 @@ def scenario_cards(config, scen):
     cards = []
     for key, data in scen.items():
         spec = config["scenarios"][key]
-        top = sorted(data["riders"], key=lambda r: -(r["blend_win_p"] or 0))[:5]
+        top = sorted(display_riders(spec, data), key=lambda r: -(r["display_p"] or 0))[:5]
         toplist = "; ".join(
-            f"{esc(r['rider_name'])} <b>{pct(r['blend_win_p'])}</b>" for r in top)
+            f"{esc(r['rider_name'])} <b>{pct(r['display_p'])}</b>" for r in top)
+        label = (f"Top 5 if the break wins (top {spec['exclude_top_gc']} GC removed)"
+                 if spec.get("exclude_top_gc") else "Top 5 (blend)")
         cards.append(f"""<div class="card">
 <h3>{esc(spec.get('short', key))}</h3>
 <div class="muted" style="font-family:var(--sans);font-size:12.5px">{esc(data['scenario'])}</div>
 {profile_bars(data['avg_profile'])}
 <div class="note">{esc(spec.get('note', ''))}</div>
-<div class="note"><b>Top 5 (blend):</b> {toplist}</div>
+<div class="note"><b>{label}:</b> {toplist}</div>
 </div>""")
     return '<div class="cards">' + "".join(cards) + "</div>"
 
 
 def board_table(config, scen):
     keys = list(scen.keys())
+    specs = config["scenarios"]
+    cond = {k: bool(specs[k].get("exclude_top_gc")) for k in keys}
+    # break readings are conditional; sort + edge use the unconditional readings
+    # so their renormalized numbers don't hijack the board or fake an edge
+    eff_keys = [k for k in keys if not cond[k]] or keys
+    # per-scenario display prob keyed by rider id (GC pool already dropped for
+    # break scenarios, so those ids simply won't appear in that column)
+    disp = {k: {int(r["rider_id"]): r["display_p"]
+                for r in display_riders(specs[k], scen[k])} for k in keys}
+
     riders = {}
     for key, data in scen.items():
         for r in data["riders"]:
-            e = riders.setdefault(int(r["rider_id"]), {
+            rid = int(r["rider_id"])
+            e = riders.setdefault(rid, {
                 "name": r["rider_name"], "team": r.get("team_name"),
                 "book_odds": r.get("book_odds"), "book_devig": r.get("book_devig"),
                 "blend": {}})
-            e["blend"][key] = r.get("blend_win_p")
-    rows = sorted(riders.values(),
-                  key=lambda e: -max((v or 0) for v in e["blend"].values()))
+            e["blend"][key] = disp[key].get(rid)
+
+    def scen_max(e):
+        return max([(e["blend"].get(k) or 0) for k in eff_keys], default=0)
+    rows = sorted(riders.values(), key=lambda e: -scen_max(e))
     shown = [e for e in rows
-             if max((v or 0) for v in e["blend"].values()) >= 0.01
-             or (e["book_devig"] or 0) >= 0.02][:24]
+             if scen_max(e) >= 0.01 or (e["book_devig"] or 0) >= 0.02][:24]
 
     head = ("<tr><th>Rider</th><th>Team</th>"
-            + "".join(f'<th class="num">{esc(config["scenarios"][k].get("short", k))}</th>'
+            + "".join(f'<th class="num">{esc(specs[k].get("short", k))}</th>'
                       for k in keys)
             + '<th class="num">Book odds</th><th class="num">Book devig</th>'
               '<th class="num">Max edge</th></tr>')
     body = []
     for e in shown:
-        best = max((v or 0) for v in e["blend"].values())
+        best = scen_max(e)
         bd = e["book_devig"]
         edge = (best - bd) if bd is not None else None
         edge_cell = (f'<td class="num {"pos" if edge > 0 else "neg"}">{100*edge:+.1f}pp</td>'
@@ -191,13 +236,28 @@ def board_table(config, scen):
             + (f'<td class="num">{pct(bd)}</td>' if bd is not None
                else '<td class="num muted">–</td>')
             + edge_cell + "</tr>")
-    return f'<div class="tablewrap"><table>{head}{"".join(body)}</table></div>'
+    caveat = ""
+    if any(cond.values()):
+        names = ", ".join(specs[k].get("short", k) for k in keys if cond[k])
+        n = max(specs[k]["exclude_top_gc"] for k in keys if cond[k])
+        caveat = (f'<div class="note"><b>{esc(names)}</b> is shown conditional on the '
+                  f'break winning — the top {n} GC contenders are removed and the '
+                  f'remaining probabilities renormalize within the break pool. That '
+                  f'column isn\'t comparable with the book line or the other readings, '
+                  f'so it\'s left out of Max&nbsp;edge; a "–" means a GC captain we '
+                  f'assume won\'t be up the road.</div>')
+    return f'<div class="tablewrap"><table>{head}{"".join(body)}</table></div>' + caveat
 
 
-def scenario_details(scen):
+def scenario_details(config, scen):
     blocks = []
     for key, data in scen.items():
-        rows = sorted(data["riders"], key=lambda r: -(r["blend_win_p"] or 0))[:30]
+        spec = config["scenarios"][key]
+        pool = (gc_pool_ids(int(spec["exclude_top_gc"]))
+                if spec.get("exclude_top_gc") else frozenset())
+        riders = [r for r in data["riders"] if int(r["rider_id"]) not in pool]
+        extra = f" · top {spec['exclude_top_gc']} GC removed" if pool else ""
+        rows = sorted(riders, key=lambda r: -(r["blend_win_p"] or 0))[:30]
         body = "".join(
             "<tr>"
             f"<td>{i+1}</td><td>{esc(r['rider_name'])}</td>"
@@ -210,7 +270,7 @@ def scenario_details(scen):
                else "<td class='num muted'>n/a</td>")
             + "</tr>"
             for i, r in enumerate(rows))
-        blocks.append(f"""<details><summary>{esc(data['scenario'])} — top 30, all heads</summary>
+        blocks.append(f"""<details><summary>{esc(data['scenario'])} — top 30, all heads{extra}</summary>
 <div class="tablewrap"><table>
 <tr><th>#</th><th>Rider</th><th class="num">Blend</th><th class="num">Cascade</th>
 <th class="num">LambdaRank</th><th class="num">Podium</th><th class="num">Top 15</th>
@@ -342,10 +402,14 @@ def hub_card(config, scen, results):
     picks = []
     for key, data in scen.items():
         spec = config["scenarios"][key]
-        top = max(data["riders"], key=lambda r: r["blend_win_p"] or 0)
+        disp = display_riders(spec, data)
+        if not disp:
+            continue
+        top = max(disp, key=lambda r: r["display_p"] or 0)
+        scen_name = spec.get("short", key) + (" · if break wins" if spec.get("exclude_top_gc") else "")
         picks.append(
-            f'<div class="pickline"><span class="scen">{esc(spec.get("short", key))}</span>'
-            f'{esc(top["rider_name"])} <b>{pct(top["blend_win_p"])}</b></div>')
+            f'<div class="pickline"><span class="scen">{esc(scen_name)}</span>'
+            f'{esc(top["rider_name"])} <b>{pct(top["display_p"])}</b></div>')
 
     any_scen = next(iter(scen.values()))
     priced = [r for r in any_scen["riders"] if r.get("book_odds")]
@@ -558,7 +622,7 @@ def main():
   morning before the stage. "Max edge" compares the most favourable scenario
   against the book — treat it as scenario-conditional, not a free bet.</p>
   {board_table(config, scen)}
-  {scenario_details(scen)}
+  {scenario_details(config, scen)}
 </section>
 
 {analysis_sections(config)}

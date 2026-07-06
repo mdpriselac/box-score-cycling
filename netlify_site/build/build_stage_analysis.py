@@ -50,8 +50,9 @@ def main():
     ap.add_argument("config")
     ap.add_argument("--break-scenario", default=None,
                     help="scenario key for the break read (default: first)")
-    ap.add_argument("--gc-exclude", type=int, default=24,
-                    help="exclude this many top GC-model riders from the pool")
+    ap.add_argument("--gc-exclude", type=int, default=None,
+                    help="exclude this many top GC-model riders from the pool "
+                         "(default: the break scenario's exclude_top_gc, else 24)")
     ap.add_argument("--book-top", type=int, default=10)
     args = ap.parse_args()
 
@@ -69,9 +70,12 @@ def main():
     if break_key not in scen:
         raise SystemExit(f"scenario '{break_key}' not found")
 
+    gc_exclude = (args.gc_exclude if args.gc_exclude is not None
+                  else config["scenarios"][break_key].get("exclude_top_gc") or 24)
+
     gc_riders, gc_file = latest_gc_riders()
     gc_sorted = sorted(gc_riders, key=lambda r: -(r.get("blend_win_p") or 0))
-    gc_pool_ids = {int(r["rider_id"]) for r in gc_sorted[:args.gc_exclude]}
+    gc_pool_ids = {int(r["rider_id"]) for r in gc_sorted[:gc_exclude]}
     gc_rank = {int(r["rider_id"]): i + 1 for i, r in enumerate(gc_sorted)}
 
     # ── block 1: if the break goes ──
@@ -91,7 +95,7 @@ def main():
     short = config["scenarios"][break_key].get("short", break_key)
     block1 = {
         "title": "If the break goes — competitive riders outside the GC pool",
-        "note": (f"Top {args.gc_exclude} riders by the latest GC-model blend "
+        "note": (f"Top {gc_exclude} riders by the latest GC-model blend "
                  f"({gc_file}) removed — captains don't get in the break. "
                  f"Remaining riders under the '{short}' read; the conditional "
                  f"column renormalizes their win probability over this pool "
@@ -135,7 +139,7 @@ def main():
         "title": "The book's card — its favourites under our readings",
         "note": ("Shortest book prices for the stage, with our blend win "
                  "probability (and rank) under each scenario. 'free' = outside "
-                 f"our top-{args.gc_exclude} GC pool, i.e. the type the "
+                 f"our top-{gc_exclude} GC pool, i.e. the type the "
                  "peloton might let up the road."),
         "columns": (["Rider", "Book odds", "Devig"]
                     + [config["scenarios"][k].get("short", k) for k in keys]
