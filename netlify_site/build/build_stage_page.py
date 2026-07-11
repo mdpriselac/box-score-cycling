@@ -148,7 +148,11 @@ def display_riders(spec, data):
 def load_stage(config_path: Path):
     config = json.loads(config_path.read_text())
     scen = {}
-    for key in config["scenarios"]:
+    for key, spec in config["scenarios"].items():
+        if spec.get("hidden"):
+            # classification anchors (e.g. the flat-sprint anchor behind the
+            # punchy-pool block) are inputs to analysis, not readings of the day
+            continue
         f = config_path.parent / f"{key}.json"
         if f.exists():
             scen[key] = json.loads(f.read_text())

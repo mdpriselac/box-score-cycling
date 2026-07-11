@@ -6,7 +6,7 @@ scenarios.json (config["analysis"]), where build_stage_page.py renders them.
         performance_eval/tour-de-france-2026/predictions/stage_03/scenarios.json \
         [--break-scenario healy_carapaz] [--gc-exclude 24] [--book-top 10]
 
-Two blocks:
+Three blocks (third only when the config carries a "punchy_filter"):
 
 1. "If the break goes" — remove the top N riders by the latest GC-model
    blend (GC captains won't be given freedom / won't be let up the road),
@@ -15,8 +15,21 @@ Two blocks:
 2. "The book's card" — the top book favourites for the stage, with our
    blend and rank under every scenario, flagging which of them are inside
    the GC-favourite pool.
+3. "The punchy pool" — the stage-4 lesson as a filter. No terrain reading
+   means "selective enough to drop the pure sprinters but won by a fast
+   hard-man", so we synthesize it: drop the GC pool AND the pure sprinters,
+   then renormalize each visible reading over the survivors. Pure sprinter
+   is model-defined via the hidden flat-sprint anchor scenario: a rider with
+   anchor probability >= anchor_floor whose selective-read probability
+   retains < retention_max of the anchor (punchy fast-men like Pedersen
+   retain; pure sprinters like Merlier collapse).
 
-Rerun any time inputs change (idempotent — blocks are replaced by title).
+   config["punchy_filter"] = {"sprint_anchor": key, "selective_scenario": key,
+                              "anchor_floor": 0.01, "retention_max": 0.12}
+
+Scenarios flagged "hidden": true never appear as table columns; they are
+classification inputs only. Rerun any time inputs change (idempotent —
+blocks are replaced by title).
 """
 
 import argparse
@@ -65,8 +78,11 @@ def main():
             scen[key] = json.loads(f.read_text())
     if not scen:
         raise SystemExit("No scenario JSONs found — run predictions first.")
+    # hidden scenarios (classification anchors) never appear as table columns
+    vis = {k: v for k, v in scen.items()
+           if not config["scenarios"][k].get("hidden")}
 
-    break_key = args.break_scenario or next(iter(scen))
+    break_key = args.break_scenario or next(iter(vis))
     if break_key not in scen:
         raise SystemExit(f"scenario '{break_key}' not found")
 
@@ -109,12 +125,12 @@ def main():
     }
 
     # ── block 2: the book's card ──
-    any_riders = next(iter(scen.values()))["riders"]
+    any_riders = next(iter(vis.values()))["riders"]
     priced = [r for r in any_riders if r.get("book_odds")]
     book_sorted = sorted(priced, key=lambda r: r["book_odds"])[:args.book_top]
     by_id = {k: {int(r["rider_id"]): r for r in d["riders"]}
-             for k, d in scen.items()}
-    keys = list(scen.keys())
+             for k, d in vis.items()}
+    keys = list(vis.keys())
 
     def scen_rank(key, rid):
         rs = sorted(scen[key]["riders"], key=lambda r: -(r.get("blend_win_p") or 0))
@@ -147,11 +163,93 @@ def main():
         "rows": rows2,
     }
 
-    existing = [b for b in config.get("analysis", [])
-                if b["title"] not in (block1["title"], block2["title"])]
-    config["analysis"] = existing + [block1, block2]
+    # ── block 3: the punchy pool (GC captains AND pure sprinters removed) ──
+    blocks = [block1, block2]
+    pf = config.get("punchy_filter")
+    if pf:
+        anchor_key = pf["sprint_anchor"]
+        sel_key = pf.get("selective_scenario") or break_key
+        if anchor_key not in scen:
+            raise SystemExit(f"punchy_filter anchor '{anchor_key}' has no "
+                             f"prediction JSON — run it with --only {anchor_key} --no-log")
+        floor = pf.get("anchor_floor", 0.01)
+        ret_max = pf.get("retention_max", 0.12)
+        anchor_p = {int(r["rider_id"]): (r.get("blend_win_p") or 0)
+                    for r in scen[anchor_key]["riders"]}
+        sel_p = {int(r["rider_id"]): (r.get("blend_win_p") or 0)
+                 for r in scen[sel_key]["riders"]}
+        names = {int(r["rider_id"]): r["rider_name"]
+                 for r in scen[anchor_key]["riders"]}
+
+        print(f"\npunchy-filter diagnostics (anchor={anchor_key}, "
+              f"selective={sel_key}, floor={floor}, retention_max={ret_max}):")
+        sprinter_ids, diag = set(), []
+        for rid, a in sorted(anchor_p.items(), key=lambda kv: -kv[1]):
+            if a < floor:
+                continue
+            ret = sel_p.get(rid, 0) / a
+            verdict = "PURE SPRINTER" if ret < ret_max else "punchy fast-man"
+            if ret < ret_max:
+                sprinter_ids.add(rid)
+            diag.append((names[rid], a, ret, verdict))
+        for nm, a, ret, verdict in diag:
+            print(f"  {nm:<24} anchor {100*a:5.1f}%  retention {ret:5.2f}  {verdict}")
+
+        excluded = gc_pool_ids | sprinter_ids
+        vk = list(vis.keys())
+        pools = {}
+        for k in vk:
+            kept = [r for r in vis[k]["riders"]
+                    if int(r["rider_id"]) not in excluded]
+            mass = sum(r.get("blend_win_p") or 0 for r in kept) or 1.0
+            pools[k] = ({int(r["rider_id"]): (r.get("blend_win_p") or 0) / mass
+                         for r in kept}, mass)
+        pool_riders = {int(r["rider_id"]): r for k in vk for r in vis[k]["riders"]
+                       if int(r["rider_id"]) not in excluded}
+
+        def pool_max(rid):
+            return max(pools[k][0].get(rid, 0) for k in vk)
+        ranked = sorted(pool_riders, key=pool_max, reverse=True)
+        rows3 = []
+        for rid in ranked[:16]:
+            r = pool_riders[rid]
+            rows3.append(
+                [r["rider_name"], r.get("team_name") or ""]
+                + [fmt_pct(pools[k][0].get(rid)) for k in vk]
+                + [f"{r['book_odds']:.0f}" if r.get("book_odds") else "n/a",
+                   fmt_pct(r.get("book_devig"))])
+        sprinter_names = ", ".join(sorted(names[i] for i in sprinter_ids))
+        masses = " / ".join(
+            f"{config['scenarios'][k].get('short', k)} {100*pools[k][1]:.0f}%"
+            for k in vk)
+        block3 = {
+            "title": "The punchy pool — the field with GC captains and pure sprinters removed",
+            "note": (f"The stage-4 lesson as a filter: no terrain reading means "
+                     f"'selective enough to shed the fast finishers but won by a "
+                     f"punchy non-climber', so this table synthesizes it. We drop "
+                     f"the top {gc_exclude} GC-model riders and every pure "
+                     f"sprinter, then renormalize each reading over the survivors "
+                     f"— P(win | the winner is a punchy non-climber). Pure "
+                     f"sprinter is the model's own verdict, not a hand list: "
+                     f"probability under a flat-sprint anchor of this exact field "
+                     f">= {100*floor:.0f}% while retaining under {100*ret_max:.0f}% "
+                     f"of it when the day turns selective ('{sel_key}' read) — "
+                     f"that collapse is what separates a Merlier from a Pedersen. "
+                     f"Classified out: {sprinter_names}. Pool holds {masses} of "
+                     f"each reading's unconditional book."),
+            "columns": (["Rider", "Team"]
+                        + [f"P(win | pool) {config['scenarios'][k].get('short', k)}"
+                           for k in vk]
+                        + ["Book odds", "Book devig"]),
+            "rows": rows3,
+        }
+        blocks.append(block3)
+
+    titles = {b["title"] for b in blocks}
+    existing = [b for b in config.get("analysis", []) if b["title"] not in titles]
+    config["analysis"] = existing + blocks
     config_path.write_text(json.dumps(config, indent=2, ensure_ascii=False) + "\n")
-    print(f"Wrote 2 analysis blocks into {config_path.name} "
+    print(f"\nWrote {len(blocks)} analysis blocks into {config_path.name} "
           f"(pool mass {100*pool_mass:.1f}%, excluded {len(gc_pool_ids)} GC riders)")
     for r in rows1[:8]:
         print("  break-pool:", r[0], r[2], "->", r[3], "| book", r[4])
