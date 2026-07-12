@@ -35,6 +35,7 @@ blocks are replaced by title).
 import argparse
 import csv
 import json
+import sqlite3
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -42,6 +43,22 @@ PREDICTIONS_ROOT = (PROJECT_ROOT / "performance_eval" / "tour-de-france-2026"
                     / "predictions")
 RESULTS_ROOT = (PROJECT_ROOT / "performance_eval" / "tour-de-france-2026"
                 / "results")
+DB_PATH = (PROJECT_ROOT / "cycling_project" / "webscrape_tools" / "database"
+           / "database" / "cycling_races.db")
+
+
+def fc_to_internal_ids(fc_ids):
+    """{fc_rider_id: internal riders.id} — the stable join between archived
+    FirstCycling results (gc.csv) and prediction JSONs; rider NAMES drift on
+    FirstCycling mid-career (Gee -> Gee-West, Martin -> Martin-Guyonnet)."""
+    fc_ids = [str(f) for f in fc_ids if f]
+    if not fc_ids or not DB_PATH.exists():
+        return {}
+    with sqlite3.connect(DB_PATH) as conn:
+        rows = conn.execute(
+            f"SELECT fc_rider_id, id FROM riders WHERE fc_rider_id IN "
+            f"({','.join('?' for _ in fc_ids)})", fc_ids).fetchall()
+    return {str(fc): int(i) for fc, i in rows}
 
 
 def norm(s):
@@ -61,15 +78,19 @@ def standings_gc_pool(stage, n, field_riders):
     """Actual-standings pool: internal ids + GC ranks of the riders on GC
     before this stage, from the newest archived results/stage_NN/gc.csv
     (NN < stage). The top-n are the riders still close enough that a break
-    containing them gets chased."""
+    containing them gets chased. Rows are joined on fc_rider_id (names drift
+    on FirstCycling), with normalized-name fallback."""
     by_name = {norm(r["rider_name"]): int(r["rider_id"]) for r in field_riders}
     for nn in range(int(stage) - 1, 0, -1):
         f = RESULTS_ROOT / f"stage_{nn:02d}" / "gc.csv"
         if not f.exists():
             continue
+        rows = list(csv.DictReader(f.open()))
+        by_fc = fc_to_internal_ids(r.get("rider_id") for r in rows)
         ids, rank, missing = set(), {}, []
-        for i, row in enumerate(csv.DictReader(f.open()), 1):
-            rid = by_name.get(norm(row["name"]))
+        for i, row in enumerate(rows, 1):
+            rid = (by_fc.get(str(row.get("rider_id") or ""))
+                   or by_name.get(norm(row["name"])))
             if rid is None:
                 if i <= n:
                     missing.append(row["name"])

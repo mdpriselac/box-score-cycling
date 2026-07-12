@@ -247,6 +247,99 @@ def _get_incomplete_race_keys(
     return keys
 
 
+def _pickle_result_counts(race) -> Tuple[int, bool]:
+    """(result-bearing stages, classified GC present) for a stage-race pickle.
+
+    The pickle's stage list carries a 'GC' pseudo-stage duplicating
+    race.results — excluded from the stage count, mirroring migrate_races.
+    The GC flag requires a numeric place: mid-race, race.results holds only
+    the DNF board (place='DNF'), which is not a final GC.
+    """
+    n_stages = sum(
+        1 for s in (getattr(race, "stages", None) or [])
+        if getattr(s, "results", None)
+        and (s.name or "").strip().upper() != "GC"
+    )
+    has_gc = any(
+        str(r.get("place", "")).strip().isdigit()
+        for r in (getattr(race, "results", None) or [])
+    )
+    return n_stages, has_gc
+
+
+def _get_db_result_counts(
+    db_path: str, years: List[int]
+) -> Dict[Tuple[str, int, str], Tuple[int, bool]]:
+    """{race key: (result-bearing stage comps, GC comp with results)}."""
+    if not years:
+        return {}
+    conn = sqlite3.connect(db_path)
+    placeholders = ",".join("?" for _ in years)
+    cursor = conn.execute(f"""
+        SELECT r.fc_race_id, r.year, r.category,
+               SUM(CASE WHEN c.competition_type = 'stage' AND rr.n > 0
+                        THEN 1 ELSE 0 END),
+               MAX(CASE WHEN c.competition_type = 'gc' AND rr.n > 0
+                        THEN 1 ELSE 0 END)
+        FROM races r
+        LEFT JOIN competitions c ON c.race_id = r.id
+        LEFT JOIN (
+            SELECT competition_id, COUNT(*) AS n
+            FROM rider_results GROUP BY competition_id
+        ) rr ON rr.competition_id = c.id
+        WHERE r.year IN ({placeholders})
+        GROUP BY r.id
+    """, years)
+    counts = {
+        (str(row[0]), row[1], row[2]): (int(row[3] or 0), bool(row[4]))
+        for row in cursor.fetchall()
+    }
+    conn.close()
+    return counts
+
+
+def _get_races_needing_refresh(
+    config: "PipelineConfig",
+    targets: List[Tuple[str, List[int]]],
+    db_counts: Dict[Tuple[str, int, str], Tuple[int, bool]],
+) -> Set[Tuple[str, int, str]]:
+    """Race keys whose pickle now carries MORE results than the DB row.
+
+    This is what lets an in-progress stage race flow through the weekly
+    pipeline: a race migrated mid-event (stages so far, no GC) is deleted and
+    re-migrated whenever its re-scraped pickle has gained stages or the final
+    GC — instead of being skipped forever as a duplicate. A pickle with FEWER
+    results than the DB (stale file) never triggers deletion.
+    """
+    needs_refresh: Set[Tuple[str, int, str]] = set()
+    for year_str, _ in targets:
+        for tour in config.tour_levels:
+            tour_dir = config.scraped_data_dir / year_str / tour
+            if not tour_dir.exists():
+                continue
+            for pkl_file in tour_dir.glob("*.pkl"):
+                try:
+                    with open(pkl_file, "rb") as f:
+                        race = pickle.load(f)
+                except Exception:
+                    continue
+                if not getattr(race, "stage_race", False):
+                    continue
+                key = (str(race.fc_race_id), race.year, tour)
+                if key not in db_counts:
+                    continue
+                pkl_stages, pkl_gc = _pickle_result_counts(race)
+                db_stages, db_gc = db_counts[key]
+                if pkl_stages > db_stages or (pkl_gc and not db_gc):
+                    logger.info(
+                        f"Race grew since migration: {race.name} ({year_str}/{tour}) "
+                        f"pickle {pkl_stages} stages/gc={pkl_gc} vs "
+                        f"DB {db_stages} stages/gc={db_gc} — will re-migrate"
+                    )
+                    needs_refresh.add(key)
+    return needs_refresh
+
+
 _COMPETITION_DEPENDENT_TABLES = [
     "rider_results",
     "race_feature_gradients",
@@ -300,10 +393,20 @@ def migrate_new_races(
     existing_keys = _get_existing_race_keys(db_path_str)
     target_years = [int(y) for y, _ in targets]
     incomplete_keys = _get_incomplete_race_keys(db_path_str, target_years)
-    logger.info(f"Found {len(existing_keys)} existing races in DB, {len(incomplete_keys)} incomplete in target years")
 
-    # Delete incomplete races so they can be re-migrated with full data
-    for key in incomplete_keys:
+    # Stage races whose re-scraped pickle gained stages or the final GC since
+    # they were migrated (in-progress races): delete and re-migrate fresh.
+    db_counts = _get_db_result_counts(db_path_str, target_years)
+    refresh_keys = _get_races_needing_refresh(config, targets, db_counts)
+    refresh_keys -= incomplete_keys
+    logger.info(
+        f"Found {len(existing_keys)} existing races in DB, "
+        f"{len(incomplete_keys)} incomplete and {len(refresh_keys)} grown "
+        f"in target years"
+    )
+
+    # Delete incomplete/grown races so they can be re-migrated with full data
+    for key in incomplete_keys | refresh_keys:
         _delete_race_by_key(db_path_str, *key)
         existing_keys.discard(key)
 
@@ -355,24 +458,32 @@ def migrate_new_races(
         migrator.print_statistics()
         migrator.disconnect()
 
-    # Clean up empty future competitions (stages with no results)
+    # Clean up empty competitions: future-dated stages (any year) plus the
+    # UNDATED result-less stages a mid-race migration leaves behind
+    # (FirstCycling serves no date on unraced stage pages), scoped to the
+    # target years so legitimately empty historical rows are untouched.
     conn = sqlite3.connect(db_path_str)
     try:
-        cursor = conn.execute("""
+        placeholders = ",".join("?" for _ in target_years)
+        cursor = conn.execute(f"""
             DELETE FROM competitions WHERE id IN (
                 SELECT c.id FROM competitions c
+                JOIN races r ON r.id = c.race_id
                 LEFT JOIN rider_results rr ON rr.competition_id = c.id
-                WHERE c.date > date('now') AND rr.id IS NULL
+                WHERE rr.id IS NULL
+                  AND (c.date > date('now')
+                       OR (c.date IS NULL AND r.year IN ({placeholders})))
             )
-        """)
+        """, target_years)
         future_deleted = cursor.rowcount
         if future_deleted:
             conn.commit()
-            logger.info(f"Cleaned up {future_deleted} empty future competition entries")
+            logger.info(f"Cleaned up {future_deleted} empty future/undated competition entries")
     finally:
         conn.close()
 
-    return f"{new_races} new, {skipped} skipped, {empty} empty, {future_deleted} future cleaned"
+    return (f"{new_races} new ({len(refresh_keys)} re-migrated after growing), "
+            f"{skipped} skipped, {empty} empty, {future_deleted} future cleaned")
 
 
 # ---------------------------------------------------------------------------

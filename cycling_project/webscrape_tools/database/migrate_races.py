@@ -229,12 +229,24 @@ class RaceMigrator:
         if race.results:
             self.insert_results(competition_id, race.results, race.date)
             
+    @staticmethod
+    def _has_classified_result(results) -> bool:
+        """True when at least one row carries a numeric place.
+
+        Mid-race, FirstCycling's race page serves the abandons (place='DNF')
+        as the only race-level rows; a pure-DNF list is the race's DNF board,
+        not a final GC, and must not create a 'gc' competition (downstream
+        logic reads "has GC results" as "race complete")."""
+        return any(
+            str(r.get('place', '')).strip().isdigit() for r in (results or [])
+        )
+
     def process_stage_race(self, race: Race, race_id: int):
         """Process a stage race with multiple stages."""
-        # Insert GC if it has results. race.date is None for stage-race
-        # pickles, so the GC date comes from the final stage; the same date
-        # feeds rider_age computation in insert_results.
-        if race.results:
+        # Insert GC if it has classified results. race.date is None for
+        # stage-race pickles, so the GC date comes from the final stage; the
+        # same date feeds rider_age computation in insert_results.
+        if self._has_classified_result(race.results):
             gc_date = self._parse_date_value(race.date) or self._final_stage_date(race)
             gc_competition_id = self.insert_competition(
                 race_id=race_id,

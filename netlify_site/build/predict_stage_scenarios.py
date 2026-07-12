@@ -167,11 +167,6 @@ def main():
     matched, unmatched = match_riders_to_db(teams, DB_PATH)
     print(f"Startlist: {len(matched)} matched, {len(unmatched)} unmatched", flush=True)
 
-    snapshots = get_latest_rider_snapshots(matched["rider_id"].tolist(), DB_PATH)
-    field_features = compute_field_features(snapshots)
-    team_map = matched.set_index("rider_id")["team_name"].to_dict()
-    book, book_source = load_book(config)
-
     conn = sqlite3.connect(DB_PATH)
     target = config.get("target", "stage")   # "stage" or "gc"
     stage_number = None if target == "gc" else int(config["stage"])
@@ -201,6 +196,37 @@ def main():
     state_through = (int(state_info["stages_completed"])
                      if state_info and state_info.get("available") else None)
     main_state_df = state_df if target == "stage" else None
+
+    # ── drop riders no longer in the race ──
+    # Active field = riders still in the reconstructed standings (abandons
+    # fall out of the cumulative GC), plus a config-level "exclude_riders"
+    # list for announced withdrawals the road hasn't recorded yet (e.g. a
+    # rest-day non-starter). Filtering BEFORE the heads means every
+    # probability and the field features price the startable field only.
+    startlist_size = len(matched)
+    if state_df is not None and state_info.get("available"):
+        active_ids = set(state_df["rider_id"].astype(int))
+        gone = matched[~matched["rider_id"].astype(int).isin(active_ids)]
+        if not gone.empty:
+            print("  out of race: " + ", ".join(sorted(gone["rider_name"])),
+                  flush=True)
+            matched = matched[matched["rider_id"].astype(int).isin(active_ids)]
+    excluded_cfg = {norm_name(n) for n in config.get("exclude_riders", [])}
+    if excluded_cfg:
+        mask = matched["rider_name"].map(norm_name).isin(excluded_cfg)
+        if mask.any():
+            print("  excluded by config: "
+                  + ", ".join(sorted(matched.loc[mask, "rider_name"])),
+                  flush=True)
+            matched = matched[~mask]
+    if len(matched) != startlist_size:
+        print(f"  active field: {len(matched)} of {startlist_size} on the "
+              f"startlist", flush=True)
+
+    snapshots = get_latest_rider_snapshots(matched["rider_id"].tolist(), DB_PATH)
+    field_features = compute_field_features(snapshots)
+    team_map = matched.set_index("rider_id")["team_name"].to_dict()
+    book, book_source = load_book(config)
 
     for key, spec in todo.items():
         prof, ref_meta, ref_ids = build_profile(spec, DB_PATH)

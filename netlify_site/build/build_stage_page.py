@@ -19,6 +19,7 @@ import csv
 import html
 import json
 import runpy
+import sqlite3
 import sys
 from datetime import datetime
 from functools import lru_cache
@@ -133,17 +134,41 @@ def norm_name(s):
     return " ".join(sorted(s.lower().replace("-", " ").split()))
 
 
+DB_PATH = (PROJECT_ROOT / "cycling_project" / "webscrape_tools" / "database"
+           / "database" / "cycling_races.db")
+
+
+def _fc_to_internal_ids(fc_ids):
+    """{fc_rider_id: internal riders.id} — names drift on FirstCycling
+    (Gee -> Gee-West), so archived gc.csv rows join on the stable fc id."""
+    fc_ids = [str(f) for f in fc_ids if f]
+    if not fc_ids or not DB_PATH.exists():
+        return {}
+    with sqlite3.connect(DB_PATH) as conn:
+        rows = conn.execute(
+            f"SELECT fc_rider_id, id FROM riders WHERE fc_rider_id IN "
+            f"({','.join('?' for _ in fc_ids)})", fc_ids).fetchall()
+    return {str(fc): int(i) for fc, i in rows}
+
+
 def standings_pool_ids(stage, n, riders):
     """Rider ids of the top-n on ACTUAL GC before this stage, from the newest
     archived results/stage_NN/gc.csv — the riders still close enough that a
-    break containing them gets chased."""
+    break containing them gets chased. Joined on fc_rider_id (names drift on
+    FirstCycling) with normalized-name fallback."""
     by_name = {norm_name(r["rider_name"]): int(r["rider_id"]) for r in riders}
     for nn in range(int(stage) - 1, 0, -1):
         f = RESULTS_ROOT / f"stage_{nn:02d}" / "gc.csv"
         if f.exists():
             top = list(csv.DictReader(f.open()))[:n]
-            return frozenset(by_name[k] for k in
-                             (norm_name(r["name"]) for r in top) if k in by_name)
+            by_fc = _fc_to_internal_ids(r.get("rider_id") for r in top)
+            ids = set()
+            for r in top:
+                rid = (by_fc.get(str(r.get("rider_id") or ""))
+                       or by_name.get(norm_name(r["name"])))
+                if rid is not None:
+                    ids.add(rid)
+            return frozenset(ids)
     raise SystemExit(f"exclude_gc_source=standings but no results/stage_NN/"
                      f"gc.csv archived before stage {stage}")
 
