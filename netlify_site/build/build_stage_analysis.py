@@ -33,12 +33,15 @@ blocks are replaced by title).
 """
 
 import argparse
+import csv
 import json
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 PREDICTIONS_ROOT = (PROJECT_ROOT / "performance_eval" / "tour-de-france-2026"
                     / "predictions")
+RESULTS_ROOT = (PROJECT_ROOT / "performance_eval" / "tour-de-france-2026"
+                / "results")
 
 
 def norm(s):
@@ -52,6 +55,34 @@ def latest_gc_riders():
         raise SystemExit("No GC prediction JSON found — run the gc config first.")
     f = max(preds, key=lambda p: p.stat().st_mtime)
     return json.loads(f.read_text())["riders"], f.name
+
+
+def standings_gc_pool(stage, n, field_riders):
+    """Actual-standings pool: internal ids + GC ranks of the riders on GC
+    before this stage, from the newest archived results/stage_NN/gc.csv
+    (NN < stage). The top-n are the riders still close enough that a break
+    containing them gets chased."""
+    by_name = {norm(r["rider_name"]): int(r["rider_id"]) for r in field_riders}
+    for nn in range(int(stage) - 1, 0, -1):
+        f = RESULTS_ROOT / f"stage_{nn:02d}" / "gc.csv"
+        if not f.exists():
+            continue
+        ids, rank, missing = set(), {}, []
+        for i, row in enumerate(csv.DictReader(f.open()), 1):
+            rid = by_name.get(norm(row["name"]))
+            if rid is None:
+                if i <= n:
+                    missing.append(row["name"])
+                continue
+            rank[rid] = i
+            if i <= n:
+                ids.add(rid)
+        if missing:
+            print(f"  WARNING: GC top-{n} riders not matched to the field: "
+                  f"{', '.join(missing)}")
+        return frozenset(ids), rank, nn
+    raise SystemExit(f"exclude_gc_source=standings but no results/stage_NN/"
+                     f"gc.csv archived before stage {stage}")
 
 
 def fmt_pct(v, d=1):
@@ -89,10 +120,19 @@ def main():
     gc_exclude = (args.gc_exclude if args.gc_exclude is not None
                   else config["scenarios"][break_key].get("exclude_top_gc") or 24)
 
-    gc_riders, gc_file = latest_gc_riders()
-    gc_sorted = sorted(gc_riders, key=lambda r: -(r.get("blend_win_p") or 0))
-    gc_pool_ids = {int(r["rider_id"]) for r in gc_sorted[:gc_exclude]}
-    gc_rank = {int(r["rider_id"]): i + 1 for i, r in enumerate(gc_sorted)}
+    if config["scenarios"][break_key].get("exclude_gc_source") == "standings":
+        gc_pool_ids, gc_rank, gc_stage = standings_gc_pool(
+            config["stage"], gc_exclude, scen[break_key]["riders"])
+        pool_desc = f"top {gc_exclude} on GC after stage {gc_stage}"
+        pool_reason = ("everyone below that is far enough back to be "
+                       "given freedom")
+    else:
+        gc_riders, gc_file = latest_gc_riders()
+        gc_sorted = sorted(gc_riders, key=lambda r: -(r.get("blend_win_p") or 0))
+        gc_pool_ids = {int(r["rider_id"]) for r in gc_sorted[:gc_exclude]}
+        gc_rank = {int(r["rider_id"]): i + 1 for i, r in enumerate(gc_sorted)}
+        pool_desc = f"top {gc_exclude} by the latest GC-model blend ({gc_file})"
+        pool_reason = "captains don't get in the break"
 
     # ── block 1: if the break goes ──
     bs = scen[break_key]["riders"]
@@ -111,8 +151,7 @@ def main():
     short = config["scenarios"][break_key].get("short", break_key)
     block1 = {
         "title": "If the break goes — competitive riders outside the GC pool",
-        "note": (f"Top {gc_exclude} riders by the latest GC-model blend "
-                 f"({gc_file}) removed — captains don't get in the break. "
+        "note": (f"The {pool_desc} removed — {pool_reason}. "
                  f"Remaining riders under the '{short}' read; the conditional "
                  f"column renormalizes their win probability over this pool "
                  f"(P(win | a non-GC rider wins), pool holds "
@@ -155,7 +194,7 @@ def main():
         "title": "The book's card — its favourites under our readings",
         "note": ("Shortest book prices for the stage, with our blend win "
                  "probability (and rank) under each scenario. 'free' = outside "
-                 f"our top-{gc_exclude} GC pool, i.e. the type the "
+                 f"the excluded GC pool ({pool_desc}), i.e. the type the "
                  "peloton might let up the road."),
         "columns": (["Rider", "Book odds", "Devig"]
                     + [config["scenarios"][k].get("short", k) for k in keys]
@@ -227,7 +266,7 @@ def main():
             "note": (f"The stage-4 lesson as a filter: no terrain reading means "
                      f"'selective enough to shed the fast finishers but won by a "
                      f"punchy non-climber', so this table synthesizes it. We drop "
-                     f"the top {gc_exclude} GC-model riders and every pure "
+                     f"the GC pool ({pool_desc}) and every pure "
                      f"sprinter, then renormalize each reading over the survivors "
                      f"— P(win | the winner is a punchy non-climber). Pure "
                      f"sprinter is the model's own verdict, not a hand list: "
