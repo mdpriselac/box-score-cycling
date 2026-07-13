@@ -463,7 +463,8 @@ def stage_strip():
     if not items:
         return ""
     lead = ('<a href="stages.html"><b>Stage-by-stage predictions '
-            '&amp; reflections →</b></a>')
+            '&amp; reflections →</b></a> · '
+            '<a href="gc.html"><b>GC tracker</b></a>')
     return (STRIP_CSS + '\n<div class="stage-strip"><b style="color:var(--ink)">'
             'Tour diary:</b> ' + lead + " · " + " · ".join(items) + "</div>")
 
@@ -578,7 +579,8 @@ def gc_card():
 <div class="note">Model win = pre-race heads with live form (book-preserving).
 The outlook head is state-aware but per-rider — its probabilities don't sum
 to one book, and {through if through else 'few'}/21 stages is the thinnest
-state it sees; read it as "how safe is the current position", not as odds.</div>
+state it sees; read it as "how safe is the current position", not as odds.
+<b><a href="gc.html">Full stage-by-stage GC tracker →</a></b></div>
 </div>"""
 
 
