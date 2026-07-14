@@ -173,15 +173,49 @@ def standings_pool_ids(stage, n, riders):
                      f"gc.csv archived before stage {stage}")
 
 
-def exclusion_pool(spec, data, stage):
-    """The GC pool a break-type reading excludes: actual standings when the
-    spec says exclude_gc_source=standings, else the GC-model blend."""
-    n = spec.get("exclude_top_gc")
-    if not n:
+@lru_cache(maxsize=None)
+def sprinter_pool_ids(config_dir: str):
+    """Rider ids the model itself classifies as pure sprinters, via the config's
+    punchy_filter: real speed on the flat-sprint anchor, collapsing to a fraction
+    of it once the road turns selective. On a FLAT day these — not the GC
+    captains — are the men an escape has to beat, so a break reading there sets
+    ``exclude_sprinters`` and they leave the pool. Mirrors the classifier in
+    build_stage_analysis.py so the board and the analysis table agree."""
+    d = Path(config_dir)
+    pf = json.loads((d / "scenarios.json").read_text()).get("punchy_filter")
+    if not pf:
         return frozenset()
-    if spec.get("exclude_gc_source") == "standings":
-        return standings_pool_ids(stage, int(n), data["riders"])
-    return gc_pool_ids(int(n))
+    anchor_f = d / f"{pf['sprint_anchor']}.json"
+    sel_f = d / f"{pf['selective_scenario']}.json"
+    if not (anchor_f.exists() and sel_f.exists()):
+        return frozenset()
+    floor = pf.get("anchor_floor", 0.01)
+    ret_max = pf.get("retention_max", 0.12)
+    sel_p = {int(r["rider_id"]): (r.get("blend_win_p") or 0)
+             for r in json.loads(sel_f.read_text())["riders"]}
+    ids = set()
+    for r in json.loads(anchor_f.read_text())["riders"]:
+        rid, a = int(r["rider_id"]), (r.get("blend_win_p") or 0)
+        if a >= floor and sel_p.get(rid, 0) / a < ret_max:
+            ids.add(rid)
+    return frozenset(ids)
+
+
+def exclusion_pool(spec, data, config):
+    """Everyone a break-type reading excludes from its conditional pool: the
+    top-N GC contenders (actual standings when exclude_gc_source=standings, else
+    the GC-model blend), plus every pure sprinter when the spec sets
+    exclude_sprinters (the flat-day case)."""
+    pool = set()
+    n = spec.get("exclude_top_gc")
+    if n:
+        if spec.get("exclude_gc_source") == "standings":
+            pool |= standings_pool_ids(config["stage"], int(n), data["riders"])
+        else:
+            pool |= gc_pool_ids(int(n))
+    if spec.get("exclude_sprinters") and config.get("_dir"):
+        pool |= sprinter_pool_ids(config["_dir"])
+    return frozenset(pool)
 
 
 def pool_label(spec):
@@ -189,18 +223,28 @@ def pool_label(spec):
             else "GC-model")
 
 
-def display_riders(spec, data, stage=None):
+def pool_removed_text(spec):
+    """How the excluded pool reads in prose, for card labels and captions."""
+    bits = []
+    if spec.get("exclude_top_gc"):
+        bits.append(f"top {spec['exclude_top_gc']} {pool_label(spec)}")
+    if spec.get("exclude_sprinters"):
+        bits.append("the sprinters")
+    return " and ".join(bits)
+
+
+def display_riders(spec, data, config):
     """Riders as *presented* for a scenario (never mutates the logged JSON).
 
-    Break-type readings carry ``exclude_top_gc: N`` in the config: the top-N GC
-    contenders (by actual standings when exclude_gc_source=standings, else by
-    the GC-model blend) are dropped (they won't be in a break) and the remaining
-    field is renormalized into a conditional 'if the break wins' win probability
-    (``display_p``). Ordinary scenarios pass through with display_p = blend."""
+    Break-type readings drop the riders who cannot win from an escape — the GC
+    captains (``exclude_top_gc``) and, on a flat day, the pure sprinters
+    (``exclude_sprinters``) — then renormalize the rest into a conditional
+    'if the break wins' win probability (``display_p``). Ordinary scenarios pass
+    through with display_p = blend."""
     riders = data["riders"]
-    if not spec.get("exclude_top_gc"):
+    if not (spec.get("exclude_top_gc") or spec.get("exclude_sprinters")):
         return [dict(r, display_p=r.get("blend_win_p")) for r in riders]
-    pool = exclusion_pool(spec, data, stage)
+    pool = exclusion_pool(spec, data, config)
     kept = [r for r in riders if int(r["rider_id"]) not in pool]
     mass = sum(r.get("blend_win_p") or 0 for r in kept) or 1.0
     return [dict(r, display_p=(r.get("blend_win_p") or 0) / mass) for r in kept]
@@ -208,6 +252,7 @@ def display_riders(spec, data, stage=None):
 
 def load_stage(config_path: Path):
     config = json.loads(config_path.read_text())
+    config["_dir"] = str(config_path.parent)
     scen = {}
     for key, spec in config["scenarios"].items():
         if spec.get("hidden"):
@@ -237,13 +282,13 @@ def scenario_cards(config, scen):
     cards = []
     for key, data in scen.items():
         spec = config["scenarios"][key]
-        top = sorted(display_riders(spec, data, config["stage"]),
+        top = sorted(display_riders(spec, data, config),
                      key=lambda r: -(r["display_p"] or 0))[:5]
         toplist = "; ".join(
             f"{esc(r['rider_name'])} <b>{pct(r['display_p'])}</b>" for r in top)
-        label = (f"Top 5 if the break wins (top {spec['exclude_top_gc']} "
-                 f"{pool_label(spec)} removed)"
-                 if spec.get("exclude_top_gc") else "Top 5 (blend)")
+        removed = pool_removed_text(spec)
+        label = (f"Top 5 if the break wins ({removed} removed)"
+                 if removed else "Top 5 (blend)")
         cards.append(f"""<div class="card">
 <h3>{esc(spec.get('short', key))}</h3>
 <div class="muted" style="font-family:var(--sans);font-size:12.5px">{esc(data['scenario'])}</div>
@@ -257,14 +302,15 @@ def scenario_cards(config, scen):
 def board_table(config, scen):
     keys = list(scen.keys())
     specs = config["scenarios"]
-    cond = {k: bool(specs[k].get("exclude_top_gc")) for k in keys}
+    cond = {k: bool(specs[k].get("exclude_top_gc")
+                    or specs[k].get("exclude_sprinters")) for k in keys}
     # break readings are conditional; sort + edge use the unconditional readings
     # so their renormalized numbers don't hijack the board or fake an edge
     eff_keys = [k for k in keys if not cond[k]] or keys
-    # per-scenario display prob keyed by rider id (GC pool already dropped for
-    # break scenarios, so those ids simply won't appear in that column)
+    # per-scenario display prob keyed by rider id (the excluded pool is already
+    # dropped for break scenarios, so those ids simply won't appear in that column)
     disp = {k: {int(r["rider_id"]): r["display_p"]
-                for r in display_riders(specs[k], scen[k], config["stage"])}
+                for r in display_riders(specs[k], scen[k], config)}
             for k in keys}
 
     riders = {}
@@ -307,15 +353,25 @@ def board_table(config, scen):
     caveat = ""
     if any(cond.values()):
         names = ", ".join(specs[k].get("short", k) for k in keys if cond[k])
-        n = max(specs[k]["exclude_top_gc"] for k in keys if cond[k])
+        ck = [k for k in keys if cond[k]]
+        gcs = [specs[k]["exclude_top_gc"] for k in ck
+               if specs[k].get("exclude_top_gc")]
         by_standings = any(specs[k].get("exclude_gc_source") == "standings"
-                           for k in keys if cond[k])
-        pool_txt = ("riders on actual GC" if by_standings else "GC contenders")
+                           for k in ck)
+        drops_sprinters = any(specs[k].get("exclude_sprinters") for k in ck)
+        bits = []
+        if gcs:
+            pool_txt = ("riders on actual GC" if by_standings else "GC contenders")
+            bits.append(f"the top {max(gcs)} {pool_txt}")
+        if drops_sprinters:
+            bits.append("every pure sprinter")
+        dashed = ("a GC captain or a pure sprinter" if drops_sprinters
+                  else "a GC captain")
         caveat = (f'<div class="note"><b>{esc(names)}</b> is shown conditional on the '
-                  f'break winning — the top {n} {pool_txt} are removed and the '
+                  f'break winning — {" and ".join(bits)} are removed and the '
                   f'remaining probabilities renormalize within the break pool. That '
                   f'column isn\'t comparable with the book line or the other readings, '
-                  f'so it\'s left out of Max&nbsp;edge; a "–" means a GC captain we '
+                  f'so it\'s left out of Max&nbsp;edge; a "–" means {dashed} we '
                   f'assume won\'t be up the road.</div>')
     return f'<div class="tablewrap"><table>{head}{"".join(body)}</table></div>' + caveat
 
@@ -324,10 +380,9 @@ def scenario_details(config, scen):
     blocks = []
     for key, data in scen.items():
         spec = config["scenarios"][key]
-        pool = exclusion_pool(spec, data, config["stage"])
+        pool = exclusion_pool(spec, data, config)
         riders = [r for r in data["riders"] if int(r["rider_id"]) not in pool]
-        extra = (f" · top {spec['exclude_top_gc']} {pool_label(spec)} removed"
-                 if pool else "")
+        extra = f" · {pool_removed_text(spec)} removed" if pool else ""
         rows = sorted(riders, key=lambda r: -(r["blend_win_p"] or 0))[:30]
         body = "".join(
             "<tr>"
@@ -474,11 +529,12 @@ def hub_card(config, scen, results):
     picks = []
     for key, data in scen.items():
         spec = config["scenarios"][key]
-        disp = display_riders(spec, data, config["stage"])
+        disp = display_riders(spec, data, config)
         if not disp:
             continue
         top = max(disp, key=lambda r: r["display_p"] or 0)
-        scen_name = spec.get("short", key) + (" · if break wins" if spec.get("exclude_top_gc") else "")
+        scen_name = spec.get("short", key) + (
+            " · if break wins" if pool_removed_text(spec) else "")
         picks.append(
             f'<div class="pickline"><span class="scen">{esc(scen_name)}</span>'
             f'{esc(top["rider_name"])} <b>{pct(top["display_p"])}</b></div>')

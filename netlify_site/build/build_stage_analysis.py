@@ -110,6 +110,46 @@ def fmt_pct(v, d=1):
     return f"{100*v:.{d}f}%" if v is not None else "–"
 
 
+def classify_sprinters(config, scen):
+    """Model-defined pure sprinters, via the config's punchy_filter.
+
+    A rider is a pure sprinter if he has real speed on a flat-sprint anchor
+    (blend >= anchor_floor) but keeps under retention_max of it once the road
+    turns selective — the collapse that separates a Merlier from a Pedersen.
+    Returns (sprinter_ids, names). Empty when no punchy_filter is configured.
+    """
+    pf = config.get("punchy_filter")
+    if not pf:
+        return set(), {}
+    anchor_key = pf["sprint_anchor"]
+    sel_key = pf["selective_scenario"]
+    for k in (anchor_key, sel_key):
+        if k not in scen:
+            raise SystemExit(f"punchy_filter scenario '{k}' has no prediction "
+                             f"JSON — run it with --only {k} --no-log")
+    floor = pf.get("anchor_floor", 0.01)
+    ret_max = pf.get("retention_max", 0.12)
+    anchor_p = {int(r["rider_id"]): (r.get("blend_win_p") or 0)
+                for r in scen[anchor_key]["riders"]}
+    sel_p = {int(r["rider_id"]): (r.get("blend_win_p") or 0)
+             for r in scen[sel_key]["riders"]}
+    names = {int(r["rider_id"]): r["rider_name"]
+             for r in scen[anchor_key]["riders"]}
+
+    print(f"\npunchy-filter diagnostics (anchor={anchor_key}, "
+          f"selective={sel_key}, floor={floor}, retention_max={ret_max}):")
+    sprinter_ids = set()
+    for rid, a in sorted(anchor_p.items(), key=lambda kv: -kv[1]):
+        if a < floor:
+            continue
+        ret = sel_p.get(rid, 0) / a
+        if ret < ret_max:
+            sprinter_ids.add(rid)
+        print(f"  {names[rid]:<24} anchor {100*a:5.1f}%  retention {ret:5.2f}  "
+              f"{'PURE SPRINTER' if ret < ret_max else 'punchy fast-man'}")
+    return sprinter_ids, names
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("config")
@@ -155,9 +195,23 @@ def main():
         pool_desc = f"top {gc_exclude} by the latest GC-model blend ({gc_file})"
         pool_reason = "captains don't get in the break"
 
+    # pure-sprinter classification — shared by block 1 (flat days, where the
+    # men who beat a break are the sprinters, not the GC pool) and block 3.
+    sprinter_ids, sprinter_names = classify_sprinters(config, scen)
+
     # ── block 1: if the break goes ──
+    # On a hard day the pool that gets freedom = field minus the GC captains.
+    # On a FLAT day the GC pool is a near-no-op (sprinters sit ~130th on GC and
+    # the captains aren't winning a gallop anyway) — there the break has to beat
+    # the sprinters, so the break scenario can set "exclude_sprinters": true and
+    # the pool drops them too.
+    drop_sprinters = bool(config["scenarios"][break_key].get("exclude_sprinters"))
+    if drop_sprinters and not sprinter_ids:
+        raise SystemExit(f"'{break_key}' sets exclude_sprinters but the "
+                         f"punchy_filter classified nobody — check the config")
+    excluded1 = gc_pool_ids | (sprinter_ids if drop_sprinters else set())
     bs = scen[break_key]["riders"]
-    pool = [r for r in bs if int(r["rider_id"]) not in gc_pool_ids]
+    pool = [r for r in bs if int(r["rider_id"]) not in excluded1]
     pool_mass = sum(r.get("blend_win_p") or 0 for r in pool)
     pool_sorted = sorted(pool, key=lambda r: -(r.get("blend_win_p") or 0))
     rows1 = []
@@ -170,19 +224,42 @@ def main():
             fmt_pct(r.get("book_devig")),
         ])
     short = config["scenarios"][break_key].get("short", break_key)
-    block1 = {
-        "title": "If the break goes — competitive riders outside the GC pool",
-        "note": (f"The {pool_desc} removed — {pool_reason}. "
-                 f"Remaining riders under the '{short}' read; the conditional "
-                 f"column renormalizes their win probability over this pool "
-                 f"(P(win | a non-GC rider wins), pool holds "
-                 f"{100*pool_mass:.0f}% of the unconditional book). The model "
-                 f"can't see who actually makes the break — read this as a "
-                 f"fitness-for-the-day ranking, not break-formation odds."),
-        "columns": ["Rider", "Team", f"{short} win p", "P(win | break wins)",
-                    "Book odds", "Book devig"],
-        "rows": rows1,
-    }
+    if drop_sprinters:
+        gone = ", ".join(sorted(sprinter_names[i] for i in sprinter_ids))
+        block1 = {
+            "title": "If the break goes — the field with the sprinters and the GC pool removed",
+            "note": (f"On a flat day the escape has to beat the fast men home, "
+                     f"so the pool that can win from it is the field minus every "
+                     f"pure sprinter and minus the {pool_desc}. Pure sprinter is "
+                     f"the model's own verdict, not a hand list: real speed on a "
+                     f"flat-sprint anchor of this exact field, but collapsing to "
+                     f"a fraction of it once the road turns selective — that "
+                     f"collapse is what separates a Merlier from a Pedersen. "
+                     f"Classified out: {gone}. The conditional column "
+                     f"renormalizes the survivors' win probability under the "
+                     f"'{short}' read over this pool (P(win | the break wins); "
+                     f"the pool holds {100*pool_mass:.0f}% of the unconditional "
+                     f"book). The model cannot see who actually gets up the road "
+                     f"— read this as a fitness-for-the-day ranking, not "
+                     f"break-formation odds."),
+            "columns": ["Rider", "Team", f"{short} win p", "P(win | break wins)",
+                        "Book odds", "Book devig"],
+            "rows": rows1,
+        }
+    else:
+        block1 = {
+            "title": "If the break goes — competitive riders outside the GC pool",
+            "note": (f"The {pool_desc} removed — {pool_reason}. "
+                     f"Remaining riders under the '{short}' read; the conditional "
+                     f"column renormalizes their win probability over this pool "
+                     f"(P(win | a non-GC rider wins), pool holds "
+                     f"{100*pool_mass:.0f}% of the unconditional book). The model "
+                     f"can't see who actually makes the break — read this as a "
+                     f"fitness-for-the-day ranking, not break-formation odds."),
+            "columns": ["Rider", "Team", f"{short} win p", "P(win | break wins)",
+                        "Book odds", "Book devig"],
+            "rows": rows1,
+        }
 
     # ── block 2: the book's card ──
     any_riders = next(iter(vis.values()))["riders"]
@@ -224,37 +301,16 @@ def main():
     }
 
     # ── block 3: the punchy pool (GC captains AND pure sprinters removed) ──
+    # Skipped when the config sets punchy_filter.emit_pool = false — on a flat
+    # day block 1 already IS the sprinters-removed pool, and a second copy of it
+    # under the "punchy non-climber" framing would just be wrong prose.
     blocks = [block1, block2]
     pf = config.get("punchy_filter")
-    if pf:
-        anchor_key = pf["sprint_anchor"]
-        sel_key = pf.get("selective_scenario") or break_key
-        if anchor_key not in scen:
-            raise SystemExit(f"punchy_filter anchor '{anchor_key}' has no "
-                             f"prediction JSON — run it with --only {anchor_key} --no-log")
+    if pf and pf.get("emit_pool", True):
         floor = pf.get("anchor_floor", 0.01)
         ret_max = pf.get("retention_max", 0.12)
-        anchor_p = {int(r["rider_id"]): (r.get("blend_win_p") or 0)
-                    for r in scen[anchor_key]["riders"]}
-        sel_p = {int(r["rider_id"]): (r.get("blend_win_p") or 0)
-                 for r in scen[sel_key]["riders"]}
-        names = {int(r["rider_id"]): r["rider_name"]
-                 for r in scen[anchor_key]["riders"]}
-
-        print(f"\npunchy-filter diagnostics (anchor={anchor_key}, "
-              f"selective={sel_key}, floor={floor}, retention_max={ret_max}):")
-        sprinter_ids, diag = set(), []
-        for rid, a in sorted(anchor_p.items(), key=lambda kv: -kv[1]):
-            if a < floor:
-                continue
-            ret = sel_p.get(rid, 0) / a
-            verdict = "PURE SPRINTER" if ret < ret_max else "punchy fast-man"
-            if ret < ret_max:
-                sprinter_ids.add(rid)
-            diag.append((names[rid], a, ret, verdict))
-        for nm, a, ret, verdict in diag:
-            print(f"  {nm:<24} anchor {100*a:5.1f}%  retention {ret:5.2f}  {verdict}")
-
+        sel_key = pf["selective_scenario"]
+        names = sprinter_names
         excluded = gc_pool_ids | sprinter_ids
         vk = list(vis.keys())
         pools = {}
@@ -278,7 +334,7 @@ def main():
                 + [fmt_pct(pools[k][0].get(rid)) for k in vk]
                 + [f"{r['book_odds']:.0f}" if r.get("book_odds") else "n/a",
                    fmt_pct(r.get("book_devig"))])
-        sprinter_names = ", ".join(sorted(names[i] for i in sprinter_ids))
+        classified_out = ", ".join(sorted(names[i] for i in sprinter_ids))
         masses = " / ".join(
             f"{config['scenarios'][k].get('short', k)} {100*pools[k][1]:.0f}%"
             for k in vk)
@@ -295,7 +351,7 @@ def main():
                      f">= {100*floor:.0f}% while retaining under {100*ret_max:.0f}% "
                      f"of it when the day turns selective ('{sel_key}' read) — "
                      f"that collapse is what separates a Merlier from a Pedersen. "
-                     f"Classified out: {sprinter_names}. Pool holds {masses} of "
+                     f"Classified out: {classified_out}. Pool holds {masses} of "
                      f"each reading's unconditional book."),
             "columns": (["Rider", "Team"]
                         + [f"P(win | pool) {config['scenarios'][k].get('short', k)}"

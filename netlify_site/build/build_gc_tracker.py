@@ -106,6 +106,11 @@ def build():
     # ── current top-10 detail ──
     gaps = {rid: g for rid, _, g in actual_gc(latest["through"]) if rid}
     detail_rows = []
+    # The blend is a set of per-rider marginals, not a distribution: it sums to
+    # well over one book. Surface the actual total so the book column next to it
+    # is read as directional, not as a like-for-like price.
+    blend_mass = (sum(r.get("blend_win_p") or 0 for r in current["riders"])
+                  if current else 0)
     if current:
         top = sorted(current["riders"],
                      key=lambda r: -(r.get("blend_win_p") or 0))[:TOP_N]
@@ -196,11 +201,13 @@ def build():
 <th class="num">Book devig</th></tr>
 {''.join(detail_rows)}
 </table></div>
-<div class="note">Model win = the pre-race heads with live form and the
-DNF-adjusted active field — book-preserving, comparable with the devigged
-book column. The outlook head is state-aware but per-rider: its numbers
-don't sum to one book; read them as "how safe is this position", not as
-odds.</div>
+<div class="note">Model win = the blended pre-race heads with live form and
+the DNF-adjusted active field. Read it against the book column with care:
+the blend is a set of per-rider marginals and sums to {100*blend_mass:.0f}%
+over the field, not to one book, so this is a directional comparison and not
+a like-for-like price — divide through by that total before calling anything
+an edge. The outlook head is state-aware but per-rider in the same way: read
+it as "how safe is this position", not as odds.</div>
 </section>
 
 <section>
