@@ -299,6 +299,35 @@ def scenario_cards(config, scen):
     return '<div class="cards">' + "".join(cards) + "</div>"
 
 
+def mass_note(config, scen):
+    """Print each unconditional reading's real probability mass.
+
+    The blend is a set of per-rider marginals, NOT a distribution: it sums to
+    well over one book (136-156% on a typical stage) while the devigged book
+    column sums to exactly 100%. Setting them side by side therefore flatters
+    the model, and "Max edge" is inflated by roughly that factor. Say so on the
+    page rather than quietly bank the difference. (Conditional break columns are
+    excluded — they already renormalize within their own pool.)"""
+    bits = []
+    for key, data in scen.items():
+        spec = config["scenarios"][key]
+        if spec.get("exclude_top_gc") or spec.get("exclude_sprinters"):
+            continue
+        m = sum(r.get("blend_win_p") or 0 for r in data["riders"])
+        bits.append(f"{esc(spec.get('short', key))} <b>{100*m:.0f}%</b>")
+    if not bits:
+        return ""
+    return ('<p class="note"><b>Read "Max edge" as directional, not as a '
+            'price.</b> The blend is a set of per-rider marginals and does not '
+            'sum to one book — across this field each reading totals '
+            + ", ".join(bits) + ' — while the devigged book column sums to '
+            'exactly 100%. Putting the two side by side flatters the model, and '
+            'Max edge is inflated by about that factor: divide a rider\'s '
+            'probability by his reading\'s total before calling anything an '
+            'edge. Of our heads only the LambdaRank one is natively '
+            'book-preserving.</p>')
+
+
 def board_table(config, scen):
     keys = list(scen.keys())
     specs = config["scenarios"]
@@ -750,6 +779,7 @@ def main():
   the pricing layer), next to the devigged Kambi (Unibet) win line captured the
   morning before the stage. "Max edge" compares the most favourable scenario
   against the book — treat it as scenario-conditional, not a free bet.</p>
+  {mass_note(config, scen)}
   {board_table(config, scen)}
   {scenario_details(config, scen)}
 </section>
