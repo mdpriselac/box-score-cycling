@@ -5,6 +5,9 @@ __pycache__/
 *$py.class
 ./DS_Store
 **/.DS_Store
+# LibreOffice/Office lock files — stale editor artifacts that record the
+# local user, host and open path.
+.~lock.*#
 # C extensions
 *.so
 
@@ -117,24 +120,18 @@ venv.bak/
 models/history/
 models/production_backup_*/
 
-#performance evals
-performance_eval/*
-# ...except the TdF 2026 daily capture scripts (data snapshots stay local)
-!performance_eval/tour-de-france-2026/
-performance_eval/tour-de-france-2026/*
-!performance_eval/tour-de-france-2026/capture_odds.py
-!performance_eval/tour-de-france-2026/capture_results.py
-!performance_eval/tour-de-france-2026/README.md
-!performance_eval/tour-de-france-2026/DAILY_RUNBOOK.md
-!performance_eval/tour-de-france-2026/seed_state_cache.py
-!performance_eval/tour-de-france-2026/predictions/
-performance_eval/tour-de-france-2026/predictions/*
-!performance_eval/tour-de-france-2026/predictions/stage_*/
-performance_eval/tour-de-france-2026/predictions/stage_*/*
-!performance_eval/tour-de-france-2026/predictions/stage_*/scenarios.json
-!performance_eval/tour-de-france-2026/predictions/gc/
-performance_eval/tour-de-france-2026/predictions/gc/*
-!performance_eval/tour-de-france-2026/predictions/gc/scenarios.json
+# Performance evals — the capture scripts, model predictions, odds captures,
+# results and betting reports are all tracked, so the netlify pages rebuild
+# from a clean clone. Raw third-party captures stay local: they are kept only
+# for provenance, are bulky, and are re-fetchable from source. Our own
+# *_bets.html reports are tracked — only saved vendor pages are excluded.
+performance_eval/**/stage_page_*.html
+performance_eval/**/race_page_*.html
+performance_eval/**/*FirstCycling*.html
+performance_eval/**/odds/**/raw/
+# The blanket *.csv rule above would otherwise swallow the results and odds
+# tables that the build scripts read.
+!performance_eval/**/*.csv
 # Database backups (multi-GB copies)
 cycling_project/webscrape_tools/database/backups/
 
