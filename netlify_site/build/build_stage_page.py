@@ -114,7 +114,12 @@ def esc(s):
 
 
 def pct(v, digits=1):
-    return f"{100*v:.{digits}f}%" if v is not None else "–"
+    # NaN means "this head didn't price that rider" (the GC outlook head only
+    # scores real contenders) — it reads as missing, not as a number, so it
+    # gets the same dash as None rather than a literal "nan%".
+    if v is None or v != v:
+        return "–"
+    return f"{100*v:.{digits}f}%"
 
 
 @lru_cache(maxsize=None)

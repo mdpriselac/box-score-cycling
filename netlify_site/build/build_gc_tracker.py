@@ -88,7 +88,7 @@ def actual_gc(through):
 
 
 def fmt_gap(seconds):
-    if seconds is None:
+    if seconds is None or seconds != seconds:  # NaN: int() would raise
         return "–"
     s = int(seconds)
     return "0:00" if s == 0 else f"+{s//60}:{s%60:02d}"
@@ -109,8 +109,10 @@ def build():
     # The blend is a set of per-rider marginals, not a distribution: it sums to
     # well over one book. Surface the actual total so the book column next to it
     # is read as directional, not as a like-for-like price.
-    blend_mass = (sum(r.get("blend_win_p") or 0 for r in current["riders"])
-                  if current else 0)
+    # `x or 0` does not screen NaN (NaN is truthy), and one NaN would carry
+    # through the sum into the note's total.
+    blend_mass = sum(p for p in (r.get("blend_win_p") for r in current["riders"])
+                     if p is not None and p == p) if current else 0
     if current:
         top = sorted(current["riders"],
                      key=lambda r: -(r.get("blend_win_p") or 0))[:TOP_N]
