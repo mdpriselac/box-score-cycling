@@ -1,0 +1,1687 @@
+{
+  "bunch": {
+    "n_members": 1664,
+    "gt_share": 0.094,
+    "per_year": {
+      "2016": 181,
+      "2017": 175,
+      "2018": 214,
+      "2019": 207,
+      "2020": 96,
+      "2021": 110,
+      "2022": 131,
+      "2023": 166,
+      "2024": 163,
+      "2025": 132,
+      "2026": 89
+    },
+    "canonical": {
+      "sprint": 0.5141,
+      "mountain": 0.0516,
+      "hilly": 0.1401,
+      "rolling": 0.053,
+      "breakaway": 0.1116,
+      "time_trial": 0.1258
+    },
+    "wg_prop": 0.6565,
+    "median_wg_size": 84,
+    "winner_archetypes": {
+      "sprint": 0.719,
+      "hilly": 0.089,
+      "time_trial": 0.084,
+      "breakaway": 0.073,
+      "rolling": 0.025,
+      "mountain": 0.011
+    },
+    "top_anchors": [
+      {
+        "race": "M\u00fcnsterland Giro",
+        "cosine": 0.998,
+        "category": "pro"
+      },
+      {
+        "race": "GP d'Isbergues",
+        "cosine": 0.997,
+        "category": "d1"
+      },
+      {
+        "race": "Trofeo Ses Salines",
+        "cosine": 0.997,
+        "category": "d1"
+      },
+      {
+        "race": "Kuurne-Brussel-Kuurne",
+        "cosine": 0.995,
+        "category": "pro"
+      }
+    ],
+    "exemplars": [
+      {
+        "race": "\u00c9toile de Bess\u00e8ges",
+        "year": 2026,
+        "stage": 4,
+        "date": "2026-02-07",
+        "winner_arch": "breakaway",
+        "wg_size": 28
+      },
+      {
+        "race": "GP Anicolor",
+        "year": 2026,
+        "stage": 1,
+        "date": "2026-05-01",
+        "winner_arch": "time_trial",
+        "wg_size": 28
+      },
+      {
+        "race": "Tour Down Under",
+        "year": 2026,
+        "stage": 5,
+        "date": "2026-01-25",
+        "winner_arch": "breakaway",
+        "wg_size": 29
+      },
+      {
+        "race": "Tour de Romandie",
+        "year": 2026,
+        "stage": 2,
+        "date": "2026-04-30",
+        "winner_arch": "mountain",
+        "wg_size": 32
+      },
+      {
+        "race": "Tour de Romandie",
+        "year": 2026,
+        "stage": 3,
+        "date": "2026-05-01",
+        "winner_arch": "time_trial",
+        "wg_size": 33
+      },
+      {
+        "race": "Tour de Wallonie",
+        "year": 2026,
+        "stage": 5,
+        "date": "2026-06-05",
+        "winner_arch": "sprint",
+        "wg_size": 33
+      },
+      {
+        "race": "Volta Ciclista a Catalunya",
+        "year": 2026,
+        "stage": 7,
+        "date": "2026-03-29",
+        "winner_arch": "breakaway",
+        "wg_size": 34
+      },
+      {
+        "race": "O Gran Cami\u00f1o",
+        "year": 2026,
+        "stage": 2,
+        "date": "2026-04-15",
+        "winner_arch": "sprint",
+        "wg_size": 35
+      },
+      {
+        "race": "Fl\u00e8che du Sud",
+        "year": 2026,
+        "stage": 4,
+        "date": "2026-05-16",
+        "winner_arch": "sprint",
+        "wg_size": 36
+      },
+      {
+        "race": "Tour of the Alps",
+        "year": 2026,
+        "stage": 3,
+        "date": "2026-04-22",
+        "winner_arch": "rolling",
+        "wg_size": 38
+      },
+      {
+        "race": "Giro d'Italia",
+        "year": 2026,
+        "stage": 4,
+        "date": "2026-05-12",
+        "winner_arch": "rolling",
+        "wg_size": 42
+      },
+      {
+        "race": "4 Jours de Dunkerque",
+        "year": 2026,
+        "stage": 1,
+        "date": "2026-05-20",
+        "winner_arch": "sprint",
+        "wg_size": 44
+      }
+    ]
+  },
+  "gc_day": {
+    "n_members": 968,
+    "gt_share": 0.134,
+    "per_year": {
+      "2016": 106,
+      "2017": 113,
+      "2018": 105,
+      "2019": 117,
+      "2020": 62,
+      "2021": 70,
+      "2022": 84,
+      "2023": 89,
+      "2024": 96,
+      "2025": 82,
+      "2026": 44
+    },
+    "canonical": {
+      "sprint": 0.0941,
+      "mountain": 0.3645,
+      "hilly": 0.0724,
+      "rolling": 0.1631,
+      "breakaway": 0.0966,
+      "time_trial": 0.2083
+    },
+    "wg_prop": 0.0324,
+    "median_wg_size": 1,
+    "winner_archetypes": {
+      "mountain": 0.343,
+      "time_trial": 0.254,
+      "rolling": 0.143,
+      "sprint": 0.104,
+      "breakaway": 0.093,
+      "hilly": 0.063
+    },
+    "top_anchors": [
+      {
+        "race": "Milano - Torino",
+        "cosine": 0.961,
+        "category": "pro"
+      },
+      {
+        "race": "Klasika Primavera",
+        "cosine": 0.958,
+        "category": "d1"
+      },
+      {
+        "race": "CIC - Mont Ventoux",
+        "cosine": 0.957,
+        "category": "pro"
+      },
+      {
+        "race": "Faun-Ard\u00e8che Classic",
+        "cosine": 0.953,
+        "category": "pro"
+      }
+    ],
+    "exemplars": [
+      {
+        "race": "AlUla Tour",
+        "year": 2026,
+        "stage": 5,
+        "date": "2026-01-31",
+        "winner_arch": "breakaway",
+        "wg_size": 1
+      },
+      {
+        "race": "Volta Comunitat Valenciana",
+        "year": 2026,
+        "stage": 4,
+        "date": "2026-02-07",
+        "winner_arch": "time_trial",
+        "wg_size": 1
+      },
+      {
+        "race": "Tour of Oman",
+        "year": 2026,
+        "stage": 5,
+        "date": "2026-02-11",
+        "winner_arch": "rolling",
+        "wg_size": 1
+      },
+      {
+        "race": "UAE Tour",
+        "year": 2026,
+        "stage": 3,
+        "date": "2026-02-18",
+        "winner_arch": "time_trial",
+        "wg_size": 1
+      },
+      {
+        "race": "UAE Tour",
+        "year": 2026,
+        "stage": 6,
+        "date": "2026-02-21",
+        "winner_arch": "rolling",
+        "wg_size": 1
+      },
+      {
+        "race": "Giro di Sardegna",
+        "year": 2026,
+        "stage": 4,
+        "date": "2026-02-28",
+        "winner_arch": "rolling",
+        "wg_size": 1
+      },
+      {
+        "race": "Tour du Rwanda",
+        "year": 2026,
+        "stage": 7,
+        "date": "2026-02-28",
+        "winner_arch": "mountain",
+        "wg_size": 1
+      },
+      {
+        "race": "Paris-Nice",
+        "year": 2026,
+        "stage": 4,
+        "date": "2026-03-11",
+        "winner_arch": "mountain",
+        "wg_size": 1
+      },
+      {
+        "race": "Paris-Nice",
+        "year": 2026,
+        "stage": 5,
+        "date": "2026-03-12",
+        "winner_arch": "mountain",
+        "wg_size": 1
+      },
+      {
+        "race": "Tirreno-Adriatico",
+        "year": 2026,
+        "stage": 5,
+        "date": "2026-03-13",
+        "winner_arch": "time_trial",
+        "wg_size": 1
+      },
+      {
+        "race": "Tirreno-Adriatico",
+        "year": 2026,
+        "stage": 6,
+        "date": "2026-03-14",
+        "winner_arch": "rolling",
+        "wg_size": 1
+      },
+      {
+        "race": "Volta Ciclista a Catalunya",
+        "year": 2026,
+        "stage": 5,
+        "date": "2026-03-27",
+        "winner_arch": "mountain",
+        "wg_size": 1
+      }
+    ]
+  },
+  "itt": {
+    "n_members": 368,
+    "gt_share": 0.139,
+    "per_year": {
+      "2016": 51,
+      "2017": 44,
+      "2018": 45,
+      "2019": 47,
+      "2020": 18,
+      "2021": 30,
+      "2022": 30,
+      "2023": 31,
+      "2024": 33,
+      "2025": 26,
+      "2026": 13
+    },
+    "canonical": {
+      "sprint": 0.102,
+      "mountain": 0.1511,
+      "hilly": 0.0553,
+      "rolling": 0.0832,
+      "breakaway": 0.065,
+      "time_trial": 0.5391
+    },
+    "wg_prop": 0.0551,
+    "median_wg_size": 1,
+    "winner_archetypes": {
+      "time_trial": 0.644,
+      "mountain": 0.136,
+      "sprint": 0.098,
+      "rolling": 0.043,
+      "hilly": 0.038,
+      "breakaway": 0.035,
+      "unknown": 0.005
+    },
+    "top_anchors": [
+      {
+        "race": "E3 Saxo Classic",
+        "cosine": 0.919,
+        "category": "wt"
+      },
+      {
+        "race": "Ronde van Vlaanderen",
+        "cosine": 0.882,
+        "category": "wt"
+      },
+      {
+        "race": "Paris-Roubaix",
+        "cosine": 0.865,
+        "category": "wt"
+      },
+      {
+        "race": "Figueira Champions Classic",
+        "cosine": 0.808,
+        "category": "pro"
+      }
+    ],
+    "exemplars": [
+      {
+        "race": "Volta Comunitat Valenciana",
+        "year": 2026,
+        "stage": 2,
+        "date": "2026-02-05",
+        "winner_arch": "time_trial",
+        "wg_size": 1
+      },
+      {
+        "race": "\u00c9toile de Bess\u00e8ges",
+        "year": 2026,
+        "stage": 5,
+        "date": "2026-02-08",
+        "winner_arch": "rolling",
+        "wg_size": 1
+      },
+      {
+        "race": "UAE Tour",
+        "year": 2026,
+        "stage": 2,
+        "date": "2026-02-17",
+        "winner_arch": "time_trial",
+        "wg_size": 1
+      },
+      {
+        "race": "Volta ao Algarve",
+        "year": 2026,
+        "stage": 3,
+        "date": "2026-02-20",
+        "winner_arch": "time_trial",
+        "wg_size": 1
+      },
+      {
+        "race": "Tirreno-Adriatico",
+        "year": 2026,
+        "stage": 1,
+        "date": "2026-03-09",
+        "winner_arch": "time_trial",
+        "wg_size": 1
+      },
+      {
+        "race": "Itzulia Basque Country",
+        "year": 2026,
+        "stage": 1,
+        "date": "2026-04-06",
+        "winner_arch": "rolling",
+        "wg_size": 1
+      },
+      {
+        "race": "O Gran Cami\u00f1o",
+        "year": 2026,
+        "stage": 1,
+        "date": "2026-04-14",
+        "winner_arch": "time_trial",
+        "wg_size": 1
+      },
+      {
+        "race": "Tour de Romandie",
+        "year": 2026,
+        "stage": 2,
+        "date": "2026-04-28",
+        "winner_arch": "time_trial",
+        "wg_size": 1
+      },
+      {
+        "race": "Giro d'Italia",
+        "year": 2026,
+        "stage": 10,
+        "date": "2026-05-19",
+        "winner_arch": "time_trial",
+        "wg_size": 1
+      },
+      {
+        "race": "Tour of Estonia",
+        "year": 2026,
+        "stage": 2,
+        "date": "2026-06-04",
+        "winner_arch": "sprint",
+        "wg_size": 1
+      },
+      {
+        "race": "Tour Down Under",
+        "year": 2026,
+        "stage": 2,
+        "date": "2026-01-20",
+        "winner_arch": "time_trial",
+        "wg_size": 2
+      },
+      {
+        "race": "Boucles de la Mayenne",
+        "year": 2026,
+        "stage": 2,
+        "date": "2026-05-28",
+        "winner_arch": "time_trial",
+        "wg_size": 2
+      }
+    ]
+  },
+  "res_0": {
+    "n_members": 31,
+    "gt_share": 0.065,
+    "per_year": {
+      "2016": 3,
+      "2017": 3,
+      "2018": 6,
+      "2019": 7,
+      "2021": 3,
+      "2022": 1,
+      "2023": 2,
+      "2024": 2,
+      "2025": 3,
+      "2026": 1
+    },
+    "canonical": {
+      "sprint": 0.2129,
+      "mountain": 0.2516,
+      "hilly": 0.0645,
+      "rolling": 0.0989,
+      "breakaway": 0.2495,
+      "time_trial": 0.1226
+    },
+    "wg_prop": 0.0428,
+    "median_wg_size": 3,
+    "winner_archetypes": {
+      "sprint": 0.258,
+      "mountain": 0.226,
+      "breakaway": 0.194,
+      "rolling": 0.161,
+      "time_trial": 0.097,
+      "hilly": 0.065
+    },
+    "top_anchors": [
+      {
+        "race": "Circuito de Getxo",
+        "cosine": 0.944,
+        "category": "d1"
+      },
+      {
+        "race": "Villafranca de Ordizia",
+        "cosine": 0.92,
+        "category": "d1"
+      },
+      {
+        "race": "Gran Premio di Lugano",
+        "cosine": 0.911,
+        "category": "d1"
+      },
+      {
+        "race": "Memorial Pantani",
+        "cosine": 0.898,
+        "category": "d1"
+      }
+    ],
+    "exemplars": [
+      {
+        "race": "Vuelta a Asturias",
+        "year": 2026,
+        "stage": 1,
+        "date": "2026-04-23",
+        "winner_arch": "mountain",
+        "wg_size": 5
+      },
+      {
+        "race": "Vuelta a Andaluc\u00eda",
+        "year": 2025,
+        "stage": 4,
+        "date": "2025-02-22",
+        "winner_arch": "breakaway",
+        "wg_size": 1
+      },
+      {
+        "race": "Okolo Slovenska",
+        "year": 2025,
+        "stage": 5,
+        "date": "2025-09-21",
+        "winner_arch": "mountain",
+        "wg_size": 1
+      },
+      {
+        "race": "Tour of Slovenia",
+        "year": 2025,
+        "stage": 2,
+        "date": "2025-06-05",
+        "winner_arch": "hilly",
+        "wg_size": 6
+      },
+      {
+        "race": "Tour of Estonia",
+        "year": 2024,
+        "stage": 2,
+        "date": "2024-05-25",
+        "winner_arch": "time_trial",
+        "wg_size": 5
+      },
+      {
+        "race": "Tour of Qinghai Lake",
+        "year": 2024,
+        "stage": 7,
+        "date": "2024-07-13",
+        "winner_arch": "sprint",
+        "wg_size": 12
+      },
+      {
+        "race": "Tour of Thailand",
+        "year": 2023,
+        "stage": 5,
+        "date": "2023-04-05",
+        "winner_arch": "mountain",
+        "wg_size": 1
+      },
+      {
+        "race": "Volta a Portugal",
+        "year": 2023,
+        "stage": 6,
+        "date": "2023-08-15",
+        "winner_arch": "rolling",
+        "wg_size": 1
+      },
+      {
+        "race": "Tour de Wallonie",
+        "year": 2022,
+        "stage": 1,
+        "date": "2022-07-23",
+        "winner_arch": "breakaway",
+        "wg_size": 3
+      },
+      {
+        "race": "Tour of Slovenia",
+        "year": 2021,
+        "stage": 2,
+        "date": "2021-06-10",
+        "winner_arch": "mountain",
+        "wg_size": 1
+      },
+      {
+        "race": "Volta a Portugal",
+        "year": 2021,
+        "stage": 5,
+        "date": "2021-08-09",
+        "winner_arch": "sprint",
+        "wg_size": 1
+      },
+      {
+        "race": "UAE Tour",
+        "year": 2021,
+        "stage": 1,
+        "date": "2021-02-21",
+        "winner_arch": "rolling",
+        "wg_size": 7
+      }
+    ]
+  },
+  "res_1": {
+    "n_members": 124,
+    "gt_share": 0.113,
+    "per_year": {
+      "2016": 15,
+      "2017": 16,
+      "2018": 11,
+      "2019": 19,
+      "2020": 8,
+      "2021": 6,
+      "2022": 16,
+      "2023": 7,
+      "2024": 9,
+      "2025": 9,
+      "2026": 8
+    },
+    "canonical": {
+      "sprint": 0.2419,
+      "mountain": 0.1656,
+      "hilly": 0.1247,
+      "rolling": 0.1677,
+      "breakaway": 0.093,
+      "time_trial": 0.207
+    },
+    "wg_prop": 0.0321,
+    "median_wg_size": 2,
+    "winner_archetypes": {
+      "time_trial": 0.298,
+      "rolling": 0.169,
+      "sprint": 0.169,
+      "hilly": 0.145,
+      "mountain": 0.137,
+      "breakaway": 0.081
+    },
+    "top_anchors": [
+      {
+        "race": "NXT Classic",
+        "cosine": 0.974,
+        "category": "d1"
+      },
+      {
+        "race": "GP la Marseillaise",
+        "cosine": 0.962,
+        "category": "d1"
+      },
+      {
+        "race": "Klasika Primavera",
+        "cosine": 0.955,
+        "category": "d1"
+      },
+      {
+        "race": "Gran Premio di Lugano",
+        "cosine": 0.955,
+        "category": "d1"
+      }
+    ],
+    "exemplars": [
+      {
+        "race": "Tour Auvergne - Rh\u00f4ne-Alpes",
+        "year": 2026,
+        "stage": 2,
+        "date": "2026-06-08",
+        "winner_arch": "rolling",
+        "wg_size": 1
+      },
+      {
+        "race": "Tour du Rwanda",
+        "year": 2026,
+        "stage": 4,
+        "date": "2026-02-25",
+        "winner_arch": "hilly",
+        "wg_size": 2
+      },
+      {
+        "race": "GP Beiras e Serra da Estrela",
+        "year": 2026,
+        "stage": 2,
+        "date": "2026-05-23",
+        "winner_arch": "hilly",
+        "wg_size": 2
+      },
+      {
+        "race": "Tour du Rwanda",
+        "year": 2026,
+        "stage": 8,
+        "date": "2026-03-01",
+        "winner_arch": "hilly",
+        "wg_size": 3
+      },
+      {
+        "race": "Volta Comunitat Valenciana",
+        "year": 2026,
+        "stage": 3,
+        "date": "2026-02-06",
+        "winner_arch": "breakaway",
+        "wg_size": 4
+      },
+      {
+        "race": "Tour of Thailand",
+        "year": 2026,
+        "stage": 4,
+        "date": "2026-03-27",
+        "winner_arch": "sprint",
+        "wg_size": 4
+      },
+      {
+        "race": "Volta Comunitat Valenciana",
+        "year": 2026,
+        "stage": 5,
+        "date": "2026-02-08",
+        "winner_arch": "time_trial",
+        "wg_size": 8
+      },
+      {
+        "race": "Tour Auvergne - Rh\u00f4ne-Alpes",
+        "year": 2026,
+        "stage": 4,
+        "date": "2026-06-10",
+        "winner_arch": "rolling",
+        "wg_size": 9
+      },
+      {
+        "race": "Giro d'Italia",
+        "year": 2025,
+        "stage": 14,
+        "date": "2025-05-24",
+        "winner_arch": "time_trial",
+        "wg_size": 1
+      },
+      {
+        "race": "Crit\u00e9rium du Dauphin\u00e9",
+        "year": 2025,
+        "stage": 3,
+        "date": "2025-06-10",
+        "winner_arch": "time_trial",
+        "wg_size": 1
+      },
+      {
+        "race": "Baloise Belgium Tour",
+        "year": 2025,
+        "stage": 4,
+        "date": "2025-06-21",
+        "winner_arch": "rolling",
+        "wg_size": 1
+      },
+      {
+        "race": "Tour de France",
+        "year": 2025,
+        "stage": 20,
+        "date": "2025-07-26",
+        "winner_arch": "sprint",
+        "wg_size": 1
+      }
+    ]
+  },
+  "res_2": {
+    "n_members": 360,
+    "gt_share": 0.344,
+    "per_year": {
+      "2016": 32,
+      "2017": 33,
+      "2018": 43,
+      "2019": 38,
+      "2020": 28,
+      "2021": 28,
+      "2022": 28,
+      "2023": 41,
+      "2024": 37,
+      "2025": 33,
+      "2026": 19
+    },
+    "canonical": {
+      "sprint": 0.0,
+      "mountain": 0.4185,
+      "hilly": 0.0559,
+      "rolling": 0.2007,
+      "breakaway": 0.0822,
+      "time_trial": 0.2426
+    },
+    "wg_prop": 0.0218,
+    "median_wg_size": 1,
+    "winner_archetypes": {
+      "mountain": 0.336,
+      "time_trial": 0.306,
+      "rolling": 0.206,
+      "breakaway": 0.089,
+      "hilly": 0.064
+    },
+    "top_anchors": [
+      {
+        "race": "CIC - Mont Ventoux",
+        "cosine": 0.981,
+        "category": "pro"
+      },
+      {
+        "race": "Il Lombardia",
+        "cosine": 0.971,
+        "category": "wt"
+      },
+      {
+        "race": "Faun-Ard\u00e8che Classic",
+        "cosine": 0.968,
+        "category": "pro"
+      },
+      {
+        "race": "Giro dell'Emilia",
+        "cosine": 0.956,
+        "category": "pro"
+      }
+    ],
+    "exemplars": [
+      {
+        "race": "Vuelta a Andaluc\u00eda",
+        "year": 2026,
+        "stage": 2,
+        "date": "2026-02-19",
+        "winner_arch": "time_trial",
+        "wg_size": 1
+      },
+      {
+        "race": "Itzulia Basque Country",
+        "year": 2026,
+        "stage": 3,
+        "date": "2026-04-08",
+        "winner_arch": "hilly",
+        "wg_size": 1
+      },
+      {
+        "race": "Itzulia Basque Country",
+        "year": 2026,
+        "stage": 4,
+        "date": "2026-04-09",
+        "winner_arch": "hilly",
+        "wg_size": 1
+      },
+      {
+        "race": "Itzulia Basque Country",
+        "year": 2026,
+        "stage": 6,
+        "date": "2026-04-11",
+        "winner_arch": "breakaway",
+        "wg_size": 1
+      },
+      {
+        "race": "Tour of the Alps",
+        "year": 2026,
+        "stage": 4,
+        "date": "2026-04-23",
+        "winner_arch": "hilly",
+        "wg_size": 1
+      },
+      {
+        "race": "Tour of T\u00fcrkiye",
+        "year": 2026,
+        "stage": 3,
+        "date": "2026-04-28",
+        "winner_arch": "mountain",
+        "wg_size": 1
+      },
+      {
+        "race": "Giro d'Italia",
+        "year": 2026,
+        "stage": 7,
+        "date": "2026-05-15",
+        "winner_arch": "mountain",
+        "wg_size": 1
+      },
+      {
+        "race": "Giro d'Italia",
+        "year": 2026,
+        "stage": 8,
+        "date": "2026-05-16",
+        "winner_arch": "rolling",
+        "wg_size": 1
+      },
+      {
+        "race": "Giro d'Italia",
+        "year": 2026,
+        "stage": 17,
+        "date": "2026-05-27",
+        "winner_arch": "time_trial",
+        "wg_size": 1
+      },
+      {
+        "race": "Tour Auvergne - Rh\u00f4ne-Alpes",
+        "year": 2026,
+        "stage": 1,
+        "date": "2026-06-07",
+        "winner_arch": "rolling",
+        "wg_size": 1
+      },
+      {
+        "race": "Tour Auvergne - Rh\u00f4ne-Alpes",
+        "year": 2026,
+        "stage": 3,
+        "date": "2026-06-09",
+        "winner_arch": "rolling",
+        "wg_size": 1
+      },
+      {
+        "race": "Tour of Oman",
+        "year": 2026,
+        "stage": 3,
+        "date": "2026-02-09",
+        "winner_arch": "rolling",
+        "wg_size": 2
+      }
+    ]
+  },
+  "res_3": {
+    "n_members": 73,
+    "gt_share": 0.096,
+    "per_year": {
+      "2016": 15,
+      "2017": 7,
+      "2018": 4,
+      "2019": 9,
+      "2020": 1,
+      "2021": 7,
+      "2022": 3,
+      "2023": 10,
+      "2024": 3,
+      "2025": 7,
+      "2026": 7
+    },
+    "canonical": {
+      "sprint": 0.6155,
+      "mountain": 0.0137,
+      "hilly": 0.105,
+      "rolling": 0.0676,
+      "breakaway": 0.0858,
+      "time_trial": 0.1123
+    },
+    "wg_prop": 0.0588,
+    "median_wg_size": 4,
+    "winner_archetypes": {
+      "sprint": 0.548,
+      "breakaway": 0.137,
+      "time_trial": 0.137,
+      "rolling": 0.096,
+      "hilly": 0.055,
+      "mountain": 0.027
+    },
+    "top_anchors": [
+      {
+        "race": "Clasica de Almeria",
+        "cosine": 0.995,
+        "category": "pro"
+      },
+      {
+        "race": "Veenendaal Classic",
+        "cosine": 0.995,
+        "category": "d1"
+      },
+      {
+        "race": "Ronde van Limburg",
+        "cosine": 0.995,
+        "category": "d1"
+      },
+      {
+        "race": "Ronde Van Brugge - Tour of Bruges",
+        "cosine": 0.994,
+        "category": "wt"
+      }
+    ],
+    "exemplars": [
+      {
+        "race": "Coppi e Bartali",
+        "year": 2026,
+        "stage": 2,
+        "date": "2026-03-26",
+        "winner_arch": "rolling",
+        "wg_size": 1
+      },
+      {
+        "race": "Tour de Hongrie",
+        "year": 2026,
+        "stage": 2,
+        "date": "2026-05-14",
+        "winner_arch": "breakaway",
+        "wg_size": 1
+      },
+      {
+        "race": "Tour de La Provence",
+        "year": 2026,
+        "stage": 1,
+        "date": "2026-02-13",
+        "winner_arch": "sprint",
+        "wg_size": 2
+      },
+      {
+        "race": "4 Jours de Dunkerque",
+        "year": 2026,
+        "stage": 2,
+        "date": "2026-05-21",
+        "winner_arch": "time_trial",
+        "wg_size": 4
+      },
+      {
+        "race": "Giro d'Italia",
+        "year": 2026,
+        "stage": 15,
+        "date": "2026-05-24",
+        "winner_arch": "time_trial",
+        "wg_size": 4
+      },
+      {
+        "race": "AlUla Tour",
+        "year": 2026,
+        "stage": 1,
+        "date": "2026-01-27",
+        "winner_arch": "sprint",
+        "wg_size": 8
+      },
+      {
+        "race": "UAE Tour",
+        "year": 2026,
+        "stage": 5,
+        "date": "2026-02-20",
+        "winner_arch": "sprint",
+        "wg_size": 23
+      },
+      {
+        "race": "Boucles de la Mayenne",
+        "year": 2025,
+        "stage": 1,
+        "date": "2025-05-30",
+        "winner_arch": "time_trial",
+        "wg_size": 1
+      },
+      {
+        "race": "Boucles de la Mayenne",
+        "year": 2025,
+        "stage": 3,
+        "date": "2025-06-01",
+        "winner_arch": "sprint",
+        "wg_size": 1
+      },
+      {
+        "race": "Tour de Langkawi",
+        "year": 2025,
+        "stage": 7,
+        "date": "2025-10-04",
+        "winner_arch": "time_trial",
+        "wg_size": 1
+      },
+      {
+        "race": "NIBC Tour of Holland",
+        "year": 2025,
+        "stage": 5,
+        "date": "2025-10-19",
+        "winner_arch": "sprint",
+        "wg_size": 2
+      },
+      {
+        "race": "Tour de Hongrie",
+        "year": 2025,
+        "stage": 5,
+        "date": "2025-05-18",
+        "winner_arch": "sprint",
+        "wg_size": 5
+      }
+    ]
+  },
+  "res_4": {
+    "n_members": 181,
+    "gt_share": 0.188,
+    "per_year": {
+      "2016": 17,
+      "2017": 23,
+      "2018": 21,
+      "2019": 15,
+      "2020": 5,
+      "2021": 24,
+      "2022": 20,
+      "2023": 15,
+      "2024": 13,
+      "2025": 15,
+      "2026": 13
+    },
+    "canonical": {
+      "sprint": 0.0667,
+      "mountain": 0.3046,
+      "hilly": 0.0928,
+      "rolling": 0.2092,
+      "breakaway": 0.1123,
+      "time_trial": 0.2144
+    },
+    "wg_prop": 0.0234,
+    "median_wg_size": 1,
+    "winner_archetypes": {
+      "mountain": 0.32,
+      "time_trial": 0.309,
+      "rolling": 0.133,
+      "breakaway": 0.11,
+      "hilly": 0.072,
+      "sprint": 0.055
+    },
+    "top_anchors": [
+      {
+        "race": "Trofeo Andratx - Pollen\u00e7a",
+        "cosine": 0.983,
+        "category": "d1"
+      },
+      {
+        "race": "Faun-Ard\u00e8che Classic",
+        "cosine": 0.977,
+        "category": "pro"
+      },
+      {
+        "race": "Trofeo Serra Tramuntana",
+        "cosine": 0.97,
+        "category": "d1"
+      },
+      {
+        "race": "Tre Valli Varesine",
+        "cosine": 0.964,
+        "category": "pro"
+      }
+    ],
+    "exemplars": [
+      {
+        "race": "Tour of Oman",
+        "year": 2026,
+        "stage": 2,
+        "date": "2026-02-08",
+        "winner_arch": "time_trial",
+        "wg_size": 1
+      },
+      {
+        "race": "Paris-Nice",
+        "year": 2026,
+        "stage": 3,
+        "date": "2026-03-10",
+        "winner_arch": "time_trial",
+        "wg_size": 1
+      },
+      {
+        "race": "Vuelta a Asturias",
+        "year": 2026,
+        "stage": 2,
+        "date": "2026-04-24",
+        "winner_arch": "mountain",
+        "wg_size": 1
+      },
+      {
+        "race": "Tour of Hellas",
+        "year": 2026,
+        "stage": 4,
+        "date": "2026-05-09",
+        "winner_arch": "sprint",
+        "wg_size": 1
+      },
+      {
+        "race": "Giro d'Italia",
+        "year": 2026,
+        "stage": 5,
+        "date": "2026-05-13",
+        "winner_arch": "mountain",
+        "wg_size": 1
+      },
+      {
+        "race": "Fl\u00e8che du Sud",
+        "year": 2026,
+        "stage": 3,
+        "date": "2026-05-15",
+        "winner_arch": "time_trial",
+        "wg_size": 1
+      },
+      {
+        "race": "Tour de Hongrie",
+        "year": 2026,
+        "stage": 4,
+        "date": "2026-05-16",
+        "winner_arch": "time_trial",
+        "wg_size": 1
+      },
+      {
+        "race": "Giro d'Italia",
+        "year": 2026,
+        "stage": 13,
+        "date": "2026-05-22",
+        "winner_arch": "time_trial",
+        "wg_size": 1
+      },
+      {
+        "race": "Tour of Thailand",
+        "year": 2026,
+        "stage": 3,
+        "date": "2026-03-26",
+        "winner_arch": "mountain",
+        "wg_size": 2
+      },
+      {
+        "race": "Giro d'Italia",
+        "year": 2026,
+        "stage": 11,
+        "date": "2026-05-20",
+        "winner_arch": "rolling",
+        "wg_size": 2
+      },
+      {
+        "race": "GP Beiras e Serra da Estrela",
+        "year": 2026,
+        "stage": 3,
+        "date": "2026-05-24",
+        "winner_arch": "mountain",
+        "wg_size": 2
+      },
+      {
+        "race": "Tour of Hellas",
+        "year": 2026,
+        "stage": 3,
+        "date": "2026-05-08",
+        "winner_arch": "mountain",
+        "wg_size": 18
+      }
+    ]
+  },
+  "res_5": {
+    "n_members": 10,
+    "gt_share": 0.0,
+    "per_year": {
+      "2016": 1,
+      "2017": 1,
+      "2018": 1,
+      "2019": 2,
+      "2021": 1,
+      "2022": 1,
+      "2023": 1,
+      "2024": 1,
+      "2026": 1
+    },
+    "canonical": {
+      "sprint": 0.2933,
+      "mountain": 0.04,
+      "hilly": 0.1533,
+      "rolling": 0.0467,
+      "breakaway": 0.12,
+      "time_trial": 0.18
+    },
+    "wg_prop": 0.0159,
+    "median_wg_size": 1,
+    "winner_archetypes": {
+      "time_trial": 0.3,
+      "sprint": 0.3,
+      "hilly": 0.2,
+      "mountain": 0.1,
+      "unknown": 0.1
+    },
+    "top_anchors": [
+      {
+        "race": "Route Ad\u00e9lie de Vitr\u00e9",
+        "cosine": 0.991,
+        "category": "d1"
+      },
+      {
+        "race": "Ronde van Drenthe",
+        "cosine": 0.987,
+        "category": "d1"
+      },
+      {
+        "race": "Ename Samyn Classic",
+        "cosine": 0.984,
+        "category": "d1"
+      },
+      {
+        "race": "Milano-Sanremo",
+        "cosine": 0.981,
+        "category": "wt"
+      }
+    ],
+    "exemplars": [
+      {
+        "race": "Vuelta a Murcia",
+        "year": 2026,
+        "stage": 1,
+        "date": "2026-02-13",
+        "winner_arch": "unknown",
+        "wg_size": 1
+      },
+      {
+        "race": "Tour of Estonia",
+        "year": 2024,
+        "stage": 1,
+        "date": "2024-05-24",
+        "winner_arch": "sprint",
+        "wg_size": 1
+      },
+      {
+        "race": "Tour of Estonia",
+        "year": 2023,
+        "stage": 1,
+        "date": "2023-05-26",
+        "winner_arch": "sprint",
+        "wg_size": 1
+      },
+      {
+        "race": "Czech Tour",
+        "year": 2022,
+        "stage": 1,
+        "date": "2022-08-04",
+        "winner_arch": "time_trial",
+        "wg_size": 4
+      },
+      {
+        "race": "Czech Tour",
+        "year": 2021,
+        "stage": 1,
+        "date": "2021-08-05",
+        "winner_arch": "hilly",
+        "wg_size": 3
+      },
+      {
+        "race": "Belgium Tour",
+        "year": 2019,
+        "stage": 1,
+        "date": "2019-06-12",
+        "winner_arch": "sprint",
+        "wg_size": 1
+      },
+      {
+        "race": "Turul Romaniei",
+        "year": 2019,
+        "stage": 1,
+        "date": "2019-09-11",
+        "winner_arch": "time_trial",
+        "wg_size": 2
+      },
+      {
+        "race": "Coppi e Bartali",
+        "year": 2018,
+        "stage": 1,
+        "date": "2018-03-22",
+        "winner_arch": "hilly",
+        "wg_size": 2
+      },
+      {
+        "race": "Vuelta a Castilla y Le\u00f3n",
+        "year": 2017,
+        "stage": 1,
+        "date": "2017-05-19",
+        "winner_arch": "mountain",
+        "wg_size": 1
+      },
+      {
+        "race": "Tour de Taiwan",
+        "year": 2016,
+        "stage": 1,
+        "date": "2016-03-06",
+        "winner_arch": "time_trial",
+        "wg_size": 3
+      }
+    ]
+  },
+  "res_6": {
+    "n_members": 114,
+    "gt_share": 0.184,
+    "per_year": {
+      "2016": 12,
+      "2017": 16,
+      "2018": 12,
+      "2019": 14,
+      "2020": 6,
+      "2021": 14,
+      "2022": 6,
+      "2023": 9,
+      "2024": 11,
+      "2025": 10,
+      "2026": 4
+    },
+    "canonical": {
+      "sprint": 0.1333,
+      "mountain": 0.2357,
+      "hilly": 0.1181,
+      "rolling": 0.1655,
+      "breakaway": 0.1257,
+      "time_trial": 0.2216
+    },
+    "wg_prop": 0.0325,
+    "median_wg_size": 2,
+    "winner_archetypes": {
+      "time_trial": 0.325,
+      "mountain": 0.246,
+      "rolling": 0.123,
+      "sprint": 0.105,
+      "hilly": 0.105,
+      "breakaway": 0.096
+    },
+    "top_anchors": [
+      {
+        "race": "Klasika Primavera",
+        "cosine": 0.985,
+        "category": "d1"
+      },
+      {
+        "race": "Muscat Classic",
+        "cosine": 0.976,
+        "category": "pro"
+      },
+      {
+        "race": "Trofeo Calvi\u00e0",
+        "cosine": 0.975,
+        "category": "d1"
+      },
+      {
+        "race": "Gran Premio di Lugano",
+        "cosine": 0.972,
+        "category": "d1"
+      }
+    ],
+    "exemplars": [
+      {
+        "race": "Vuelta a Andaluc\u00eda",
+        "year": 2026,
+        "stage": 5,
+        "date": "2026-02-22",
+        "winner_arch": "rolling",
+        "wg_size": 1
+      },
+      {
+        "race": "Tour du Rwanda",
+        "year": 2026,
+        "stage": 3,
+        "date": "2026-02-24",
+        "winner_arch": "time_trial",
+        "wg_size": 1
+      },
+      {
+        "race": "Paris-Nice",
+        "year": 2026,
+        "stage": 6,
+        "date": "2026-03-13",
+        "winner_arch": "rolling",
+        "wg_size": 1
+      },
+      {
+        "race": "4 Jours de Dunkerque",
+        "year": 2026,
+        "stage": 4,
+        "date": "2026-05-23",
+        "winner_arch": "mountain",
+        "wg_size": 1
+      },
+      {
+        "race": "Giro d'Italia",
+        "year": 2025,
+        "stage": 18,
+        "date": "2025-05-29",
+        "winner_arch": "time_trial",
+        "wg_size": 1
+      },
+      {
+        "race": "Tour of Hellas",
+        "year": 2025,
+        "stage": 2,
+        "date": "2025-04-03",
+        "winner_arch": "time_trial",
+        "wg_size": 2
+      },
+      {
+        "race": "Giro d'Abruzzo",
+        "year": 2025,
+        "stage": 4,
+        "date": "2025-04-18",
+        "winner_arch": "time_trial",
+        "wg_size": 2
+      },
+      {
+        "race": "Vuelta a Asturias",
+        "year": 2025,
+        "stage": 2,
+        "date": "2025-04-25",
+        "winner_arch": "sprint",
+        "wg_size": 2
+      },
+      {
+        "race": "Tour of Magnificent Qinghai",
+        "year": 2025,
+        "stage": 2,
+        "date": "2025-07-07",
+        "winner_arch": "mountain",
+        "wg_size": 2
+      },
+      {
+        "race": "Tour of Britain",
+        "year": 2025,
+        "stage": 4,
+        "date": "2025-09-05",
+        "winner_arch": "time_trial",
+        "wg_size": 2
+      },
+      {
+        "race": "Vuelta a Espa\u00f1a",
+        "year": 2025,
+        "stage": 15,
+        "date": "2025-09-07",
+        "winner_arch": "time_trial",
+        "wg_size": 8
+      },
+      {
+        "race": "Tour de Wallonie",
+        "year": 2025,
+        "stage": 5,
+        "date": "2025-07-30",
+        "winner_arch": "time_trial",
+        "wg_size": 9
+      }
+    ]
+  },
+  "res_7": {
+    "n_members": 140,
+    "gt_share": 0.15,
+    "per_year": {
+      "2016": 20,
+      "2017": 15,
+      "2018": 24,
+      "2019": 18,
+      "2020": 9,
+      "2021": 12,
+      "2022": 14,
+      "2023": 9,
+      "2024": 6,
+      "2025": 7,
+      "2026": 6
+    },
+    "canonical": {
+      "sprint": 0.3705,
+      "mountain": 0.0729,
+      "hilly": 0.1567,
+      "rolling": 0.0533,
+      "breakaway": 0.14,
+      "time_trial": 0.2067
+    },
+    "wg_prop": 0.0426,
+    "median_wg_size": 3,
+    "winner_archetypes": {
+      "time_trial": 0.329,
+      "sprint": 0.307,
+      "breakaway": 0.171,
+      "hilly": 0.114,
+      "rolling": 0.05,
+      "mountain": 0.029
+    },
+    "top_anchors": [
+      {
+        "race": "Route Ad\u00e9lie de Vitr\u00e9",
+        "cosine": 0.983,
+        "category": "d1"
+      },
+      {
+        "race": "Ronde van Drenthe",
+        "cosine": 0.983,
+        "category": "d1"
+      },
+      {
+        "race": "Ename Samyn Classic",
+        "cosine": 0.983,
+        "category": "d1"
+      },
+      {
+        "race": "Paris - Tours",
+        "cosine": 0.98,
+        "category": "pro"
+      }
+    ],
+    "exemplars": [
+      {
+        "race": "Tour de La Provence",
+        "year": 2026,
+        "stage": 3,
+        "date": "2026-02-15",
+        "winner_arch": "sprint",
+        "wg_size": 1
+      },
+      {
+        "race": "Tour of Hainan",
+        "year": 2026,
+        "stage": 3,
+        "date": "2026-04-17",
+        "winner_arch": "time_trial",
+        "wg_size": 1
+      },
+      {
+        "race": "Giro d'Italia",
+        "year": 2026,
+        "stage": 12,
+        "date": "2026-05-21",
+        "winner_arch": "time_trial",
+        "wg_size": 1
+      },
+      {
+        "race": "4 Jours de Dunkerque",
+        "year": 2026,
+        "stage": 3,
+        "date": "2026-05-22",
+        "winner_arch": "breakaway",
+        "wg_size": 1
+      },
+      {
+        "race": "Tour de Wallonie",
+        "year": 2026,
+        "stage": 4,
+        "date": "2026-06-04",
+        "winner_arch": "breakaway",
+        "wg_size": 2
+      },
+      {
+        "race": "R\u00e9gion Pays de la Loire Tour",
+        "year": 2026,
+        "stage": 3,
+        "date": "2026-04-09",
+        "winner_arch": "breakaway",
+        "wg_size": 6
+      },
+      {
+        "race": "Tour of Norway",
+        "year": 2025,
+        "stage": 1,
+        "date": "2025-05-29",
+        "winner_arch": "time_trial",
+        "wg_size": 1
+      },
+      {
+        "race": "Boucles de la Mayenne",
+        "year": 2025,
+        "stage": 2,
+        "date": "2025-05-31",
+        "winner_arch": "time_trial",
+        "wg_size": 2
+      },
+      {
+        "race": "Tour of Iran",
+        "year": 2025,
+        "stage": 3,
+        "date": "2025-05-29",
+        "winner_arch": "mountain",
+        "wg_size": 3
+      },
+      {
+        "race": "Tour de Wallonie",
+        "year": 2025,
+        "stage": 4,
+        "date": "2025-07-29",
+        "winner_arch": "time_trial",
+        "wg_size": 4
+      },
+      {
+        "race": "\u00c9toile de Bess\u00e8ges",
+        "year": 2025,
+        "stage": 1,
+        "date": "2025-02-05",
+        "winner_arch": "hilly",
+        "wg_size": 6
+      },
+      {
+        "race": "Volta ao Algarve",
+        "year": 2025,
+        "stage": 4,
+        "date": "2025-02-22",
+        "winner_arch": "sprint",
+        "wg_size": 16
+      }
+    ]
+  }
+}
