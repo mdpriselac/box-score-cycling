@@ -58,6 +58,9 @@ from cycling_project.prediction_tools.lambdarank_probability_predictor import (
     LambdaRankPredictorConfig,
 )
 from cycling_project.prediction_tools.model_registry import ModelRegistry
+from cycling_project.webscrape_tools.logging_config import get_logger
+
+logger = get_logger(__name__)
 from cycling_project.prediction_tools.contest_signature_features import (
     SIGNATURE_FEATURE_COLS,
     attach_signature_features,
@@ -567,6 +570,78 @@ def main(enable_stack: bool = True):
     )
     save_corrector(win_corrector, model_dir)
     print(f"Models saved to {model_dir}")
+
+    # --- Day-menu retrieval ranker (bucket_daymenu; Option A, 2026-08-09) ---
+    # Governs ONLY contender selection (pool membership + board order) at
+    # serving; the pricing heads saved above are untouched and NEVER see the
+    # dtm_* features (gate 4/5 verdicts, experiment_log.md 2026-08-09).
+    # Construction = gate 6 bucket_k: the same augmented frame + 14 dtm_*
+    # columns under oracle own-assignment keys (one-day comps self-keyed).
+    # Runs after registry.save() so a failure here can't disturb the
+    # production suite — non-fatal by design, serving falls back to the
+    # production board when the variant is absent.
+    if enable_stack:
+        print("\n" + "=" * 70)
+        print("TRAINING DAY-MENU RETRIEVAL RANKER (bucket_daymenu)")
+        print("=" * 70)
+        try:
+            from cycling_project.prediction_tools import day_menu as dm
+
+            menu = dm.load_menu()
+            sig_table = dm.build_signature_table_from_db()
+            labels = dm.label_days(sig_table, menu)
+            key_map = dm.oracle_key_map(labels)
+            stage_comps = set(key_map.index)
+            self_keys = dm.self_key_oneday(od_feats, menu)
+            key_map = pd.concat([key_map, self_keys[~self_keys.index.isin(stage_comps)]])
+
+            hist = dm.build_rider_history(sig_table)
+            cum = dm.kernel_cumulants(hist, menu)
+            kernels_path = dm.save_kernels(cum)
+
+            print("Attaching day-menu features (oracle keys) to train / early-stop...")
+            train_dm = dm.attach_day_menu_features(
+                train_aug, key_map, menu, cum, field_shares, stage_comps)
+            early_stop_dm = dm.attach_day_menu_features(
+                early_stop_aug, key_map, menu, cum, field_shares, stage_comps)
+            dtm_cov = train_dm['dtm_k_expos'].notna().mean()
+            print(f"  dtm kernel coverage (train rows): {dtm_cov:.1%}")
+
+            daymenu_config = BucketPredictorConfig(
+                n_estimators=2000,
+                early_stopping_rounds=300,
+                use_sample_weights=True,
+            )
+            daymenu_config.lgb_params.update({
+                'num_leaves': 63,
+                'learning_rate': 0.05,
+                'feature_fraction': 0.8,
+                'bagging_fraction': 0.8,
+                'bagging_freq': 5,
+                'min_child_samples': 50,
+            })
+            daymenu_bucket = OrdinalBucketPredictor(daymenu_config)
+            daymenu_info = daymenu_bucket.train(train_dm, early_stop_dm, verbose=True)
+            print(f"Best iteration: {daymenu_info['best_iteration']}")
+            print(f"Features: {daymenu_info['n_features']}")
+
+            registry.add_bucket_variant(
+                daymenu_bucket, 'daymenu',
+                training_info={
+                    'daymenu_menu_version': menu.version,
+                    'daymenu_best_iteration': daymenu_info['best_iteration'],
+                    'daymenu_n_features': daymenu_info['n_features'],
+                    'daymenu_kernel_rows': int(len(cum)),
+                    'daymenu_kernels_path': str(kernels_path),
+                    'daymenu_labeled_stage_comps': int(len(stage_comps)),
+                    'daymenu_oneday_self_keys': int(len(self_keys)),
+                    'daymenu_dtm_kernel_coverage': round(float(dtm_cov), 4),
+                    'daymenu_timestamp': datetime.now().isoformat(),
+                },
+            )
+        except Exception as e:
+            logger.exception("Day-menu ranker training failed (non-fatal)")
+            print(f"Day-menu ranker training FAILED (non-fatal, production suite unaffected): {e}")
 
     # --- Quick early-stop set metrics for reference ---
     print("\n" + "=" * 70)

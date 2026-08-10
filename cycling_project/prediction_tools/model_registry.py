@@ -240,6 +240,76 @@ class ModelRegistry:
         logger.info(f"LambdaRank head added to {self.base_dir}")
         print(f"LambdaRank head added to {self.base_dir}")
 
+    def add_bucket_variant(
+        self,
+        predictor: OrdinalBucketPredictor,
+        variant: str,
+        training_info: Optional[Dict[str, Any]] = None,
+    ):
+        """Append a named bucket-model variant to an existing registry.
+
+        Written for the day-menu retrieval channel (variant='daymenu',
+        2026-08-09): a bucket model that governs ONLY contender selection
+        (pool membership + board order) while the untouched production heads
+        price. Like add_lambdarank, this does not archive or touch other
+        models — it writes bucket_model_<variant>.txt +
+        bucket_feature_engineer_<variant>.pkl and updates metadata in place.
+        """
+        if not (self.base_dir / 'metadata.json').exists():
+            raise FileNotFoundError(
+                f"Cannot add bucket variant — no existing metadata in {self.base_dir}."
+            )
+
+        model_path = self.base_dir / f'bucket_model_{variant}.txt'
+        predictor.save(str(model_path))
+        fe_path = self.base_dir / f'bucket_feature_engineer_{variant}.pkl'
+        with open(fe_path, 'wb') as f:
+            pickle.dump({
+                'feature_columns': predictor.feature_columns,
+                'feature_engineer': predictor.feature_engineer,
+            }, f)
+
+        metadata_path = self.base_dir / 'metadata.json'
+        with open(metadata_path, 'r') as f:
+            metadata = json.load(f)
+        metadata[f'has_bucket_{variant}'] = True
+        metadata[f'bucket_{variant}_feature_columns'] = predictor.feature_columns
+        if training_info is not None:
+            existing_info = metadata.get('training_info', {})
+            existing_info.update(self._make_json_safe(training_info))
+            metadata['training_info'] = existing_info
+        with open(metadata_path, 'w') as f:
+            json.dump(metadata, f, indent=2)
+
+        logger.info(f"Bucket variant '{variant}' added to {self.base_dir}")
+        print(f"Bucket variant '{variant}' added to {self.base_dir}")
+
+    def load_bucket_variant(self, variant: str) -> Optional[OrdinalBucketPredictor]:
+        """Load a named bucket-model variant, or None if absent.
+
+        Requires BOTH the file and the metadata flag: save() rebuilds
+        metadata from scratch but leaves old variant files on disk, so a
+        file without its flag is stale (variant not re-added after the last
+        full retrain) and must not be served.
+        """
+        metadata_path = self.base_dir / 'metadata.json'
+        if metadata_path.exists():
+            with open(metadata_path, 'r') as f:
+                if not json.load(f).get(f'has_bucket_{variant}', False):
+                    return None
+        model_path = self.base_dir / f'bucket_model_{variant}.txt'
+        if not model_path.exists():
+            return None
+        predictor = OrdinalBucketPredictor()
+        predictor.load(str(model_path))
+        fe_path = self.base_dir / f'bucket_feature_engineer_{variant}.pkl'
+        if fe_path.exists():
+            with open(fe_path, 'rb') as f:
+                fe_data = pickle.load(f)
+                predictor.feature_columns = fe_data['feature_columns']
+                predictor.feature_engineer = fe_data['feature_engineer']
+        return predictor
+
     def _save_lambdarank_model(self, predictor: LambdaRankProbabilityPredictor):
         """Persist a LambdaRank predictor (model + feature engineer + temperature)."""
         model_path = self.base_dir / 'lambdarank_model.txt'

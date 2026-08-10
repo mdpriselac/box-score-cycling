@@ -95,7 +95,8 @@ class RaceRankingPredictor:
     def predict_race(
         self,
         race_df: pd.DataFrame,
-        return_details: bool = False
+        return_details: bool = False,
+        extra_contender_ids: Optional[set] = None,
     ) -> pd.DataFrame:
         """
         Predict complete race ranking.
@@ -161,6 +162,15 @@ class RaceRankingPredictor:
             # contender (top N) > calibrated > weighted > Gaussian heuristic
             contender = self.contender_predictor
             contender_mask = pd.Series(expected_buckets).rank().values <= self.config.contender_top_n
+            # Day-menu retrieval channel (2026-08): riders promoted into the
+            # top-15 conversation by the kernod ranking board also get priced
+            # by the contender model (pool membership routes pricing exactly
+            # as it does for the production top-N). The pricing heads and
+            # their features are untouched — only the routing mask widens.
+            if extra_contender_ids:
+                extra = race_df['rider_id'].astype(int).isin(
+                    {int(i) for i in extra_contender_ids}).to_numpy()
+                contender_mask = contender_mask | extra
 
             if contender is not None:
                 # Add classifier prediction as feature for contender model
