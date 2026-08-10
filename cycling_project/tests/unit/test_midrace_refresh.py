@@ -19,6 +19,10 @@ And the cancelled-stage churn fixed 2026-08-09:
    results-posting grace) marked the pickle stale on every run, and its
    zero-result stage competition marked the race incomplete on every run,
    so the race was deleted + re-migrated forever, churning competition ids.
+4. The one-day analogue of 3: a result-less one-day pickle with any past
+   date was stale forever (Duo Normand 2012–19 — FirstCycling never posts
+   its results), deleted + re-fetched on every run over its folder. Now
+   only a date within the posting grace ("results not up yet") is stale.
 """
 
 import pickle
@@ -59,6 +63,12 @@ def _stage_race(name, fc_race_id, stages, gc_results=False):
     return Race(name=name, url="u", year=2026, stage_race=True,
                 fc_race_id=fc_race_id, stages=stages,
                 results=list(RESULT_ROW) if gc_results else [])
+
+
+def _one_day_race(name, fc_race_id, race_date, with_results):
+    return Race(name=name, url="u", year=2026, stage_race=False,
+                fc_race_id=fc_race_id, date=race_date,
+                results=list(RESULT_ROW) if with_results else [])
 
 
 COMPLETE = [_stage("GC", YESTERDAY, True),
@@ -152,6 +162,39 @@ def test_gcless_recently_finished_race_is_still_stale(tmp_path):
               _stage("Stage: 02", YESTERDAY, False)]
     tour = _tour_dir_with(tmp_path, _stage_race("Fresh", 5, stages))
     assert create_to_scrape_list_tour(str(tour)) == [("Fresh", "u")]
+
+
+@pytest.mark.unit
+def test_completed_oneday_race_is_not_stale(tmp_path):
+    tour = _tour_dir_with(tmp_path, _one_day_race("Classic", 6, YESTERDAY, True))
+    assert create_to_scrape_list_tour(str(tour)) == []
+    assert (tour / "Classic.pkl").exists()
+
+
+@pytest.mark.unit
+def test_resultless_oneday_race_within_grace_is_still_stale(tmp_path):
+    # Raced yesterday, results not up yet — keep re-scraping.
+    tour = _tour_dir_with(tmp_path, _one_day_race("Waiting", 7, YESTERDAY, False))
+    assert create_to_scrape_list_tour(str(tour)) == [("Waiting", "u")]
+    assert not (tour / "Waiting.pkl").exists()
+
+
+@pytest.mark.unit
+def test_resultless_oneday_race_past_grace_is_not_stale(tmp_path):
+    # The Duo Normand shape: a one-day race FirstCycling will never post
+    # results for (weather-cancelled). Marking its legacy empty pickle stale
+    # deleted + re-fetched it on every run over the folder.
+    tour = _tour_dir_with(tmp_path, _one_day_race("Cancelled", 8, LONG_AGO, False))
+    assert create_to_scrape_list_tour(str(tour)) == []
+    assert (tour / "Cancelled.pkl").exists()
+
+
+@pytest.mark.unit
+def test_resultless_undated_oneday_race_is_not_stale(tmp_path):
+    # No parseable date: can't tell past from future — leave it alone
+    # (pre-fix behavior, preserved).
+    tour = _tour_dir_with(tmp_path, _one_day_race("Undated", 9, None, False))
+    assert create_to_scrape_list_tour(str(tour)) == []
 
 
 # ---------------------------------------------------------------------------

@@ -95,7 +95,9 @@ def create_to_scrape_list_tour(tour_folder_path: str) -> List[Tuple[str, str]]:
     Creates a list of races that still need to be scraped in a tour folder.
 
     Races are included if they have no .pkl file, or if they have a .pkl file
-    with no results and the race date is in the past (stale empty pkl).
+    with no results and the race date is recently past — within the
+    results-posting grace (stale empty pkl). Result-less races older than the
+    grace are settled/cancelled and are left alone.
 
     Args:
         tour_folder_path: Path to a tour level folder
@@ -154,10 +156,25 @@ def create_to_scrape_list_tour(tour_folder_path: str) -> List[Tuple[str, str]]:
                                 is_stale = True
                                 break
                 else:
-                    # One-day race: stale if past date and no results
+                    # One-day race: stale if past date and no results — the
+                    # "raced but results not posted yet" window, bounded by
+                    # the posting grace like the stage-race arm. A result-less
+                    # race further in the past was cancelled (FirstCycling
+                    # never posts results for it: Duo Normand 2012–19), so
+                    # marking it stale deleted + re-fetched it on every run
+                    # over its folder. Keeping the pickle pins the original
+                    # date — safe, because race lists carry no dates and the
+                    # scraper no longer writes result-less pickles, so only
+                    # legacy empties reach this arm; a rescheduled race would
+                    # never have had one.
                     if not bool(race.results):
                         race_date = _parse_race_date(race.date)
-                        if race_date and race_date <= date.today():
+                        cancelled_past_grace = race_date is not None and (
+                            race_date
+                            <= date.today() - timedelta(days=RESULTS_POSTING_GRACE_DAYS)
+                        )
+                        if (race_date and race_date <= date.today()
+                                and not cancelled_past_grace):
                             is_stale = True
 
                 if is_stale:
