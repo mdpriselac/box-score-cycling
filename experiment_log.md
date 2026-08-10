@@ -2200,3 +2200,273 @@ win at ~1.6× the model's price). Neither Elo nor v5 closes it. A future fix
 must be **orthogonal to the contesting signal** (candidates: the deferred v7
 characteristic-weighted form; a GT-recency-aware term; explicit
 "days-since-GT" context). v5-family contested form is done.
+
+## 2026-08-08 — Day-type menu survey: mapping the residual stage-day space (step 1 of day_type_menu_plan.md)
+
+Post-TdF program (see `day_type_menu_plan.md`): condition the heads on a
+day-type "menu" — hard own-assignment labels at train, judgment-selected at
+serve. Step 1 surveys the space: which stage days are neither GC-decided nor
+bunch gallops, do they resemble one-day races in contesting-composition
+space, and what are the natural menu items? Script
+`prediction_tools/experiments/day_type_menu_survey.py`; artifacts
+`experiments/day_type_menu_assignments_20260808_172753.csv.gz` +
+`day_type_menu_v0_20260808_172753.json`. Inputs = the 2026-06-11 selection
+signatures (top-15 contesting archetype shares, K=15 window) + fresh DB joins.
+
+**Class definition (mechanical, results-derived — legal as train-time
+labels).** Population: 4,033 stage comps 2016–2026 (≥30 finishers). Pool =
+not {mass_sprint, bunch_sprint, itt_like} → 2,128. **Residual = pool AND
+winner's final GC rank > 10** → **951 days (239 GT), ~24% of stage days;
+`res_wide` adds 39 low-`wg_prop` (<0.20) bunch_sprint survivor gallops
+(TdF-2026-st17 class) → 990.** GT editions average **8.1 residual days per
+GT** (Giro 8.7 / TdF 8.0 / Vuelta 7.6) — TdF 2026 had exactly 8. Rate is
+stable 2016→2026. Boundary caveats: final-GC filter excludes Carapaz's
+stage-18/20 wins (his wins lifted him to GC 8) — as-of-morning GC rank is
+the production labeler's fix; `itt_like` also catches fully-shattered summit
+days (needs a real-ITT check from comp metadata).
+
+**Anchor matching: everything matches something — raw cosine is
+non-discriminative.** 51 wt/pro one-day anchors (≥4 editions, multi-edition
+mean signatures). Residual best-anchor cosine median 0.944 (98.5% ≥0.8) —
+but one-day editions match their OWN race at only 0.905 (LOO) while matching
+some *other* anchor at 0.969, and best−second margin is 0.014. The 7-dim
+share space is dense: nearest-anchor identity is weakly determined. **Menu
+items must be cluster-level; named anchors are display labels only.**
+
+**The space has 6 real clusters** (GMM, full-cov; BIC keeps rising to k=12,
+capped at 8 for interpretability; 2 junk d1 micro-clusters n=18):
+
+| item | n (GT) | signature | nearest anchors | winners |
+|---|---|---|---|---|
+| C1 hard puncheur | 120 (29) | mtn .27 / tt .26 / rol .20 | GP Montréal, Tre Valli, Japan Cup | tt .42 / mtn .20 / brk .14 |
+| C2 break-mixed | 93 (19) | balanced, brk .19 | Milano-Torino, Japan Cup, Gran Piemonte | spr .26 / brk .20 |
+| C3 rouleur power | 104 (20) | tt .56 | E3 0.90 (weak) | tt .75 |
+| C4 hard-man reduced sprint | 241 (31) | spr .29 / tt .25 / hil .15 | Dwars 0.96, Sanremo 0.95, Roubaix 0.95 | tt .38 / spr .27 |
+| C5 aggressor/escape | 286 (127!) | mtn .42 / tt .28 / rol .18 | Lombardia 0.955, Faun-Ardèche, Emilia | tt .41 / mtn .25 / rol .17, **spr .00** |
+| C7 split sprint | 89 (13) | spr .56 | Münsterland 1.00, Brussels, Brugge | spr .58 |
+
+Winner-archetype info gain from cluster label: 2.36 → 2.05 bits (+0.31).
+More than half of GT residual days are C5 — escape composition is
+terrain-independent (a mountain break and a rolling break select the same
+archetype mix; the GC filter, not composition, separates escape days from GC
+mountain days). Slot repeatability of the residual flag is weak (r=0.19;
+P(residual | slot residual ≥50% of other years)=0.37 vs base 0.25) —
+confirms serve-time keys must come from course/judgment, not slot history.
+
+**TdF 2026 validation (stages 2–21 run through the pipeline blind):**
+st 4 Pedersen → **E3 0.988 / Flanders 0.981** (the program's founding
+sentence — "a hard-man day looks like a Flanders" — produced verbatim);
+st 13 Schmid → Strade Bianche 0.973; st 17 Philipsen survivor gallop →
+Roubaix/Sanremo 0.95 (captured only by `res_wide`); st 5 Kooij → C7
+(In Flanders Fields/Kuurne 0.97); st 9 vdP + st 18/20 Carapaz → C5
+aggressor cluster (user correction 2026-08-08: st 9 WAS in fact a break day —
+UAE kept the gap tight and the break held on, the review summary had it
+wrong — so the C5 read is a hit, not a miss); st 2 correctly excluded
+(GC-won, del Toro GC 3); st 16
+excluded itt_like; st 21 excluded by the same-time timing artifact (mass_sprint,
+wg=158) though its composition still reads semi-classic (Denain 0.99).
+Sprint controls: st 7/8/12 → Brugge/Münsterland/Denain 0.98–1.00.
+
+**Verdicts.** (1) The one-day-analog premise holds for the *fast-finisher*
+families (C4/C7 sit directly on Dwars/Sanremo/Kuurne-class anchors and C1 on
+the Ardennes/Italian hilly classics) and holds at family level everywhere,
+but the anchor label is a display convenience, not an identifier. (2) The
+break/escape class (C5 + C2, ~40% of residual, >60% of GT residual) is
+compositionally coherent but mechanism-shaped, not terrain-shaped —
+supporting the standing view that break-membership modeling is a separate
+program the menu cannot absorb. (3) Training mass is adequate: 4 of 6 menu
+items have n≥100, and every item has GT representation. (4) Next: step 2 of
+the work order — oracle re-gate (`day_menu_gate_cv.py`) filling the stage-NULL
+`sig_*` columns with menu canonicals, scored on the surfacing suite.
+
+## 2026-08-08 — Day-type menu ORACLE gate (step 2): composition clears 5/5, pool entry under bar, namespace collision found
+
+Script `prediction_tools/experiments/day_menu_gate_cv.py` (5-fold, arms
+trained per fold on the production bucket+contender harness; per-race
+records persisted — the June gate's missing instrument). Labeler finalized
+per session decisions: ITT = winning_time < 4500 s; bunch = mass_sprint or
+bunch_sprint with wg_prop >= 0.20; gc_day = winner OR front-5 median
+**as-of-morning** GC rank <= 10 (`rider_race_state.gc_rank_current`,
+final-GC fallback; verified pre-stage semantics on TdF 2025); residual =
+rest (includes survivor gallops). Labels: bunch 1,664 / residual 1,033 /
+gc_day 968 / itt 368. Menu = per-fold GMM (train-years members only,
+unknown-share>0.20 rows excluded from fits) + bunch/gc/itt macro items;
+canonical fills from train members.
+
+**PRE-REGISTERED rule (residual slice, arm−base, paired):** PASS iff
+winner_in_pool15 pooled ≥ +2.0pp (≥4/5 folds ≥0) AND board_front_cosine
+pooled ≥ +0.010 (≥4/5 folds ≥0), guardrails all.top4_ll ≤ +0.010,
+all.winner ≥ −0.5pp, |one_day.winner| ≤ 0.5pp.
+
+**Baseline context (new number, from the persisted records): on residual
+days the production pool contains the eventual winner only 49.5% of the
+time — median winner rank 16.** Front recall@15 45.8%, board-front cosine
+0.856. Half the residual class is a retrieval failure before any reranking.
+
+**Run 1 (fills on the SHARED sig_* columns — menu6/menu8):** residual
+cosine **+0.0210/+0.0238 (5/5 both)**; winner_in_pool15 +0.77/+1.16pp
+(4/5); winner_model_rank −0.67/−0.66 (**improved in 5/5 folds, both
+arms**); global guardrails fine — but **one-day winner capture −1.1/−1.0pp
+with od log loss worse in 5/5 / 4/5 folds. Systematic, not noise: stage
+fills on the shared columns cannibalize the one-day B4 signal** (the trees
+re-optimize sig_* splits for a population that is now majority stage
+fills). FORMAL FAIL, and a standing design constraint discovered: **any
+stage-side conditioning must live in its own namespace.**
+
+**Run 2 (iteration: separate dtm_* namespace — menu6sep/menu8sep,
+thresholds unchanged):** od collision fixed for menu8sep (od winner
++0.04pp mean, od ll mixed ±; menu6sep still −0.70pp — partial). Residual
+cosine **+0.0211/+0.0212 (5/5 both)**; winner_in_pool15 +0.97/+0.71pp
+(3/5); winner_model_rank −0.48/−0.74 (again negative in 5/5 folds, both
+arms — 20/20 fold-arm combinations across both runs). menu8sep guardrails
+all clean (all.ll −0.0025, all.winner +0.51pp). dtm rider interactions
+immediately top the family importances (dtm_rider_sig_vs_field ~24K gain)
+while the od sig_* family retains its ~5K loadings independently — the
+namespace split works as designed.
+
+**Per-item concentration (both runs):** the composition fix lands hardest
+exactly on the program's target — the sprint+time_trial (hard-man
+fast-finisher, Dwars/Sanremo family) items take **cos_delta +0.044 to
++0.051** at n=297–404, with winner_rank −1.4 to −2.0. The mountain+rolling
+(escape-adjacent) items gain +0.02–0.03 pool entry; bunch fills are flat
+to slightly negative (never the problem); micro-items (n<25) are noise.
+
+**VERDICT: formal FAIL under pre-registration — primary-2 (composition)
+passes in every configuration, primary-1 (winner_in_pool15 ≥ +2.0pp)
+misses in every configuration (+0.7–1.2pp actual).** Thresholds are NOT
+being revised post-hoc. Honest reading: at the oracle ceiling, day-side
+conditioning alone (a) robustly fixes the board's *composition* on hard
+days — the original depth-of-field objective — and (b) moves the winner up
+~0.5–0.7 board places (20/20 fold-arms), but (c) converts to pool
+membership at only ~half the pre-registered size. The Pedersen/Simmons
+retrieval hole needs the rider-side half: the only rider-side exploitation
+mechanism in this arm is coarse best_profile archetype interactions, and
+the Simmons class is precisely the one invisible in best_profile. That
+complement is step 3 of the work order (kernel attendance/performance
+ladders, type-conditional Elo) — always the designed pairing.
+
+**Decisions carried forward:** menu8sep (k=8, dtm namespace) is the
+reference configuration; the day-fill alone does NOT ship; step-3
+rider-side features gate next, ON TOP of this arm, same thresholds, same
+persisted-records instrument. Artifacts:
+`experiments/day_menu_gate_cv_20260808_183455.json` (run 1),
+`day_menu_gate_cv_20260808_192654.json` (run 2), records CSVs alongside;
+runs 41.4 + 44.0 min under caffeinate.
+
+## 2026-08-08 — Day-menu step-3 gate: rider-side kernel ladders PASS (menu8kernod)
+
+Script `prediction_tools/experiments/day_menu_gate3_cv.py`. Four as-of-then
+rider features answering "how does this rider fare on days LIKE today":
+kernel weight per history row = cos(historical comp's realized top-15
+6-archetype shares, target day-key signature)^8 × exp-decay (half-life
+730 d), over the rider's rows in ALL signature-covered comps — one-day
+history transfers into stage days through the kernel (Pedersen's classics
+record feeds his hard-man-stage ladder; that is the mechanism). Features:
+`dtm_k_expos` (decayed similar-day exposure), `dtm_k_attend` (weighted
+top-15 rate), `dtm_k_top3` (kick rate), `dtm_k_perf_place` (weighted mean
+front position); attend/top3/perf NaN below 3 effective rows; kernel target
+= the fold's item CANONICAL, never the race's own realized signature.
+Primary-1 re-registered before the run per user agreement: continuous
+winner_model_rank (≤ −1.00, ≥4/5 folds negative) replaces the binary pool
+metric, which stays reported against its +2.0pp aspiration. Coverage:
+~88–90% of stage test rows, ~92% of one-day rows (run 2).
+
+**Run 1 (base / menu8sep / menu8kern; stage-only kernels):** the kernel arm
+cleared both primaries decisively — residual winner_rank **−2.09 (negative
+5/5, range −1.5..−2.5)**, cosine +0.0277 (5/5), pool15 **+2.38pp** (meeting
+the retired step-2 bar), front_recall +2.2pp (5/5), global winner capture
++0.81pp with kern ≥ base 5/5 — but tripped the two-sided od band at
+−0.85pp (mixed 3/5-negative, od ll +0.009; weaker than the step-2
+collision but not clean). Cause: od rows traverse `dtm_k_*` splits via the
+NaN-default path. Rider-side increment over the day fill alone
+(menu8kern − menu8sep): winner_rank −0.74 → −2.09, pool15 +0.7 → +2.4pp —
+the kernels roughly TRIPLE the surfacing effect, confirming the step-2
+diagnosis that the day vocabulary was waiting for its rider-side half.
+
+**Run 2 (iteration, registered before running: menu8kernod gives od rows
+REAL kernel features keyed to the nearest menu canonical of their own
+as-of-then B4 signature; od guardrail becomes one-sided degradation-only
+≥ −0.5pp winner + od ll ≤ +0.010; all else unchanged):**
+
+| metric (residual, C−base, n=490) | menu8kernod | folds |
+|---|---|---|
+| winner_model_rank | **−2.082** | negative 5/5 |
+| winner_in_pool15 | **+3.48pp** | ≥0 in 5/5 |
+| front_recall15 | **+3.00pp** | ≥0 in 5/5 |
+| board_front_cosine | **+0.0269** | ≥0 in 5/5 |
+
+Guardrails: all.ll +0.0004; **all.winner +1.40pp (positive 5/5:** +0.04,
++0.71, +1.89, +2.29, +2.10 — contested-Elo-magnitude on the old top-1
+lens); **od.winner +1.91pp** (the extension helped one-days outright, not
+just decoupled them); od.ll +0.0096, just inside the bound → **PASS=True
+under the pre-registered rule.** Slices: gc_day pool15 +1.33pp, bunch
++1.50pp — conditioning helps the giants too. Per-item pool gains broad
+(time+roll +7.3pp, time+moun +5.9pp, moun+roll +4.4pp, spri+time +2.7pp,
+rank deltas −1.7..−3.5); only the tiny break-flavored micro-items (n≤17)
+stay flat — the break-membership class remains out of vocabulary reach, as
+the survey predicted. Importances: the four kernel cols take 4 of the top-5
+dtm slots (`dtm_k_perf_place` 33.1K, `dtm_k_attend` 27.8K, `dtm_k_top3`
+25.0K, `dtm_k_expos` 20.1K gain). Baseline context: residual
+winner-in-pool goes 49.5% → ~53%.
+
+**Caveats and pre-ship requirements.** (1) Stage day-keys are still the
+ORACLE tier (own-assignment labels) — the serve-time selector (judgment
+menu pick; book-card/course mechanical priors) is the untested tier; note
+the od kernel key (nearest-canonical of B4) IS fully mechanical at serve
+already. (2) **Watch item: od top4_log_loss +0.0096** — od top-1 capture
+way up but probability quality marginally worse; the standing
+market_avg_log_loss honest-frame gate adjudicates this at the full-stack
+integration step, which (v5 lesson) is REQUIRED before any wiring: these
+gates ran on the light bucket+contender harness without
+LambdaRank/corrector/DNF. (3) Bunch-fill ablation deprioritized (bunch
+slice improved under kernod). (4) res_2/res_6 micro-clusters (n=6/8)
+remain menu tidy-up candidates. (5) Kernel hyperparams (Γ=8, HL=730 d,
+floor 3) are v1 defaults, never swept — headroom unknown.
+
+Artifacts: `experiments/day_menu_gate3_cv_20260808_204201.json` (run 1) /
+`day_menu_gate3_cv_20260808_213212.json` (run 2, the passing record) +
+records CSVs; 42.4 + 42.3 min under caffeinate. **Step 3 verdict: the
+rider-side conditional record converts the day vocabulary into contender
+retrieval — the program's core hypothesis is confirmed at the oracle tier.
+Next: serve-side key (tier 2/3) + full-stack integration gate.**
+
+## 2026-08-09 — Day-menu step-4: FULL-STACK integration + serve keys — FORMAL FAIL (feature-attachment form dead; retrieval mechanism survives at oracle tier)
+
+**Script** `prediction_tools/experiments/day_menu_gate4_cv.py` · **results** `experiments/day_menu_gate4_cv_20260809_083651.json` + per-race records `day_menu_gate4_records_20260809_083651.csv.gz` (72.4 min, 5 folds) · pre-registration in the script docstring + `day_type_menu_plan.md` step 4. Deep-dive analyzer output archived in the scratchpad (`analyze_gate4.py`).
+
+**Design.** The pre-ship gate for the step-3 kernel family, on the SHIPPED arm-C stack (meta-OOF + one-day B4 sigs + contested Elo + DNF head, honest DNF-adjusted frame). Arms: **A** = shipped stack; **korc/kmech/kmix** = one shared K-model (stack + menu8kernod features, oracle keys at train/val by design) evaluated under oracle keys / selector-argmax keys / top-5 board mixture under the selector's calibrated prior. Mechanical day-key selector: LightGBM multiclass over menu items from strictly pre-race features (profile scores, field composition/strength, per-event history shape, calendar/stage context; `winning_time` + `abandon_ratio` excluded as realized outcomes; ITT exogenous-known). Primary = honest `market_avg_log_loss` per the 2026-08-08 gate-policy addendum; G2 = step-3 surfacing bars on the deployable arm; per-race pool records persisted for all four arms (pool ids to 25, front ranks, board composition, selector diagnostics).
+
+**Verdict: FAIL on every gated check; guardrails passed.** kmix−A honest market_avg_log_loss **+0.0107 (0/5 folds ≤0)** vs the +0.0010 bar — and the damage **grows toward recent folds** (+0.0046 → +0.0245 on 2025). All subsets degrade: stage +0.0123, gc +0.0110, one_day +0.0057 (0/5 everywhere). Winner capture GUARDRAILS PASSED (capture up ~+0.5–1.1pp most folds) — top-1 improved while probability quality cratered: the exact failure mode the 2026-06-11 policy exists to catch; the old top-1 gate would have shipped this.
+
+**Mechanism findings (the run's real value):**
+1. **The conditioning tax is global, not key-skew.** korc (oracle keys at train AND test — zero serve skew) still degrades +0.0100. And the gc subset — whose rows carry NO dtm features (gc comps are unlabeled; all-NaN) — degrades identically (+0.0110) in all three K arms: adding the 14 dtm columns re-shapes every tree, so rows traversing NaN-default paths land in different, worse-calibrated leaves. This is gate3 run-1's od NaN-coupling generalized to the whole probability surface; on the light harness the tax hid under the gains, on the tighter full stack it dominates. It also scales the wrong way: later folds (more labeled coverage, deeper conditioning) pay more.
+2. **The retrieval mechanism is real and survives the full stack — at oracle tier.** Label-year residual win@15: A 0.486 (the 49% retrieval hole reproduces exactly) → korc **0.523 (+3.7pp)**, winner rank −1.84 (5/5 folds), cosine +0.0224 (5/5), per-item rank improvement in 7/8 residual items, winners gained into pool15 22 vs 14 lost (kmix). Case studies are precisely the target class: Denz Giro-break 112→43, Clarke TdF-22 cobbles 132→85, Wellens TdF-25 122→75, Matthews Mende 100→59, Simmons 38→18, Woods, Izagirre. The improvement lives at ranks 10–25 (win@5 flat/slightly negative).
+3. **The serving gap is large on the full stack.** kmech collapses to −0.62 winner rank / pool15 −0.8pp (hard wrong keys actively hurt); kmix recovers about half the oracle ceiling (−0.93 rank, +1.9pp win@15 label-year) — board mixing works as designed as a hedge (wrong-key comps: oracle −1.66, mech −0.39, mix −0.89) but cannot manufacture the key.
+4. **The day-key ceiling is strategic, not observational.** Selector: 73.1% top-1 overall (bunch 0.99, gc_day 0.89) but **12.1% exact on residual days**, with every residual item's dominant confusion → gc_day; a v2 probe adding morning-GC dispersion + remaining-route context (all pre-race-legit) was **null** (5 folds, scratchpad `selector_v2_probe.py`). Whether the GC teams control the day is not in any pre-race observable we hold — it is the tier-3 judgment variable (news/tactics/book), consistent with June's slot-repeatability r=0.19.
+5. **od watch item adjudicated: real.** The light-harness od top4_ll +0.0096 materializes as od honest market LL +0.0057 (0/5) despite od winner capture +1.9pp there — the od kernel extension helps capture and hurts pricing.
+
+**Decision: the feature-attachment integration form is dead** — do not wire dtm_*/kernel columns into the shared production heads. NOT dead: the menu itself, the labeler, the kernel ladders as a RETRIEVAL signal, and the board-mixing serve pattern. Live salvage directions, in order: (a) **retrieval-only integration** — kernod ranking selects/expands the contender pool while the untouched production heads price it (decouples pool entry from mass allocation; needs its own gate: market LL must stay ~0 while pool recall moves); (b) **scenario-layer overlay** — day-menu boards serve the app's read/scenario workflow (where the TdF process already lives) with judgment-tier keys, zero production-model risk; (c) shelved unless (a) works: per-item head partitioning. Kernel hyperparams remain unswept (Γ=8/HL730/floor3) but tuning cannot plausibly close a +0.011 5/5 gap and is deprioritized.
+
+## 2026-08-09 — Day-menu step-4b: overlay (home-turf) gate — HOME_TURF_HARM (conditional boards must not serve prices)
+
+**Script** `prediction_tools/experiments/day_menu_gate5_overlay_cv.py` · **results** `experiments/day_menu_gate5_overlay_cv_20260809_124022.json` + per-comp pricing records `day_menu_gate5_pricing_*.csv.gz` + surfacing records (46.3 min, 5 folds) · pre-registration in the script docstring.
+
+**Design.** The step-4 review (user) reframed the product: the system is operated judgment-in-the-loop (the TdF workflow — someone always supplies the day read), so the decisive question is not global always-on pricing but **whether the conditional board beats the production board on its home turf when the key is known**. Arms A vs korc only (oracle keys train/val/test — the upper bound on the judgment-keyed product); market metrics sliced by day class in standard + honest frames; per-comp market-LL contributions persisted. Pre-registered reading on residual honest market_avg_log_loss: WIN (mean ≤ 0, ≥4/5 folds ≤ 0) → scenario layer may serve conditional boards; HARM (mean ≥ +0.002, ≥4/5 folds ≥ 0) → retrieval-only product.
+
+**Verdict: HOME_TURF_HARM, decisively.** Residual days — the exact class the program targets — pay **+0.0158 (0/5 folds ≤ 0)**, MORE than the global +0.0100; gc_day is worst (+0.0183), bunch mildest (+0.0034), itt +0.0130, unlabeled stages +0.0120, one-days +0.0057. Same picture in the standard frame. Damage again grows toward recent folds (residual +0.0059 → +0.0342 on 2025). Global honest per-fold deltas reproduce gate4's korc arm exactly (+0.0034/+0.0074/+0.0063/+0.0099/+0.0229) — clean cross-harness consistency.
+
+**Combined with the gate4 market decomposition** (korc−A: win +0.0098, podium +0.0151, top5 +0.0159, **top15 +0.0013 with 3/5 folds BETTER**), the mechanism is now fully characterized: the kernel family is a **top-15-grade retrieval signal** — "keeps making these fronts" — which the model prices correctly at exactly that grain (pool entry +2.5–3.7pp, top15 market neutral-to-better) and which contains no within-front kick information (making the break ≠ winning from it), so any head that spends it on win/podium/top5 mass miscalibrates, worst precisely where the features are most active (residual/gc_day stage days). This also matches the review corpus's two failure classes: the family fixes *invisible-winner* and worsens *in-pool-but-massless*.
+
+**Consequence (per the registered mapping + user's scope confirmation that the program's goal was retrieval, not mass):** conditional boards do NOT serve prices at any tier (judgment included). The menu's production path narrows to the **retrieval-only integration** (gate6, `day_menu_gate6_retrieval_cv.py`: kernod-featured model governs pool membership/board order only; untouched production heads price the pool — a wrong key can cost pool composition but can never corrupt prices) plus scenario-layer shortlist support. Gate6 pre-registered: P1 pricing-neutrality (honest mkt_ll ≤ +0.0010, win_ll ≤ +0.0010) AND P2 retrieval (residual pool15 ≥ +0.015, winner_rank ≤ −1.00, 4/5 consistency).
+
+## 2026-08-09 — Day-menu step-4c: retrieval-only gate — P1 PASS (pricing-neutral architecture) / P2 FAIL at automated tier (formal PASS_rmix=False); judgment tier carries the payoff
+
+**Script** `prediction_tools/experiments/day_menu_gate6_retrieval_cv.py` · **results** `experiments/day_menu_gate6_retrieval_cv_20260809_134250.json` + pricing/surfacing record CSVs (52.9 min, 5 folds) · pre-registration in the script docstring.
+
+**Design.** The kernod-featured model governs ONLY contender selection (pool membership + board order); the untouched production cascade prices whatever pool it is given. Arms: A production; rorc (oracle ranking keys — the judgment-tier upper bound); rmix (selector-mixture ranking keys — the automated fallback, the gated arm). A wrong key can cost pool composition but structurally cannot corrupt prices.
+
+**P1 pricing-neutrality: PASSES, decisively.** rmix honest market_avg_ll **+0.0005** [+0.0018 −0.0001 +0.0005 −0.0000 +0.0004], win_ll +0.0005; rorc +0.0005, and on fold-5 residual (where the conditional cascade paid +0.0342) the pool-swap is −0.0009..−0.0014 (BETTER). The architecture split eliminates ~95% of the feature-attachment damage (+0.0107 → +0.0005): definitive confirmation that the step-4 harm lived in the pricing heads, not the pool.
+
+**P2 retrieval at the automated tier: FAILS** — rmix pool15 +0.0052 (3/5) vs the +0.015 bar; winner rank −0.934 (5/5 neg) vs −1.00. Surfacing reproduces gate4's ranking-channel numbers exactly (same bucket_k + keys). **rorc ceiling: pool15 +0.0245 (5/5), rank −1.843 (5/5), front recall +0.0229 — at +0.0005 pricing cost.** Formal PASS_rmix = FALSE (pre-registered discipline; the automated key is too weak, consistent with the selector's 12% residual accuracy and the null v2 probe — the key is strategic, not observable).
+
+**Where this leaves the program (decision to the user):** the retrieval-only architecture achieves the program's goal — the full +2.45pp/−1.84 hard-day retrieval at ~zero pricing cost — **at the judgment-key tier**, which is how the system is actually operated (user, 2026-08-09: judgment always in the loop; scope = retrieval, not mass). Options: (a) wire the ranking channel with judgment-priority keys (judgment > od self-key > mixture fallback; worst case ≈ status quo given P1); (b) scenario-layer only. Remaining measurement gap before (a): **tier-3 read-selection eval** — score the archived TdF 2026 scenario picks against the oracle labels to locate judgment between rmix and rorc; uses existing data, no CV run. Honest caveat: rorc is an upper bound — judgment ≠ oracle, and its quality is currently unmeasured.
