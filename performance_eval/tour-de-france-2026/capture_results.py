@@ -174,11 +174,18 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[1])
     ap.add_argument("--race-id", default="17", help="FirstCycling race id (default 17 = TdF)")
     ap.add_argument("--year", default="2026")
+    ap.add_argument("--out-root", default=None,
+                    help="results archive root (default: this campaign's "
+                         "results/); other campaigns pass their own, e.g. "
+                         "performance_eval/vuelta-2026/results")
     ap.add_argument("--force", action="store_true", help="re-fetch stages already archived")
     ap.add_argument("--all", action="store_true",
                     help="keep scanning past the first stage with no results")
     ap.add_argument("--stage", default=None, help="fetch only this stage number (e.g. 05)")
     args = ap.parse_args()
+    if args.out_root:
+        global OUT_ROOT
+        OUT_ROOT = Path(args.out_root)
 
     today = datetime.now().strftime("%Y-%m-%d")
     race_page_dir = OUT_ROOT / "race_page"

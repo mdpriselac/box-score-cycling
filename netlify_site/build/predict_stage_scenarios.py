@@ -20,6 +20,16 @@ Scenario spec (in the config's "scenarios" map):
     tag:       suffix appended to model_version in prediction_log — rerunning
                a scenario logs a NEW opinion under the same tag, so use --only
                to avoid duplicate logging of unchanged scenarios.
+    day_key:   optional {menu_item: weight} map (e.g. {"res_2": 0.6,
+               "res_4": 0.4}; see day_menu_v1_reference.md). When present and
+               the day-menu channel is installed, the kernod bucket model
+               ranks the board (pool membership + display order; weighted
+               sets mix at the RANKING-SCORE level) and riders it promotes
+               into the top 15 are priced by the contender model like any
+               pool member. Prices always come from the untouched production
+               heads. A config-root day_key applies to every scenario that
+               doesn't set its own. Logged in the output JSON — the morning
+               scenarios.json entry is the immutable tier-3 key archive.
 
 Within-race state (mirrors the web app): stage targets >= 2 attach the live
 race state (completed stages via DB/cache/scrape) to the MAIN models; a
@@ -35,9 +45,12 @@ import sys
 import unicodedata
 from pathlib import Path
 
+import numpy as np
+
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(PROJECT_ROOT))
 
+from cycling_project.prediction_tools import day_menu as day_menu_mod
 from cycling_project.prediction_tools.dnf_predictor import load_production_dnf_head
 from cycling_project.prediction_tools.gc_outlook import GCOutlookHead
 from cycling_project.prediction_tools.live_race_state import (
@@ -77,6 +90,7 @@ SCORE_KEY_MAP = {
 
 RESULT_COLS = [
     "rider_id", "rider_name", "predicted_rank", "expected_bucket",
+    "daymenu_rank", "daymenu_score", "in_daymenu_pool",
     "is_contender", "predicted_time_gap",
     "prob_win", "prob_podium", "prob_top5", "prob_top15",
     "lambdarank_win_p", "blend_win_p",
@@ -161,6 +175,25 @@ def main():
     saved_at = registry.get_metadata().get("saved_at", "")
     lr_temp = getattr(lambdarank_pred, "temperature", None)
 
+    # Day-menu retrieval channel (Option A, 2026-08-09): when a scenario
+    # carries a day_key, the kernod bucket ranks the board (pool membership
+    # + order); the production heads above price it, untouched. Absent any
+    # piece, serving falls back to the production board.
+    dm_menu = dm_cum = dm_bucket = None
+    try:
+        dm_bucket = registry.load_bucket_variant("daymenu")
+        if dm_bucket is not None:
+            dm_menu = day_menu_mod.load_menu()
+            dm_cum = day_menu_mod.load_kernels()
+            print(f"day-menu channel ready: menu {dm_menu.version}, "
+                  f"kernels {len(dm_cum):,} rows", flush=True)
+        else:
+            print("day-menu channel: bucket_daymenu absent — production board only",
+                  flush=True)
+    except Exception as e:
+        dm_menu = dm_cum = dm_bucket = None
+        print(f"[warn] day-menu channel unavailable: {e}", flush=True)
+
     teams, from_cache = scrape_or_load_startlist(
         int(config["fc_race_id"]), int(config["year"]), db_path=DB_PATH)
     assert from_cache, "startlist should come from cache"
@@ -242,7 +275,32 @@ def main():
         pred_df = attach_stack_features(pred_df, time_gap_pred, lambdarank_pred,
                                         rating_snapshots=rating_snaps,
                                         signature_context=None)
-        result = race_ranker.predict_race(pred_df, return_details=True)
+
+        # ── day-menu ranking channel ──
+        day_key = spec.get("day_key") or config.get("day_key")
+        dm_scores = None
+        if day_key and dm_bucket is not None:
+            dm_scores = day_menu_mod.serving_board_scores(
+                pred_df, dm_bucket, day_key, dm_menu, dm_cum,
+                field_features, config["date"])
+            dm_order = np.argsort(np.argsort(dm_scores))  # 0-based ranks
+            dm_pool_ids = set(
+                pred_df["rider_id"].astype(int).to_numpy()[dm_order < 15])
+            print(f"  day key: {day_key} -> kernod board "
+                  f"(pool of {len(dm_pool_ids)})", flush=True)
+        elif day_key:
+            print("  [warn] day_key set but day-menu channel unavailable — "
+                  "production board", flush=True)
+
+        result = race_ranker.predict_race(
+            pred_df, return_details=True,
+            extra_contender_ids=dm_pool_ids if dm_scores is not None else None)
+        if dm_scores is not None:
+            smap = dict(zip(pred_df["rider_id"].astype(int), dm_scores))
+            result["daymenu_score"] = result["rider_id"].astype(int).map(smap)
+            ranks = result["daymenu_score"].rank(method="first")
+            result["daymenu_rank"] = ranks.astype(int)
+            result["in_daymenu_pool"] = ranks <= 15
         lr_map = dict(zip(pred_df["rider_id"].astype(int),
                           pred_df["oof_lambdarank_win_p"].astype(float)))
         result["lambdarank_win_p"] = result["rider_id"].astype(int).map(lr_map)
@@ -259,7 +317,8 @@ def main():
             print(f"  [warn] {w}", flush=True)
 
         cols = [c for c in RESULT_COLS if c in priced.columns]
-        tab = priced.sort_values("predicted_rank")[cols].copy()
+        board_col = "daymenu_rank" if dm_scores is not None else "predicted_rank"
+        tab = priced.sort_values(board_col)[cols].copy()
         tab["team_name"] = tab["rider_id"].map(team_map)
         records = json.loads(tab.to_json(orient="records"))
         for r in records:
@@ -291,6 +350,8 @@ def main():
             "references": ref_meta,
             "note": spec.get("note"),
             "model_version": f"{saved_at}|{spec['tag']}",
+            "day_key": day_key if dm_scores is not None else None,
+            "board": "daymenu" if dm_scores is not None else "production",
             "avg_profile": {k: prof.get(k) for k in prof
                             if not hasattr(prof.get(k), "shape")},
             "form_status": form_status,

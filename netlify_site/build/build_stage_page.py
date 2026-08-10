@@ -283,6 +283,32 @@ def profile_bars(profile):
     return f'<div class="bars">{"".join(rows)}</div>'
 
 
+DAY_MENU_NAMES = {
+    "res_0": "chaos day", "res_1": "fast-finisher power day",
+    "res_2": "mountain escape", "res_3": "survivor gallop",
+    "res_4": "hard puncheur day", "res_5": "split sprint (res_5)",
+    "res_6": "rouleur power group", "res_7": "split sprint",
+    "bunch": "bunch sprint", "gc_day": "GC day", "itt": "time trial",
+}
+
+
+def day_key_chip(data):
+    """'keyed: mountain escape 0.6 / hard puncheur 0.4' badge for boards
+    ranked by the day-menu retrieval channel (prices stay production)."""
+    key = data.get("day_key")
+    if not key or data.get("board") != "daymenu":
+        return ""
+    parts = sorted(key.items(), key=lambda kv: -float(kv[1]))
+    tot = sum(float(w) for _, w in parts) or 1.0
+    txt = " / ".join(
+        f"{DAY_MENU_NAMES.get(i, i)}" + (f" {float(w)/tot:.1f}" if len(parts) > 1 else "")
+        for i, w in parts)
+    return ('<div class="note" style="border-left:3px solid #7a5df0;'
+            'padding-left:7px"><b>keyed:</b> ' + esc(txt) +
+            ' <span class="muted">(board order by rider-type retrieval; '
+            'prices unchanged)</span></div>')
+
+
 def scenario_cards(config, scen):
     cards = []
     for key, data in scen.items():
@@ -298,6 +324,7 @@ def scenario_cards(config, scen):
 <h3>{esc(spec.get('short', key))}</h3>
 <div class="muted" style="font-family:var(--sans);font-size:12.5px">{esc(data['scenario'])}</div>
 {profile_bars(data['avg_profile'])}
+{day_key_chip(data)}
 <div class="note">{esc(spec.get('note', ''))}</div>
 <div class="note"><b>{label}:</b> {toplist}</div>
 </div>""")

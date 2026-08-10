@@ -96,12 +96,16 @@ def main() -> int:
     ap.add_argument("--match", default="(tour de france 2026)",
                     help="case-insensitive substring an event name must contain "
                          "(default excludes TdF Femmes; use 'tour de france' to include it)")
+    ap.add_argument("--out-root", default=str(OUT_ROOT),
+                    help="odds archive root (default: this campaign's odds/); "
+                         "other campaigns pass their own, e.g. "
+                         "performance_eval/vuelta-2026/odds")
     args = ap.parse_args()
 
     now_utc = datetime.now(timezone.utc)
     day = datetime.now().strftime("%Y-%m-%d")
     hhmm = datetime.now().strftime("%H%M")
-    out_dir = OUT_ROOT / day
+    out_dir = Path(args.out_root) / day
     raw_dir = out_dir / "raw"
     raw_dir.mkdir(parents=True, exist_ok=True)
 
