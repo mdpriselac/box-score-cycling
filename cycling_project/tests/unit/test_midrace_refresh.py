@@ -10,6 +10,15 @@ Covers the two defects fixed 2026-07-12:
 2. update_pipeline.migrate_new_races permanently skipped races already in
    the `races` table, so a race migrated mid-event never received its
    remaining stages or final GC (the CLAUDE.md migration gotcha).
+
+And the cancelled-stage churn fixed 2026-08-09:
+
+3. A past-dated result-less stage in a settled race (final GC posted, or —
+   when FirstCycling publishes no GC at all, as for Vuelta a Murcia 2026
+   after its stage 2 was weather-cancelled — every stage dated and past the
+   results-posting grace) marked the pickle stale on every run, and its
+   zero-result stage competition marked the race incomplete on every run,
+   so the race was deleted + re-migrated forever, churning competition ids.
 """
 
 import pickle
@@ -20,16 +29,21 @@ import pytest
 
 from cycling_project.update_pipeline import (
     _get_db_result_counts,
+    _get_incomplete_race_keys,
     _get_races_needing_refresh,
     _pickle_result_counts,
 )
 from cycling_project.webscrape_tools.create_race_data import Race, Stage
 from cycling_project.webscrape_tools.download_race_data import (
+    RESULTS_POSTING_GRACE_DAYS,
     create_to_scrape_list_tour,
 )
 
 YESTERDAY = (date.today() - timedelta(days=1)).isoformat()
 TOMORROW = (date.today() + timedelta(days=1)).isoformat()
+LONG_AGO = (
+    date.today() - timedelta(days=RESULTS_POSTING_GRACE_DAYS + 30)
+).isoformat()
 RESULT_ROW = [{"rider": "A", "place": 1}]
 # Mid-race, FirstCycling's race page serves only the abandons as race-level
 # rows — a DNF board, not a final GC.
@@ -59,6 +73,11 @@ MIDRACE = [_stage("GC", None, False),
 FUTURE = [_stage("GC", None, False),
           _stage("Stage: 01", TOMORROW, False),
           _stage("Stage: 02", TOMORROW, False)]
+# The Vuelta a Murcia 2026 shape: stage 2 weather-cancelled, and FirstCycling
+# published no final GC at all — race.results stays empty while every stage
+# carries a date months in the past.
+GCLESS_SETTLED = [_stage("Stage: 01", LONG_AGO, True),
+                  _stage("Stage: 02", LONG_AGO, False)]
 
 
 # ---------------------------------------------------------------------------
@@ -106,6 +125,35 @@ def test_completed_race_with_cancelled_undated_stage_is_not_stale(tmp_path):
     assert create_to_scrape_list_tour(str(tour)) == []
 
 
+@pytest.mark.unit
+def test_completed_race_with_cancelled_past_dated_stage_is_not_stale(tmp_path):
+    # Same, but the cancelled stage carries its (past) scheduled date — the
+    # final GC posting settles the race either way.
+    stages = COMPLETE + [_stage("Stage: 03", YESTERDAY, False)]
+    tour = _tour_dir_with(tmp_path, _stage_race("Storm", 4, stages, gc_results=True))
+    assert create_to_scrape_list_tour(str(tour)) == []
+    assert (tour / "Storm.pkl").exists()
+
+
+@pytest.mark.unit
+def test_gcless_settled_race_with_cancelled_stage_is_not_stale(tmp_path):
+    # Vuelta a Murcia 2026: no final GC exists anywhere, but every stage is
+    # dated and the race concluded well past the posting grace.
+    tour = _tour_dir_with(tmp_path, _stage_race("Murcia", 74, GCLESS_SETTLED))
+    assert create_to_scrape_list_tour(str(tour)) == []
+    assert (tour / "Murcia.pkl").exists()
+
+
+@pytest.mark.unit
+def test_gcless_recently_finished_race_is_still_stale(tmp_path):
+    # Result-less stage inside the posting grace with no GC: results may
+    # simply not be up yet — keep re-scraping.
+    stages = [_stage("Stage: 01", YESTERDAY, True),
+              _stage("Stage: 02", YESTERDAY, False)]
+    tour = _tour_dir_with(tmp_path, _stage_race("Fresh", 5, stages))
+    assert create_to_scrape_list_tour(str(tour)) == [("Fresh", "u")]
+
+
 # ---------------------------------------------------------------------------
 # Migration refresh decision
 # ---------------------------------------------------------------------------
@@ -134,16 +182,19 @@ def test_midrace_pickle_with_dnf_board_is_still_stale(tmp_path):
     assert create_to_scrape_list_tour(str(tour)) == [("Tour", "u")]
 
 
+_SCHEMA = """
+    CREATE TABLE IF NOT EXISTS races (
+        id INTEGER PRIMARY KEY, fc_race_id TEXT, year INT, category TEXT);
+    CREATE TABLE IF NOT EXISTS competitions (
+        id INTEGER PRIMARY KEY, race_id INT, competition_type TEXT, date TEXT);
+    CREATE TABLE IF NOT EXISTS rider_results (
+        id INTEGER PRIMARY KEY, competition_id INT);
+"""
+
+
 def _seed_db(db_path, fc_race_id, n_result_stages, with_gc, n_empty_stages=0):
     conn = sqlite3.connect(db_path)
-    conn.executescript("""
-        CREATE TABLE IF NOT EXISTS races (
-            id INTEGER PRIMARY KEY, fc_race_id TEXT, year INT, category TEXT);
-        CREATE TABLE IF NOT EXISTS competitions (
-            id INTEGER PRIMARY KEY, race_id INT, competition_type TEXT);
-        CREATE TABLE IF NOT EXISTS rider_results (
-            id INTEGER PRIMARY KEY, competition_id INT);
-    """)
+    conn.executescript(_SCHEMA)
     cur = conn.execute(
         "INSERT INTO races (fc_race_id, year, category) VALUES (?, 2026, 'wt')",
         (str(fc_race_id),))
@@ -213,3 +264,77 @@ def test_fully_migrated_race_is_not_refreshed(tmp_path):
 def test_stale_pickle_never_deletes_fuller_db_row(tmp_path):
     race = _stage_race("Tour", 17, MIDRACE)  # 1 result stage, no GC
     assert _refresh_keys(tmp_path, race, db_stages=5, db_gc=True) == set()
+
+
+# ---------------------------------------------------------------------------
+# Incomplete-race detection (delete + re-migrate trigger)
+# ---------------------------------------------------------------------------
+
+def _seed_race_comps(db_path, fc_race_id, comps):
+    """Insert one race with explicit competitions: (type, date, n_results)."""
+    conn = sqlite3.connect(db_path)
+    conn.executescript(_SCHEMA)
+    cur = conn.execute(
+        "INSERT INTO races (fc_race_id, year, category) VALUES (?, 2026, 'wt')",
+        (str(fc_race_id),))
+    race_id = cur.lastrowid
+    for comp_type, comp_date, n_results in comps:
+        c = conn.execute(
+            "INSERT INTO competitions (race_id, competition_type, date) "
+            "VALUES (?, ?, ?)",
+            (race_id, comp_type, comp_date)).lastrowid
+        for _ in range(n_results):
+            conn.execute(
+                "INSERT INTO rider_results (competition_id) VALUES (?)", (c,))
+    conn.commit()
+    conn.close()
+
+
+@pytest.mark.unit
+def test_cancelled_stage_with_final_gc_is_not_incomplete(tmp_path):
+    db = str(tmp_path / "t.db")
+    _seed_race_comps(db, 4, [("stage", LONG_AGO, 5), ("stage", LONG_AGO, 0),
+                             ("gc", LONG_AGO, 5)])
+    assert _get_incomplete_race_keys(db, [2026]) == set()
+
+
+@pytest.mark.unit
+def test_cancelled_stage_in_gcless_settled_race_is_not_incomplete(tmp_path):
+    # The DB image of Vuelta a Murcia 2026: no gc competition exists because
+    # FirstCycling never published one, and stage 2 is a zero-result comp
+    # with a long-past date. Flagging it deleted + re-migrated the race every
+    # pipeline run, churning competition ids with no data change.
+    db = str(tmp_path / "t.db")
+    _seed_race_comps(db, 74, [("stage", LONG_AGO, 5), ("stage", LONG_AGO, 0)])
+    assert _get_incomplete_race_keys(db, [2026]) == set()
+
+
+@pytest.mark.unit
+def test_midrace_race_with_unraced_stages_is_still_incomplete(tmp_path):
+    # Mid-race: unraced stages migrate as empty comps that are undated or
+    # future-dated and no gc comp exists yet — must keep re-migrating.
+    db = str(tmp_path / "t.db")
+    _seed_race_comps(db, 17, [("stage", YESTERDAY, 5), ("stage", None, 0),
+                              ("stage", TOMORROW, 0)])
+    assert _get_incomplete_race_keys(db, [2026]) == {("17", 2026, "wt")}
+
+
+@pytest.mark.unit
+def test_gcless_empty_stage_within_grace_is_still_incomplete(tmp_path):
+    # Race just ended, no GC yet, one stage result-less: results may merely
+    # not be posted — keep flagging until the grace passes.
+    db = str(tmp_path / "t.db")
+    _seed_race_comps(db, 5, [("stage", YESTERDAY, 5), ("stage", YESTERDAY, 0)])
+    assert _get_incomplete_race_keys(db, [2026]) == {("5", 2026, "wt")}
+
+
+@pytest.mark.unit
+def test_race_without_competitions_is_incomplete(tmp_path):
+    db = str(tmp_path / "t.db")
+    conn = sqlite3.connect(db)
+    conn.executescript(_SCHEMA)
+    conn.execute(
+        "INSERT INTO races (fc_race_id, year, category) VALUES ('9', 2026, 'wt')")
+    conn.commit()
+    conn.close()
+    assert _get_incomplete_race_keys(db, [2026]) == {("9", 2026, "wt")}

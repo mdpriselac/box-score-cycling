@@ -1,5 +1,5 @@
 import os
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from random import randint
 from time import sleep
 import pickle
@@ -21,6 +21,13 @@ logger.info(f"Database path: {DB_PATH}")
 TOURS = ['wt', 'pro', 'd1']
 SLEEP_MIN = 3
 SLEEP_MAX = 8
+
+# How long after a race's last stage date missing results still mean "not
+# posted yet" (keep re-scraping) rather than "never coming" (stage was
+# cancelled). FirstCycling posts results same-day, so anything older than
+# this without results — in a race that is otherwise over — is a cancelled
+# stage, not lag. Shared by update_pipeline's incomplete-race check.
+RESULTS_POSTING_GRACE_DAYS = 7
 
 
 def _parse_race_date(raw_date) -> Optional[date]:
@@ -116,30 +123,36 @@ def create_to_scrape_list_tour(tour_folder_path: str) -> List[Tuple[str, str]]:
                 is_stale = False
                 if hasattr(race, 'stages') and race.stages:
                     # Stage race: stale if any stage is missing results and is
-                    # not provably in the future. Completed races carry a date
-                    # AND results on every stage (GC included); an in-progress
-                    # race has result-less stages that are either past-dated or
-                    # undated (FirstCycling omits the date div on unraced stage
-                    # pages), so it re-scrapes every run until the GC posts.
-                    # The undated rule is gated on the final GC being absent so
-                    # a completed race with one legitimately result-less stage
-                    # (e.g. weather-cancelled) doesn't refetch forever. "Final
+                    # not provably in the future — the in-progress shape
+                    # (result-less stages either past-dated or undated;
+                    # FirstCycling omits the date div on unraced stage pages),
+                    # which re-scrapes every run until the race settles. A
+                    # settled race never refetches: its result-less stages are
+                    # legitimately empty (weather-cancelled), not pending.
+                    # Settled means the final GC posted, OR every stage is
+                    # dated with the last one more than the posting grace in
+                    # the past — FirstCycling publishes no GC at all when a
+                    # short race loses a stage (Vuelta a Murcia 2026). "Final
                     # GC" means a CLASSIFIED row — mid-race, race.results holds
                     # only the DNF board (place='DNF'), which doesn't count.
                     has_final_gc = any(
                         str(r.get('place', '')).strip().isdigit()
                         for r in (race.results or [])
                     )
-                    for stage in race.stages:
-                        if getattr(stage, 'results', None):
-                            continue
-                        stage_date = _parse_race_date(stage.date)
-                        if stage_date and stage_date <= date.today():
-                            is_stale = True
-                            break
-                        if stage_date is None and not has_final_gc:
-                            is_stale = True
-                            break
+                    stage_dates = [_parse_race_date(s.date) for s in race.stages]
+                    concluded_past_grace = (
+                        all(d is not None for d in stage_dates)
+                        and max(stage_dates)
+                        <= date.today() - timedelta(days=RESULTS_POSTING_GRACE_DAYS)
+                    )
+                    if not (has_final_gc or concluded_past_grace):
+                        for stage in race.stages:
+                            if getattr(stage, 'results', None):
+                                continue
+                            stage_date = _parse_race_date(stage.date)
+                            if stage_date is None or stage_date <= date.today():
+                                is_stale = True
+                                break
                 else:
                     # One-day race: stale if past date and no results
                     if not bool(race.results):

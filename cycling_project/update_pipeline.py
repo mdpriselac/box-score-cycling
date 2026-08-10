@@ -225,9 +225,24 @@ def _get_incomplete_race_keys(
 
     Only checks the specified years to avoid touching historical data where
     empty competitions may be legitimate (e.g. GC classifications).
+
+    A zero-result stage competition is excused when the race is SETTLED — its
+    GC competition has results, or every competition is dated with the newest
+    past the results-posting grace. Such a stage was weather-cancelled, not
+    half-migrated (Vuelta a Murcia 2026: stage 2 cancelled and FirstCycling
+    published no GC at all); flagging it would delete + re-migrate the race
+    every run, churning competition ids with no data change. In-progress
+    races stay flagged: their unraced stages are undated or future-dated and
+    no classified GC exists yet, so the mid-race refresh flow is unaffected.
     """
+    from cycling_project.webscrape_tools.download_race_data import (
+        RESULTS_POSTING_GRACE_DAYS,
+    )
+
     if not years:
         return set()
+    today = date.today()
+    grace_cutoff = today - timedelta(days=RESULTS_POSTING_GRACE_DAYS)
     conn = sqlite3.connect(db_path)
     placeholders = ",".join("?" for _ in years)
     cursor = conn.execute(f"""
@@ -236,12 +251,28 @@ def _get_incomplete_race_keys(
         JOIN competitions c ON c.race_id = r.id
         LEFT JOIN rider_results rr ON rr.competition_id = c.id
         WHERE rr.id IS NULL AND r.year IN ({placeholders})
+          AND NOT (
+            c.competition_type = 'stage'
+            AND c.date IS NOT NULL AND c.date <= ?
+            AND (
+              EXISTS (
+                SELECT 1 FROM competitions g
+                JOIN rider_results grr ON grr.competition_id = g.id
+                WHERE g.race_id = r.id AND g.competition_type = 'gc'
+              )
+              OR NOT EXISTS (
+                SELECT 1 FROM competitions s
+                WHERE s.race_id = r.id
+                  AND (s.date IS NULL OR s.date > ?)
+              )
+            )
+          )
         UNION
         SELECT r.fc_race_id, r.year, r.category
         FROM races r
         LEFT JOIN competitions c ON c.race_id = r.id
         WHERE c.id IS NULL AND r.year IN ({placeholders})
-    """, years + years)
+    """, years + [today.isoformat(), grace_cutoff.isoformat()] + years)
     keys = {(str(row[0]), row[1], row[2]) for row in cursor.fetchall()}
     conn.close()
     return keys
