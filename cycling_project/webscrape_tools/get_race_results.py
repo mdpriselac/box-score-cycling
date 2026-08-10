@@ -395,39 +395,48 @@ def extract_race_date(race_page_soup: BeautifulSoup) -> Optional[str]:
         Race date string in YYYY-MM-DD format or None if extraction fails
     """
     logger.info("Extracting race date")
-    
+
     try:
-        # Find the div tag with id='race' within the body tag, and get the first h2 tag
         body = race_page_soup.find('body')
         if not body:
             logger.warning("No body tag found in page")
             return None
-            
+
+        # The date lives in a header block whose markup FirstCycling has
+        # changed over time: originally the first <h2> inside <div id='race'>,
+        # since 2026-08 a <div id='raceSub'> info line ("Grand Tour, 9th
+        # stage, 12th July 2026, France"). Try each known container in turn.
+        date_str = None
         race_div = body.find('div', id='race')
-        if not race_div:
-            logger.warning("No div with id='race' found")
+        if race_div:
+            h2_tag = race_div.find('h2')
+            if h2_tag:
+                date_str = h2_tag.get_text(strip=True, separator=' ')
+        if date_str is None:
+            race_sub = body.find('div', id='raceSub')
+            if race_sub:
+                date_str = race_sub.get_text(strip=True, separator=' ')
+        if date_str is None:
+            logger.warning("No date container found (div#race h2 / div#raceSub)")
             return None
-            
-        h2_tag = race_div.find('h2')
-        if not h2_tag:
-            logger.warning("No h2 tag found in race div")
-            return None
-            
-        date_str = h2_tag.get_text(strip=True, separator=' ')
-        logger.debug(f"Found date string in h2: '{date_str}'")
-        
-        # Extract the date using regex
+        logger.debug(f"Found date string: '{date_str}'")
+
+        # Extract the date using regex. A race-page range ("4th -26th July
+        # 2026") matches on its complete trailing date, which is what the
+        # one-day path wants.
         date_match = re.search(r'\d{1,2}(?:st|nd|rd|th)?\s+[A-Za-z]+\s+\d{4}', date_str)
         if not date_match:
             logger.warning(f"Date pattern not found in: '{date_str}'")
             return None
-            
+
         date_str = date_match.group(0)
         logger.debug(f"Extracted date string: '{date_str}'")
-        
-        # Remove ordinal suffixes
-        date_str = re.sub(r'(st|nd|rd|th)', '', date_str)
-        
+
+        # Remove ordinal suffixes only when attached to the day number — a
+        # bare (st|nd|rd|th) substitution corrupts month names ("August" ->
+        # "Augu"), which silently nulled every August race date.
+        date_str = re.sub(r'(\d{1,2})(st|nd|rd|th)\b', r'\1', date_str)
+
         # Parse the date string
         try:
             date_obj = datetime.strptime(date_str, '%d %B %Y')
@@ -437,7 +446,7 @@ def extract_race_date(race_page_soup: BeautifulSoup) -> Optional[str]:
         except Exception as e:
             logger.error(f"Error parsing date string '{date_str}': {e}")
             return None
-            
+
     except Exception as e:
         logger.error(f"Error extracting race date: {e}")
         return None
