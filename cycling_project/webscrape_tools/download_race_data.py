@@ -113,7 +113,12 @@ def create_to_scrape_list_tour(tour_folder_path: str) -> List[Tuple[str, str]]:
     # Get a list of .pkl files in the tour folder
     try:
         scraped_races = [f for f in os.listdir(tour_folder_path) if f.endswith('.pkl')]
-        scraped_race_names = set(f.split('.')[0] for f in scraped_races)
+        # Strip only the ".pkl" extension — race names contain periods
+        # ("Kamp. van Vlaanderen", "Pro Ötztaler 5.500"), so split('.')
+        # truncated the stem: it never matched its races.txt entry (the race
+        # re-scraped on every run) and the staleness loop below opened a
+        # nonexistent "<stem>.pkl" (warned every run, never actually checked).
+        scraped_race_names = set(os.path.splitext(f)[0] for f in scraped_races)
 
         # Check existing pkls for stale data (past races with no results)
         stale_names = set()

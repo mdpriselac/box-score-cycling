@@ -23,6 +23,15 @@ And the cancelled-stage churn fixed 2026-08-09:
    date was stale forever (Duo Normand 2012–19 — FirstCycling never posts
    its results), deleted + re-fetched on every run over its folder. Now
    only a date within the posting grace ("results not up yet") is stale.
+
+And the dotted-name stem truncation fixed 2026-08-09:
+
+5. create_to_scrape_list_tour derived pickle stems with split('.'), so a
+   race name containing a period ("Kamp. van Vlaanderen", "Pro Ötztaler
+   5.500") never matched its races.txt entry — re-scraped on every run
+   despite a complete pickle — and the staleness loop opened a nonexistent
+   "<stem>.pkl" ("Kamp.pkl"), warning every run and never actually
+   checking the real pickle.
 """
 
 import pickle
@@ -195,6 +204,40 @@ def test_resultless_undated_oneday_race_is_not_stale(tmp_path):
     # (pre-fix behavior, preserved).
     tour = _tour_dir_with(tmp_path, _one_day_race("Undated", 9, None, False))
     assert create_to_scrape_list_tour(str(tour)) == []
+
+
+@pytest.mark.unit
+def test_dotted_race_name_with_complete_pickle_is_not_rescraped(tmp_path):
+    # Stems came from split('.'), so "Kamp. van Vlaanderen.pkl" registered
+    # as "Kamp" — never matching its races.txt entry — and the race was
+    # re-scraped on every run over its folder despite the complete pickle.
+    tour = _tour_dir_with(
+        tmp_path, _one_day_race("Kamp. van Vlaanderen", 10, YESTERDAY, True))
+    assert create_to_scrape_list_tour(str(tour)) == []
+    assert (tour / "Kamp. van Vlaanderen.pkl").exists()
+
+
+@pytest.mark.unit
+def test_multidot_race_name_with_complete_pickle_is_not_rescraped(tmp_path):
+    # Only the final ".pkl" may be stripped: "Pro Ötztaler 5.500" must
+    # survive stem derivation whole, dots and all.
+    tour = _tour_dir_with(
+        tmp_path, _one_day_race("Pro Ötztaler 5.500", 11, YESTERDAY, True))
+    assert create_to_scrape_list_tour(str(tour)) == []
+    assert (tour / "Pro Ötztaler 5.500.pkl").exists()
+
+
+@pytest.mark.unit
+def test_dotted_race_name_stale_pickle_is_still_detected(tmp_path):
+    # The staleness loop opened "<stem>.pkl" ("Mem.pkl"), which doesn't
+    # exist, so dotted-name pickles were never staleness-checked ("Error
+    # checking pkl" warning every run). The deletion proves the loop now
+    # opens the real dotted filename: raced yesterday, no results yet —
+    # stale, so re-scrape and drop the pickle.
+    tour = _tour_dir_with(
+        tmp_path, _one_day_race("Mem. Van Steenbergen", 12, YESTERDAY, False))
+    assert create_to_scrape_list_tour(str(tour)) == [("Mem. Van Steenbergen", "u")]
+    assert not (tour / "Mem. Van Steenbergen.pkl").exists()
 
 
 # ---------------------------------------------------------------------------
