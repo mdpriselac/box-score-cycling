@@ -1,0 +1,813 @@
+{
+  "summary": {
+    "generated_at": "20260808_172753",
+    "n_stage_comps": 4033,
+    "n_pool": 2128,
+    "n_residual": 951,
+    "n_residual_wide": 990,
+    "n_residual_gt": 239,
+    "residual_wide_per_gt_edition_mean": 8.13,
+    "anchor_matching": {
+      "residual_best_cos_median": 0.944,
+      "residual_ge_080": 0.985,
+      "match_margin_median": 0.014,
+      "note": "raw best-cos is non-discriminative (dense anchor space); menu lives at cluster level, anchors are display labels"
+    },
+    "k_bic_range": {},
+    "k_used": 8,
+    "menu_items": [
+      {
+        "item": 0,
+        "n": 12,
+        "n_gt": 0,
+        "canonical_shares": {
+          "sprint": 0.3278,
+          "mountain": 0.0222,
+          "hilly": 0.1167,
+          "rolling": 0.0611,
+          "breakaway": 0.1278,
+          "time_trial": 0.2778,
+          "unknown": 0.0667
+        },
+        "canonical_shape": {
+          "wg_prop": 0.012,
+          "winner_margin": 1.5,
+          "chase_gap": 3.0,
+          "frac_30s": 0.469,
+          "top15_spread": 12.0
+        },
+        "winner_archetypes": {
+          "time_trial": 0.5,
+          "sprint": 0.25,
+          "hilly": 0.167,
+          "breakaway": 0.083
+        },
+        "anchors": [
+          {
+            "name": "Dwars door Vlaanderen",
+            "cos": 0.98
+          },
+          {
+            "name": "Paris-Roubaix",
+            "cos": 0.961
+          },
+          {
+            "name": "In Flanders Fields",
+            "cos": 0.955
+          }
+        ],
+        "gt_examples": []
+      },
+      {
+        "item": 1,
+        "n": 120,
+        "n_gt": 29,
+        "canonical_shares": {
+          "sprint": 0.0667,
+          "mountain": 0.2656,
+          "hilly": 0.0894,
+          "rolling": 0.1994,
+          "breakaway": 0.1172,
+          "time_trial": 0.2617,
+          "unknown": 0.0
+        },
+        "canonical_shape": {
+          "wg_prop": 0.01,
+          "winner_margin": 3.0,
+          "chase_gap": 8.0,
+          "frac_30s": 0.105,
+          "top15_spread": 35.0
+        },
+        "winner_archetypes": {
+          "time_trial": 0.417,
+          "mountain": 0.2,
+          "breakaway": 0.142,
+          "rolling": 0.117,
+          "sprint": 0.067,
+          "hilly": 0.058
+        },
+        "anchors": [
+          {
+            "name": "GP Montreal",
+            "cos": 0.955
+          },
+          {
+            "name": "Tre Valli Varesine",
+            "cos": 0.942
+          },
+          {
+            "name": "Japan Cup",
+            "cos": 0.939
+          }
+        ],
+        "gt_examples": [
+          "Giro d'Italia 2026 st5",
+          "Giro d'Italia 2026 st11",
+          "Giro d'Italia 2026 st13"
+        ]
+      },
+      {
+        "item": 2,
+        "n": 93,
+        "n_gt": 19,
+        "canonical_shares": {
+          "sprint": 0.172,
+          "mountain": 0.2616,
+          "hilly": 0.0789,
+          "rolling": 0.1584,
+          "breakaway": 0.1878,
+          "time_trial": 0.1412,
+          "unknown": 0.0
+        },
+        "canonical_shape": {
+          "wg_prop": 0.02,
+          "winner_margin": 0.0,
+          "chase_gap": 6.0,
+          "frac_30s": 0.165,
+          "top15_spread": 19.0
+        },
+        "winner_archetypes": {
+          "sprint": 0.258,
+          "breakaway": 0.204,
+          "time_trial": 0.183,
+          "mountain": 0.151,
+          "rolling": 0.118,
+          "hilly": 0.086
+        },
+        "anchors": [
+          {
+            "name": "Milano - Torino",
+            "cos": 0.941
+          },
+          {
+            "name": "Japan Cup",
+            "cos": 0.939
+          },
+          {
+            "name": "Gran Piemonte",
+            "cos": 0.928
+          }
+        ],
+        "gt_examples": [
+          "Tour de France 2025 st11",
+          "Giro d'Italia 2024 st12",
+          "Vuelta a Espa\u00f1a 2023 st1"
+        ]
+      },
+      {
+        "item": 3,
+        "n": 104,
+        "n_gt": 20,
+        "canonical_shares": {
+          "sprint": 0.0942,
+          "mountain": 0.159,
+          "hilly": 0.0712,
+          "rolling": 0.1167,
+          "breakaway": 0.0,
+          "time_trial": 0.559,
+          "unknown": 0.0
+        },
+        "canonical_shape": {
+          "wg_prop": 0.008,
+          "winner_margin": 4.0,
+          "chase_gap": 7.0,
+          "frac_30s": 0.101,
+          "top15_spread": 30.5
+        },
+        "winner_archetypes": {
+          "time_trial": 0.75,
+          "mountain": 0.077,
+          "sprint": 0.067,
+          "rolling": 0.058,
+          "hilly": 0.048
+        },
+        "anchors": [
+          {
+            "name": "E3 Saxo Classic",
+            "cos": 0.9
+          },
+          {
+            "name": "Ronde van Vlaanderen",
+            "cos": 0.864
+          },
+          {
+            "name": "Paris-Roubaix",
+            "cos": 0.844
+          }
+        ],
+        "gt_examples": [
+          "Giro d'Italia 2025 st2",
+          "Giro d'Italia 2025 st10",
+          "Giro d'Italia 2025 st14"
+        ]
+      },
+      {
+        "item": 4,
+        "n": 241,
+        "n_gt": 31,
+        "canonical_shares": {
+          "sprint": 0.2932,
+          "mountain": 0.1035,
+          "hilly": 0.1472,
+          "rolling": 0.0963,
+          "breakaway": 0.1054,
+          "time_trial": 0.2545,
+          "unknown": 0.0
+        },
+        "canonical_shape": {
+          "wg_prop": 0.018,
+          "winner_margin": 0.0,
+          "chase_gap": 5.0,
+          "frac_30s": 0.358,
+          "top15_spread": 13.0
+        },
+        "winner_archetypes": {
+          "time_trial": 0.378,
+          "sprint": 0.274,
+          "hilly": 0.129,
+          "breakaway": 0.1,
+          "rolling": 0.062,
+          "mountain": 0.058
+        },
+        "anchors": [
+          {
+            "name": "Dwars door Vlaanderen",
+            "cos": 0.961
+          },
+          {
+            "name": "Milano-Sanremo",
+            "cos": 0.953
+          },
+          {
+            "name": "Paris-Roubaix",
+            "cos": 0.951
+          }
+        ],
+        "gt_examples": [
+          "Giro d'Italia 2026 st12",
+          "Giro d'Italia 2025 st18",
+          "Tour de France 2025 st20"
+        ]
+      },
+      {
+        "item": 5,
+        "n": 286,
+        "n_gt": 127,
+        "canonical_shares": {
+          "sprint": 0.0,
+          "mountain": 0.4233,
+          "hilly": 0.0427,
+          "rolling": 0.1793,
+          "breakaway": 0.076,
+          "time_trial": 0.2788,
+          "unknown": 0.0
+        },
+        "canonical_shape": {
+          "wg_prop": 0.007,
+          "winner_margin": 7.0,
+          "chase_gap": 12.0,
+          "frac_30s": 0.038,
+          "top15_spread": 71.0
+        },
+        "winner_archetypes": {
+          "time_trial": 0.413,
+          "mountain": 0.252,
+          "rolling": 0.168,
+          "breakaway": 0.108,
+          "hilly": 0.059
+        },
+        "anchors": [
+          {
+            "name": "Il Lombardia",
+            "cos": 0.955
+          },
+          {
+            "name": "Faun-Ard\u00e8che Classic",
+            "cos": 0.94
+          },
+          {
+            "name": "Giro dell'Emilia",
+            "cos": 0.935
+          }
+        ],
+        "gt_examples": [
+          "Giro d'Italia 2026 st8",
+          "Giro d'Italia 2026 st17",
+          "Giro d'Italia 2025 st7"
+        ]
+      },
+      {
+        "item": 6,
+        "n": 6,
+        "n_gt": 0,
+        "canonical_shares": {
+          "sprint": 0.1444,
+          "mountain": 0.1333,
+          "hilly": 0.0889,
+          "rolling": 0.1222,
+          "breakaway": 0.1222,
+          "time_trial": 0.1222,
+          "unknown": 0.2667
+        },
+        "canonical_shape": {
+          "wg_prop": 0.02,
+          "winner_margin": 1.5,
+          "chase_gap": 11.0,
+          "frac_30s": 0.657,
+          "top15_spread": 13.5
+        },
+        "winner_archetypes": {
+          "hilly": 0.333,
+          "unknown": 0.333,
+          "mountain": 0.167,
+          "sprint": 0.167
+        },
+        "anchors": [
+          {
+            "name": "Cadel Evans Great Ocean Road Race",
+            "cos": 0.724
+          },
+          {
+            "name": "Gran Piemonte",
+            "cos": 0.724
+          },
+          {
+            "name": "Grand Prix du Morbihan",
+            "cos": 0.721
+          }
+        ],
+        "gt_examples": []
+      },
+      {
+        "item": 7,
+        "n": 89,
+        "n_gt": 13,
+        "canonical_shares": {
+          "sprint": 0.5573,
+          "mountain": 0.0187,
+          "hilly": 0.1228,
+          "rolling": 0.0217,
+          "breakaway": 0.1431,
+          "time_trial": 0.1363,
+          "unknown": 0.0
+        },
+        "canonical_shape": {
+          "wg_prop": 0.026,
+          "winner_margin": 0.0,
+          "chase_gap": 5.0,
+          "frac_30s": 0.561,
+          "top15_spread": 7.0
+        },
+        "winner_archetypes": {
+          "sprint": 0.584,
+          "time_trial": 0.191,
+          "breakaway": 0.135,
+          "hilly": 0.067,
+          "mountain": 0.011,
+          "rolling": 0.011
+        },
+        "anchors": [
+          {
+            "name": "M\u00fcnsterland Giro",
+            "cos": 0.998
+          },
+          {
+            "name": "Brussels Cycling Classic",
+            "cos": 0.995
+          },
+          {
+            "name": "Ronde Van Brugge - Tour of Bruges",
+            "cos": 0.994
+          }
+        ],
+        "gt_examples": [
+          "Giro d'Italia 2026 st15",
+          "Giro d'Italia 2024 st5",
+          "Giro d'Italia 2023 st10"
+        ]
+      }
+    ]
+  },
+  "tdf_2026_validation": [
+    {
+      "stage": 2,
+      "rule": "small_group",
+      "wg_size": 4,
+      "winner": "del Toro Isaac",
+      "winner_gc": 3.0,
+      "in_pool": true,
+      "residual": false,
+      "cluster": 5,
+      "anchor1": "La Fl\u00e8che Wallonne",
+      "cos1": 0.947,
+      "anchor2": "Li\u00e8ge-Bastogne-Li\u00e8ge",
+      "cos2": 0.898,
+      "share_sprint": 0.0,
+      "share_mountain": 0.2,
+      "share_hilly": 0.0,
+      "share_rolling": 0.6,
+      "share_breakaway": 0.0,
+      "share_time_trial": 0.2,
+      "share_unknown": 0.0
+    },
+    {
+      "stage": 3,
+      "rule": "solo",
+      "wg_size": 1,
+      "winner": "Pogacar Tadej",
+      "winner_gc": 1.0,
+      "in_pool": true,
+      "residual": false,
+      "cluster": 5,
+      "anchor1": "La Fl\u00e8che Wallonne",
+      "cos1": 0.974,
+      "anchor2": "Li\u00e8ge-Bastogne-Li\u00e8ge",
+      "cos2": 0.956,
+      "share_sprint": 0.0,
+      "share_mountain": 0.267,
+      "share_hilly": 0.0,
+      "share_rolling": 0.467,
+      "share_breakaway": 0.0,
+      "share_time_trial": 0.267,
+      "share_unknown": 0.0
+    },
+    {
+      "stage": 4,
+      "rule": "reduced_sprint",
+      "wg_size": 10,
+      "winner": "Pedersen Mads",
+      "winner_gc": 80.0,
+      "in_pool": true,
+      "residual": true,
+      "cluster": 1,
+      "anchor1": "E3 Saxo Classic",
+      "cos1": 0.988,
+      "anchor2": "Ronde van Vlaanderen",
+      "cos2": 0.981,
+      "share_sprint": 0.067,
+      "share_mountain": 0.067,
+      "share_hilly": 0.133,
+      "share_rolling": 0.2,
+      "share_breakaway": 0.133,
+      "share_time_trial": 0.4,
+      "share_unknown": 0.0
+    },
+    {
+      "stage": 5,
+      "rule": "reduced_sprint",
+      "wg_size": 19,
+      "winner": "Kooij Olav",
+      "winner_gc": 149.0,
+      "in_pool": true,
+      "residual": true,
+      "cluster": 7,
+      "anchor1": "In Flanders Fields",
+      "cos1": 0.976,
+      "anchor2": "Kuurne-Brussel-Kuurne",
+      "cos2": 0.966,
+      "share_sprint": 0.467,
+      "share_mountain": 0.0,
+      "share_hilly": 0.133,
+      "share_rolling": 0.067,
+      "share_breakaway": 0.067,
+      "share_time_trial": 0.267,
+      "share_unknown": 0.0
+    },
+    {
+      "stage": 6,
+      "rule": "solo",
+      "wg_size": 1,
+      "winner": "Pogacar Tadej",
+      "winner_gc": 1.0,
+      "in_pool": true,
+      "residual": false,
+      "cluster": 5,
+      "anchor1": "Li\u00e8ge-Bastogne-Li\u00e8ge",
+      "cos1": 0.979,
+      "anchor2": "La Fl\u00e8che Wallonne",
+      "cos2": 0.971,
+      "share_sprint": 0.0,
+      "share_mountain": 0.333,
+      "share_hilly": 0.0,
+      "share_rolling": 0.4,
+      "share_breakaway": 0.0,
+      "share_time_trial": 0.267,
+      "share_unknown": 0.0
+    },
+    {
+      "stage": 7,
+      "rule": "mass_sprint",
+      "wg_size": 100,
+      "winner": "Merlier Tim",
+      "winner_gc": NaN,
+      "in_pool": false,
+      "residual": false,
+      "cluster": -1,
+      "anchor1": "Ronde Van Brugge - Tour of Bruges",
+      "cos1": 0.984,
+      "anchor2": "M\u00fcnsterland Giro",
+      "cos2": 0.968,
+      "share_sprint": 0.6,
+      "share_mountain": 0.0,
+      "share_hilly": 0.067,
+      "share_rolling": 0.0,
+      "share_breakaway": 0.067,
+      "share_time_trial": 0.267,
+      "share_unknown": 0.0
+    },
+    {
+      "stage": 8,
+      "rule": "mass_sprint",
+      "wg_size": 89,
+      "winner": "Merlier Tim",
+      "winner_gc": NaN,
+      "in_pool": false,
+      "residual": false,
+      "cluster": -1,
+      "anchor1": "Ronde Van Brugge - Tour of Bruges",
+      "cos1": 0.997,
+      "anchor2": "M\u00fcnsterland Giro",
+      "cos2": 0.989,
+      "share_sprint": 0.6,
+      "share_mountain": 0.0,
+      "share_hilly": 0.133,
+      "share_rolling": 0.0,
+      "share_breakaway": 0.067,
+      "share_time_trial": 0.2,
+      "share_unknown": 0.0
+    },
+    {
+      "stage": 9,
+      "rule": "small_group",
+      "wg_size": 4,
+      "winner": "van der Poel Mathieu",
+      "winner_gc": 75.0,
+      "in_pool": true,
+      "residual": true,
+      "cluster": 5,
+      "anchor1": "La Fl\u00e8che Wallonne",
+      "cos1": 0.982,
+      "anchor2": "San Sebastian Klasikoa",
+      "cos2": 0.952,
+      "share_sprint": 0.0,
+      "share_mountain": 0.2,
+      "share_hilly": 0.067,
+      "share_rolling": 0.467,
+      "share_breakaway": 0.067,
+      "share_time_trial": 0.2,
+      "share_unknown": 0.0
+    },
+    {
+      "stage": 10,
+      "rule": "solo",
+      "wg_size": 1,
+      "winner": "Pogacar Tadej",
+      "winner_gc": 1.0,
+      "in_pool": true,
+      "residual": false,
+      "cluster": 5,
+      "anchor1": "La Fl\u00e8che Wallonne",
+      "cos1": 0.975,
+      "anchor2": "Li\u00e8ge-Bastogne-Li\u00e8ge",
+      "cos2": 0.965,
+      "share_sprint": 0.0,
+      "share_mountain": 0.267,
+      "share_hilly": 0.067,
+      "share_rolling": 0.4,
+      "share_breakaway": 0.0,
+      "share_time_trial": 0.267,
+      "share_unknown": 0.0
+    },
+    {
+      "stage": 11,
+      "rule": "mass_sprint",
+      "wg_size": 119,
+      "winner": "W\u00e6renskjold S\u00f8ren",
+      "winner_gc": 138.0,
+      "in_pool": false,
+      "residual": false,
+      "cluster": -1,
+      "anchor1": "GP de Denain",
+      "cos1": 0.979,
+      "anchor2": "Kuurne-Brussel-Kuurne",
+      "cos2": 0.979,
+      "share_sprint": 0.467,
+      "share_mountain": 0.0,
+      "share_hilly": 0.2,
+      "share_rolling": 0.067,
+      "share_breakaway": 0.067,
+      "share_time_trial": 0.2,
+      "share_unknown": 0.0
+    },
+    {
+      "stage": 12,
+      "rule": "mass_sprint",
+      "wg_size": 144,
+      "winner": "Merlier Tim",
+      "winner_gc": NaN,
+      "in_pool": false,
+      "residual": false,
+      "cluster": -1,
+      "anchor1": "GP de Denain",
+      "cos1": 0.979,
+      "anchor2": "Kuurne-Brussel-Kuurne",
+      "cos2": 0.979,
+      "share_sprint": 0.467,
+      "share_mountain": 0.0,
+      "share_hilly": 0.2,
+      "share_rolling": 0.067,
+      "share_breakaway": 0.067,
+      "share_time_trial": 0.2,
+      "share_unknown": 0.0
+    },
+    {
+      "stage": 13,
+      "rule": "tiny_group",
+      "wg_size": 2,
+      "winner": "Schmid Mauro",
+      "winner_gc": 35.0,
+      "in_pool": true,
+      "residual": true,
+      "cluster": 5,
+      "anchor1": "Strade Bianche",
+      "cos1": 0.973,
+      "anchor2": "Ronde van Vlaanderen",
+      "cos2": 0.93,
+      "share_sprint": 0.0,
+      "share_mountain": 0.133,
+      "share_hilly": 0.067,
+      "share_rolling": 0.267,
+      "share_breakaway": 0.133,
+      "share_time_trial": 0.4,
+      "share_unknown": 0.0
+    },
+    {
+      "stage": 14,
+      "rule": "solo",
+      "wg_size": 1,
+      "winner": "Pogacar Tadej",
+      "winner_gc": 1.0,
+      "in_pool": true,
+      "residual": false,
+      "cluster": 5,
+      "anchor1": "Li\u00e8ge-Bastogne-Li\u00e8ge",
+      "cos1": 0.979,
+      "anchor2": "La Fl\u00e8che Wallonne",
+      "cos2": 0.971,
+      "share_sprint": 0.0,
+      "share_mountain": 0.333,
+      "share_hilly": 0.0,
+      "share_rolling": 0.4,
+      "share_breakaway": 0.0,
+      "share_time_trial": 0.267,
+      "share_unknown": 0.0
+    },
+    {
+      "stage": 15,
+      "rule": "tiny_group",
+      "wg_size": 2,
+      "winner": "Evenepoel Remco",
+      "winner_gc": 2.0,
+      "in_pool": true,
+      "residual": false,
+      "cluster": 5,
+      "anchor1": "La Fl\u00e8che Wallonne",
+      "cos1": 0.974,
+      "anchor2": "Li\u00e8ge-Bastogne-Li\u00e8ge",
+      "cos2": 0.956,
+      "share_sprint": 0.0,
+      "share_mountain": 0.267,
+      "share_hilly": 0.0,
+      "share_rolling": 0.467,
+      "share_breakaway": 0.0,
+      "share_time_trial": 0.267,
+      "share_unknown": 0.0
+    },
+    {
+      "stage": 16,
+      "rule": "itt_like",
+      "wg_size": 1,
+      "winner": "Evenepoel Remco",
+      "winner_gc": 2.0,
+      "in_pool": false,
+      "residual": false,
+      "cluster": -1,
+      "anchor1": "E3 Saxo Classic",
+      "cos1": 0.884,
+      "anchor2": "Ronde van Vlaanderen",
+      "cos2": 0.858,
+      "share_sprint": 0.0,
+      "share_mountain": 0.067,
+      "share_hilly": 0.0,
+      "share_rolling": 0.267,
+      "share_breakaway": 0.0,
+      "share_time_trial": 0.667,
+      "share_unknown": 0.0
+    },
+    {
+      "stage": 17,
+      "rule": "bunch_sprint",
+      "wg_size": 26,
+      "winner": "Philipsen Jasper",
+      "winner_gc": 135.0,
+      "in_pool": false,
+      "residual": false,
+      "cluster": -1,
+      "anchor1": "Paris-Roubaix",
+      "cos1": 0.953,
+      "anchor2": "Milano-Sanremo",
+      "cos2": 0.946,
+      "share_sprint": 0.267,
+      "share_mountain": 0.067,
+      "share_hilly": 0.2,
+      "share_rolling": 0.133,
+      "share_breakaway": 0.067,
+      "share_time_trial": 0.267,
+      "share_unknown": 0.0
+    },
+    {
+      "stage": 18,
+      "rule": "solo",
+      "wg_size": 1,
+      "winner": "Carapaz Richard",
+      "winner_gc": 8.0,
+      "in_pool": true,
+      "residual": false,
+      "cluster": 5,
+      "anchor1": "La Fl\u00e8che Wallonne",
+      "cos1": 0.953,
+      "anchor2": "Strade Bianche",
+      "cos2": 0.95,
+      "share_sprint": 0.0,
+      "share_mountain": 0.267,
+      "share_hilly": 0.0,
+      "share_rolling": 0.4,
+      "share_breakaway": 0.0,
+      "share_time_trial": 0.333,
+      "share_unknown": 0.0
+    },
+    {
+      "stage": 19,
+      "rule": "itt_like",
+      "wg_size": 1,
+      "winner": "Pogacar Tadej",
+      "winner_gc": 1.0,
+      "in_pool": false,
+      "residual": false,
+      "cluster": -1,
+      "anchor1": "La Fl\u00e8che Wallonne",
+      "cos1": 0.975,
+      "anchor2": "Li\u00e8ge-Bastogne-Li\u00e8ge",
+      "cos2": 0.943,
+      "share_sprint": 0.0,
+      "share_mountain": 0.267,
+      "share_hilly": 0.0,
+      "share_rolling": 0.533,
+      "share_breakaway": 0.067,
+      "share_time_trial": 0.133,
+      "share_unknown": 0.0
+    },
+    {
+      "stage": 20,
+      "rule": "solo",
+      "wg_size": 1,
+      "winner": "Carapaz Richard",
+      "winner_gc": 8.0,
+      "in_pool": true,
+      "residual": false,
+      "cluster": 5,
+      "anchor1": "La Fl\u00e8che Wallonne",
+      "cos1": 0.968,
+      "anchor2": "Li\u00e8ge-Bastogne-Li\u00e8ge",
+      "cos2": 0.957,
+      "share_sprint": 0.0,
+      "share_mountain": 0.333,
+      "share_hilly": 0.0,
+      "share_rolling": 0.533,
+      "share_breakaway": 0.0,
+      "share_time_trial": 0.133,
+      "share_unknown": 0.0
+    },
+    {
+      "stage": 21,
+      "rule": "mass_sprint",
+      "wg_size": 158,
+      "winner": "van der Poel Mathieu",
+      "winner_gc": 75.0,
+      "in_pool": false,
+      "residual": false,
+      "cluster": -1,
+      "anchor1": "GP de Denain",
+      "cos1": 0.986,
+      "anchor2": "In Flanders Fields",
+      "cos2": 0.978,
+      "share_sprint": 0.4,
+      "share_mountain": 0.0,
+      "share_hilly": 0.2,
+      "share_rolling": 0.067,
+      "share_breakaway": 0.133,
+      "share_time_trial": 0.2,
+      "share_unknown": 0.0
+    }
+  ]
+}
