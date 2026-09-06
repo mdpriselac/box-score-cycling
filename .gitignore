@@ -154,3 +154,9 @@ netlify_site/Archive.zip
 performance_eval/runs/releases/
 *.inference_slice.db
 inference_slice.db
+
+# Supabase CLI local state and private signing keys (never commit)
+supabase/.temp/
+supabase/.branches/
+supabase/signing_keys.json
+supabase/**/signing_keys*.json

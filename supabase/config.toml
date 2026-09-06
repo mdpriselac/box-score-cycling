@@ -1,0 +1,115 @@
+# Supabase CLI configuration for the nightly control plane ("CyclingNightly").
+# Local:  cd supabase/.. && supabase start        (needs Docker)
+# Hosted: supabase link --project-ref $SUPABASE_PROJECT_REF && supabase db push
+# Reference: https://supabase.com/docs/guides/local-development/cli/config
+project_id = "cycling-nightly"
+
+[api]
+enabled = true
+port = 54321
+# The control plane lives in `public`; Storage is reached through /storage/v1.
+schemas = ["public", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[api.tls]
+enabled = false
+
+[db]
+port = 54322
+shadow_port = 54320
+health_timeout = "2m"
+# Must match the hosted project (CyclingNightly runs Postgres 17).
+major_version = 17
+
+[db.pooler]
+enabled = false
+port = 54329
+pool_mode = "transaction"
+default_pool_size = 20
+max_client_conn = 100
+
+[db.migrations]
+enabled = true
+schema_paths = []
+
+[db.seed]
+# No seed: registry rows come from `nightly registry sync` on the Mac.
+enabled = false
+sql_paths = ["./seed.sql"]
+
+[db.network_restrictions]
+enabled = false
+allowed_cidrs = ["0.0.0.0/0"]
+allowed_cidrs_v6 = ["::/0"]
+
+[realtime]
+enabled = false
+
+[studio]
+# The dashboard is the day-one operator inbox (README "Inbox workflow").
+enabled = true
+port = 54323
+api_url = "http://127.0.0.1"
+openai_api_key = "env(OPENAI_API_KEY)"
+
+[local_smtp]
+enabled = true
+port = 54324
+
+[storage]
+enabled = true
+# Release bundles carry the inference slice (~270 MB) and models (~206 MB).
+file_size_limit = "1GiB"
+
+[storage.s3_protocol]
+enabled = false
+
+[storage.analytics]
+enabled = false
+
+[storage.vector]
+enabled = false
+
+[auth]
+# Humans (operators) sign in with Supabase Auth; signup is invite-only.
+enabled = true
+site_url = "http://127.0.0.1:3000"
+additional_redirect_urls = ["https://127.0.0.1:3000"]
+jwt_expiry = 3600
+# Path to a JWT signing key generated with `supabase gen signing-key`.
+# NEVER commit the file; keep it under ~/.config/cycling-project/ (README).
+# signing_keys_path = "./signing_keys.json"
+enable_refresh_token_rotation = true
+refresh_token_reuse_interval = 10
+enable_signup = false
+enable_anonymous_sign_ins = false
+enable_manual_linking = false
+minimum_password_length = 12
+password_requirements = "lower_upper_letters_digits"
+
+[auth.email]
+enable_signup = false
+double_confirm_changes = true
+enable_confirmations = true
+secure_password_change = true
+max_frequency = "1s"
+otp_length = 6
+otp_expiry = 3600
+
+[auth.sms]
+enable_signup = false
+enable_confirmations = false
+
+[auth.mfa]
+max_enrolled_factors = 10
+
+[auth.mfa.totp]
+enroll_enabled = true
+verify_enabled = true
+
+[edge_runtime]
+enabled = false
+
+[analytics]
+enabled = false
