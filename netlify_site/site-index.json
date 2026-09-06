@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-09-05 17:30",
+ "generated_at": "2026-09-06 13:51",
  "site_name": "Cycling Race Predictor",
  "races": [
   {
@@ -211,7 +211,7 @@
      "stage": 15,
      "date": "2026-09-06",
      "label": "Stage 15 — Palma del Río → Córdoba, 110.2 km (shortened from 189.7 km, extreme-heat protocol)",
-     "status": "predicted",
+     "status": "settled",
      "predicted": true,
      "url": "/race/vuelta-a-espana/2026/stage-15",
      "asset": "/vuelta-stage15.html",
@@ -277,7 +277,7 @@
     }
    ],
    "n_stages": 21,
-   "n_settled": 13,
+   "n_settled": 14,
    "n_predicted": 15
   },
   {

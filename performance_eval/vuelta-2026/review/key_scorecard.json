@@ -387,5 +387,36 @@
   "covered": true,
   "weight_on_true": 0.4,
   "scored_at": "2026-09-06T10:49:44.204550"
+ },
+ {
+  "stage": 15,
+  "oracle_item": "res_4",
+  "day_class": "residual",
+  "rule_type": "tiny_group",
+  "wg_size": 3,
+  "wg_prop": 0.02,
+  "winning_time": 9300.0,
+  "winner": "van Aert Wout",
+  "winner_gc_morning": 55,
+  "front5_gc_median": 76.0,
+  "top15_shares": {
+   "sprint": 0.067,
+   "mountain": 0.267,
+   "hilly": 0.133,
+   "rolling": 0.133,
+   "breakaway": 0.133,
+   "time_trial": 0.267
+  },
+  "top15_unknown": 0.0,
+  "day_key": {
+   "bunch": 0.55,
+   "res_3": 0.3,
+   "res_1": 0.15
+  },
+  "key_source": "config-root",
+  "exact": false,
+  "covered": false,
+  "weight_on_true": 0.0,
+  "scored_at": "2026-09-06T13:49:10.819722"
  }
 ]
