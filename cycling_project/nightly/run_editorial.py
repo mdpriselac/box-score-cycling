@@ -254,7 +254,8 @@ def _is_post_hoc(key: str, spec: Dict[str, Any], data: Optional[Dict[str, Any]])
 
 
 def _boards_block(pred_dir: Path, config: Dict[str, Any], *, results: Optional[List[Dict[str, Any]]],
-                  id_map: Dict[str, int], include_notes: bool) -> Tuple[List[Dict[str, Any]], Dict[str, str]]:
+                  id_map: Dict[str, int], include_notes: bool,
+                  name_fallback: bool = True) -> Tuple[List[Dict[str, Any]], Dict[str, str]]:
     boards = []
     sources: Dict[str, str] = {}
     actual: Dict[int, Dict[str, Any]] = {}
@@ -295,6 +296,8 @@ def _boards_block(pred_dir: Path, config: Dict[str, Any], *, results: Optional[L
             def _find(r: Dict[str, Any]) -> Optional[Dict[str, Any]]:
                 if r.get("rider_id") in actual:
                     return actual[r["rider_id"]]
+                if not name_fallback:          # the nightly driver joins on rider id only
+                    return None
                 return by_name.get(_name_key(r.get("rider_name") or ""))
             placed = []
             for r in riders:
@@ -352,8 +355,14 @@ def _gc_block(campaign_dir: Path, *, top: int = 10) -> Tuple[Optional[Dict[str, 
     return block, sources
 
 
-def build_facts_bundle(campaign_dir: Path, unit: str, artifact: str, *, db_path: Optional[Path] = None) -> Dict[str, Any]:
-    """Minimal facts bundle when the driver has not produced ``retro_facts.json``."""
+def build_facts_bundle(campaign_dir: Path, unit: str, artifact: str, *, db_path: Optional[Path] = None,
+                       id_map: Optional[Dict[str, int]] = None, name_fallback: bool = True) -> Dict[str, Any]:
+    """Minimal facts bundle when the driver has not produced ``retro_facts.json``.
+
+    ``id_map`` (FC rider id → internal id) overrides the DB lookup; the
+    nightly driver passes the crosswalk + riders map and ``name_fallback=False``
+    so boards join to results on rider id only (chip H).
+    """
     campaign_dir = Path(campaign_dir)
     pred_dir = campaign_dir / "predictions" / unit
     cfg_path = pred_dir / "scenarios.json"
@@ -438,7 +447,8 @@ def build_facts_bundle(campaign_dir: Path, unit: str, artifact: str, *, db_path:
         bundle["market"]["devig_outside_gc_top10_pct"] = round(100 - inside, 1)
 
     boards, board_sources = _boards_block(pred_dir, config, results=results_rows,
-                                          id_map=rider_id_map(db_path), include_notes=retro)
+                                          id_map=id_map if id_map is not None else rider_id_map(db_path),
+                                          include_notes=retro, name_fallback=name_fallback)
     bundle["boards"] = boards
     sources.update(board_sources)
     gc_block, gc_sources = _gc_block(campaign_dir)

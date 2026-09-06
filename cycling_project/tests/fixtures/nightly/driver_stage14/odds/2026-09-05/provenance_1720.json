@@ -1,0 +1,45 @@
+{
+ "source": "Kambi CDN, brand=ubnl, lang=nl_NL, market=NL",
+ "listview_url": "https://eu-offering-api.kambicdn.com/offering/v2018/ubnl/listView/cycling.json?lang=nl_NL&market=NL&useCombined=true",
+ "fetched_at_utc": "2026-09-06T00:20:40+00:00",
+ "events": {
+  "1028797735": {
+   "name": "Etappe 15 (Ronde van Spanje 2026)",
+   "start": "2026-09-06T10:46:00Z",
+   "group": "Stages"
+  },
+  "1028635359": {
+   "name": "Algemeen Klassement (Ronde van Spanje 2026)",
+   "start": "2026-09-13T14:23:00Z",
+   "group": "Classificatie"
+  },
+  "1028797618": {
+   "name": "Bergklassement (Ronde van Spanje 2026)",
+   "start": "2026-09-13T14:23:00Z",
+   "group": "Classificatie"
+  },
+  "1028797616": {
+   "name": "Ploegenklassement (Ronde van Spanje 2026)",
+   "start": "2026-09-13T14:23:00Z",
+   "group": "Classificatie"
+  },
+  "1028797617": {
+   "name": "Jongerenklassement (Ronde van Spanje 2026)",
+   "start": "2026-09-13T14:23:00Z",
+   "group": "Classificatie"
+  },
+  "1028797615": {
+   "name": "Puntenklassement (Ronde van Spanje 2026)",
+   "start": "2026-09-13T14:23:00Z",
+   "group": "Classificatie"
+  }
+ },
+ "overrounds": {
+  "stage_15_vuelta_a_espa_a_2026 | Winnaar | Winnaar": 1.5779,
+  "general_classification_vuelta_a_espa_a_2026 | Winnaar | Winnaar": 1.1984,
+  "mountains_classification_vuelta_a_espa_a_2026 | Winnaar | Winnaar": 1.3527,
+  "team_classification_vuelta_a_espa_a_2026 | Winnaar | Winnaar": 1.097,
+  "young_rider_classification_vuelta_a_espa_a_2026 | Winnaar | Winnaar": 1.194,
+  "points_classification_vuelta_a_espa_a_2026 | Winnaar | Winnaar": 1.1394
+ }
+}

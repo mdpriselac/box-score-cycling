@@ -86,6 +86,21 @@ AGENT_FIELDS = ("agent_key", "agent_exact", "agent_covered", "agent_weight_on_tr
                 "agent_self_flag", "agent_family_covered", "agent_confidence", "agent_replay")
 
 
+def set_campaign(path) -> Path:
+    """Point the module at another campaign directory (``--campaign``; the nightly driver, chip H).
+
+    Every path below is derived from ``CAMPAIGN`` at import time, so re-point
+    them together. The DB path is untouched.
+    """
+    global CAMPAIGN, RESULTS_ROOT, PREDICTIONS_ROOT, SCORECARD, REPLAY_SCORECARD
+    CAMPAIGN = Path(path).resolve()
+    RESULTS_ROOT = CAMPAIGN / "results"
+    PREDICTIONS_ROOT = CAMPAIGN / "predictions"
+    SCORECARD = CAMPAIGN / "review" / "key_scorecard.json"
+    REPLAY_SCORECARD = CAMPAIGN / "review" / "agent_replay_scorecard.json"
+    return CAMPAIGN
+
+
 def latest_archived_stage() -> int:
     stages = sorted(int(p.name.split("_")[1]) for p in RESULTS_ROOT.glob("stage_*")
                     if (p / "results.json").exists())
@@ -228,6 +243,12 @@ def logged_key(stage: int) -> dict | None:
         # promote a hindsight scenario's day_key into the tier-3 archive as if
         # it had been logged in advance — scoring a fabricated exact. A
         # post_hoc config is never a logged key.
+        return None
+    if cfg.get("day_key_author") == "agent":
+        # Shadow mode (nightly driver --agent-key): the board was priced under
+        # the agent's key so the preview could run, but no human read was
+        # logged. The tier-3 card stays unkeyed; the agent record is scored
+        # through --also agent from agent_key.json, never from here.
         return None
     key = cfg.get("day_key")
     if key is None:
@@ -377,12 +398,16 @@ def agent_refresh() -> list:
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[1])
+    ap.add_argument("--campaign", default=None,
+                    help="campaign directory (default: this script's own, performance_eval/vuelta-2026)")
     ap.add_argument("--stage", type=int, default=None)
     ap.add_argument("--also", choices=["agent"], default=None,
                     help="also score predictions/stage_NN/agent_key.json into the row (paired table)")
     ap.add_argument("--agent-refresh", action="store_true",
                     help="re-attach every agent key from stored oracle rows and print the paired table (no DB)")
     args = ap.parse_args()
+    if args.campaign:
+        set_campaign(args.campaign)
     if args.agent_refresh:
         print_paired_table(agent_refresh())
         return

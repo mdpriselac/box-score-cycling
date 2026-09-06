@@ -1,0 +1,52 @@
+{
+ "unit": "stage_14",
+ "race": "vuelta-2026",
+ "fetched_by": "mac plain requests (chip H fixture, one-time, 2026-09-06)",
+ "pages": {
+  "stage": {
+   "file": "stage.html",
+   "source_url": "https://www.procyclingstats.com/race/vuelta-a-espana/2026/stage-14",
+   "fetched_at": "2026-09-06T18:05:00+00:00",
+   "sha256": "c3aef940ae171dfa14c92851ab85ae9a3c6867a2b16844c605df762d9fa3a85a",
+   "bytes": 608243,
+   "totals": {
+    "rows": 155
+   }
+  },
+  "gc": {
+   "file": "gc.html",
+   "source_url": "https://www.procyclingstats.com/race/vuelta-a-espana/2026/stage-14-gc",
+   "fetched_at": "2026-09-06T18:05:00+00:00",
+   "sha256": "9a32e878e154d6baacc2314f5330b1d3e5399e7cc023719da4a72e33c9da3bd1",
+   "bytes": 608309
+  },
+  "points": {
+   "file": "points.html",
+   "source_url": "https://www.procyclingstats.com/race/vuelta-a-espana/2026/stage-14-points",
+   "fetched_at": "2026-09-06T18:05:00+00:00",
+   "sha256": "72dfbc06962e56ba8f35acace55d5bb5ff5af2ef36e5af9b3fcfef4e58334a36",
+   "bytes": 608397
+  },
+  "kom": {
+   "file": "kom.html",
+   "source_url": "https://www.procyclingstats.com/race/vuelta-a-espana/2026/stage-14-kom",
+   "fetched_at": "2026-09-06T18:05:00+00:00",
+   "sha256": "be96951858480c80c1b7d53c68aba37ee31b1a7838f8265221f629202bb3651d",
+   "bytes": 608331
+  },
+  "startlist": {
+   "file": "startlist.html",
+   "source_url": "https://www.procyclingstats.com/race/vuelta-a-espana/2026/startlist",
+   "fetched_at": "2026-09-06T18:05:00+00:00",
+   "sha256": "4b65cd1d5980b2ab08859a7bda623c9485b8a68e2025c43410040aca5391df92",
+   "bytes": 70756
+  },
+  "embed_top10": {
+   "file": "embed_top10.html",
+   "source_url": "https://www.procyclingstats.com/race/vuelta-a-espana/2026/stage-14/more/embed-results",
+   "fetched_at": "2026-09-06T18:05:00+00:00",
+   "sha256": "7d0af3ac5767e8621ec7d15c0a0c4e8279e2c6692828ffcfa87ef973b863f161",
+   "bytes": 51388
+  }
+ }
+}

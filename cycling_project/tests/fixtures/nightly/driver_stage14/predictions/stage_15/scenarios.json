@@ -1,0 +1,71 @@
+{
+  "stage": 15,
+  "fc_race_id": "23",
+  "year": 2026,
+  "date": "2026-09-06",
+  "label": "Stage 15 — Palma del Río → Córdoba, 110.2 km (shortened from 189.7 km, extreme-heat protocol)",
+  "odds_capture": "2026-09-05/markets_1720.json",
+  "event_id": "1028797735",
+  "void_stages": [
+    3
+  ],
+  "day_key": {
+    "bunch": 0.55,
+    "res_3": 0.3,
+    "res_1": 0.15
+  },
+  "day_key_note": "OFFICIAL MORNING READ (tier-3 archive), written the evening before on the same-day odds snapshot (2026-09-05 17:20) because the stage was redrawn during the afternoon. The organisers activated the extreme-weather protocol: Palma del Río to Córdoba is cut from 189.7 km to 110.2 km, the neutralised start moves to 14:50 with the flag at 15:00, and the forecast is 39°C in Córdoba. At km 52 the race leaves the original course for the CO-3402 towards Santa María de Trassierra, which removes the whole western loop through Villaviciosa. What is left: Puerto de la Forestal, category 3, 6.7 km at 4.1% cresting at km 34.5; Puerto Artafi, category 3, 5.9 km at 5.5% cresting at km 73.6, so 36.6 km from the line; the intermediate sprint at Trassierra at km 78.9; then the descent off the Sierra and the run into Córdoba, finishing on the Avenida de Vallellano. The road book files it as medium mountains; the shortened version is a 110 km day with two tempo-gradient climbs and the last summit well over half an hour from the finish. THE WORKING READ — 'likely a sprint or a reduced-group sprint' — is right, and the campaign's own record settles the family. Every sprint-flavoured stage of this Vuelta has come back `bunch`: st2 41 riders (22%), st5 89 (49%), st8 148 (86%), st10 68 (40%), st11 96 (57%). The gold-standard comparison is Barx on stage 8 — 4.7 km at 5.6% cresting 26 km out, followed by a descent and flat roads — which produced an 86% mass sprint won by Coquard; Artafi is a little longer at a hair below Barx's gradient and crests ten kilometres further from the line, and Aledo on stage 11, 9.5 km inside the final thirty in 35°C, still left 96 riders together. So bunch is forced as the majority, 0.55. WHY IT IS NOT HIGHER, and where the rest of the weight goes: three things distinguish tomorrow from Xeraco and Lorca. First, day fifteen at 39°C the afternoon after the Pandera, with the field down to 150 — the stage-10 lesson (a `bunch` by shape that the pure sprinters were nowhere in, Brennan 90th) was a heat-and-fatigue day, and the same mechanism is live. Second, the sprinters' teams are thinner than they were: Pedersen, Groves and Laporte are gone, Red Bull are riding for a podium rather than for Meeus, so the chase falls on Visma for Brennan and van Aert, Cofidis for Coquard and not much else. Third, a 5.5% climb 36 km out on a short, hot stage is exactly where a fast climber's team might ride to shed the last of the pure speed and where a reduced group would form — but it is a long way to hold that split on a descent and 25 km of flat. The market reads it the same way: Brennan 2.50 (25.4% devig) and van Aert 4.50 (14.1%) carry 39% between them, the fast men as a group about 63%, and then a long, thin tail — Cort, Romele and Meeus at 21-23, Kron, Leknessund and Coquard at 29, Laurance, Nys and Albanese at 34 — with no break rider priced inside 40. That is a sprint book with a hedge, not a break book. So res_3 (the survivor gallop, where the fastest man present wins from a thinned group) takes 0.30, and res_1 (a small fast group with the pure speed ground out, the stage-10 shape) 0.15. res_7 gets nothing: there is no fractured finale to justify it, the last 25 km are flat and straight. CHASE INCENTIVE, applied the way stage 14 taught it: who has a reason to spend? Visma, twice over — Brennan has won three of three sprints and van Aert is the second-strongest fast man in the race — and they have the strongest team here. Nobody in the GC has any reason to make the day hard: Mas is 1.20 to win, Roglic and Gall are racing for the podium on Sunday's mountains, not Saturday's flat. That is a controlled day, which is the bunch case, but it also means the break's survival rests entirely on whether one team can close a gap in 39°C — the one branch drawn as its own board.",
+  "scenarios": {
+    "bunch_sprint": {
+      "label": "The sprint comes home — Visma close it on the flat and Brennan does the rest",
+      "short": "Bunch sprint",
+      "refs": [
+        9741,
+        9647,
+        150,
+        145,
+        1453
+      ],
+      "tag": "vuelta_st15_bunch_sprint",
+      "note": "The base case and the book's card, on the campaign's pure-speed anchor references (flat GT/WT sprints: Xeraco and Lorca both came back on these boards with Brennan #1 at 60%+ and the podium in the top three). A 110 km day whose last summit is 36 km out and whose last 25 km are flat and straight, with a 150-rider field and a leader's team that has no need to race. Inherits the config-root key. The question is composition, not shape: Brennan has been 1st, 1st, 1st and 90th on this race's four sprint days, and the 90th was the hot one."
+    },
+    "artafi_thins_it": {
+      "label": "Artafi thins it — a reduced group in the heat and the fastest man present wins",
+      "short": "Artafi thins it",
+      "refs": [
+        309,
+        32,
+        981,
+        87,
+        9765
+      ],
+      "tag": "vuelta_st15_artafi_thins",
+      "day_key": {
+        "res_3": 0.5,
+        "bunch": 0.35,
+        "res_7": 0.15
+      },
+      "note": "The middle case and the operator's read drawn properly. References are the lumpy-finale reduced-sprint archetype (sprint ~0.51, hilly ~0.46, breakaway ~0) — flat stages whose late climb thinned the bunch without truly selecting it. 5.9 km at 5.5% in 39°C on day fifteen is enough to drop the men who suffered on the Pandera, and if Visma ride it for van Aert rather than tempo it for Brennan the group that crests Artafi may be 60 rather than 120. Brennan and van Aert are both riders who win THIS shape as readily as a full bunch, so the board's interest is in who fills the places behind them: Cort, Kron, Laurance, Nys, Albanese, Aular — the survivors' sprint card the market has at 21-41."
+    },
+    "break_survives": {
+      "label": "The escape survives — 39°C, a thin chase, and a break that is never brought back",
+      "short": "Break survives",
+      "refs": [
+        64,
+        314,
+        1522,
+        48,
+        10604
+      ],
+      "tag": "vuelta_st15_break",
+      "day_key": {
+        "res_4": 0.45,
+        "res_2": 0.3,
+        "res_6": 0.25
+      },
+      "exclude_top_gc": 10,
+      "exclude_gc_source": "standings",
+      "note": "The branch the market prices at almost nothing and the campaign has learned not to dismiss. Stage 13 — a hillier day, but a break day on a race whose GC has been settled — went to the escape with van Aert in it; stage 14's 44-man move was given seven minutes because nobody had a reason to chase. Here the chase has a reason, but only one team with the legs to act on it, and 39°C after the Pandera is when trains fall apart. References are hilly and medium-mountain GT stages won from an escape solo or two-up with the peloton minutes back (front hilly/rolling/TT-mixed, no sprinters, winner groups of 1-2): van Aert's Vuelta 2024 stage 10, Izagirre's TdF 2023 stage 12, Cort's TdF 2022 stage 10 at Megève, Vendrame's Giro 2024 stage 19 and Bettiol's Giro 2026 stage 13. The GC top 10 is cut on standings — everyone inside 7:01, through Cristian Rodriguez — which frees the whole book tail: Leknessund, Vermaerke, Küng, Romeo, Camprubí, Oliveira, Armirail, Berrade, Bilbao, Dversnes."
+    }
+  }
+}
