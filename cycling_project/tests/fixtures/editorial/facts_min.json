@@ -1,0 +1,20 @@
+{
+  "bundle_kind": "minimal", "artifact": "stage_retro", "unit": "stage_14", "stage": 14,
+  "campaign": {"slug": "test-2026", "name": "Test Tour 2026", "n_stages": 21, "void_stages": [3]},
+  "date": "2026-09-05", "label": "Stage 14 — Jaén → Sierra de la Pandera, 154.5 km",
+  "config": {"day_key": {"gc_day": 0.6, "res_2": 0.4},
+             "scenarios": {"gc_showdown": {"label": "GC showdown", "day_key": null, "post_hoc": false},
+                           "mountain_break": {"label": "Mountain break", "day_key": {"res_2": 0.85, "gc_day": 0.15}, "post_hoc": false}}},
+  "route": {"route_facts": "partial", "distance_km": 154.5, "climbs": [{"name": "Pandera", "length_km": 11.4, "gradient_pct": 7.2}]},
+  "results": {"top": [{"place": 1, "name": "Brenner Marco", "gap_s": 0.0, "gap": "0:00"},
+                      {"place": 2, "name": "Buitrago Santiago", "gap_s": 1.0, "gap": "0:01"},
+                      {"place": 21, "name": "Mas Enric", "gap_s": 252.0, "gap": "4:12"}],
+              "n_classified": 155, "winning_time_s": 15309.0, "winning_time": "4:15:09"},
+  "scorecard": {"available": true, "stage": {"oracle_item": "res_2", "exact": false, "covered": true, "weight_on_true": 0.4},
+                "tally": {"stages_scored": 12, "exact": 6, "covered": 11, "mean_weight_on_true": 0.53}},
+  "market": {"available": true, "top": [{"name": "Enric Mas", "odds": 3.75, "devig_pct": 17.2},
+                                        {"name": "Santiago Buitrago", "odds": 6.5, "devig_pct": 9.9}]},
+  "boards": [{"scenario_key": "mountain_break", "retrieval": {"top15_finishers_in_top15_with_key": 5,
+              "top15_finishers_in_top15_production": 2,
+              "finishers_top5_on_board": [{"place": 1, "name": "Brenner Marco", "rank_with_key": 22, "rank_production": 37, "win_pct": 0.2, "book_odds": 201.0}]}}]
+}

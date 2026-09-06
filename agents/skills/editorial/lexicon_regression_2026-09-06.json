@@ -1,0 +1,925 @@
+{
+ "ok": false,
+ "files": 37,
+ "lexicon_version": "1.0.0",
+ "lexicon_hits": 31,
+ "key_mismatches": 0,
+ "hits_by_term": {
+  "edge": 16,
+  "pick": 8,
+  "value": 4,
+  "staked": 1,
+  "back him": 1,
+  "lock": 1
+ },
+ "reports": [
+  {
+   "ok": false,
+   "lexicon_version": "1.0.0",
+   "checks": {
+    "lexicon": true,
+    "numerals": false,
+    "key": false
+   },
+   "sections_checked": [
+    "scenario_label.catalunya",
+    "scenario_note.catalunya",
+    "scenario_label.hilly45",
+    "scenario_note.hilly45",
+    "scenario_label.b25h45m30",
+    "scenario_note.b25h45m30",
+    "scenario_label.hindsight",
+    "scenario_note.hindsight",
+    "reflection[0]",
+    "reflection[1]",
+    "reflection[2]"
+   ],
+   "lexicon": [
+    {
+     "section": "reflection[0]",
+     "term": "pick",
+     "match": "pick",
+     "start": 380,
+     "context": "…ranch. It carried del Toro as its third pick at 6.4% against a book devig of 3.9% (t…"
+    },
+    {
+     "section": "reflection[0]",
+     "term": "edge",
+     "match": "edge",
+     "start": 434,
+     "context": "…gainst a book devig of 3.9% (the +2.5pp edge we flagged the day before), and it gave…"
+    },
+    {
+     "section": "reflection[2]",
+     "term": "edge",
+     "match": "edge",
+     "start": 40,
+     "context": "Two things to carry forward. First, the edge framing worked exactly as designed: we …"
+    },
+    {
+     "section": "reflection[2]",
+     "term": "edge",
+     "match": "edge",
+     "start": 365,
+     "context": "…% book) — either our strongest standing edge or a systematic youth-form artifact, an…"
+    }
+   ],
+   "numerals": [],
+   "key": [],
+   "placeholders": [],
+   "counts": {
+    "lexicon": 4,
+    "numerals": 0,
+    "key": 0,
+    "placeholders": 0
+   },
+   "file": "tour-de-france-2026/predictions/stage_02/scenarios.json"
+  },
+  {
+   "ok": false,
+   "lexicon_version": "1.0.0",
+   "checks": {
+    "lexicon": true,
+    "numerals": false,
+    "key": false
+   },
+   "sections_checked": [
+    "scenario_label.break_survives",
+    "scenario_note.break_survives",
+    "scenario_label.reduced_sprint",
+    "scenario_note.reduced_sprint",
+    "scenario_label.late_move",
+    "scenario_note.late_move",
+    "scenario_label.hindsight",
+    "scenario_note.hindsight",
+    "reflection[0]",
+    "reflection[1]",
+    "reflection[2]",
+    "analysis[0].title",
+    "analysis[0].note",
+    "analysis[1].title",
+    "analysis[1].note"
+   ],
+   "lexicon": [
+    {
+     "section": "reflection[1]",
+     "term": "pick",
+     "match": "pick",
+     "start": 263,
+     "context": "…half the book's 14.32%, and its own top pick was Philipsen (15.5%), a pure sprinter …"
+    }
+   ],
+   "numerals": [],
+   "key": [],
+   "placeholders": [],
+   "counts": {
+    "lexicon": 1,
+    "numerals": 0,
+    "key": 0,
+    "placeholders": 0
+   },
+   "file": "tour-de-france-2026/predictions/stage_04/scenarios.json"
+  },
+  {
+   "ok": false,
+   "lexicon_version": "1.0.0",
+   "checks": {
+    "lexicon": true,
+    "numerals": false,
+    "key": false
+   },
+   "sections_checked": [
+    "scenario_label.full_sprint",
+    "scenario_note.full_sprint",
+    "scenario_label.reduced_sprint",
+    "scenario_note.reduced_sprint",
+    "scenario_label.hindsight",
+    "scenario_note.hindsight",
+    "reflection[0]",
+    "reflection[1]",
+    "reflection[2]"
+   ],
+   "lexicon": [
+    {
+     "section": "reflection[2]",
+     "term": "edge",
+     "match": "edge",
+     "start": 1206,
+     "context": "…oning luck on the day, not a structural edge the model should price."
+    }
+   ],
+   "numerals": [],
+   "key": [],
+   "placeholders": [],
+   "counts": {
+    "lexicon": 1,
+    "numerals": 0,
+    "key": 0,
+    "placeholders": 0
+   },
+   "file": "tour-de-france-2026/predictions/stage_05/scenarios.json"
+  },
+  {
+   "ok": false,
+   "lexicon_version": "1.0.0",
+   "checks": {
+    "lexicon": true,
+    "numerals": false,
+    "key": false
+   },
+   "sections_checked": [
+    "scenario_label.elite_selection",
+    "scenario_note.elite_selection",
+    "scenario_label.select_group",
+    "scenario_note.select_group",
+    "scenario_label.large_group",
+    "scenario_note.large_group",
+    "scenario_label.break_survives",
+    "scenario_note.break_survives",
+    "scenario_label.hindsight",
+    "scenario_note.hindsight",
+    "reflection[0]",
+    "reflection[1]",
+    "reflection[2]",
+    "analysis[0].title",
+    "analysis[0].note",
+    "analysis[1].title",
+    "analysis[1].note"
+   ],
+   "lexicon": [
+    {
+     "section": "reflection[2]",
+     "term": "edge",
+     "match": "edge",
+     "start": 1035,
+     "context": "… ordering is strong — the market's only edge is a tighter concentration on the singl…"
+    }
+   ],
+   "numerals": [],
+   "key": [],
+   "placeholders": [],
+   "counts": {
+    "lexicon": 1,
+    "numerals": 0,
+    "key": 0,
+    "placeholders": 0
+   },
+   "file": "tour-de-france-2026/predictions/stage_06/scenarios.json"
+  },
+  {
+   "ok": false,
+   "lexicon_version": "1.0.0",
+   "checks": {
+    "lexicon": true,
+    "numerals": false,
+    "key": false
+   },
+   "sections_checked": [
+    "scenario_label.full_sprint",
+    "scenario_note.full_sprint",
+    "scenario_label.hindsight",
+    "scenario_note.hindsight",
+    "reflection[0]",
+    "reflection[1]",
+    "reflection[2]"
+   ],
+   "lexicon": [
+    {
+     "section": "reflection[2]",
+     "term": "edge",
+     "match": "edge",
+     "start": 904,
+     "context": "…fidence on the lead sprinter is genuine edge or systematic over-concentration."
+    }
+   ],
+   "numerals": [],
+   "key": [],
+   "placeholders": [],
+   "counts": {
+    "lexicon": 1,
+    "numerals": 0,
+    "key": 0,
+    "placeholders": 0
+   },
+   "file": "tour-de-france-2026/predictions/stage_07/scenarios.json"
+  },
+  {
+   "ok": false,
+   "lexicon_version": "1.0.0",
+   "checks": {
+    "lexicon": true,
+    "numerals": false,
+    "key": false
+   },
+   "sections_checked": [
+    "scenario_label.full_sprint",
+    "scenario_note.full_sprint",
+    "scenario_label.reduced_sprint",
+    "scenario_note.reduced_sprint",
+    "scenario_label.hindsight",
+    "scenario_note.hindsight",
+    "reflection[0]",
+    "reflection[1]",
+    "reflection[2]"
+   ],
+   "lexicon": [
+    {
+     "section": "reflection[2]",
+     "term": "edge",
+     "match": "edge",
+     "start": 759,
+     "context": "…confidence in second wheels rather than edge. Tomorrow is the real test of the week:…"
+    },
+    {
+     "section": "reflection[2]",
+     "term": "pick",
+     "match": "pick",
+     "start": 859,
+     "context": "…type day where the carry-forward rule — pick references by winner archetype, not ter…"
+    }
+   ],
+   "numerals": [],
+   "key": [],
+   "placeholders": [],
+   "counts": {
+    "lexicon": 2,
+    "numerals": 0,
+    "key": 0,
+    "placeholders": 0
+   },
+   "file": "tour-de-france-2026/predictions/stage_08/scenarios.json"
+  },
+  {
+   "ok": false,
+   "lexicon_version": "1.0.0",
+   "checks": {
+    "lexicon": true,
+    "numerals": false,
+    "key": false
+   },
+   "sections_checked": [
+    "scenario_label.break_day",
+    "scenario_note.break_day",
+    "scenario_label.hard_mens_sprint",
+    "scenario_note.hard_mens_sprint",
+    "scenario_label.late_move",
+    "scenario_note.late_move",
+    "scenario_label.anchor_sprint",
+    "scenario_note.anchor_sprint",
+    "scenario_label.hindsight",
+    "scenario_note.hindsight",
+    "reflection[0]",
+    "reflection[1]",
+    "reflection[2]",
+    "reflection[3]",
+    "analysis[0].title",
+    "analysis[0].note",
+    "analysis[1].title",
+    "analysis[1].note",
+    "analysis[2].title",
+    "analysis[2].note"
+   ],
+   "lexicon": [
+    {
+     "section": "reflection[1]",
+     "term": "pick",
+     "match": "pick",
+     "start": 314,
+     "context": "…column made van der Poel the single top pick of the whole pool at 11.3%, and its har…"
+    },
+    {
+     "section": "reflection[3]",
+     "term": "pick",
+     "match": "pick",
+     "start": 352,
+     "context": "…he pool's conditional column to the hub pick on days where the GC pool is expected t…"
+    }
+   ],
+   "numerals": [],
+   "key": [],
+   "placeholders": [],
+   "counts": {
+    "lexicon": 2,
+    "numerals": 0,
+    "key": 0,
+    "placeholders": 0
+   },
+   "file": "tour-de-france-2026/predictions/stage_09/scenarios.json"
+  },
+  {
+   "ok": false,
+   "lexicon_version": "1.0.0",
+   "checks": {
+    "lexicon": true,
+    "numerals": false,
+    "key": false
+   },
+   "sections_checked": [
+    "scenario_label.gc_day",
+    "scenario_note.gc_day",
+    "scenario_label.mountain_break",
+    "scenario_note.mountain_break",
+    "scenario_label.full_mountain",
+    "scenario_note.full_mountain",
+    "scenario_label.hindsight",
+    "scenario_note.hindsight",
+    "reflection[0]",
+    "reflection[1]",
+    "reflection[2]",
+    "reflection[3]",
+    "analysis[0].title",
+    "analysis[0].note",
+    "analysis[1].title",
+    "analysis[1].note"
+   ],
+   "lexicon": [
+    {
+     "section": "reflection[1]",
+     "term": "edge",
+     "match": "edge",
+     "start": 461,
+     "context": "…ill had him #1 under every reading. The edge was entirely in the tier behind him, an…"
+    },
+    {
+     "section": "reflection[3]",
+     "term": "edge",
+     "match": "edge",
+     "start": 426,
+     "context": "…t-Paris retrospective. (2) The standing edge is the GC second tier. The book prices …"
+    }
+   ],
+   "numerals": [],
+   "key": [],
+   "placeholders": [],
+   "counts": {
+    "lexicon": 2,
+    "numerals": 0,
+    "key": 0,
+    "placeholders": 0
+   },
+   "file": "tour-de-france-2026/predictions/stage_10/scenarios.json"
+  },
+  {
+   "ok": false,
+   "lexicon_version": "1.0.0",
+   "checks": {
+    "lexicon": true,
+    "numerals": false,
+    "key": false
+   },
+   "sections_checked": [
+    "scenario_label.full_sprint",
+    "scenario_note.full_sprint",
+    "scenario_label.reduced_sprint",
+    "scenario_note.reduced_sprint",
+    "scenario_label.break_survives",
+    "scenario_note.break_survives",
+    "scenario_label.anchor_selective",
+    "scenario_note.anchor_selective",
+    "scenario_label.hindsight",
+    "scenario_note.hindsight",
+    "reflection[0]",
+    "reflection[1]",
+    "reflection[2]",
+    "reflection[3]",
+    "analysis[0].title",
+    "analysis[0].note",
+    "analysis[1].title",
+    "analysis[1].note"
+   ],
+   "lexicon": [
+    {
+     "section": "reflection[1]",
+     "term": "staked",
+     "match": "staked",
+     "start": 528,
+     "context": "…op, and it landed on all three names we staked it on: Kooij 22.3% against the book's 1…"
+    },
+    {
+     "section": "reflection[3]",
+     "term": "edge",
+     "match": "edge",
+     "start": 369,
+     "context": "… GT hard-day hole. (2) The intra-sprint edge over the market held for the second spr…"
+    }
+   ],
+   "numerals": [],
+   "key": [],
+   "placeholders": [],
+   "counts": {
+    "lexicon": 2,
+    "numerals": 0,
+    "key": 0,
+    "placeholders": 0
+   },
+   "file": "tour-de-france-2026/predictions/stage_11/scenarios.json"
+  },
+  {
+   "ok": false,
+   "lexicon_version": "1.0.0",
+   "checks": {
+    "lexicon": true,
+    "numerals": false,
+    "key": false
+   },
+   "sections_checked": [
+    "scenario_label.full_sprint",
+    "scenario_note.full_sprint",
+    "scenario_label.reduced_sprint",
+    "scenario_note.reduced_sprint",
+    "scenario_label.break_survives",
+    "scenario_note.break_survives",
+    "scenario_label.anchor_selective",
+    "scenario_note.anchor_selective",
+    "scenario_label.hindsight",
+    "scenario_note.hindsight",
+    "reflection[0]",
+    "reflection[1]",
+    "reflection[2]",
+    "reflection[3]",
+    "analysis[0].title",
+    "analysis[0].note",
+    "analysis[1].title",
+    "analysis[1].note"
+   ],
+   "lexicon": [
+    {
+     "section": "reflection[3]",
+     "term": "edge",
+     "match": "edge",
+     "start": 36,
+     "context": "Carry forward. (1) The intra-sprint edge over the book is now the most repeatabl…"
+    }
+   ],
+   "numerals": [],
+   "key": [],
+   "placeholders": [],
+   "counts": {
+    "lexicon": 1,
+    "numerals": 0,
+    "key": 0,
+    "placeholders": 0
+   },
+   "file": "tour-de-france-2026/predictions/stage_12/scenarios.json"
+  },
+  {
+   "ok": false,
+   "lexicon_version": "1.0.0",
+   "checks": {
+    "lexicon": true,
+    "numerals": false,
+    "key": false
+   },
+   "sections_checked": [
+    "scenario_label.break_survives",
+    "scenario_note.break_survives",
+    "scenario_label.reduced_gc",
+    "scenario_note.reduced_gc",
+    "scenario_label.gc_mountain",
+    "scenario_note.gc_mountain",
+    "scenario_label.hindsight",
+    "scenario_note.hindsight",
+    "reflection[0]",
+    "reflection[1]",
+    "reflection[2]",
+    "reflection[3]",
+    "analysis[0].title",
+    "analysis[0].note",
+    "analysis[1].title",
+    "analysis[1].note"
+   ],
+   "lexicon": [
+    {
+     "section": "scenario_note.break_survives",
+     "term": "value",
+     "match": "value",
+     "start": 1021,
+     "context": "…e GC captains who fit the terrain — the value is the pool table below, which strips t…"
+    },
+    {
+     "section": "reflection[1]",
+     "term": "value",
+     "match": "value",
+     "start": 483,
+     "context": "…model nor book rated for the stage. The value was in the conditional pool. The whole …"
+    }
+   ],
+   "numerals": [],
+   "key": [],
+   "placeholders": [],
+   "counts": {
+    "lexicon": 2,
+    "numerals": 0,
+    "key": 0,
+    "placeholders": 0
+   },
+   "file": "tour-de-france-2026/predictions/stage_13/scenarios.json"
+  },
+  {
+   "ok": false,
+   "lexicon_version": "1.0.0",
+   "checks": {
+    "lexicon": true,
+    "numerals": false,
+    "key": false
+   },
+   "sections_checked": [
+    "scenario_label.gc_mountain",
+    "scenario_note.gc_mountain",
+    "scenario_label.reduced_gc",
+    "scenario_note.reduced_gc",
+    "scenario_label.break_survives",
+    "scenario_note.break_survives",
+    "scenario_label.hindsight",
+    "scenario_note.hindsight",
+    "reflection[0]",
+    "reflection[1]",
+    "reflection[2]",
+    "reflection[3]",
+    "analysis[0].title",
+    "analysis[0].note",
+    "analysis[1].title",
+    "analysis[1].note"
+   ],
+   "lexicon": [
+    {
+     "section": "scenario_note.break_survives",
+     "term": "value",
+     "match": "value",
+     "start": 803,
+     "context": "…captains who best fit the terrain — the value is the pool table below, which strips t…"
+    },
+    {
+     "section": "reflection[1]",
+     "term": "back him",
+     "match": "back him",
+     "start": 631,
+     "context": "…ight man on top, but we still would not back him as hard as the market did. That is the …"
+    }
+   ],
+   "numerals": [],
+   "key": [],
+   "placeholders": [],
+   "counts": {
+    "lexicon": 2,
+    "numerals": 0,
+    "key": 0,
+    "placeholders": 0
+   },
+   "file": "tour-de-france-2026/predictions/stage_14/scenarios.json"
+  },
+  {
+   "ok": false,
+   "lexicon_version": "1.0.0",
+   "checks": {
+    "lexicon": true,
+    "numerals": false,
+    "key": false
+   },
+   "sections_checked": [
+    "scenario_label.gc_summit",
+    "scenario_note.gc_summit",
+    "scenario_label.climbers_wall",
+    "scenario_note.climbers_wall",
+    "scenario_label.break_survives",
+    "scenario_note.break_survives",
+    "scenario_label.hindsight",
+    "scenario_note.hindsight",
+    "reflection[0]",
+    "reflection[1]",
+    "reflection[2]",
+    "reflection[3]",
+    "analysis[0].title",
+    "analysis[0].note",
+    "analysis[1].title",
+    "analysis[1].note",
+    "analysis[2].title",
+    "analysis[2].note"
+   ],
+   "lexicon": [
+    {
+     "section": "scenario_note.break_survives",
+     "term": "value",
+     "match": "value",
+     "start": 1036,
+     "context": "…ill tops out with the GC captains — the value is the pool table below, which strips t…"
+    },
+    {
+     "section": "reflection[0]",
+     "term": "edge",
+     "match": "edge",
+     "start": 683,
+     "context": "…as the model's known blind spot, not as edge.' That editorial call was wrong, and it…"
+    },
+    {
+     "section": "analysis[2].note",
+     "term": "edge",
+     "match": "edge",
+     "start": 1059,
+     "context": "…as the model's known blind spot, not as edge."
+    }
+   ],
+   "numerals": [],
+   "key": [],
+   "placeholders": [],
+   "counts": {
+    "lexicon": 3,
+    "numerals": 0,
+    "key": 0,
+    "placeholders": 0
+   },
+   "file": "tour-de-france-2026/predictions/stage_15/scenarios.json"
+  },
+  {
+   "ok": false,
+   "lexicon_version": "1.0.0",
+   "checks": {
+    "lexicon": true,
+    "numerals": false,
+    "key": false
+   },
+   "sections_checked": [
+    "scenario_label.gc_engines",
+    "scenario_note.gc_engines",
+    "scenario_label.pure_power",
+    "scenario_note.pure_power",
+    "scenario_label.hills_bite",
+    "scenario_note.hills_bite",
+    "scenario_label.hindsight",
+    "scenario_note.hindsight",
+    "reflection[0]",
+    "reflection[1]",
+    "reflection[2]",
+    "reflection[3]",
+    "analysis[0].title",
+    "analysis[0].note",
+    "analysis[1].title",
+    "analysis[1].note",
+    "analysis[2].title",
+    "analysis[2].note"
+   ],
+   "lexicon": [
+    {
+     "section": "reflection[0]",
+     "term": "pick",
+     "match": "pick",
+     "start": 301,
+     "context": "…5%, and all three made Pogacar the ~53% pick. After stage 15 settled a 16x disagreem…"
+    },
+    {
+     "section": "reflection[3]",
+     "term": "edge",
+     "match": "edge",
+     "start": 607,
+     "context": "…k odds is another mark for the standing edge. And the day's structural news travels …"
+    }
+   ],
+   "numerals": [],
+   "key": [],
+   "placeholders": [],
+   "counts": {
+    "lexicon": 2,
+    "numerals": 0,
+    "key": 0,
+    "placeholders": 0
+   },
+   "file": "tour-de-france-2026/predictions/stage_16/scenarios.json"
+  },
+  {
+   "ok": false,
+   "lexicon_version": "1.0.0",
+   "checks": {
+    "lexicon": true,
+    "numerals": false,
+    "key": false
+   },
+   "sections_checked": [
+    "scenario_label.break_day",
+    "scenario_note.break_day",
+    "scenario_label.hard_mens_sprint",
+    "scenario_note.hard_mens_sprint",
+    "scenario_label.full_sprint",
+    "scenario_note.full_sprint",
+    "scenario_label.hindsight",
+    "scenario_note.hindsight",
+    "reflection[0]",
+    "reflection[1]",
+    "reflection[2]",
+    "reflection[3]",
+    "analysis[0].title",
+    "analysis[0].note",
+    "analysis[1].title",
+    "analysis[1].note",
+    "analysis[2].title",
+    "analysis[2].note"
+   ],
+   "lexicon": [
+    {
+     "section": "reflection[1]",
+     "term": "pick",
+     "match": "pick",
+     "start": 217,
+     "context": "…he book's 9.3% — the model's single top pick, and it won. The sprint-survives read p…"
+    }
+   ],
+   "numerals": [],
+   "key": [],
+   "placeholders": [],
+   "counts": {
+    "lexicon": 1,
+    "numerals": 0,
+    "key": 0,
+    "placeholders": 0
+   },
+   "file": "tour-de-france-2026/predictions/stage_17/scenarios.json"
+  },
+  {
+   "ok": false,
+   "lexicon_version": "1.0.0",
+   "checks": {
+    "lexicon": true,
+    "numerals": false,
+    "key": false
+   },
+   "sections_checked": [
+    "scenario_label.gc_finish",
+    "scenario_note.gc_finish",
+    "scenario_label.mountain_break",
+    "scenario_note.mountain_break",
+    "scenario_label.rouleur_climb",
+    "scenario_note.rouleur_climb",
+    "scenario_label.hindsight",
+    "scenario_note.hindsight",
+    "reflection[0]",
+    "reflection[1]",
+    "reflection[2]",
+    "reflection[3]",
+    "analysis[0].title",
+    "analysis[0].note",
+    "analysis[1].title",
+    "analysis[1].note",
+    "analysis[2].title",
+    "analysis[2].note"
+   ],
+   "lexicon": [
+    {
+     "section": "scenario_note.rouleur_climb",
+     "term": "lock",
+     "match": "lock",
+     "start": 74,
+     "context": "…e reason this day is not a pure-climber lock. None of the five climbs is an HC wall …"
+    }
+   ],
+   "numerals": [],
+   "key": [],
+   "placeholders": [],
+   "counts": {
+    "lexicon": 1,
+    "numerals": 0,
+    "key": 0,
+    "placeholders": 0
+   },
+   "file": "tour-de-france-2026/predictions/stage_18/scenarios.json"
+  },
+  {
+   "ok": false,
+   "lexicon_version": "1.0.0",
+   "checks": {
+    "lexicon": true,
+    "numerals": false,
+    "key": false
+   },
+   "sections_checked": [
+    "scenario_label.gc_summit",
+    "scenario_note.gc_summit",
+    "scenario_label.mountain_break",
+    "scenario_note.mountain_break",
+    "scenario_label.rouleur_break",
+    "scenario_note.rouleur_break",
+    "scenario_label.hindsight",
+    "scenario_note.hindsight",
+    "reflection[0]",
+    "reflection[1]",
+    "reflection[2]",
+    "reflection[3]",
+    "analysis[0].title",
+    "analysis[0].note",
+    "analysis[1].title",
+    "analysis[1].note"
+   ],
+   "lexicon": [
+    {
+     "section": "scenario_note.rouleur_break",
+     "term": "edge",
+     "match": "edge",
+     "start": 994,
+     "context": "…g model-book gap here as agreement, not edge. If a Schmid contends on Alpe d'Huez an…"
+    },
+    {
+     "section": "reflection[2]",
+     "term": "pick",
+     "match": "pick",
+     "start": 360,
+     "context": "… #6 and #9 out of fourteen, and its top pick took the highest non-Pogačar place on t…"
+    }
+   ],
+   "numerals": [],
+   "key": [],
+   "placeholders": [],
+   "counts": {
+    "lexicon": 2,
+    "numerals": 0,
+    "key": 0,
+    "placeholders": 0
+   },
+   "file": "tour-de-france-2026/predictions/stage_19/scenarios.json"
+  },
+  {
+   "ok": false,
+   "lexicon_version": "1.0.0",
+   "checks": {
+    "lexicon": true,
+    "numerals": false,
+    "key": false
+   },
+   "sections_checked": [
+    "scenario_label.gc_finale",
+    "scenario_note.gc_finale",
+    "scenario_label.mountain_break",
+    "scenario_note.mountain_break",
+    "scenario_label.hardman_break",
+    "scenario_note.hardman_break",
+    "scenario_label.hindsight",
+    "scenario_note.hindsight",
+    "reflection[0]",
+    "reflection[1]",
+    "reflection[2]",
+    "reflection[3]",
+    "reflection[4]",
+    "analysis[0].title",
+    "analysis[0].note",
+    "analysis[1].title",
+    "analysis[1].note"
+   ],
+   "lexicon": [
+    {
+     "section": "reflection[1]",
+     "term": "edge",
+     "match": "edge",
+     "start": 741,
+     "context": "… represent. Where the model did have an edge it collected: the GC finale read had Ev…"
+    }
+   ],
+   "numerals": [],
+   "key": [],
+   "placeholders": [],
+   "counts": {
+    "lexicon": 1,
+    "numerals": 0,
+    "key": 0,
+    "placeholders": 0
+   },
+   "file": "tour-de-france-2026/predictions/stage_20/scenarios.json"
+  }
+ ]
+}

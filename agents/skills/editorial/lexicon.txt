@@ -1,0 +1,105 @@
+# Editorial lexicon — versioned beside agents/skills/editorial/SKILL.md.
+# One term per line; matching is case-insensitive on word boundaries.
+# Lines beginning with "allow " name phrases that are acceptable and are
+# masked BEFORE the deny scan (so "in play" does not trip "play").
+# Multi-word terms match with any whitespace/hyphen between the words.
+# version: 1.0.0
+
+# --- gambling / advice framing (user directive 2026-08-31) ---
+bet
+bets
+betting
+bettor
+bettors
+wager
+wagers
+wagering
+stake
+stakes
+staked
+staking
+ROI
+value bet
+value bets
+value pick
+value picks
+value play
+value plays
+value side
+value
+play
+plays
+punt
+punts
+punter
+punters
+units
+unit stake
+smart money
+sharp money
+odds-on
+odds on
+each-way
+each way
+parlay
+accumulator
+bookie
+bookies
+bookmaker
+bookmakers
+sportsbook
+payout
+payouts
+cash out
+cashout
+lock
+banker
+edge
+edges
+pick
+picks
+tip
+tips
+tipster
+back him
+back her
+backing him
+bankroll
+
+# --- acceptable terms (documented, masked before the scan) ---
+allow book
+allow the book
+allow market
+allow devig
+allow devigged
+allow implied
+allow priced
+allow pricing
+allow price
+allow favourite
+allow favorite
+allow in play
+allow played out
+allow playing field
+allow at stake
+allow lock step
+allow lockstep
+allow knife-edge
+allow edge of
+allow road edge
+allow tip of
+allow tipped over
+allow tips it
+allow tip it
+allow tipped it
+allow pick up
+allow picks up
+allow picked up
+allow pick that up
+allow pick out
+allow picked out
+allow face value
+allow add value
+allow adds value
+allow added value
+allow value of the

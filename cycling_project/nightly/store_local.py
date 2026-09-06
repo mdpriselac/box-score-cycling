@@ -29,7 +29,7 @@ from cycling_project.webscrape_tools.logging_config import get_logger
 
 logger = get_logger(__name__)
 
-AGENT_INSERT_TABLES = frozenset({"crosswalk_proposals", "operator_tasks", "reconciliation"})
+AGENT_INSERT_TABLES = frozenset({"crosswalk_proposals", "operator_tasks", "reconciliation", "editorial_drafts"})
 
 
 def utcnow_iso() -> str:
@@ -73,6 +73,14 @@ class JsonlStore:
 
     def insert_reconciliation(self, rows: Iterable[dict[str, Any]]) -> list[dict[str, Any]]:
         return self.insert_many("reconciliation", rows)
+
+    def insert_editorial_draft(self, run_id, campaign_slug: str, unit: str, phase: str, body_md: str, *,
+                               kind: str = "prose", author: str = "agent", lint=None, lint_ok=None) -> dict[str, Any]:
+        """Same signature as ``store.SupabaseStore.insert_editorial_draft`` (chip G shadow drafts)."""
+        row = {"run_id": str(run_id) if run_id else None, "campaign_slug": campaign_slug, "unit": unit,
+               "phase": phase, "kind": kind, "author": author, "body_md": body_md,
+               "lint": lint or {}, "lint_ok": lint_ok}
+        return self.insert("editorial_drafts", {k: v for k, v in row.items() if v is not None})
 
     # -- the ONE mutating path: human confirmation -----------------------
     def upsert_crosswalk(self, row: dict[str, Any]) -> dict[str, Any]:
