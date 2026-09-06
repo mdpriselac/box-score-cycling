@@ -5,6 +5,8 @@ from pathlib import Path
 
 import pytest
 
+from cycling_project.nightly.registry import merge_new_information
+
 from cycling_project.nightly.registry import merge_calendar_sidecars, sync
 from cycling_project.nightly.store import FakeStore, StorePermissionError
 from cycling_project import update_pipeline
@@ -118,7 +120,24 @@ def test_registry_fills_unknowns_but_never_overwrites_known_fields(tmp_path):
     assert campaign["timezone"] == "Europe/Custom"
     assert campaign["pcs_slug"] == "test-tour"
     assert campaign["stages"][0]["towns"] == "Known finish"
-    assert len(campaign["stages"]) == 3
+    # a campaign that declares its stages (no stages_provisional flag) never grows
+    assert len(campaign["stages"]) == 1
+
+
+def test_registry_extends_only_provisional_stage_lists(tmp_path):
+    perf = tmp_path / "performance_eval"
+    calendar = perf / "calendar" / "2026.json"
+    calendar.parent.mkdir(parents=True)
+    calendar.write_text(json.dumps({"races": [_calendar_row()]}))
+    campaign_file = perf / "test-tour-2026" / "campaign.json"
+    campaign_file.parent.mkdir(parents=True)
+    campaign_file.write_text(json.dumps({
+        "slug": "test-tour-2026", "name": "Test Tour", "fc_race_id": "99", "year": 2026,
+        "is_stage_race": True, "stages_provisional": True,
+        "stages": [{"number": 1, "date": "2026-09-10"}],
+    }))
+    sync(perf, horizon=14, now=date(2026, 9, 6), store_mode="none")
+    assert len(json.loads(campaign_file.read_text())["stages"]) == 3
 
 
 def test_registry_reuses_handwritten_campaign_slug_for_same_fc_race(tmp_path):
@@ -200,3 +219,23 @@ def test_handwritten_campaign_stage_dates_match_committed_configs(campaign):
         assert by_number[int(config["stage"])] == config["date"]
     if campaign == "vuelta-2026":
         assert registry["void_stages"] == [3]
+
+
+def test_merge_stages_never_appends_phantom_stages_on_rest_days():
+    from cycling_project.nightly.registry import _merge_stages
+    existing = [{"number": n, "date": f"2026-08-{21 + n:02d}"} for n in range(1, 4)]
+    proposed = [{"number": n, "date": f"2026-08-{21 + n:02d}", "kind": "road"} for n in range(1, 6)]
+    merged = _merge_stages(existing, proposed)
+    assert [s["number"] for s in merged] == [1, 2, 3]
+    assert merged[0]["kind"] == "road"           # unknown fields still filled
+    assert [s["number"] for s in _merge_stages(existing, proposed, allow_append=True)] == [1, 2, 3, 4, 5]
+    assert _merge_stages([], proposed) == [merge_new_information({}, s) for s in proposed]
+
+
+def test_calendar_store_row_projects_onto_table_columns():
+    from cycling_project.nightly.registry import CALENDAR_COLUMNS, _calendar_store_row
+    row = {"fc_race_id": "24", "year": 2026, "name": "Il Lombardia", "category": "wt",
+           "is_stage_race": False, "start_date": "2026-10-10", "end_date": "2026-10-10",
+           "url": "https://firstcycling.com/race.php?r=24&y=2026", "calendar_category": "WT"}
+    out = _calendar_store_row(row)
+    assert set(out) == set(CALENDAR_COLUMNS) and "url" not in out and out["name"] == "Il Lombardia"

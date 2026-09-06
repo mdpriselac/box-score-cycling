@@ -201,6 +201,14 @@ def _row_country(row: BeautifulSoup) -> Optional[str]:
             value = tag.get(attr)
             if value and str(value).strip():
                 return str(value).strip()
+        # FirstCycling encodes the country only in the class list: live pages
+        # use "flag flag-es", older markup "flag es" (2-3 letter ISO code).
+        match = re.search(r"\bflag-([a-z]{2,3})\b", classes)
+        if match:
+            return match.group(1)
+        tokens = [t for t in classes.split() if t != "flag" and re.fullmatch(r"[a-z]{2,3}", t)]
+        if tokens:
+            return tokens[0]
     return None
 
 

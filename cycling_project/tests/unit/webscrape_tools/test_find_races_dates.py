@@ -59,3 +59,12 @@ def test_month_scrape_keeps_txt_shape_and_writes_dated_sidecar(tmp_path, monkeyp
     assert rows[0]["end_date"] == "2026-09-12"
     assert rows[0]["country"] == "Spain"
     assert rows[0]["is_stage_race"] is True
+
+
+def test_row_country_falls_back_to_flag_class():
+    from bs4 import BeautifulSoup
+    from cycling_project.webscrape_tools.find_races import _row_country
+    live = BeautifulSoup('<tr><td><span class="flag flag-es"></span> Vuelta</td></tr>', "html.parser").tr
+    old = BeautifulSoup('<tr><td><span class="flag be"></span> Omloop</td></tr>', "html.parser").tr
+    titled = BeautifulSoup('<tr><td><img class="flag" title="Italy"></td></tr>', "html.parser").tr
+    assert _row_country(live) == "es" and _row_country(old) == "be" and _row_country(titled) == "Italy"

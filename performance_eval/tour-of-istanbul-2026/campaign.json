@@ -43,5 +43,6 @@
   "kambi_event_ids": {},
   "pcs_slug": "tour-of-istanbul",
   "organiser_stage_urls": {},
-  "void_stages": []
+  "void_stages": [],
+  "stages_provisional": true
 }

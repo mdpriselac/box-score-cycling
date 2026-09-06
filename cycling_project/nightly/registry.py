@@ -155,17 +155,39 @@ def merge_new_information(existing: Any, proposed: Any) -> Any:
             elif isinstance(result[key], dict) and isinstance(value, dict):
                 result[key] = merge_new_information(result[key], value)
             elif key == "stages" and isinstance(result[key], list) and isinstance(value, list):
-                result[key] = _merge_stages(result[key], value)
+                result[key] = _merge_stages(result[key], value,
+                                            allow_append=bool(result.get("stages_provisional")))
         return result
     return existing if not _is_absent(existing) else proposed
 
 
-def _merge_stages(existing: List[dict], proposed: List[dict]) -> List[dict]:
+def _merge_stages(existing: List[dict], proposed: List[dict], *, allow_append: bool = False) -> List[dict]:
+    """Fill unknown fields of known stages; invent none unless allowed.
+
+    A campaign that declares its stages (hand-written, or PCS-supplied) is
+    authoritative on HOW MANY there are: the calendar's one-stage-per-day
+    proposal must not append phantom stages on rest days (the Vuelta spans 23
+    calendar days for 21 stages). Only a campaign flagged
+    ``stages_provisional`` (generated from the calendar, schedule not yet
+    known) may grow.
+    """
     by_number = {stage.get("number"): dict(stage) for stage in existing}
     for stage in proposed:
         number = stage.get("number")
+        if existing and number not in by_number and not allow_append:
+            continue
         by_number[number] = merge_new_information(by_number.get(number, {}), stage)
     return [by_number[key] for key in sorted(by_number, key=lambda value: (value is None, value or 0))]
+
+
+CALENDAR_COLUMNS = ("fc_race_id", "year", "name", "category", "is_stage_race",
+                    "start_date", "end_date", "country", "pcs_slug", "week", "source")
+
+
+def _calendar_store_row(row: Dict[str, Any]) -> Dict[str, Any]:
+    """Project a calendar row onto public.calendar's columns (the sidecar also
+    carries url / calendar_category, which PostgREST rejects)."""
+    return {k: row.get(k) for k in CALENDAR_COLUMNS}
 
 
 def timezone_for_country(country: Optional[str]) -> Optional[str]:
@@ -307,6 +329,8 @@ def sync(
             path = performance_eval_dir / proposed["slug"] / "campaign.json"
             existing = _read_json(path, {})
         config = merge_new_information(existing, proposed)
+        if not existing and config.get("is_stage_race"):
+            config["stages_provisional"] = True   # one stage per calendar day until PCS supplies the schedule
         if not dry_run and config != existing:
             _write_json(path, config)
         synced.append({"slug": config["slug"], "path": str(path), "changed": config != existing})
@@ -315,7 +339,7 @@ def sync(
 
     resolved_store = None if dry_run else _resolve_store(store, store_mode)
     if resolved_store is not None:
-        resolved_store.sync_calendar(calendar_rows)
+        resolved_store.sync_calendar([_calendar_store_row(r) for r in calendar_rows])
         for row in campaign_rows:
             resolved_store.sync_campaign(row)
         resolved_store.sync_stages(stage_rows)
