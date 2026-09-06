@@ -1,0 +1,25 @@
+{
+ "stage": 12,
+ "date": "2026-09-03",
+ "label": "Stage 12 — Vera → Observatorio de Calar Alto, 166.6 km",
+ "void_stages": [
+  3
+ ],
+ "odds_capture": "2026-09-02/markets_1748.json",
+ "event_id": "1028797706",
+ "day_key": {
+  "res_2": 0.55,
+  "gc_day": 0.45
+ },
+ "day_key_note": "OFFICIAL MORNING READ (tier-3 archive). Vera to the Calar Alto Observatory, 166.6 km and 4,568 m. Climbing starts almost immediately — Alto del Cabecico (8.3 km at 3.3%) from km 7.7, then the long drag of Collado García (18.5 km at 2.4%), then the decisive pair: Alto de Velefique, 13.1 km at 7.2% opening on double-digit ramps before easing, a short descent, and the 16.9 km haul to Calar Alto at 5.",
+ "reflection": [
+  "The break won and the model missed the winner, but this was a far better day than Valdelinares. Jakob Omrzel — twenty years old — went clear and held 1:56 on Berrade and 2:13 on Buitrago, with Mas the first GC man home in 6th at 2:56, taking 27 seconds out of Roglic, Gall and Carapaz. The boards had"
+ ],
+ "scenarios": {
+  "main": {
+   "label": "x",
+   "tag": "st12_main",
+   "note": "fixture"
+  }
+ }
+}

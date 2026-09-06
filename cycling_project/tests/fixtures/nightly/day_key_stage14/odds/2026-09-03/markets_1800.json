@@ -1,0 +1,101 @@
+{
+ "1028797734": {
+  "event_name": "Etappe 14 (Ronde van Spanje 2026)",
+  "start": "2026-09-05T11:33:00Z",
+  "betoffers": [
+   {
+    "betoffer_id": 2688324174,
+    "criterion": "Winnaar",
+    "bet_offer_type": "Winnaar",
+    "outcomes": [
+     {
+      "name": "Andreas Kron",
+      "label": "Andreas Kron",
+      "odds": 301.0,
+      "implied": 0.0033222591362126247,
+      "devig": 0.0021455153501728367
+     },
+     {
+      "name": "Andreas Leknessund",
+      "label": "Andreas Leknessund",
+      "odds": 151.0,
+      "implied": 0.006622516556291391,
+      "devig": 0.004276821989417376
+     },
+     {
+      "name": "Attila Valter",
+      "label": "Attila Valter",
+      "odds": 401.0,
+      "implied": 0.0024937655860349127,
+      "devig": 0.0016104741157157703
+     },
+     {
+      "name": "Bruno Armirail",
+      "label": "Bruno Armirail",
+      "odds": 301.0,
+      "implied": 0.0033222591362126247,
+      "devig": 0.0021455153501728367
+     },
+     {
+      "name": "Carlos Rodriguez",
+      "label": "Carlos Rodriguez",
+      "odds": 67.0,
+      "implied": 0.014925373134328358,
+      "devig": 0.009638807767194385
+     },
+     {
+      "name": "Clément Berthet",
+      "label": "Clément Berthet",
+      "odds": 41.0,
+      "implied": 0.024390243902439025,
+      "devig": 0.01575122244882985
+     },
+     {
+      "name": "Cristian Rodriguez",
+      "label": "Cristian Rodriguez",
+      "odds": 19.0,
+      "implied": 0.05263157894736842,
+      "devig": 0.033989480021159146
+     },
+     {
+      "name": "Darren Rafferty",
+      "label": "Darren Rafferty",
+      "odds": 501.0,
+      "implied": 0.001996007984031936,
+      "devig": 0.001289022196411225
+     },
+     {
+      "name": "David de la Cruz",
+      "label": "David de la Cruz",
+      "odds": 301.0,
+      "implied": 0.0033222591362126247,
+      "devig": 0.0021455153501728367
+     },
+     {
+      "name": "Domen Novak",
+      "label": "Domen Novak",
+      "odds": 501.0,
+      "implied": 0.001996007984031936,
+      "devig": 0.001289022196411225
+     },
+     {
+      "name": "Eddie Dunbar",
+      "label": "Eddie Dunbar",
+      "odds": 126.0,
+      "implied": 0.007936507936507936,
+      "devig": 0.005125397780968443
+     },
+     {
+      "name": "Emanuel Buchmann",
+      "label": "Emanuel Buchmann",
+      "odds": 501.0,
+      "implied": 0.001996007984031936,
+      "devig": 0.001289022196411225
+     }
+    ],
+    "book_sum": 1.0,
+    "overround": 1.5485
+   }
+  ]
+ }
+}

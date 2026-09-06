@@ -1,0 +1,119 @@
+{
+ "stage": "14",
+ "stage_name": "Stage: 14",
+ "url": "https://firstcycling.com/race.php?r=23&y=2026&e=14",
+ "date": "2026-09-05",
+ "race_time": 15309.0,
+ "fetched_at": "2026-09-05T17:20:55",
+ "n_results": 155,
+ "results": [
+  {
+   "place": "1",
+   "name": "Brenner Marco",
+   "rider_id": "111801",
+   "team": "Tudor Pro Cycling Team",
+   "team_id": "39194",
+   "gap": 0,
+   "dob": "2002"
+  },
+  {
+   "place": "2",
+   "name": "Buitrago Santiago",
+   "rider_id": "81835",
+   "team": "Bahrain Victorious",
+   "team_id": "38975",
+   "gap": 1.0,
+   "dob": "1999"
+  },
+  {
+   "place": "3",
+   "name": "Rodriguez Cristian",
+   "rider_id": "16947",
+   "team": "XDS Astana Team",
+   "team_id": "44515",
+   "gap": 11.0,
+   "dob": "1995"
+  },
+  {
+   "place": "4",
+   "name": "Sosa Ivan",
+   "rider_id": "61639",
+   "team": "Equipo Kern Pharma",
+   "team_id": "39319",
+   "gap": 14.0,
+   "dob": "1997"
+  },
+  {
+   "place": "5",
+   "name": "Paret-Peintre Valentin",
+   "rider_id": "97944",
+   "team": "Soudal Quick-Step",
+   "team_id": "26331",
+   "gap": 22.0,
+   "dob": "2001"
+  },
+  {
+   "place": "6",
+   "name": "Berthet Clément",
+   "rider_id": "57961",
+   "team": "Groupama-FDJ United",
+   "team_id": "39001",
+   "gap": 27.0,
+   "dob": "1997"
+  },
+  {
+   "place": "7",
+   "name": "Nordhagen Jørgen",
+   "rider_id": "179420",
+   "team": "Team Visma | Lease a Bike",
+   "team_id": "28242",
+   "gap": 39.0,
+   "dob": "2005"
+  },
+  {
+   "place": "8",
+   "name": "Zana Filippo",
+   "rider_id": "66439",
+   "team": "Soudal Quick-Step",
+   "team_id": "26331",
+   "gap": 43.0,
+   "dob": "1999"
+  },
+  {
+   "place": "9",
+   "name": "Calzoni Walter",
+   "rider_id": "96990",
+   "team": "Pinarello-Q36.5 Pro Cycling Team",
+   "team_id": "44779",
+   "gap": 66.0,
+   "dob": "2001"
+  },
+  {
+   "place": "10",
+   "name": "Almeida João",
+   "rider_id": "50303",
+   "team": "UAE Team Emirates-XRG",
+   "team_id": "25778",
+   "gap": 69.0,
+   "dob": "1998"
+  },
+  {
+   "place": "11",
+   "name": "Martin-Guyonnet Guillaume",
+   "rider_id": "10990",
+   "team": "Groupama-FDJ United",
+   "team_id": "39001",
+   "gap": 103.0,
+   "dob": "1993"
+  },
+  {
+   "place": "12",
+   "name": "Bouwman Koen",
+   "rider_id": "18564",
+   "team": "Team Jayco-AlUla",
+   "team_id": "39199",
+   "gap": 109.0,
+   "dob": "1993"
+  }
+ ]
+}

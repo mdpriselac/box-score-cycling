@@ -1,0 +1,20 @@
+{
+ "stage": 13,
+ "date": "2026-09-04",
+ "label": "Stage 13 — 4 September 2026 (no prediction made)",
+ "void_stages": [
+  3
+ ],
+ "odds_capture": "2026-09-02/markets_1748.json",
+ "post_hoc": true,
+ "reflection": [
+  "RETROSPECTIVE ONLY — no prediction was made for this stage. The daily cycle was missed on 4 September: no odds were captured, no key was logged, no boards were run before the start. There is therefore nothing here to score and nothing to claim. The oracle labelled the day anyway (res_2, tiny_group, "
+ ],
+ "scenarios": {
+  "main": {
+   "label": "x",
+   "tag": "st13_main",
+   "note": "fixture"
+  }
+ }
+}

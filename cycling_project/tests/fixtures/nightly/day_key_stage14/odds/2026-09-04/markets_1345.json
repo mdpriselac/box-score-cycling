@@ -1,0 +1,200 @@
+{
+ "1028797734": {
+  "event_name": "Etappe 14 (Ronde van Spanje 2026)",
+  "start": "2026-09-05T11:33:00Z",
+  "betoffers": [
+   {
+    "betoffer_id": 2688324174,
+    "criterion": "Winnaar",
+    "bet_offer_type": "Winnaar",
+    "outcomes": [
+     {
+      "name": "Andreas Kron",
+      "label": "Andreas Kron",
+      "odds": 301.0,
+      "implied": 0.0033222591362126247,
+      "devig": 0.0021455153501728367
+     },
+     {
+      "name": "Andreas Leknessund",
+      "label": "Andreas Leknessund",
+      "odds": 151.0,
+      "implied": 0.006622516556291391,
+      "devig": 0.004276821989417376
+     },
+     {
+      "name": "Attila Valter",
+      "label": "Attila Valter",
+      "odds": 401.0,
+      "implied": 0.0024937655860349127,
+      "devig": 0.0016104741157157703
+     },
+     {
+      "name": "Bruno Armirail",
+      "label": "Bruno Armirail",
+      "odds": 301.0,
+      "implied": 0.0033222591362126247,
+      "devig": 0.0021455153501728367
+     },
+     {
+      "name": "Carlos Rodriguez",
+      "label": "Carlos Rodriguez",
+      "odds": 67.0,
+      "implied": 0.014925373134328358,
+      "devig": 0.009638807767194385
+     },
+     {
+      "name": "Clément Berthet",
+      "label": "Clément Berthet",
+      "odds": 41.0,
+      "implied": 0.024390243902439025,
+      "devig": 0.01575122244882985
+     },
+     {
+      "name": "Cristian Rodriguez",
+      "label": "Cristian Rodriguez",
+      "odds": 19.0,
+      "implied": 0.05263157894736842,
+      "devig": 0.033989480021159146
+     },
+     {
+      "name": "Darren Rafferty",
+      "label": "Darren Rafferty",
+      "odds": 501.0,
+      "implied": 0.001996007984031936,
+      "devig": 0.001289022196411225
+     },
+     {
+      "name": "David de la Cruz",
+      "label": "David de la Cruz",
+      "odds": 301.0,
+      "implied": 0.0033222591362126247,
+      "devig": 0.0021455153501728367
+     },
+     {
+      "name": "Domen Novak",
+      "label": "Domen Novak",
+      "odds": 501.0,
+      "implied": 0.001996007984031936,
+      "devig": 0.001289022196411225
+     },
+     {
+      "name": "Eddie Dunbar",
+      "label": "Eddie Dunbar",
+      "odds": 126.0,
+      "implied": 0.007936507936507936,
+      "devig": 0.005125397780968443
+     },
+     {
+      "name": "Emanuel Buchmann",
+      "label": "Emanuel Buchmann",
+      "odds": 501.0,
+      "implied": 0.001996007984031936,
+      "devig": 0.001289022196411225
+     }
+    ],
+    "book_sum": 1.0,
+    "overround": 1.5485
+   }
+  ]
+ },
+ "1028635359": {
+  "event_name": "Algemeen Klassement (Ronde van Spanje 2026)",
+  "start": "2026-09-13T14:23:00Z",
+  "betoffers": [
+   {
+    "betoffer_id": 2676596111,
+    "criterion": "Winnaar",
+    "bet_offer_type": "Winnaar",
+    "outcomes": [
+     {
+      "name": "Clément Berthet",
+      "label": "Clément Berthet",
+      "odds": 1001.0,
+      "implied": 0.000999000999000999,
+      "devig": 0.0008214525826857459
+     },
+     {
+      "name": "Cristian Rodriguez",
+      "label": "Cristian Rodriguez",
+      "odds": 401.0,
+      "implied": 0.0024937655860349127,
+      "devig": 0.002050558691442473
+     },
+     {
+      "name": "Enric Mas",
+      "label": "Enric Mas",
+      "odds": 1.28,
+      "implied": 0.78125,
+      "devig": 0.6424015900534622
+     },
+     {
+      "name": "Felix Gall",
+      "label": "Felix Gall",
+      "odds": 13.0,
+      "implied": 0.07692307692307693,
+      "devig": 0.06325184886680243
+     },
+     {
+      "name": "Guillaume Martin",
+      "label": "Guillaume Martin",
+      "odds": 1501.0,
+      "implied": 0.0006662225183211193,
+      "devig": 0.0005478174785266034
+     },
+     {
+      "name": "Harold Tejada",
+      "label": "Harold Tejada",
+      "odds": 251.0,
+      "implied": 0.00398406374501992,
+      "devig": 0.0032759921723841895
+     },
+     {
+      "name": "Jarno Widar",
+      "label": "Jarno Widar",
+      "odds": 1001.0,
+      "implied": 0.000999000999000999,
+      "devig": 0.0008214525826857459
+     },
+     {
+      "name": "João Almeida",
+      "label": "João Almeida",
+      "odds": 3001.0,
+      "implied": 0.0003332222592469177,
+      "devig": 0.00027400001175222646
+     },
+     {
+      "name": "Léo Bisiaux",
+      "label": "Léo Bisiaux",
+      "odds": 1001.0,
+      "implied": 0.000999000999000999,
+      "devig": 0.0008214525826857459
+     },
+     {
+      "name": "Matthew Riccitello",
+      "label": "Matthew Riccitello",
+      "odds": 601.0,
+      "implied": 0.0016638935108153079,
+      "devig": 0.001368176431395061
+     },
+     {
+      "name": "Mattias Skjelmose",
+      "label": "Mattias Skjelmose",
+      "odds": 51.0,
+      "implied": 0.0196078431372549,
+      "devig": 0.01612302029938101
+     },
+     {
+      "name": "Primoz Roglic",
+      "label": "Primoz Roglic",
+      "odds": 4.5,
+      "implied": 0.2222222222222222,
+      "devig": 0.1827275633929848
+     }
+    ],
+    "book_sum": 1.0,
+    "overround": 1.2161
+   }
+  ]
+ }
+}

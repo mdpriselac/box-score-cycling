@@ -1,0 +1,89 @@
+[
+ {
+  "stage": 12,
+  "oracle_item": "gc_day",
+  "day_class": "gc_day",
+  "rule_type": "solo",
+  "wg_size": 1,
+  "wg_prop": 0.0063,
+  "winning_time": 16193.0,
+  "winner": "Omrzel Jakob",
+  "winner_gc_morning": 10,
+  "front5_gc_median": 34.0,
+  "top15_shares": {
+   "sprint": 0.0,
+   "mountain": 0.467,
+   "hilly": 0.0,
+   "rolling": 0.4,
+   "breakaway": 0.0,
+   "time_trial": 0.133
+  },
+  "top15_unknown": 0.0,
+  "day_key": {
+   "res_2": 0.55,
+   "gc_day": 0.45
+  },
+  "key_source": "config-root",
+  "exact": false,
+  "covered": true,
+  "weight_on_true": 0.45,
+  "scored_at": "2026-09-04T13:40:18.740390"
+ },
+ {
+  "stage": 13,
+  "oracle_item": "res_2",
+  "day_class": "residual",
+  "rule_type": "tiny_group",
+  "wg_size": 2,
+  "wg_prop": 0.0129,
+  "winning_time": 16440.0,
+  "winner": "van Aert Wout",
+  "winner_gc_morning": 45,
+  "front5_gc_median": 51.0,
+  "top15_shares": {
+   "sprint": 0.0,
+   "mountain": 0.333,
+   "hilly": 0.2,
+   "rolling": 0.333,
+   "breakaway": 0.0,
+   "time_trial": 0.133
+  },
+  "top15_unknown": 0.0,
+  "day_key": null,
+  "exact": null,
+  "covered": null,
+  "weight_on_true": null,
+  "key_source": null,
+  "scored_at": "2026-09-04T13:43:30.677706"
+ },
+ {
+  "stage": 14,
+  "oracle_item": "res_2",
+  "day_class": "residual",
+  "rule_type": "itt_like",
+  "wg_size": 2,
+  "wg_prop": 0.0133,
+  "winning_time": 15309.0,
+  "winner": "Brenner Marco",
+  "winner_gc_morning": 42,
+  "front5_gc_median": 42.0,
+  "top15_shares": {
+   "sprint": 0.0,
+   "mountain": 0.6,
+   "hilly": 0.0,
+   "rolling": 0.2,
+   "breakaway": 0.0,
+   "time_trial": 0.2
+  },
+  "top15_unknown": 0.0,
+  "day_key": {
+   "gc_day": 0.6,
+   "res_2": 0.4
+  },
+  "key_source": "config-root",
+  "exact": false,
+  "covered": true,
+  "weight_on_true": 0.4,
+  "scored_at": "2026-09-05T17:25:00.431972"
+ }
+]

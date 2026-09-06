@@ -1,0 +1,119 @@
+{
+ "stage": "12",
+ "stage_name": "Stage: 12",
+ "url": "https://firstcycling.com/race.php?r=23&y=2026&e=12",
+ "date": "2026-09-03",
+ "race_time": 16193.0,
+ "fetched_at": "2026-09-04T13:38:27",
+ "n_results": 166,
+ "results": [
+  {
+   "place": "1",
+   "name": "Omrzel Jakob",
+   "rider_id": "208369",
+   "team": "Bahrain Victorious",
+   "team_id": "38975",
+   "gap": 0,
+   "dob": "2006"
+  },
+  {
+   "place": "2",
+   "name": "Berrade Urko",
+   "rider_id": "57355",
+   "team": "Equipo Kern Pharma",
+   "team_id": "39319",
+   "gap": 116.0,
+   "dob": "1997"
+  },
+  {
+   "place": "3",
+   "name": "Buitrago Santiago",
+   "rider_id": "81835",
+   "team": "Bahrain Victorious",
+   "team_id": "38975",
+   "gap": 133.0,
+   "dob": "1999"
+  },
+  {
+   "place": "4",
+   "name": "Lutsenko Alexey",
+   "rider_id": "6230",
+   "team": "NSN Cycling Team",
+   "team_id": "38561",
+   "gap": 169.0,
+   "dob": "1992"
+  },
+  {
+   "place": "5",
+   "name": "Vansevenant Mauri",
+   "rider_id": "70034",
+   "team": "Soudal Quick-Step",
+   "team_id": "26331",
+   "gap": 173.0,
+   "dob": "1999"
+  },
+  {
+   "place": "6",
+   "name": "Mas Enric",
+   "rider_id": "1527",
+   "team": "Movistar Team",
+   "team_id": "39654",
+   "gap": 176.0,
+   "dob": "1995"
+  },
+  {
+   "place": "7",
+   "name": "Gall Felix",
+   "rider_id": "48547",
+   "team": "Decathlon CMA CGM Team",
+   "team_id": "40474",
+   "gap": 203.0,
+   "dob": "1998"
+  },
+  {
+   "place": "8",
+   "name": "Roglic Primoz",
+   "rider_id": "18655",
+   "team": "Red Bull-BORA-hansgrohe",
+   "team_id": "43656",
+   "gap": 203.0,
+   "dob": "1989"
+  },
+  {
+   "place": "9",
+   "name": "Carapaz Richard",
+   "rider_id": "23097",
+   "team": "EF Education-EasyPost",
+   "team_id": "39797",
+   "gap": 203.0,
+   "dob": "1993"
+  },
+  {
+   "place": "10",
+   "name": "Mühlberger Gregor",
+   "rider_id": "16578",
+   "team": "Decathlon CMA CGM Team",
+   "team_id": "40474",
+   "gap": 230.0,
+   "dob": "1994"
+  },
+  {
+   "place": "11",
+   "name": "Diaz Jose Manuel",
+   "rider_id": "45106",
+   "team": "Burgos Burpellet BH",
+   "team_id": "44473",
+   "gap": 305.0,
+   "dob": "1995"
+  },
+  {
+   "place": "12",
+   "name": "Onley Oscar",
+   "rider_id": "120433",
+   "team": "Netcompany INEOS Cycling Team",
+   "team_id": "29252",
+   "gap": 305.0,
+   "dob": "2002"
+  }
+ ]
+}

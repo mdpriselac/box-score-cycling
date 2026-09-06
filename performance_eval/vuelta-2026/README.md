@@ -30,8 +30,11 @@ odds/YYYY-MM-DD/                     Kambi snapshots (raw/, markets_HHMM.json,
 results/stage_NN/ + race_page/       FirstCycling archives (evening)
 predictions/stage_NN/scenarios.json  stage config: scenarios + DAY KEY
 predictions/gc/scenarios.json        GC config (target: gc)
-review/key_scorecard.json            rolling tier-3 key accuracy
-score_day_keys.py                    evening oracle labeling + key scoring
+predictions/stage_NN/bundle/         frozen morning bundle for the day-key agent (manifest.json + sha256s)
+predictions/stage_NN/agent_key.json  the agent's §5.1 decision record (shadow; replay: true = calibration only)
+review/key_scorecard.json            rolling tier-3 key accuracy (+ agent_* fields via --also agent)
+review/agent_replay_scorecard.json   agent replay sample — never the tier-3 archive
+score_day_keys.py                    evening oracle labeling + key scoring (--also agent, --agent-refresh)
 ```
 
 ## campaign.json

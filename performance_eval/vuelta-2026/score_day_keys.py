@@ -15,8 +15,21 @@ pipeline is NOT needed mid-race.
 
     uv run python performance_eval/vuelta-2026/score_day_keys.py            # latest archived stage
     uv run python performance_eval/vuelta-2026/score_day_keys.py --stage 4
+    uv run python performance_eval/vuelta-2026/score_day_keys.py --also agent          # + the agent's key
+    uv run python performance_eval/vuelta-2026/score_day_keys.py --agent-refresh       # re-attach every agent key, no DB
 
 Appends to review/key_scorecard.json and prints the running table.
+
+``--also agent`` (chip E, 2026-09-06): when ``predictions/stage_NN/agent_key.json``
+exists (written by ``cycling_project.nightly.run_day_key``), the row gains
+``agent_key``, ``agent_exact``, ``agent_covered``, ``agent_weight_on_true``,
+``agent_flagged`` (+ ``agent_self_flag``, ``agent_family_covered``,
+``agent_confidence``); the human fields are never touched. Records marked
+``replay: true`` (settled stages re-keyed from frozen morning inputs) are
+NOT prospective: they are scored into ``review/agent_replay_scorecard.json``
+instead of the tier-3 card, and the paired table shows them flagged.
+The paired table applies the Gate K criteria (AGENT_DESIGN §6.2) over
+judgment stages (``itt`` excluded).
 
 Evening labels are PROVISIONAL: rider archetypes come from the latest DB
 snapshots (pre-race mid-campaign), so items can flip between within-family
@@ -59,11 +72,18 @@ from cycling_project.prediction_tools.experiments.front_local_race_typing import
     rule_label,
 )
 from cycling_project.db_path import default_db_path
+from cycling_project.nightly.day_key_record import (   # noqa: E402
+    family_covered,
+    score_agent_key,
+)
 
 DB_PATH = str(default_db_path())
 RESULTS_ROOT = CAMPAIGN / "results"
 PREDICTIONS_ROOT = CAMPAIGN / "predictions"
 SCORECARD = CAMPAIGN / "review" / "key_scorecard.json"
+REPLAY_SCORECARD = CAMPAIGN / "review" / "agent_replay_scorecard.json"
+AGENT_FIELDS = ("agent_key", "agent_exact", "agent_covered", "agent_weight_on_true", "agent_flagged",
+                "agent_self_flag", "agent_family_covered", "agent_confidence", "agent_replay")
 
 
 def latest_archived_stage() -> int:
@@ -239,10 +259,133 @@ def score(oracle: dict, logged: dict | None) -> dict:
     return row
 
 
+def agent_record(stage: int) -> dict | None:
+    p = PREDICTIONS_ROOT / f"stage_{stage:02d}" / "agent_key.json"
+    if not p.exists():
+        return None
+    try:
+        return json.loads(p.read_text())
+    except json.JSONDecodeError:
+        return None
+
+
+def attach_agent(row: dict, record: dict | None) -> dict:
+    """Return a copy of ``row`` with the agent_* fields (human fields untouched)."""
+    out = dict(row)
+    out.update(score_agent_key(record, row["oracle_item"]))
+    out["agent_scored_at"] = datetime.now().isoformat()
+    return out
+
+
+def write_agent_score(row: dict, record: dict | None, card: list) -> list:
+    """Prospective records land on the tier-3 row; replay records go to the
+    separate replay card so the archive stays prospective-only."""
+    if record is None:
+        return card
+    scored = attach_agent(row, record)
+    if scored["agent_replay"]:
+        rep = json.loads(REPLAY_SCORECARD.read_text()) if REPLAY_SCORECARD.exists() else []
+        rep = [r for r in rep if r["stage"] != row["stage"]] + [
+            {k: scored.get(k) for k in ("stage", "oracle_item", "day_class", "day_key", "exact", "covered",
+                                        "weight_on_true", *AGENT_FIELDS, "agent_scored_at")}]
+        rep.sort(key=lambda r: r["stage"])
+        REPLAY_SCORECARD.write_text(json.dumps(rep, indent=1))
+        return card
+    return [r for r in card if r["stage"] != row["stage"]] + [scored]
+
+
+def paired_rows(card: list) -> list:
+    """Every stage with both a human key and an agent key, prospective rows
+    from the tier-3 card and replay rows from the replay card."""
+    rows = {r["stage"]: r for r in card if r.get("agent_key")}
+    if REPLAY_SCORECARD.exists():
+        for r in json.loads(REPLAY_SCORECARD.read_text()):
+            rows.setdefault(r["stage"], r)
+    return [rows[s] for s in sorted(rows)]
+
+
+def _fmt_key(key: dict | None) -> str:
+    if not key:
+        return "-"
+    return " ".join(f"{k}:{v:.2f}" for k, v in sorted(key.items(), key=lambda kv: -kv[1]))
+
+
+def _fmt_bool(v) -> str:
+    return "-" if v is None else ("Y" if v else "n")
+
+
+def print_paired_table(card: list) -> None:
+    rows = paired_rows(card)
+    if not rows:
+        print("\nno stage carries both a human key and an agent key yet")
+        return
+    print("\npaired human vs agent keys (Gate K population = judgment stages, itt excluded; R = replay, not prospective)")
+    hdr = f"{'st':>3} {'oracle':<7} {'human key':<28} {'ex':>2} {'cov':>3} {'wt':>4} | {'agent key':<28} {'ex':>2} {'cov':>3} {'wt':>4} {'flag':>4} {'conf':>4} R"
+    print(hdr)
+    print("-" * len(hdr))
+    for r in rows:
+        print(f"{r['stage']:>3} {str(r.get('oracle_item')):<7} {_fmt_key(r.get('day_key')):<28} "
+              f"{_fmt_bool(r.get('exact')):>2} {_fmt_bool(r.get('covered')):>3} "
+              f"{(r.get('weight_on_true') if r.get('weight_on_true') is not None else 0):>4.2f} | "
+              f"{_fmt_key(r.get('agent_key')):<28} {_fmt_bool(r.get('agent_exact')):>2} "
+              f"{_fmt_bool(r.get('agent_covered')):>3} {(r.get('agent_weight_on_true') or 0):>4.2f} "
+              f"{_fmt_bool(r.get('agent_flagged')):>4} {(r.get('agent_confidence') or 0):>4.2f} "
+              f"{'R' if r.get('agent_replay') else ' '}")
+
+    for label, subset in (("prospective", [r for r in rows if not r.get("agent_replay")]),
+                          ("replay", [r for r in rows if r.get("agent_replay")])):
+        judged = [r for r in subset if r.get("oracle_item") != "itt" and r.get("exact") is not None
+                  and r.get("agent_exact") is not None]
+        if not judged:
+            continue
+        n = len(judged)
+        h_cov = sum(bool(r["covered"]) for r in judged) / n
+        a_cov = sum(bool(r["agent_covered"]) for r in judged) / n
+        h_wt = float(np.mean([r["weight_on_true"] for r in judged]))
+        a_wt = float(np.mean([r["agent_weight_on_true"] for r in judged]))
+        h_ex = sum(bool(r["exact"]) for r in judged)
+        a_ex = sum(bool(r["agent_exact"]) for r in judged)
+        regressions = [r["stage"] for r in judged
+                       if family_covered(r.get("day_key"), r["oracle_item"])
+                       and not r.get("agent_family_covered")]
+        unflagged_wrong = [r["stage"] for r in judged if not r["agent_exact"] and not r.get("agent_flagged")]
+        flagged_wrong = [r["stage"] for r in judged if not r["agent_exact"] and r.get("agent_flagged")]
+        print(f"\nGate K ({label}, {n} judgment stages):")
+        print(f"  1 covered      human {h_cov:.2f}  agent {a_cov:.2f}  -> {'PASS' if a_cov >= h_cov else 'FAIL'}")
+        print(f"  2 weight_true  human {h_wt:.2f}  agent {a_wt:.2f}  -> {'PASS' if a_wt >= h_wt - 0.03 else 'FAIL'}")
+        print(f"  3 family regressions (human covered family, agent missed it): {regressions or 'none'} "
+              f"-> {'PASS' if not regressions else 'FAIL'}")
+        print(f"  5 self-flagging: agent wrong+unflagged {unflagged_wrong or 'none'}; wrong+flagged {flagged_wrong or 'none'}")
+        print(f"  exact          human {h_ex}/{n}  agent {a_ex}/{n}   (diagnostic)")
+        print("  4 retrieval neutrality: not measured here (needs the retrieval ledger under agent keys)")
+        print(f"  sample size: {n} of >= 30 stages across >= 3 races required before promotion")
+
+
+def agent_refresh() -> list:
+    """Re-attach agent fields to every stage with an agent_key.json using the
+    stored oracle rows (no DB, no re-labelling)."""
+    card = json.loads(SCORECARD.read_text()) if SCORECARD.exists() else []
+    for row in list(card):
+        record = agent_record(row["stage"])
+        if record is None:
+            continue
+        card = write_agent_score(row, record, card)
+    card.sort(key=lambda r: r["stage"])
+    SCORECARD.write_text(json.dumps(card, indent=1))
+    return card
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[1])
     ap.add_argument("--stage", type=int, default=None)
+    ap.add_argument("--also", choices=["agent"], default=None,
+                    help="also score predictions/stage_NN/agent_key.json into the row (paired table)")
+    ap.add_argument("--agent-refresh", action="store_true",
+                    help="re-attach every agent key from stored oracle rows and print the paired table (no DB)")
     args = ap.parse_args()
+    if args.agent_refresh:
+        print_paired_table(agent_refresh())
+        return
     stage = args.stage or latest_archived_stage()
 
     menu = load_menu()
@@ -251,7 +394,17 @@ def main():
 
     SCORECARD.parent.mkdir(parents=True, exist_ok=True)
     card = json.loads(SCORECARD.read_text()) if SCORECARD.exists() else []
+    prior = next((r for r in card if r["stage"] == stage), {})
+    # never drop agent fields already on the row when re-scoring the human key
+    row = {**{k: prior[k] for k in (*AGENT_FIELDS, "agent_scored_at") if k in prior}, **row}
     card = [r for r in card if r["stage"] != stage] + [row]
+    if args.also == "agent":
+        record = agent_record(stage)
+        if record is None:
+            print(f"  --also agent: no predictions/stage_{stage:02d}/agent_key.json")
+        else:
+            card = write_agent_score(row, record, card)
+            row = next(r for r in card if r["stage"] == stage) if not record.get("replay") else attach_agent(row, record)
     card.sort(key=lambda r: r["stage"])
     SCORECARD.write_text(json.dumps(card, indent=1))
 
@@ -272,6 +425,12 @@ def main():
               f"covered {sum(r['covered'] for r in scored)}/{len(scored)}, "
               f"mean weight_on_true "
               f"{np.mean([r['weight_on_true'] for r in scored]):.2f}")
+    if args.also == "agent":
+        if row.get("agent_key") is not None:
+            print(f"  agent: {row['agent_key']} exact={row['agent_exact']} covered={row['agent_covered']} "
+                  f"weight_on_true={row['agent_weight_on_true']} flagged={row['agent_flagged']}"
+                  + (" [REPLAY — not in the tier-3 card]" if row.get("agent_replay") else ""))
+        print_paired_table(card)
 
 
 if __name__ == "__main__":

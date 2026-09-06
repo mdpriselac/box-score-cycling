@@ -1,0 +1,119 @@
+{
+ "stage": "13",
+ "stage_name": "Stage: 13",
+ "url": "https://firstcycling.com/race.php?r=23&y=2026&e=13",
+ "date": "2026-09-04",
+ "race_time": 16440.0,
+ "fetched_at": "2026-09-04T13:38:33",
+ "n_results": 160,
+ "results": [
+  {
+   "place": "1",
+   "name": "van Aert Wout",
+   "rider_id": "18258",
+   "team": "Team Visma | Lease a Bike",
+   "team_id": "28242",
+   "gap": 0,
+   "dob": "1994"
+  },
+  {
+   "place": "2",
+   "name": "Paret-Peintre Valentin",
+   "rider_id": "97944",
+   "team": "Soudal Quick-Step",
+   "team_id": "26331",
+   "gap": 0.0,
+   "dob": "2001"
+  },
+  {
+   "place": "3",
+   "name": "Brennan Matthew",
+   "rider_id": "187473",
+   "team": "Team Visma | Lease a Bike",
+   "team_id": "28242",
+   "gap": 24.0,
+   "dob": "2005"
+  },
+  {
+   "place": "4",
+   "name": "Widar Jarno",
+   "rider_id": "186117",
+   "team": "Lotto-Intermarché",
+   "team_id": "39318",
+   "gap": 24.0,
+   "dob": "2005"
+  },
+  {
+   "place": "5",
+   "name": "Albanese Vincenzo",
+   "rider_id": "37351",
+   "team": "EF Education-EasyPost",
+   "team_id": "39797",
+   "gap": 24.0,
+   "dob": "1996"
+  },
+  {
+   "place": "6",
+   "name": "Fisher-Black Finn",
+   "rider_id": "75998",
+   "team": "Red Bull-BORA-hansgrohe",
+   "team_id": "43656",
+   "gap": 24.0,
+   "dob": "2001"
+  },
+  {
+   "place": "7",
+   "name": "Vermaerke Kevin",
+   "rider_id": "82912",
+   "team": "UAE Team Emirates-XRG",
+   "team_id": "25778",
+   "gap": 24.0,
+   "dob": "2000"
+  },
+  {
+   "place": "8",
+   "name": "Bisiaux Léo",
+   "rider_id": "184536",
+   "team": "Decathlon CMA CGM Team",
+   "team_id": "40474",
+   "gap": 28.0,
+   "dob": "2005"
+  },
+  {
+   "place": "9",
+   "name": "Dalby Simon",
+   "rider_id": "129977",
+   "team": "Uno-X Mobility",
+   "team_id": "31698",
+   "gap": 32.0,
+   "dob": "2003"
+  },
+  {
+   "place": "10",
+   "name": "Zana Filippo",
+   "rider_id": "66439",
+   "team": "Soudal Quick-Step",
+   "team_id": "26331",
+   "gap": 45.0,
+   "dob": "1999"
+  },
+  {
+   "place": "11",
+   "name": "Herrada Jesus",
+   "rider_id": "2325",
+   "team": "Burgos Burpellet BH",
+   "team_id": "44473",
+   "gap": 45.0,
+   "dob": "1990"
+  },
+  {
+   "place": "12",
+   "name": "Kron Andreas",
+   "rider_id": "53723",
+   "team": "Uno-X Mobility",
+   "team_id": "31698",
+   "gap": 45.0,
+   "dob": "1998"
+  }
+ ]
+}

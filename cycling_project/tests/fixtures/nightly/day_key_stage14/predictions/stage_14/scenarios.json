@@ -1,0 +1,33 @@
+{
+ "stage": 14,
+ "date": "2026-09-05",
+ "label": "Stage 14 — Jaén → Sierra de la Pandera, 154.5 km",
+ "void_stages": [
+  3
+ ],
+ "odds_capture": "2026-09-04/markets_1345.json",
+ "event_id": "1028797734",
+ "day_key": {
+  "gc_day": 0.6,
+  "res_2": 0.4
+ },
+ "day_key_note": "OFFICIAL MORNING READ FIXTURE-SENTINEL-ST14 — this text must never reach the bundle.",
+ "reflection": [
+  "The escape won for the third time in four mountain stages, and it won in the one way the morning read had argued against. Marco Brenner took Tudor's first Grand Tour stage from a 44-rider break, beating Santiago Buitrago by a second after the Colombian had attacked on the steepest section and been r"
+ ],
+ "scenarios": {
+  "main": {
+   "label": "x",
+   "tag": "st14_main",
+   "note": "fixture"
+  },
+  "hindsight": {
+   "label": "h",
+   "tag": "st14_hindsight",
+   "day_key": {
+    "res_2": 1.0
+   },
+   "note": "FIXTURE-SENTINEL-HINDSIGHT"
+  }
+ }
+}
