@@ -180,6 +180,8 @@ def main():
     }
     OUT_PROD.parent.mkdir(parents=True, exist_ok=True)
     OUT_PROD.write_text(json.dumps(prod, indent=2))
+    from cycling_project.prediction_tools.production_release import write_release_manifest
+    write_release_manifest(OUT_PROD.parent)
 
     ts = datetime.now().strftime("%Y%m%d_%H%M%S")
     rep_path = OUT_DIR / f"day_menu_v1_report_{ts}.json"

@@ -38,6 +38,11 @@ except ImportError:
     warnings.warn("LightGBM not installed. Install with: pip install lightgbm")
 
 from .feature_engineering import FeatureEngineer
+from .lambdarank_feature_contract import (
+    assert_stateless_feature_columns,
+    build_lambdarank_feature_view,
+    make_lambdarank_contract_metadata,
+)
 
 
 # ---------------------------------------------------------------------------
@@ -180,6 +185,10 @@ class LambdaRankProbabilityPredictor:
                 "LambdaRank predictor requires 'competition_id' in input to form groups"
             )
 
+        # Serving commonly receives the stateful frame used by downstream
+        # heads. Enforce the stateless contract at the model boundary too.
+        df = build_lambdarank_feature_view(df)
+
         # Sort by competition_id so LightGBM `group` arrays align with rows.
         df_sorted = df.sort_values('competition_id', kind='stable').reset_index(drop=True)
 
@@ -270,6 +279,7 @@ class LambdaRankProbabilityPredictor:
         )
 
         self._fitted = True
+        assert_stateless_feature_columns(self.feature_columns)
 
         return {
             'feature_importance': self.get_feature_importance(),
@@ -529,11 +539,18 @@ class LambdaRankProbabilityPredictor:
     def save(self, path: str):
         if not self._fitted:
             raise ValueError("Model must be trained before saving")
+        assert_stateless_feature_columns(self.feature_columns or [])
         self.model.save_model(path)
 
     def load(self, path: str):
         self.model = lgb.Booster(model_file=path)
         self._fitted = True
+
+    def feature_contract_metadata(self) -> Dict[str, Any]:
+        """Return the feature contract persisted beside this model."""
+        if self.feature_columns is None:
+            raise ValueError("LambdaRank feature columns are not available")
+        return make_lambdarank_contract_metadata(self.feature_columns)
 
 
 def train_lambdarank_predictor(

@@ -41,6 +41,7 @@ from cycling_project.prediction_tools.data_pipeline import (
     DataConfig,
 )
 from cycling_project.prediction_tools.probability_predictor import ProbabilityPredictor
+from cycling_project.prediction_tools.production_release import write_release_manifest
 from cycling_project.prediction_tools.training import ModelTrainer, TrainingConfig
 from cycling_project.webscrape_tools.logging_config import get_logger
 
@@ -241,6 +242,7 @@ class GCOutlookHead:
         metadata['train_config'] = TRAIN_CONFIG
         with open(base / MODEL_FILES['metadata'], 'w') as f:
             json.dump(metadata, f, indent=2, default=str)
+        write_release_manifest(base)
         logger.info("GC outlook head saved to %s", base)
 
     @classmethod

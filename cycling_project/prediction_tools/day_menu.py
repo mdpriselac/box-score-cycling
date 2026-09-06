@@ -348,6 +348,8 @@ def save_kernels(cum: pd.DataFrame, path: Optional[Path] = None) -> Path:
     path = Path(path) if path else KERNELS_PATH
     path.parent.mkdir(parents=True, exist_ok=True)
     cum.to_parquet(path, index=False)
+    from cycling_project.prediction_tools.production_release import write_release_manifest
+    write_release_manifest(path.parent)
     logger.info("Saved kernel cumulants: %s (%d rows, %d riders)",
                 path, len(cum), cum.rider_id.nunique())
     return path

@@ -766,6 +766,22 @@ def run_dnf_training(config: PipelineConfig) -> str:
 
 
 # ---------------------------------------------------------------------------
+# Step 14: Verify the exact release that serving will load
+# ---------------------------------------------------------------------------
+
+def run_release_validation(config: PipelineConfig) -> str:
+    from cycling_project.prediction_tools.production_release import (
+        validate_release_manifest,
+    )
+
+    report = validate_release_manifest(config.model_dir)
+    return (
+        f"release={report.release_id[:12]} artifacts={report.artifact_count} "
+        f"components={report.component_count}"
+    )
+
+
+# ---------------------------------------------------------------------------
 # CLI
 # ---------------------------------------------------------------------------
 
@@ -773,7 +789,7 @@ STEP_NAMES = [
     "scrape-lists", "scrape-data", "migrate", "place-bucket",
     "bib", "experience", "percentiles", "gradients", "features",
     "race-state", "elo-snapshots", "train", "train-lambdarank",
-    "train-gc-outlook", "train-dnf",
+    "train-gc-outlook", "train-dnf", "validate-release",
 ]
 
 
@@ -865,7 +881,15 @@ def print_summary(results: List[StepResult]):
 # Orchestrator
 # ---------------------------------------------------------------------------
 
-def run_pipeline(args: argparse.Namespace):
+def run_pipeline(args: argparse.Namespace) -> bool:
+    """Run the requested pipeline steps and report overall success.
+
+    Non-critical steps may fail without preventing later independent work,
+    but any recorded failure makes the final process status unsuccessful.
+    Critical data failures and a failed main-model training step stop the
+    pipeline immediately so dependent heads cannot be published against an
+    older main suite.
+    """
     config = PipelineConfig.from_defaults()
     results: List[StepResult] = []
 
@@ -884,7 +908,7 @@ def run_pipeline(args: argparse.Namespace):
         for step in STEP_NAMES:
             marker = "  RUN " if should_run(step, args) else "  SKIP"
             print(f"  {marker}  {step}")
-        return
+        return True
 
     # Step 2: Scrape race lists
     if should_run("scrape-lists", args):
@@ -905,7 +929,7 @@ def run_pipeline(args: argparse.Namespace):
         if not r.success:
             logger.error("Migration failed - stopping pipeline")
             print_summary(results)
-            return
+            return False
 
     # Step 4b: Backfill place_bucket
     if should_run("place-bucket", args):
@@ -932,7 +956,7 @@ def run_pipeline(args: argparse.Namespace):
         if not r.success:
             logger.error("Percentile tables failed - stopping pipeline")
             print_summary(results)
-            return
+            return False
 
     # Step 8: Gradients
     if should_run("gradients", args):
@@ -941,7 +965,7 @@ def run_pipeline(args: argparse.Namespace):
         if not r.success:
             logger.error("Gradient calculation failed - stopping pipeline")
             print_summary(results)
-            return
+            return False
 
     # Step 9: Feature precomputation
     if should_run("features", args):
@@ -952,7 +976,7 @@ def run_pipeline(args: argparse.Namespace):
         if not r.success:
             logger.error("Feature precomputation failed - stopping pipeline")
             print_summary(results)
-            return
+            return False
 
     # Step 9b: Stage-race state (non-fatal: training tolerates a stale
     # rider_race_state via the LEFT JOIN; rows simply come through NULL)
@@ -970,9 +994,14 @@ def run_pipeline(args: argparse.Namespace):
 
     # Step 10: Train model
     if should_run("train", args):
-        results.append(
-            run_step("Train Production Model", run_model_training, config)
-        )
+        r = run_step("Train Production Model", run_model_training, config)
+        results.append(r)
+        if not r.success:
+            logger.error(
+                "Main model training failed - stopping model publication chain"
+            )
+            print_summary(results)
+            return False
 
     # Step 11: Train LambdaRank probability head (separate, appends to registry)
     if should_run("train-lambdarank", args):
@@ -994,7 +1023,15 @@ def run_pipeline(args: argparse.Namespace):
             run_step("Train DNF Head", run_dnf_training, config)
         )
 
+    # This is the deployment/serving gate: success means every tracked byte
+    # still matches the content-addressed manifest produced by the writers.
+    if should_run("validate-release", args):
+        results.append(
+            run_step("Validate Production Release", run_release_validation, config)
+        )
+
     print_summary(results)
+    return all(r.success for r in results)
 
 
 def main():
@@ -1011,7 +1048,8 @@ def main():
     print("=" * 70)
 
     start = time.time()
-    run_pipeline(args)
+    if not run_pipeline(args):
+        raise SystemExit(1)
 
     elapsed = time.time() - start
     print(f"\nPipeline finished in {elapsed/60:.1f} minutes")

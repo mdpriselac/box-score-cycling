@@ -54,6 +54,7 @@ import numpy as np
 import pandas as pd
 
 from cycling_project.webscrape_tools.logging_config import get_logger
+from cycling_project.prediction_tools.production_release import write_release_manifest
 
 logger = get_logger(__name__)
 
@@ -763,6 +764,7 @@ def train_production_dnf_head(
     (model_dir / PRODUCTION_FILES["metadata"]).write_text(
         json.dumps(metadata, indent=2, default=str)
     )
+    write_release_manifest(model_dir)
     logger.info("DNF head saved to %s", model_dir)
     return metadata
 

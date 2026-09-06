@@ -15,6 +15,7 @@ import os
 import json
 import pickle
 import shutil
+import tempfile
 from datetime import datetime
 from typing import Dict, Any, Optional, Tuple
 from pathlib import Path
@@ -30,8 +31,12 @@ from .lambdarank_probability_predictor import (
     LambdaRankProbabilityPredictor,
     LambdaRankPredictorConfig,
 )
+from .lambdarank_feature_contract import (
+    assert_lambdarank_contract_compatible,
+)
 from .race_ranking_predictor import RaceRankingPredictor, RaceRankingConfig
 from .feature_engineering import FeatureEngineer
+from .production_release import write_release_manifest
 
 
 class ModelRegistry:
@@ -59,6 +64,59 @@ class ModelRegistry:
 
     def __init__(self, base_dir: str = 'models/prediction_system'):
         self.base_dir = Path(base_dir)
+
+    def _staging_dir(self, *, copy_existing: bool) -> Path:
+        """Create a sibling directory in which a complete release can be built."""
+        self.base_dir.parent.mkdir(parents=True, exist_ok=True)
+        path = Path(tempfile.mkdtemp(
+            prefix=f'.{self.base_dir.name}.staging-',
+            dir=self.base_dir.parent,
+        ))
+        if copy_existing:
+            # copytree requires an absent destination.  Removing this newly
+            # created, uniquely named directory is safe and keeps all staging
+            # work on the same filesystem as the eventual rename.
+            path.rmdir()
+            shutil.copytree(self.base_dir, path)
+        return path
+
+    def _publish_staged(self, staged_dir: Path) -> None:
+        """Publish a complete staged registry, restoring the old one on error.
+
+        Directory renames are atomic on a single filesystem.  Moving the old
+        release aside before installing the new one prevents readers from ever
+        observing a directory containing a mixture of release generations.
+        There can be a very short interval in which the canonical path is
+        absent; a pointer-based layout would be required to remove that interval
+        while retaining portable filesystem operations.
+        """
+        rollback_dir: Optional[Path] = None
+        if self.base_dir.exists():
+            rollback_dir = Path(tempfile.mkdtemp(
+                prefix=f'.{self.base_dir.name}.rollback-',
+                dir=self.base_dir.parent,
+            ))
+            rollback_dir.rmdir()
+
+        published = False
+        try:
+            if rollback_dir is not None:
+                os.replace(self.base_dir, rollback_dir)
+            try:
+                os.replace(staged_dir, self.base_dir)
+                published = True
+            except Exception:
+                if rollback_dir is not None and not self.base_dir.exists():
+                    os.replace(rollback_dir, self.base_dir)
+                    rollback_dir = None
+                raise
+        finally:
+            if staged_dir.exists():
+                shutil.rmtree(staged_dir)
+            # If restoration itself fails, retain the rollback directory for
+            # manual recovery rather than deleting the last good release.
+            if published and rollback_dir is not None and rollback_dir.exists():
+                shutil.rmtree(rollback_dir)
 
     def _archive_existing(self) -> Optional[Path]:
         """Archive the current model directory before overwriting.
@@ -121,9 +179,50 @@ class ModelRegistry:
             evaluation: Optional evaluation metrics
             training_info: Optional training metadata
         """
-        # Archive existing models before overwriting
-        self._archive_existing()
+        # A production registry also contains independently managed serving
+        # artifacts (GC outlook, DNF, Elo snapshots, win calibration and the
+        # day-menu corpus).  A full main-suite save historically replaced its
+        # own files while leaving those artifacts in place.  Seed staging from
+        # the published directory so the atomic directory swap preserves that
+        # contract; metadata flags still prevent stale optional main heads
+        # from being loaded.
+        staged_dir = self._staging_dir(copy_existing=self.base_dir.exists())
+        staged_registry = ModelRegistry(str(staged_dir))
+        try:
+            staged_registry._write_full_registry(
+                bucket_predictor=bucket_predictor,
+                time_gap_predictor=time_gap_predictor,
+                probability_predictor=probability_predictor,
+                calibrated_predictor=calibrated_predictor,
+                contender_predictor=contender_predictor,
+                lambdarank_predictor=lambdarank_predictor,
+                evaluation=evaluation,
+                training_info=training_info,
+            )
+            write_release_manifest(staged_dir)
+            # Preserve the established history behavior, but only after the
+            # replacement suite has been written successfully.
+            self._archive_existing()
+            self._publish_staged(staged_dir)
+        except Exception:
+            if staged_dir.exists():
+                shutil.rmtree(staged_dir)
+            raise
 
+        print(f"Models saved to {self.base_dir}")
+
+    def _write_full_registry(
+        self,
+        bucket_predictor: OrdinalBucketPredictor,
+        time_gap_predictor: Optional[TimeGapPredictor] = None,
+        probability_predictor: Optional[ProbabilityPredictor] = None,
+        calibrated_predictor: Optional[ProbabilityPredictor] = None,
+        contender_predictor: Optional[ProbabilityPredictor] = None,
+        lambdarank_predictor: Optional[LambdaRankProbabilityPredictor] = None,
+        evaluation: Optional[Dict[str, Any]] = None,
+        training_info: Optional[Dict[str, Any]] = None,
+    ) -> None:
+        """Write a complete registry into an unpublished directory."""
         self.base_dir.mkdir(parents=True, exist_ok=True)
 
         # Save bucket model
@@ -173,6 +272,10 @@ class ModelRegistry:
             'bucket_feature_columns': bucket_predictor.feature_columns,
             'saved_at': datetime.now().isoformat(),
         }
+        if lambdarank_predictor is not None:
+            metadata['lambdarank_feature_contract'] = (
+                lambdarank_predictor.feature_contract_metadata()
+            )
 
         if evaluation:
             metadata['evaluation'] = self._make_json_safe(evaluation)
@@ -183,8 +286,6 @@ class ModelRegistry:
         metadata_path = self.base_dir / 'metadata.json'
         with open(metadata_path, 'w') as f:
             json.dump(metadata, f, indent=2)
-
-        print(f"Models saved to {self.base_dir}")
 
     def _save_probability_model(self, predictor: ProbabilityPredictor, suffix: str):
         """Save a single probability model and its feature engineer."""
@@ -223,19 +324,44 @@ class ModelRegistry:
                 f"Cannot add LambdaRank head — no existing metadata at {metadata_path}."
             )
 
-        with open(metadata_path, 'r') as f:
-            metadata = json.load(f)
+        staged_dir = self._staging_dir(copy_existing=True)
+        staged_registry = ModelRegistry(str(staged_dir))
+        try:
+            staged_metadata_path = staged_dir / 'metadata.json'
+            with open(staged_metadata_path, 'r') as f:
+                metadata = json.load(f)
 
-        self._save_lambdarank_model(predictor)
-        metadata['has_lambdarank_model'] = True
+            replacement_contract = predictor.feature_contract_metadata()
+            expected_contract = metadata.get('lambdarank_feature_contract')
+            if expected_contract is None:
+                raise ValueError(
+                    "Production registry predates the LambdaRank feature "
+                    "contract. Run the full production-suite retrain before "
+                    "using the standalone LambdaRank replacement step."
+                )
+            assert_lambdarank_contract_compatible(
+                expected_contract,
+                replacement_contract,
+                context='Standalone LambdaRank replacement',
+            )
 
-        if training_info is not None:
-            existing_info = metadata.get('training_info', {})
-            existing_info.update(self._make_json_safe(training_info))
-            metadata['training_info'] = existing_info
+            staged_registry._save_lambdarank_model(predictor)
+            metadata['has_lambdarank_model'] = True
+            metadata['lambdarank_feature_contract'] = replacement_contract
 
-        with open(metadata_path, 'w') as f:
-            json.dump(metadata, f, indent=2)
+            if training_info is not None:
+                existing_info = metadata.get('training_info', {})
+                existing_info.update(self._make_json_safe(training_info))
+                metadata['training_info'] = existing_info
+
+            with open(staged_metadata_path, 'w') as f:
+                json.dump(metadata, f, indent=2)
+            write_release_manifest(staged_dir)
+            self._publish_staged(staged_dir)
+        except Exception:
+            if staged_dir.exists():
+                shutil.rmtree(staged_dir)
+            raise
 
         logger.info(f"LambdaRank head added to {self.base_dir}")
         print(f"LambdaRank head added to {self.base_dir}")
@@ -260,26 +386,34 @@ class ModelRegistry:
                 f"Cannot add bucket variant — no existing metadata in {self.base_dir}."
             )
 
-        model_path = self.base_dir / f'bucket_model_{variant}.txt'
-        predictor.save(str(model_path))
-        fe_path = self.base_dir / f'bucket_feature_engineer_{variant}.pkl'
-        with open(fe_path, 'wb') as f:
-            pickle.dump({
-                'feature_columns': predictor.feature_columns,
-                'feature_engineer': predictor.feature_engineer,
-            }, f)
+        staged_dir = self._staging_dir(copy_existing=True)
+        try:
+            model_path = staged_dir / f'bucket_model_{variant}.txt'
+            predictor.save(str(model_path))
+            fe_path = staged_dir / f'bucket_feature_engineer_{variant}.pkl'
+            with open(fe_path, 'wb') as f:
+                pickle.dump({
+                    'feature_columns': predictor.feature_columns,
+                    'feature_engineer': predictor.feature_engineer,
+                }, f)
 
-        metadata_path = self.base_dir / 'metadata.json'
-        with open(metadata_path, 'r') as f:
-            metadata = json.load(f)
-        metadata[f'has_bucket_{variant}'] = True
-        metadata[f'bucket_{variant}_feature_columns'] = predictor.feature_columns
-        if training_info is not None:
-            existing_info = metadata.get('training_info', {})
-            existing_info.update(self._make_json_safe(training_info))
-            metadata['training_info'] = existing_info
-        with open(metadata_path, 'w') as f:
-            json.dump(metadata, f, indent=2)
+            metadata_path = staged_dir / 'metadata.json'
+            with open(metadata_path, 'r') as f:
+                metadata = json.load(f)
+            metadata[f'has_bucket_{variant}'] = True
+            metadata[f'bucket_{variant}_feature_columns'] = predictor.feature_columns
+            if training_info is not None:
+                existing_info = metadata.get('training_info', {})
+                existing_info.update(self._make_json_safe(training_info))
+                metadata['training_info'] = existing_info
+            with open(metadata_path, 'w') as f:
+                json.dump(metadata, f, indent=2)
+            write_release_manifest(staged_dir)
+            self._publish_staged(staged_dir)
+        except Exception:
+            if staged_dir.exists():
+                shutil.rmtree(staged_dir)
+            raise
 
         logger.info(f"Bucket variant '{variant}' added to {self.base_dir}")
         print(f"Bucket variant '{variant}' added to {self.base_dir}")
@@ -321,6 +455,7 @@ class ModelRegistry:
                 'feature_columns': predictor.feature_columns,
                 'feature_engineer': predictor.feature_engineer,
                 'temperature': predictor.config.temperature,
+                'feature_contract': predictor.feature_contract_metadata(),
             }, f)
 
     def _load_lambdarank_model(self) -> Optional[LambdaRankProbabilityPredictor]:
@@ -340,6 +475,29 @@ class ModelRegistry:
                 predictor.feature_engineer = fe_data['feature_engineer']
                 if 'temperature' in fe_data:
                     predictor.config.temperature = fe_data['temperature']
+                actual_contract = predictor.feature_contract_metadata()
+                saved_contract = fe_data.get('feature_contract')
+                if saved_contract is not None:
+                    assert_lambdarank_contract_compatible(
+                        saved_contract,
+                        actual_contract,
+                        context='Loaded LambdaRank artifact',
+                    )
+                metadata_path = self.base_dir / 'metadata.json'
+                if metadata_path.exists():
+                    with open(metadata_path, 'r') as f:
+                        registry_contract = json.load(f).get(
+                            'lambdarank_feature_contract'
+                        )
+                    # Legacy registries remain readable until the coordinated
+                    # full retrain writes the new contract. New registries fail
+                    # closed if their release metadata and sidecar diverge.
+                    if registry_contract is not None:
+                        assert_lambdarank_contract_compatible(
+                            registry_contract,
+                            actual_contract,
+                            context='Registry LambdaRank artifact',
+                        )
 
         return predictor
 

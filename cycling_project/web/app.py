@@ -32,9 +32,6 @@ from cycling_project.prediction_tools.future_race_loader import (
     compute_field_features,
     get_reference_race_profile,
     average_race_profiles,
-    assemble_prediction_df,
-    attach_stack_features,
-    load_production_rating_snapshots,
     search_historical_races,
     get_selected_race_details,
     scrape_or_load_results,
@@ -48,30 +45,23 @@ from cycling_project.prediction_tools.future_race_loader import (
     get_available_stages,
     get_default_references,
 )
-from cycling_project.prediction_tools.contest_signature_features import (
-    build_serving_signature_context,
-)
-from cycling_project.prediction_tools.dnf_predictor import (
-    load_production_dnf_head,
-)
-from cycling_project.prediction_tools.gc_outlook import GCOutlookHead
 from cycling_project.prediction_tools.pricing_layer import (
     BLEND_W,
-    apply_pricing_layer,
 )
 from cycling_project.prediction_tools.live_race_state import (
-    attach_race_state,
     enumerate_edition_stages,
     fetch_live_race_state,
 )
-from cycling_project.prediction_tools.model_registry import ModelRegistry
 from cycling_project.prediction_tools.prediction_log import (
     PredictionLogRow,
+    PredictionRunIdentity,
     ensure_schema as _ensure_prediction_log_schema,
     log_predictions,
+    prediction_input_fingerprint,
 )
-from cycling_project.prediction_tools.win_calibration import (
-    load_corrector as load_win_corrector,
+from cycling_project.prediction_tools.prediction_service import (
+    PredictionRequest,
+    PredictionService,
 )
 
 
@@ -923,30 +913,15 @@ passed the probability gate. Three pricing additions on top:
 
         with st.spinner("Loading model and running predictions..."):
             try:
-                # Load model (ensemble gives both bucket + time gap,
-                # plus the optional full-field LambdaRank probability head)
-                registry = ModelRegistry(MODEL_DIR)
-                (
-                    bucket_pred,
-                    time_gap_pred,
-                    race_ranker,
-                    lambdarank_pred,
-                ) = registry.load_with_ranker(ranking_method='ensemble')
-                registry_metadata = registry.get_metadata()
-                model_version = registry_metadata.get('saved_at', '')
-
-                # ── Arm-C stack inputs (all optional; features stay NaN
-                # and pricing degrades gracefully when artifacts are absent)
-                win_corrector = load_win_corrector(MODEL_DIR)
-                dnf_bundle = load_production_dnf_head(Path(MODEL_DIR))
-                rating_snaps = load_production_rating_snapshots()
-
-                # Build name/team lookup
-                name_map = matched.set_index('rider_id')[['rider_name', 'team_name']].to_dict('index')
+                service = PredictionService.from_production(
+                    MODEL_DIR, db_path=DB_PATH
+                )
+                artifacts = service.artifacts
+                model_version = artifacts.model_version
 
                 all_predictions = {}
                 reference_profiles = []
-                log_rows: list = []
+                log_batches: list = []
 
                 fc_race_id = str(st.session_state.get('fc_race_id', ''))
                 race_year = st.session_state.get('race_year')
@@ -988,9 +963,6 @@ passed the probability gate. Three pricing additions on top:
                         force_refresh=force_refresh_state,
                         db_path=DB_PATH,
                     )
-                # State for the main per-reference/averaged predictions —
-                # only stage targets; everything else gets NaN -> defaults.
-                main_state_df = race_state_df if fetch_for_stage else None
                 state_through = (
                     int(race_state_info['stages_completed'])
                     if race_state_info and race_state_info.get('available')
@@ -1017,91 +989,30 @@ passed the probability gate. Three pricing additions on top:
                     else:
                         rs_msg = 'n/a (not an in-progress stage-race target)'
 
-                def _attach_lambdarank(result_df: pd.DataFrame, pred_df: pd.DataFrame):
-                    """Merge LambdaRank win/podium probabilities onto result_df.
-
-                    Both columns are aligned on rider_id; silently no-ops
-                    if the LambdaRank head isn't installed in the registry.
-                    """
-                    if lambdarank_pred is None:
-                        return None
-                    # LambdaRank requires competition_id to form the softmax
-                    # denominator. pred_df already has competition_id=0 set
-                    # by assemble_prediction_df, so the whole field forms
-                    # one group (what we want for full-field softmax).
-                    win_p = lambdarank_pred.predict_win_probabilities(pred_df)
-                    podium_p = lambdarank_pred.predict_topk_probabilities(
-                        pred_df, k=3, n_samples=2000
-                    )
-                    lr_df = pd.DataFrame({
-                        'rider_id': pred_df['rider_id'].values,
-                        'lambdarank_win_p': win_p.values,
-                        'lambdarank_podium_p': podium_p.values,
-                    })
-                    result_df['lambdarank_win_p'] = result_df['rider_id'].map(
-                        lr_df.set_index('rider_id')['lambdarank_win_p']
-                    )
-                    result_df['lambdarank_podium_p'] = result_df['rider_id'].map(
-                        lr_df.set_index('rider_id')['lambdarank_podium_p']
-                    )
-                    return float(lambdarank_pred.config.temperature)
-
-                def _attach_elo(result_df: pd.DataFrame, pred_df: pd.DataFrame):
-                    """Map contested-Elo rating + comparison count onto result_df.
-
-                    As-of-today rider rating from the production snapshots
-                    (attached to pred_df by attach_stack_features); silently
-                    no-ops if the rating columns aren't present.
-                    """
-                    for col in ('contested_rating', 'contested_rating_n'):
-                        if col in pred_df.columns:
-                            result_df[col] = result_df['rider_id'].map(
-                                pred_df.set_index('rider_id')[col]
-                            )
-
-                # ── Arm-C signature context: one-day targets only.
-                # Stage / gc targets keep all signature columns NaN — the
-                # models' trained out-of-scope state (ref-keyed stage serving
-                # was shown to cost +0.078 log loss).
-                sig_context = None
-                sig_error = None
-                if target_comp_type == 'one_day':
-                    try:
-                        sig_context = build_serving_signature_context(
-                            reference_ids, field_features, DB_PATH,
-                        )
-                    except Exception as sig_exc:
-                        sig_error = str(sig_exc)
-                        st.warning(
-                            f"Signature features unavailable (NaN fallback): {sig_exc}"
-                        )
-
+                sig_status = {'error': None}
                 _pricing_warned = set()
 
-                def _apply_pricing_layer(result_df: pd.DataFrame, pred_df: pd.DataFrame,
-                                         profile: dict):
-                    """Shared pricing layer (prediction_tools.pricing_layer):
-                    win corrector + blend win market + DNF-adjusted prices."""
-                    priced, pricing_warnings = apply_pricing_layer(
-                        result_df, pred_df, profile,
-                        win_corrector=win_corrector,
-                        dnf_bundle=dnf_bundle,
-                        stage_number=(
-                            int(target_stage_num)
-                            if target_comp_type == 'stage' and target_stage_num
-                            else None
-                        ),
-                        db_path=DB_PATH,
-                    )
-                    for w in pricing_warnings:
+                def _run_profile(profile: dict, label: str):
+                    prediction = service.predict(PredictionRequest(
+                        snapshots=snapshots,
+                        matched_riders=matched,
+                        field_features=field_features,
+                        profile=profile,
+                        target_type=target_comp_type,
+                        stage_number=logged_stage_num,
+                        race_state=race_state_df,
+                        reference_competition_ids=reference_ids,
+                    ))
+                    for w in prediction.warnings:
                         if w not in _pricing_warned:
                             _pricing_warned.add(w)
                             st.warning(w)
-                    return priced
+                        if w.startswith('Signature features unavailable:'):
+                            sig_status['error'] = w.partition(':')[2].strip()
 
-                def _append_log_rows(label: str, result_df: pd.DataFrame, lr_temp):
-                    for _, row in result_df.iterrows():
-                        log_rows.append(PredictionLogRow(
+                    rows = []
+                    for _, row in prediction.riders.iterrows():
+                        rows.append(PredictionLogRow(
                             fc_race_id=fc_race_id,
                             year=int(race_year) if race_year else 0,
                             stage_number=logged_stage_num,
@@ -1115,7 +1026,9 @@ passed the probability gate. Three pricing additions on top:
                             multiclass_top15_p=row.get('prob_top15'),
                             lambdarank_win_p=row.get('lambdarank_win_p'),
                             lambdarank_podium_p=row.get('lambdarank_podium_p'),
-                            lambdarank_temperature=lr_temp,
+                            lambdarank_temperature=(
+                                prediction.lambdarank_temperature
+                            ),
                             state_through_stage=state_through,
                             dnf_p=row.get('dnf_p'),
                             dnf_adj_win_p=row.get('dnf_adj_win_p'),
@@ -1124,58 +1037,38 @@ passed the probability gate. Three pricing additions on top:
                             dnf_adj_top15_p=row.get('dnf_adj_top15_p'),
                             blend_win_p=row.get('blend_win_p'),
                         ))
-
-                # Live-form recompute status, written by assemble_prediction_df
-                # (shared across all assembles this run — same inputs).
-                form_status: dict = {}
+                    identity = PredictionRunIdentity(
+                        fc_race_id=fc_race_id,
+                        year=int(race_year) if race_year else 0,
+                        stage_number=logged_stage_num,
+                        model_version=model_version,
+                        reference_comp_ids=reference_ids,
+                        state_through_stage=state_through,
+                        scenario_key=label,
+                        target=target_comp_type,
+                        input_fingerprint=prediction_input_fingerprint(
+                            matched['rider_id'], profile
+                        ),
+                    )
+                    log_batches.append((rows, identity))
+                    return prediction
 
                 for comp_id in selected_refs:
                     profile = get_reference_race_profile(comp_id)
                     reference_profiles.append(profile)
-
-                    pred_df = assemble_prediction_df(
-                        snapshots, matched, field_features, profile,
-                        form_status=form_status,
-                    )
-                    pred_df = attach_race_state(pred_df, main_state_df)
-                    pred_df = attach_stack_features(
-                        pred_df, time_gap_pred, lambdarank_pred,
-                        rating_snapshots=rating_snaps,
-                        signature_context=sig_context,
-                    )
-                    result = race_ranker.predict_race(pred_df, return_details=True)
-                    result['team'] = result['rider_id'].map(
-                        lambda rid: name_map.get(rid, {}).get('team_name', '')
-                    )
-                    lr_temp = _attach_lambdarank(result, pred_df)
-                    _attach_elo(result, pred_df)
-                    result = _apply_pricing_layer(result, pred_df, profile)
-
                     label = f"{profile['competition_name']} ({profile['competition_date']})"
-                    all_predictions[label] = result
-                    _append_log_rows(label, result, lr_temp)
+                    prediction = _run_profile(profile, label)
+                    all_predictions[label] = prediction.riders
 
                 # Average prediction (always, even for 1 race)
                 avg_profile = average_race_profiles(reference_profiles)
-                pred_df = assemble_prediction_df(
-                    snapshots, matched, field_features, avg_profile,
-                    form_status=form_status,
+                average_prediction = _run_profile(
+                    avg_profile, 'Averaged Reference Races'
                 )
-                pred_df = attach_race_state(pred_df, main_state_df)
-                pred_df = attach_stack_features(
-                    pred_df, time_gap_pred, lambdarank_pred,
-                    rating_snapshots=rating_snaps,
-                    signature_context=sig_context,
-                )
-                result = race_ranker.predict_race(pred_df, return_details=True)
-                result['team'] = result['rider_id'].map(
-                    lambda rid: name_map.get(rid, {}).get('team_name', '')
-                )
-                lr_temp = _attach_lambdarank(result, pred_df)
-                _attach_elo(result, pred_df)
-                result = _apply_pricing_layer(result, pred_df, avg_profile)
+                pred_df = average_prediction.feature_frame
+                result = average_prediction.riders
+                form_status = average_prediction.form_status
                 all_predictions['Averaged Reference Races'] = result
-                _append_log_rows('Averaged Reference Races', result, lr_temp)
 
                 # ── GC outlook head (state-aware final-GC prediction) ──
                 gc_outlook_df = None
@@ -1189,42 +1082,25 @@ passed the probability gate. Three pricing additions on top:
                         )
                     )
                 if fetch_for_gc and race_state_df is not None:
-                    gc_outlook_head = GCOutlookHead.load(MODEL_DIR)
-                    if gc_outlook_head is None:
+                    gc_outlook_df = average_prediction.gc_outlook
+                    if gc_outlook_df is None:
                         gc_outlook_note = "head not installed"
-                        st.info(
-                            "GC outlook head not installed — train it with "
-                            "`uv run python -m cycling_project.update_pipeline "
-                            "--only train-gc-outlook`."
+                    elif gc_outlook_df.empty:
+                        gc_outlook_note = (
+                            "head produced no rows (no riders in reconstructed standings)"
                         )
                     else:
-                        outlook_frame = assemble_prediction_df(
-                            snapshots, matched, field_features, avg_profile,
-                            form_status=form_status,
-                        )
-                        outlook_frame = attach_race_state(
-                            outlook_frame, race_state_df
-                        )
-                        gc_outlook_df = gc_outlook_head.predict(outlook_frame)
-                        if gc_outlook_df.empty:
-                            gc_outlook_note = (
-                                "head produced no rows (no riders in "
-                                "reconstructed standings)"
-                            )
-                        if not gc_outlook_df.empty:
-                            gc_outlook_df['team'] = gc_outlook_df['rider_id'].map(
-                                lambda rid: name_map.get(rid, {}).get('team_name', '')
-                            )
-                            # Outlook is run-level (averaged profile): merge
-                            # its probabilities onto every log row by rider.
-                            outlook_by_rider = gc_outlook_df.set_index('rider_id')
-                            for r in log_rows:
-                                if r.rider_id in outlook_by_rider.index:
-                                    o = outlook_by_rider.loc[r.rider_id]
-                                    r.gc_outlook_win_p = o.get('gc_outlook_win_p')
-                                    r.gc_outlook_podium_p = o.get('gc_outlook_podium_p')
-                                    r.gc_outlook_top5_p = o.get('gc_outlook_top5_p')
-                                    r.gc_outlook_top15_p = o.get('gc_outlook_top15_p')
+                        # Outlook is run-level (averaged profile): merge its
+                        # probabilities onto every logged display board.
+                        outlook_by_rider = gc_outlook_df.set_index('rider_id')
+                        for rows, _identity in log_batches:
+                            for row in rows:
+                                if row.rider_id in outlook_by_rider.index:
+                                    outlook = outlook_by_rider.loc[row.rider_id]
+                                    row.gc_outlook_win_p = outlook.get('gc_outlook_win_p')
+                                    row.gc_outlook_podium_p = outlook.get('gc_outlook_podium_p')
+                                    row.gc_outlook_top5_p = outlook.get('gc_outlook_top5_p')
+                                    row.gc_outlook_top15_p = outlook.get('gc_outlook_top15_p')
                 st.session_state['gc_outlook'] = gc_outlook_df
                 st.session_state['gc_outlook_state_info'] = race_state_info
 
@@ -1270,10 +1146,10 @@ passed the probability gate. Three pricing additions on top:
                             int(_sig_n_refs_series.iloc[0])
                             if len(_sig_n_refs_series) else None
                         ),
-                        'error': sig_error,
+                        'error': sig_status['error'],
                     },
                     'elo': {
-                        'loaded': rating_snaps is not None,
+                        'loaded': artifacts.rating_snapshots is not None,
                         'coverage': (
                             float(pred_df['contested_rating'].notna().mean())
                             if 'contested_rating' in pred_df.columns else 0.0
@@ -1290,18 +1166,18 @@ passed the probability gate. Three pricing additions on top:
                         ),
                     },
                     'win_corrector': {
-                        'loaded': bool(win_corrector),
+                        'loaded': bool(artifacts.win_corrector),
                         'method': (
-                            win_corrector.get('method')
-                            if win_corrector else None
+                            artifacts.win_corrector.get('method')
+                            if artifacts.win_corrector else None
                         ),
                         'param': (
-                            win_corrector.get('param')
-                            if win_corrector else None
+                            artifacts.win_corrector.get('param')
+                            if artifacts.win_corrector else None
                         ),
                     },
                     'dnf': {
-                        'loaded': dnf_bundle is not None,
+                        'loaded': artifacts.dnf_bundle is not None,
                         'mean_p': (
                             float(_dnf_series.mean())
                             if len(_dnf_series) else None
@@ -1323,7 +1199,7 @@ passed the probability gate. Three pricing additions on top:
                 }
 
                 # Persist to prediction_log (best-effort — never blocks the UI)
-                if log_rows and fc_race_id:
+                if log_batches and fc_race_id:
                     try:
                         import sqlite3
                         from cycling_project.prediction_tools.prediction_log import (
@@ -1338,9 +1214,12 @@ passed the probability gate. Three pricing additions on top:
                                 int(race_year) if race_year else 0,
                                 logged_stage_num,
                             )
-                            for r in log_rows:
-                                r.competition_id = target_comp_id
-                            log_predictions(conn, log_rows)
+                            for rows, identity in log_batches:
+                                for row in rows:
+                                    row.competition_id = target_comp_id
+                                log_predictions(
+                                    conn, rows, run_identity=identity
+                                )
                     except Exception as log_exc:
                         st.warning(f"Prediction log write failed (non-fatal): {log_exc}")
 
@@ -1349,7 +1228,9 @@ passed the probability gate. Three pricing additions on top:
                 st.session_state['_predictions_removed_set'] = set(
                     st.session_state.get('removed_rider_ids', set())
                 )
-                st.session_state['lambdarank_available'] = lambdarank_pred is not None
+                st.session_state['lambdarank_available'] = (
+                    artifacts.lambdarank_predictor is not None
+                )
                 # Clear old actual results when new predictions are run
                 st.session_state.pop('actual_results', None)
                 st.session_state.pop('eval_results', None)

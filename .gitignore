@@ -144,3 +144,8 @@ experiments/*.csv.gz
 # Day-menu kernel cumulants: 100MB+ derived artifact, rebuilt DB-fresh at
 # every production train (train_production_model day-menu block)
 models/production/day_menu_kernels.parquet
+
+# wrangler dev caches and stale deploy archives
+.wrangler/
+netlify_site/.wrangler/
+netlify_site/Archive.zip

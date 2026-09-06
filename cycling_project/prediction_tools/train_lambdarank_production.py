@@ -26,6 +26,9 @@ from cycling_project.prediction_tools.lambdarank_probability_predictor import (
     LambdaRankPredictorConfig,
     LambdaRankProbabilityPredictor,
 )
+from cycling_project.prediction_tools.lambdarank_feature_contract import (
+    build_lambdarank_feature_view,
+)
 from cycling_project.prediction_tools.model_registry import ModelRegistry
 
 
@@ -45,6 +48,7 @@ def main():
     )
     pipeline = CyclingDataPipeline(config)
     df = pipeline.load_training_data()
+    df = build_lambdarank_feature_view(df)
     df['competition_date'] = pd.to_datetime(df['competition_date'])
 
     print(f"Total samples: {len(df):,}")
@@ -114,6 +118,7 @@ def main():
         'lambdarank_early_stop_win_cal_ratio': metrics['win_cal_ratio'],
         'lambdarank_early_stop_win_ece': metrics['win_ece'],
         'lambdarank_trained_at': datetime.now().isoformat(),
+        'lambdarank_feature_contract': predictor.feature_contract_metadata(),
     }
 
     registry.add_lambdarank(predictor, training_info=training_info)

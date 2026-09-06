@@ -24,6 +24,8 @@ def test_race_scraping_flow(mock_client, temp_db_path):
                   lambda base_url: mock_client)
         mp.setattr('cycling_project.webscrape_tools.create_race_data.WebClient', 
                   lambda base_url: mock_client)
+        mp.setattr('cycling_project.webscrape_tools.find_races.sleep', lambda _: None)
+        mp.setattr('cycling_project.webscrape_tools.create_race_data.sleep', lambda _: None)
         
         # Step 1: Create race database
         create_race_year_db(year="2024", race_data_dir=temp_db_path)

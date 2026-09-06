@@ -57,6 +57,9 @@ from cycling_project.prediction_tools.lambdarank_probability_predictor import (
     LambdaRankProbabilityPredictor,
     LambdaRankPredictorConfig,
 )
+from cycling_project.prediction_tools.lambdarank_feature_contract import (
+    build_lambdarank_feature_view,
+)
 from cycling_project.prediction_tools.model_registry import ModelRegistry
 from cycling_project.webscrape_tools.logging_config import get_logger
 
@@ -191,6 +194,8 @@ def generate_oof_lambdarank_winp(
     n_folds: int = N_OOF_FOLDS,
 ) -> np.ndarray:
     """5-fold temporal OOF calibrated LambdaRank win_p on train (gated port)."""
+    train_df = build_lambdarank_feature_view(train_df)
+    val_df = build_lambdarank_feature_view(val_df)
     dates = pd.to_datetime(train_df['competition_date'])
     oof = np.full(len(train_df), np.nan)
 
@@ -306,10 +311,12 @@ def main(enable_stack: bool = True):
         # so the early-stop meta feature comes from the exact head that ships
         # to the registry / serves oof_lambdarank_win_p at prediction time.
         print("\nTraining main LambdaRank head (production config)...")
+        lr_train = build_lambdarank_feature_view(train)
+        lr_early_stop = build_lambdarank_feature_view(early_stop)
         lr_config = LambdaRankPredictorConfig()
         lambdarank_predictor = LambdaRankProbabilityPredictor(lr_config)
-        lr_info = lambdarank_predictor.train(train, early_stop, verbose=True)
-        lambdarank_temp = lambdarank_predictor.calibrate_temperature(early_stop)
+        lr_info = lambdarank_predictor.train(lr_train, lr_early_stop, verbose=True)
+        lambdarank_temp = lambdarank_predictor.calibrate_temperature(lr_early_stop)
         print(f"Best iteration: {lr_info['best_iteration']}  temperature: {lambdarank_temp:.3f}")
 
         # OOF meta features on train (5 temporal sub-folds, gated configs)
@@ -339,7 +346,9 @@ def main(enable_stack: bool = True):
         train_aug['oof_lambdarank_win_p'] = oof_lr
         early_stop_aug['oof_time_gap_pred'] = time_gap_predictor.predict(early_stop_aug)
         early_stop_aug['oof_lambdarank_win_p'] = np.asarray(
-            lambdarank_predictor.predict_win_probabilities(early_stop_aug)
+            lambdarank_predictor.predict_win_probabilities(
+                build_lambdarank_feature_view(early_stop_aug)
+            )
         )
 
         sig_cov = 1 - train_aug['sig_sprint'].isna().mean()
@@ -358,6 +367,9 @@ def main(enable_stack: bool = True):
             'n_oof_folds': N_OOF_FOLDS,
             'lambdarank_best_iteration': lr_info['best_iteration'],
             'lambdarank_temperature': lambdarank_temp,
+            'lambdarank_feature_contract': (
+                lambdarank_predictor.feature_contract_metadata()
+            ),
         }
     else:
         train_aug = train

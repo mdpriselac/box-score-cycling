@@ -46,7 +46,7 @@ correctly in training data).
 
 import re
 import sqlite3
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, Iterable, List, Optional, Tuple
 
 import numpy as np
 import pandas as pd
@@ -530,6 +530,7 @@ def fetch_live_race_state(
     target_stage_number: Optional[int] = None,
     force_refresh: bool = False,
     db_path: Optional[str] = None,
+    void_stages: Optional[Iterable[int]] = None,
 ) -> Tuple[Optional[pd.DataFrame], Dict]:
     """
     Load completed-stage results for an ongoing race and compute state.
@@ -539,13 +540,23 @@ def fetch_live_race_state(
     scraping is unavailable, as long as completed stages are in the DB.
     Stages feed the state in racing order and must be contiguous from the
     first; the first unavailable stage stops the reconstruction (a gap would
-    corrupt cumulative GC time) and is reported in ``info``.
+    corrupt cumulative GC time) and is reported in ``info``. The exception is
+    ``void_stages`` — stages that were CANCELLED and will never have results.
+    A cancelled stage adds zero time to every rider, so skipping it leaves
+    every later cumulative GC sum correct; treating it as a gap instead would
+    freeze state at the stage before it for the rest of the race. Callers must
+    pass these explicitly: a stage that merely has not been published yet is
+    indistinguishable from a cancelled one here, and guessing would silently
+    corrupt GC.
 
     Args:
         target_stage_number: the stage being predicted; only stages with a
             lower number feed the state (strictly-before leakage rule).
             None means "use everything completed" (GC targets — state feeds
             the GC outlook head; the main models stay pre-race on gc rows).
+        void_stages: stage numbers cancelled outright (no result will ever
+            exist). Skipped without breaking contiguity and reported in
+            ``info['void_stages']``. Default None = strict contiguity.
         force_refresh: re-scrape stages instead of using cached_race_results
             (e.g. a stage finished since the cache row was written mid-race).
             Stages migrated into the main DB are final and are not re-scraped.
@@ -628,7 +639,13 @@ def fetch_live_race_state(
     # ── load each candidate: DB -> cache -> scrape; stop at the first gap ──
     completed: List[Dict] = []
     loaded_nums: List[int] = []
+    void_set = {int(n) for n in (void_stages or ())}
+    info['void_stages'] = sorted(void_set)
     for num in candidate_nums:
+        if num in void_set:
+            # Cancelled: contributes no time to anyone, so skipping it keeps
+            # every later cumulative GC sum correct. Not a contiguity break.
+            continue
         entry = stages_by_num.get(num, {})
         results = None
         winning_time = None
@@ -702,7 +719,8 @@ def fetch_live_race_state(
         info['sources'][source].append(num)
 
     info['missing_stages'] = [
-        n for n in candidate_nums if n not in loaded_nums
+        n for n in candidate_nums
+        if n not in loaded_nums and n not in void_set
     ]
 
     if not completed:

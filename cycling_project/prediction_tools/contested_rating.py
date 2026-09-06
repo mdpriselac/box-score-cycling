@@ -350,6 +350,9 @@ def build_and_save(
     snapshots = engine.run(results)
     save_snapshots(snapshots, path)
     _write_artifact_meta(path, snapshots, config)
+    if path.resolve() == PRODUCTION_SNAPSHOT_PATH.resolve():
+        from cycling_project.prediction_tools.production_release import write_release_manifest
+        write_release_manifest(path.parent)
     return snapshots
 
 
@@ -467,6 +470,9 @@ def build_or_update_snapshots(
     combined = pd.concat([existing, new_snaps], ignore_index=True)
     save_snapshots(combined, artifact_path)
     _write_artifact_meta(artifact_path, combined, config)
+    if artifact_path.resolve() == PRODUCTION_SNAPSHOT_PATH.resolve():
+        from cycling_project.prediction_tools.production_release import write_release_manifest
+        write_release_manifest(artifact_path.parent)
     logger.info(
         "Rating artifact updated: +%d snapshot rows over %d new comps (total %d rows)",
         len(new_snaps), new_results['competition_id'].nunique(), len(combined),

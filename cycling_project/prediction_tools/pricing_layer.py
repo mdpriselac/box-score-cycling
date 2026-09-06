@@ -42,6 +42,7 @@ def apply_pricing_layer(
     dnf_bundle: Optional[Tuple] = None,
     stage_number: Optional[int] = None,
     db_path: Optional[str] = None,
+    asof_date: Optional[str] = None,
     blend_w: float = BLEND_W,
 ) -> Tuple[pd.DataFrame, List[str]]:
     """Apply corrector + blend + DNF adjustment to a predict_race result.
@@ -57,6 +58,7 @@ def apply_pricing_layer(
         dnf_bundle: (DNFPredictor, events_df, metadata) from
             dnf_predictor.load_production_dnf_head, or None.
         stage_number: target stage number when predicting a stage, else None.
+        asof_date: cutoff for DNF history features; defaults to today.
 
     Returns:
         (result_df, warnings) — warnings are user-facing degradation notes.
@@ -122,6 +124,7 @@ def apply_pricing_layer(
             race_category=profile.get("race_category", "wt"),
             stage_number=stage_number,
             db_path=db_path,
+            asof_date=asof_date,
         )
         p_dnf = head.predict_dnf_proba(dnf_frame)
         dnf_map = dict(zip(dnf_frame["rider_id"].astype(int), p_dnf))

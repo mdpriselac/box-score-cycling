@@ -36,6 +36,7 @@ import numpy as np
 from scipy.optimize import minimize_scalar
 
 from cycling_project.webscrape_tools.logging_config import get_logger
+from cycling_project.prediction_tools.production_release import write_release_manifest
 
 logger = get_logger(__name__)
 
@@ -158,6 +159,7 @@ def fit_win_corrector(win_p: np.ndarray, y_win: np.ndarray) -> Dict[str, Any]:
 def save_corrector(corrector: Dict[str, Any], model_dir: Path) -> Path:
     path = Path(model_dir) / ARTIFACT_NAME
     path.write_text(json.dumps(corrector, indent=2))
+    write_release_manifest(model_dir)
     return path
 
 

@@ -115,6 +115,14 @@ class MockWebClient:
         
         if url in self.responses:
             return self.responses[url]
+
+        # Production callers may pass either a relative path or the fully
+        # qualified URL. Let fixtures register the resource once and support
+        # both forms without weakening the request assertions above.
+        if url.startswith(self.base_url):
+            relative_url = url[len(self.base_url):]
+            if relative_url in self.responses:
+                return self.responses[relative_url]
         
         # Return 404 if URL not found
         return MockResponse(

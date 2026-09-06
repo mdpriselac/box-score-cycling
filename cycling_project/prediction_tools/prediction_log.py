@@ -2,11 +2,12 @@
 Prediction log: persist each web-app prediction so multiclass and
 LambdaRank probabilities can be compared against actual results over time.
 
-A single row captures one (prediction run, rider) pair. A prediction run
-is identified by (fc_race_id, year, stage_number, predicted_at). The same
-rider in the same race can be logged multiple times across runs — each
-run is a separate "opinion" the app produced, e.g. after a start-list
-change or after re-running against different reference races.
+A single row captures one (prediction run, rider) pair. New writes carry a
+deterministic ``run_key`` derived from the semantic inputs to a run. Replaying
+the same run updates its rider opinions instead of appending duplicates;
+changing the model, scenario, references, race state, or an explicit input
+fingerprint creates a separate opinion. Rows written before run keys shipped
+remain untouched and continue to be available as historical opinions.
 
 `competition_id` is filled in at write time when the target race already
 exists in `competitions`; otherwise it stays NULL until a later join can
@@ -15,11 +16,12 @@ resolve it.
 
 from __future__ import annotations
 
+import hashlib
 import json
 import sqlite3
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, Dict, Iterable, List, Optional
+from typing import Any, Dict, Iterable, List, Literal, Optional, Sequence
 
 import pandas as pd
 
@@ -44,6 +46,7 @@ CREATE TABLE IF NOT EXISTS prediction_log (
     lambdarank_podium_p REAL,
     lambdarank_temperature REAL,
     state_through_stage INTEGER,
+    run_key TEXT,
     FOREIGN KEY (competition_id) REFERENCES competitions(id),
     FOREIGN KEY (rider_id) REFERENCES riders(id)
 );
@@ -74,6 +77,7 @@ MIGRATION_COLUMNS = [
     ("dnf_adj_top5_p", "REAL"),
     ("dnf_adj_top15_p", "REAL"),
     ("blend_win_p", "REAL"),
+    ("run_key", "TEXT"),
 ]
 
 INDEX_SQL = [
@@ -81,14 +85,15 @@ INDEX_SQL = [
     "CREATE INDEX IF NOT EXISTS idx_prediction_log_competition ON prediction_log(competition_id);",
     "CREATE INDEX IF NOT EXISTS idx_prediction_log_rider ON prediction_log(rider_id);",
     "CREATE INDEX IF NOT EXISTS idx_prediction_log_predicted_at ON prediction_log(predicted_at);",
+    # SQLite permits multiple NULL values in a unique index. Legacy rows are
+    # therefore preserved while all newly keyed rows become idempotent.
+    "CREATE UNIQUE INDEX IF NOT EXISTS idx_prediction_log_run_rider ON prediction_log(run_key, rider_id);",
 ]
 
 
 def ensure_schema(conn: sqlite3.Connection) -> None:
     """Create prediction_log table + indexes if they don't already exist."""
     conn.execute(SCHEMA_SQL)
-    for stmt in INDEX_SQL:
-        conn.execute(stmt)
     existing = {
         row[1] for row in conn.execute("PRAGMA table_info(prediction_log)")
     }
@@ -97,7 +102,99 @@ def ensure_schema(conn: sqlite3.Connection) -> None:
             conn.execute(
                 f"ALTER TABLE prediction_log ADD COLUMN {col} {col_type}"
             )
+    # Index creation must follow migrations because the run-key index refers
+    # to a column absent from databases created by older releases.
+    for stmt in INDEX_SQL:
+        conn.execute(stmt)
     conn.commit()
+
+
+@dataclass(frozen=True)
+class PredictionRunIdentity:
+    """Semantic identity for one prediction run.
+
+    ``input_fingerprint`` is the caller's escape hatch for mutable inputs not
+    otherwise represented here (for example, a start-list or odds snapshot
+    digest). ``scenario_key``, ``target``, and ``day_key`` let serving callers
+    distinguish different products built from the same model and references.
+    """
+
+    fc_race_id: str
+    year: int
+    stage_number: Optional[int] = None
+    model_version: Optional[str] = None
+    reference_comp_ids: Sequence[int] = field(default_factory=tuple)
+    state_through_stage: Optional[int] = None
+    scenario_key: Optional[str] = None
+    target: Optional[str] = None
+    day_key: Optional[str] = None
+    input_fingerprint: Optional[str] = None
+
+    def as_dict(self) -> Dict[str, Any]:
+        return {
+            "schema": "prediction-run-v1",
+            "fc_race_id": str(self.fc_race_id),
+            "year": int(self.year),
+            "stage_number": (
+                int(self.stage_number) if self.stage_number is not None else None
+            ),
+            "model_version": self.model_version,
+            "reference_comp_ids": sorted({int(v) for v in self.reference_comp_ids}),
+            "state_through_stage": (
+                int(self.state_through_stage)
+                if self.state_through_stage is not None else None
+            ),
+            "scenario_key": self.scenario_key,
+            "target": self.target,
+            "day_key": self.day_key,
+            "input_fingerprint": self.input_fingerprint,
+        }
+
+    @property
+    def run_key(self) -> str:
+        canonical = json.dumps(
+            self.as_dict(), sort_keys=True, separators=(",", ":"), ensure_ascii=True
+        )
+        digest = hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+        return f"prediction-run-v1:{digest}"
+
+    @classmethod
+    def from_row(cls, row: "PredictionLogRow") -> "PredictionRunIdentity":
+        """Build the backward-compatible default identity for a log row."""
+        return cls(
+            fc_race_id=row.fc_race_id,
+            year=row.year,
+            stage_number=row.stage_number,
+            model_version=row.model_version,
+            reference_comp_ids=row.reference_comp_ids,
+            state_through_stage=row.state_through_stage,
+        )
+
+
+def prediction_input_fingerprint(
+    rider_ids: Sequence[int],
+    profile: Dict[str, Any],
+    race_date: Optional[Any] = None,
+) -> str:
+    """Hash the mutable field/profile inputs that distinguish a rerun.
+
+    Model release and scenario metadata belong in :class:`PredictionRunIdentity`;
+    this digest covers the actual active field and terrain/profile payload.
+    """
+    scalar_profile = {
+        str(key): value
+        for key, value in profile.items()
+        if not hasattr(value, "shape")
+    }
+    payload = {
+        "rider_ids": sorted({int(value) for value in rider_ids}),
+        "profile": scalar_profile,
+        "race_date": race_date,
+    }
+    canonical = json.dumps(
+        payload, sort_keys=True, separators=(",", ":"), default=str
+    )
+    return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
 
 
 @dataclass
@@ -216,19 +313,96 @@ def resolve_competition_id(
 def log_predictions(
     conn: sqlite3.Connection,
     rows: Iterable[PredictionLogRow],
+    *,
+    run_identity: Optional[PredictionRunIdentity] = None,
+    on_conflict: Literal["update", "ignore", "error"] = "update",
 ) -> int:
-    """Insert a batch of prediction rows. Returns number of rows inserted."""
+    """Persist a batch of rider opinions idempotently.
+
+    Existing callers need not provide ``run_identity``: a stable identity is
+    inferred from each row's race, stage, model version, references, and race
+    state. Callers that know more about the run should pass an explicit
+    :class:`PredictionRunIdentity`, especially its scenario/day/input fields.
+
+    ``on_conflict="update"`` (the default) replaces the values and timestamp
+    for an existing ``(run_key, rider_id)`` opinion. ``"ignore"`` keeps the
+    first opinion and ``"error"`` exposes the uniqueness violation. The
+    return value is the number of rows SQLite inserted or updated.
+    """
+    if on_conflict not in {"update", "ignore", "error"}:
+        raise ValueError(
+            "on_conflict must be one of: 'update', 'ignore', or 'error'"
+        )
+
     ensure_schema(conn)
-    payload = [r.as_row() for r in rows]
+    row_list = list(rows)
+    if run_identity is not None:
+        _validate_run_identity(run_identity, row_list)
+
+    payload = []
+    for row in row_list:
+        item = row.as_row()
+        identity = run_identity or PredictionRunIdentity.from_row(row)
+        item["run_key"] = identity.run_key
+        payload.append(item)
     if not payload:
         return 0
 
     cols = list(payload[0].keys())
     placeholders = ", ".join([f":{c}" for c in cols])
-    sql = f"INSERT INTO prediction_log ({', '.join(cols)}) VALUES ({placeholders})"
-    conn.executemany(sql, payload)
-    conn.commit()
-    return len(payload)
+    insert = f"INSERT INTO prediction_log ({', '.join(cols)}) VALUES ({placeholders})"
+    if on_conflict == "update":
+        update_cols = [c for c in cols if c not in {"run_key", "rider_id"}]
+        assignments = ", ".join(f"{c} = excluded.{c}" for c in update_cols)
+        sql = (
+            f"{insert} ON CONFLICT(run_key, rider_id) DO UPDATE SET "
+            f"{assignments}, predicted_at = CURRENT_TIMESTAMP"
+        )
+    elif on_conflict == "ignore":
+        sql = f"{insert} ON CONFLICT(run_key, rider_id) DO NOTHING"
+    else:
+        sql = insert
+
+    changes_before = conn.total_changes
+    try:
+        conn.executemany(sql, payload)
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+    return conn.total_changes - changes_before
+
+
+def _validate_run_identity(
+    identity: PredictionRunIdentity,
+    rows: Sequence[PredictionLogRow],
+) -> None:
+    """Reject a batch whose rows cannot belong to the declared run."""
+    expected = (
+        str(identity.fc_race_id),
+        int(identity.year),
+        identity.stage_number,
+    )
+    for row in rows:
+        actual = (str(row.fc_race_id), int(row.year), row.stage_number)
+        if actual != expected:
+            raise ValueError(
+                "run_identity race/year/stage does not match every prediction row"
+            )
+        if row.model_version != identity.model_version:
+            raise ValueError(
+                "run_identity model_version does not match every prediction row"
+            )
+        if sorted({int(v) for v in row.reference_comp_ids}) != sorted(
+            {int(v) for v in identity.reference_comp_ids}
+        ):
+            raise ValueError(
+                "run_identity references do not match every prediction row"
+            )
+        if row.state_through_stage != identity.state_through_stage:
+            raise ValueError(
+                "run_identity race state does not match every prediction row"
+            )
 
 
 def fetch_with_actuals(

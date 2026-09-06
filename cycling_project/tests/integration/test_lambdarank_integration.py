@@ -8,6 +8,7 @@ that per-race softmax probabilities sum to 1.
 Skipped if the production DB or bucket model is absent.
 """
 
+import json
 import shutil
 import sqlite3
 from pathlib import Path
@@ -124,6 +125,13 @@ def test_registry_round_trip_preserves_predictions(tmp_path, small_training_df):
     predictor.train(df, df, verbose=False)
     predictor.calibrate_temperature(df)
     expected_probs = predictor.predict_win_probabilities(df).values
+
+    # A standalone replacement is only valid after the full suite has
+    # recorded the schema its downstream heads were trained against.
+    metadata_path = test_registry_dir / 'metadata.json'
+    metadata = json.loads(metadata_path.read_text())
+    metadata['lambdarank_feature_contract'] = predictor.feature_contract_metadata()
+    metadata_path.write_text(json.dumps(metadata, indent=2))
 
     registry = ModelRegistry(str(test_registry_dir))
     registry.add_lambdarank(predictor, training_info={'test': True})

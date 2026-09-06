@@ -106,10 +106,10 @@ def test_race_extract_race_identifiers_invalid():
         url="https://firstcycling.com/invalid"
     )
     
-    with patch('cycling_project.webscrape_tools.create_race_data.WebClient'):
-        # Should raise ValueError due to missing race ID and year
-        with pytest.raises(ValueError, match="Could not extract race ID or year"):
-            race.populate_race()
+    # populate_race deliberately logs scraper errors so one bad race does not
+    # abort a bulk scrape; test the validating unit directly.
+    with pytest.raises(ValueError, match="Could not extract race ID or year"):
+        race._extract_race_identifiers()
 
 
 def test_race_process_one_day_race():
@@ -122,7 +122,7 @@ def test_race_process_one_day_race():
     # Create mock soup
     mock_soup = MagicMock()
     
-    with patch('cycling_project.webscrape_tools.get_race_results.extract_race_date', 
+    with patch('cycling_project.webscrape_tools.create_race_data.extract_race_date',
                return_value="2024-03-01") as mock_extract_date:
         
         # Process one-day race
