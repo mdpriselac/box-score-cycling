@@ -186,7 +186,7 @@ hr { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
   <a href="pipeline_overview.html">Pipeline</a>
   <a href="race_features_reference.html">Race Features</a>
   <a href="metrics_reference.html">Metrics Reference</a>
-  <span class="nav-updated">updated 2026-06-11</span>
+  <span class="nav-updated">updated 2026-08-10</span>
 </nav>
 
 <h1>How the Race Predictor Works</h1>
@@ -205,8 +205,8 @@ hr { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
     races from nothing more than the startlist and the race's own history.
   </p>
   <div class="stats">
-    <div class="stat"><div class="v">643K</div><div class="k">rider-race results learned from</div></div>
-    <div class="stat"><div class="v">5,724</div><div class="k">races (2016 – present)</div></div>
+    <div class="stat"><div class="v">668K</div><div class="k">rider-race results learned from</div></div>
+    <div class="stat"><div class="v">5,905</div><div class="k">races (2016 – present)</div></div>
     <div class="stat"><div class="v">1M+</div><div class="k">"rider as of race day" snapshots</div></div>
     <div class="stat"><div class="v">164</div><div class="k">facts considered per rider per race</div></div>
     <div class="stat"><div class="v">~1 in 4</div><div class="k">winners named correctly (top pick)</div></div>
@@ -285,7 +285,7 @@ hr { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
         separates a bunch sprint from a summit finish remarkably well.</li>
       <li><strong>Front-group depth.</strong> How much of the field finished in the winner's
         group — the single best "how selective was it?" number on the sheet.</li>
-      <li><strong>Selection signatures <span class="chip next">next retrain</span>.</strong>
+      <li><strong>Selection signatures <span class="chip live">live</span>.</strong>
         Not just <em>how many</em> contested the finale but <em>who</em>: what mix of
         sprinters / climbers / puncheurs filled the top 10. It turns out the <em>kind</em> of
         rider who contests a given race is about twice as stable year-over-year as the size
@@ -312,11 +312,11 @@ hr { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
         rated on their glory years. These features are also <strong>re-aged to race
         morning</strong>: a rider idle for six weeks is predicted as rusty <em>today</em>,
         not as fresh as their last start.</li>
-      <li><strong>Contested-duel rating <span class="chip next">next retrain</span>.</strong>
+      <li><strong>Contested-duel rating <span class="chip live">live</span>.</strong>
         A chess-style Elo rating built only from finishes where riders genuinely raced each
         other (front of the winning group, group-vs-group). Currently rates Pogačar #1 —
         and spots hot neo-pros the career averages haven't caught up with.</li>
-      <li><strong>Finishing risk <span class="chip next">next retrain</span>.</strong> A
+      <li><strong>Finishing risk <span class="chip live">live</span>.</strong> A
         dedicated abandon model: 1.26M start records (10.6% DNFs) teach it who tends not to
         finish — crash-prone riders, riders deep into a grand tour, classics crashers.</li>
       <li><strong>Team context.</strong> Strength and depth of the rider's squad at this
@@ -386,20 +386,30 @@ hr { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
     </tr>
     <tr>
       <td class="q">Will they even finish?</td>
-      <td>Abandon (DNF) model <span class="chip next">next retrain</span></td>
+      <td>Abandon (DNF) model <span class="chip live">live</span></td>
       <td class="what">Probability each rider finishes at all. Used to mark down prices on
           fragile riders: a podium price becomes
           P(podium <em>if they finish</em>) × P(they finish).</td>
+    </tr>
+    <tr>
+      <td class="q">Told the kind of day — who belongs in the conversation?</td>
+      <td>Day-menu ranker <span class="chip live">live</span></td>
+      <td class="what">New (August 2026), for stage races. When a human keys the stage to one
+          of eleven <em>day types</em> ("mountain-escape day", "split sprint"…), this model
+          re-picks the shortlist of contenders from a decade of who-shows-up-on-days-like-this.
+          It only changes who's on the shortlist and in what order — <strong>never a
+          price</strong>. Debuts live at the Vuelta a España 2026.</td>
     </tr>
   </tbody>
 </table>
 
 <p class="dim small" style="margin-top:10px">
   Under the hood all of these are gradient-boosted decision-tree models (LightGBM) — the
-  same family that wins most tabular-data competitions — trained on the 643K historical
-  rider-race results. The newest upgrade (June 2026) also lets the main models see each
-  other's outputs: the contender model now receives the time-gap and bookmaker estimates,
-  the duel ratings, and the selection signatures as additional inputs.
+  same family that wins most tabular-data competitions — trained on the 668K historical
+  rider-race results (models last retrained 2026-08-09, data current through that day).
+  The main models also see each other's outputs: the contender model receives the time-gap
+  and bookmaker estimates, the duel ratings, and the selection signatures as additional
+  inputs.
 </p>
 
 <!-- =========================================================== -->
@@ -434,9 +444,21 @@ hr { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
 </div>
 
 <!-- =========================================================== -->
-<h2 id="new">5. What changed recently (June 2026)</h2>
+<h2 id="new">5. What changed recently</h2>
 
 <div class="new-list">
+  <div class="new-item"><div class="when">AUG 9</div>
+    <div class="what"><strong>Day-type retrieval channel.</strong> <span class="expl">A menu of eleven
+    day types ("mountain-escape day", "split sprint"…) and a ranker that, given the morning's key,
+    re-picks <em>who is in the contender conversation</em> on stage-race days — the fix for the Tour's
+    breakaway/transition-day blind spot. Prices are structurally untouched; a wrong key can only cost
+    shortlist quality. Live evaluation: the Vuelta a España 2026.</span>
+    <span class="chip live">live</span></div></div>
+  <div class="new-item"><div class="when">AUG 9</div>
+    <div class="what"><strong>Post-Tour retrain on a healed archive.</strong> <span class="expl">All models
+    retrained with the full Tour de France 2026 included. A silent source-site format change had un-dated
+    35 races (including the whole Vuelta 2025); they were caught, repaired, and re-imported first.</span>
+    <span class="chip live">live</span></div></div>
   <div class="new-item"><div class="when">JUN 9</div>
     <div class="what"><strong>Stage-race awareness.</strong> <span class="expl">Models now see the live race
     situation mid-stage-race (standings, gaps, attrition, rest days), and a dedicated GC outlook
@@ -460,22 +482,22 @@ hr { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
     <div class="what"><strong>Contested-duel Elo ratings.</strong> <span class="expl">Head-to-head ratings from
     finishes that were genuinely raced — first feature in months to improve winner-naming
     (+1.25 points, positive in all five test years).</span>
-    <span class="chip next">next retrain</span></div></div>
+    <span class="chip live">live</span></div></div>
   <div class="new-item"><div class="when">JUN 11</div>
     <div class="what"><strong>Selection signatures.</strong> <span class="expl">One-day races now carry a
     forecast of <em>who contests the finale</em> (sprinter/climber/puncheur mix), built from this
     year's startlist plus the race's history.</span>
-    <span class="chip next">next retrain</span></div></div>
+    <span class="chip live">live</span></div></div>
   <div class="new-item"><div class="when">JUN 11</div>
     <div class="what"><strong>Abandon model.</strong> <span class="expl">Recovered 1.26M start/abandon records
     from the archive and trained a dedicated did-they-finish model (separates "didn't start" from
-    "didn't finish"); will mark down prices on riders unlikely to finish.</span>
-    <span class="chip next">next retrain</span></div></div>
+    "didn't finish"); marks down prices on riders unlikely to finish.</span>
+    <span class="chip live">live</span></div></div>
   <div class="new-item"><div class="when">JUN 11</div>
     <div class="what"><strong>Model stacking.</strong> <span class="expl">The contender model now consumes the
     time-gap and bookmaker models' outputs as inputs — better prices across the board in
     five-year backtests, uniformly across race types.</span>
-    <span class="chip next">next retrain</span></div></div>
+    <span class="chip live">live</span></div></div>
 </div>
 
 <p class="dim small">
@@ -518,8 +540,8 @@ hr { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
 <hr>
 <p class="subtitle">
   Part of the Cycling Race Predictor documentation · generated from the
-  <span class="mono">webscrape-refactor</span> branch, 2026-06-11 ·
-  data current to 2026-06-10.
+  <span class="mono">webscrape-refactor</span> branch, 2026-08-10 ·
+  data current to 2026-08-09 · models retrained 2026-08-09.
 </p>
 
 </body>

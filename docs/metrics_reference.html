@@ -228,7 +228,7 @@ hr { border: none; border-top: 1px solid var(--border); margin: 14px 0; }
   <a href="pipeline_overview.html">Pipeline</a>
   <a href="race_features_reference.html">Race Features</a>
   <a href="metrics_reference.html" class="active">Metrics Reference</a>
-  <span class="nav-updated">updated 2026-06-11</span>
+  <span class="nav-updated">updated 2026-08-10</span>
 </nav>
 
 <h1>Metrics Reference</h1>
@@ -236,10 +236,11 @@ hr { border: none; border-top: 1px solid var(--border); margin: 14px 0; }
   Exact formulas and derivations for every feature, metric, and output in the
   cycling prediction system. Each entry shows how the value is computed from
   its inputs, the output range, and the source location.<br>
-  Branch: <span class="mono">webscrape-refactor</span> @ <span class="mono">4e87815</span>+ (2026-06-11) —
+  Branch: <span class="mono">webscrape-refactor</span> @ <span class="mono">4282974</span>+ (2026-08-10) —
   complements <a href="pipeline_overview.html">pipeline_overview.html</a> (code flow).
-  <span class="chip next">next retrain</span> marks features that are merged + validated but only
-  enter the saved models at the next weekly retrain.
+  Saved models are from the <strong>2026-08-09 retrain</strong>; everything below is
+  <span class="chip live">live</span> unless marked otherwise
+  (<span class="chip next">next retrain</span> = merged + validated, enters at the next weekly retrain).
 </p>
 
 <!-- =========================== TOC =========================== -->
@@ -254,6 +255,7 @@ hr { border: none; border-top: 1px solid var(--border); margin: 14px 0; }
   <a class="t-race"    href="#state">5b. Within-race state</a>
   <a class="t-race"    href="#race">6. Race profile scores</a>
   <a class="t-race"    href="#signatures">6b. Selection signatures</a>
+  <a class="t-race"    href="#daymenu">6c. Day-menu features</a>
   <a class="t-derived" href="#derived">7. Derived features</a>
   <a class="t-rider"   href="#elo">7b. Contested Elo</a>
   <a class="t-model"   href="#stack">7c. Meta-OOF stack</a>
@@ -1014,7 +1016,7 @@ race_dominant_profile = <span class="fn">argmax</span>(all six scores)</div>
 <!-- SECTION 6b: SELECTION SIGNATURES -->
 <!-- =========================================================== -->
 
-<h2 id="signatures">6b. Selection-Signature Features <span class="chip next">next retrain</span></h2>
+<h2 id="signatures">6b. Selection-Signature Features <span class="chip live">live</span></h2>
 <p class="section-intro">
   Eleven columns predicting <em>who contests the front</em> of a one-day race — the
   archetype mix of the expected top-10 — built from this year's startlist plus the race's
@@ -1048,6 +1050,69 @@ sig_n_refs  = number of reference editions feeding enrichment</div>
 rider_contest_fit  = Σ_a (<span class="num">4</span> − rider_[a]_avg_bucket) · sig_[a]  <span class="cmt"># ability · shares</span>
 rider_sig_vs_field = rider_sig_share − field_share[best_profile]</div>
   <p class="meta-line"><span class="lbl">src:</span> <span class="dep">prediction_tools/contest_signature_features.py</span></p>
+</div>
+
+<!-- =========================================================== -->
+<!-- SECTION 6c: DAY-MENU FEATURES (2026-08) -->
+<!-- =========================================================== -->
+
+<h2 id="daymenu">6c. Day-Menu Features (<span class="mono">dtm_*</span>) <span class="chip live">live · 2026-08-09</span></h2>
+<p class="section-intro">
+  Fourteen columns seen <strong>only</strong> by the <span class="mono">bucket_daymenu</span>
+  retrieval variant — never by any pricing head (gate verdict 2026-08-09: dtm features in
+  pricing heads cost +0.011 honest log loss, 0/5 folds). Attached when a stage day carries a
+  <span class="mono">day_key</span> from menu v1
+  (<span class="mono">models/production/day_menu_v1.json</span>; 11 items — 3 macro rules +
+  8 GMM analogs in two families). Training keys are oracle labels from realized results plus
+  one-day self-keys; serve keys are human judgment reads. Unkeyed rows: all 14 columns NaN.
+  Menu construction and family vocabulary:
+  <a href="race_features_reference.html#s10b">Race Features §10b</a>.
+</p>
+
+<div class="metric t-race">
+  <div class="metric-head">
+    <h3>dtm_sig_sprint … dtm_sig_time_trial, dtm_sig_wg_prop</h3>
+    <span class="type" style="background:var(--m-race)">race</span>
+    <span class="range">shares ∈ [0, 1]</span>
+  </div>
+  <div class="formula"><span class="cmt"># the keyed item's canonical composition, broadcast to every rider row:</span>
+dtm_sig_[a] = menu.canonicals[item, a]      <span class="cmt"># mean realized top-15 share over members</span>
+dtm_sig_wg_prop = canonical winner-group proportion of the item
+<span class="cmt"># weighted keys ({res_2: 0.6, res_4: 0.4}) do NOT average fills — each item's</span>
+<span class="cmt"># board is scored separately; mixing happens at the ranking-score level only</span></div>
+  <p class="meta-line"><span class="lbl">src:</span> <span class="dep">prediction_tools/day_menu.py — attach_day_menu_features() (training) / attach_day_menu_serving() (serve; feature-identical by test)</span></p>
+</div>
+
+<div class="metric t-race">
+  <div class="metric-head">
+    <h3>dtm_rider_sig_share, dtm_rider_sig_vs_field, dtm_rider_contest_fit</h3>
+    <span class="type" style="background:var(--m-race)">race × rider</span>
+  </div>
+  <div class="formula"><span class="cmt"># the §6b rider interactions, recomputed against the keyed item's composition:</span>
+dtm_rider_sig_share   = dtm_sig_[rider's best_profile]
+dtm_rider_sig_vs_field = dtm_rider_sig_share − field_share[best_profile]
+dtm_rider_contest_fit  = Σ_a (<span class="num">4</span> − rider_[a]_avg_bucket) · dtm_sig_[a]</div>
+</div>
+
+<div class="metric t-rider">
+  <div class="metric-head">
+    <h3>dtm_k_expos, dtm_k_attend, dtm_k_top3, dtm_k_perf_place</h3>
+    <span class="type" style="background:var(--m-rider)">rider kernels</span>
+    <span class="range">as-of race morning</span>
+  </div>
+  <div class="formula"><span class="cmt"># weight of a historical ride h against the keyed day's composition c:</span>
+w_h = <span class="fn">cos</span>(c, c_h)<sup>γ</sup> · <span class="num">2</span><sup>−Δdays/H</sup>        <span class="cmt"># γ = 8.0, H = 730 days</span>
+
+dtm_k_expos      = Σ_h w_h                       <span class="cmt"># similarity-weighted exposure</span>
+dtm_k_attend     = Σ_h w_h·[top15_h] / Σ_h w_h   <span class="cmt"># attendance on days like this</span>
+dtm_k_top3       = Σ_h w_h·[top3_h]  / Σ_h w_h
+dtm_k_perf_place = Σ_h w_h·place_h   / Σ_h w_h   <span class="cmt"># mean finish on days like this</span>
+
+<span class="cmt"># ratio kernels NaN when effective n = Σw < 3.0 (thin history)</span>
+<span class="cmt"># decay factorizes (2^(−t/H) = 2^(−t₀/H)·2^(−Δ/H)) → per-rider cumsums,</span>
+<span class="cmt"># joined merge_asof(allow_exact_matches=False): strictly before race morning</span></div>
+  <p class="meta-line"><span class="lbl">artifact:</span> <span class="dep">models/production/day_menu_kernels.parquet — 642,461 rider-rides through 2026-08-09; rebuilt DB-fresh at every train</span></p>
+  <p class="meta-line"><span class="lbl">gate:</span> <span class="dep">retrieval-only channel: pricing neutral (+0.0005 honest LL); +2.45pp top-15 pool coverage / −1.84 winner rank with judgment-grade keys on residual days (5/5 folds). Kernels are a top-15-grade signal — attendance ≠ kick, which is why conditional boards never serve prices.</span></p>
 </div>
 
 <!-- =========================================================== -->
@@ -1245,13 +1310,13 @@ bucket_mean=<span class="num">5.0</span>, bucket_median=<span class="num">5.0</s
 <!-- SECTION 7b: CONTESTED-COMPARISON ELO -->
 <!-- =========================================================== -->
 
-<h2 id="elo">7b. Contested-Comparison Elo Rating <span class="chip next">next retrain</span></h2>
+<h2 id="elo">7b. Contested-Comparison Elo Rating <span class="chip live">live</span></h2>
 <p class="section-intro">
   A chess-style rating built from the only finishing orders that are <em>informative</em>:
   riders who genuinely contested against each other. Deep-bunch order (positions 11+ of a
   group) generates no comparisons. Replayed chronologically over every result sheet since
   the data starts, snapshotting each rider's rating <strong>as of</strong> each competition
-  (~560K snapshot rows) — zero look-ahead. First feature family since trajectory form to
+  (~575K snapshot rows) — zero look-ahead. First feature family since trajectory form to
   clear the winner-capture gate: <strong>+1.25pp ± 0.65, positive in all 5 CV folds</strong>,
   alongside market_avg_log_loss −0.0019 ± 0.0017 (4/5). Sanity checks: 2025's top-15 is
   Pogačar #1 then the world-class sprinters (high comparison volume); a hot neo-pro shows up
@@ -1308,7 +1373,7 @@ contested_rating_vs_field = rating − mean rating of this startlist
 <!-- SECTION 7c: META-OOF STACK -->
 <!-- =========================================================== -->
 
-<h2 id="stack">7c. Meta-OOF Stack Features <span class="chip next">next retrain</span></h2>
+<h2 id="stack">7c. Meta-OOF Stack Features <span class="chip live">live</span></h2>
 <p class="section-intro">
   The bucket and contender heads consume two other heads' predictions as input features
   ("stacking"). In training these are generated <strong>out-of-fold</strong> (5 temporal
@@ -1467,12 +1532,13 @@ gc_outlook_{win,podium,top5,top15}_p = contender-style cumulative probabilities
 <!-- SECTION 8b: DNF HEAD -->
 <!-- =========================================================== -->
 
-<h2 id="dnfhead">8b. DNF Head — P(finish) for the pricing layer <span class="chip next">next retrain</span></h2>
+<h2 id="dnfhead">8b. DNF Head — P(finish) for the pricing layer <span class="chip live">live</span></h2>
 <p class="section-intro">
   A binary LightGBM head answering "does this rider finish this race?", trained on 1.26M
   status rows recovered from the scrape archive (132,892 DNFs ≈ 10.6%; DNS / OOT / DSQ
   distinguished; 99.5% coverage of 2016+ competitions). CV: <strong>AUC 0.883 ± 0.003</strong>,
-  log loss 0.221, calibration 0.964.
+  log loss 0.221, calibration 0.964. Production early-stop check at the 2026-08-09 retrain:
+  AUC 0.889, calibration ratio 1.011.
 </p>
 
 <div class="metric t-model">
@@ -1560,7 +1626,7 @@ win_cal_ratio, ECE, Brier per head
 <hr>
 
 <p class="subtitle">
-  Sources (all read from <span class="mono">webscrape-refactor</span>, 2026-06-11):
+  Sources (all read from <span class="mono">webscrape-refactor</span>, 2026-08-10):
   <span class="mono">engineering_tools/feature_precomputation.py</span> (RiderRunningState, compute_field_features),
   <span class="mono">engineering_tools/form_team_features.py</span> (RiderFormHistory, TeamFeatureComputer, get_trajectory_form_features),
   <span class="mono">engineering_tools/stage_race_state.py</span> (within-race state),

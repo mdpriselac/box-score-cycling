@@ -250,7 +250,7 @@ hr { border: none; border-top: 1px solid var(--border); margin: 14px 0; }
   <a href="pipeline_overview.html">Pipeline</a>
   <a href="race_features_reference.html" class="active">Race Features</a>
   <a href="metrics_reference.html">Metrics Reference</a>
-  <span class="nav-updated">updated 2026-06-11</span>
+  <span class="nav-updated">updated 2026-08-10</span>
 </nav>
 
 <h1>Race Feature Reference</h1>
@@ -261,7 +261,7 @@ hr { border: none; border-top: 1px solid var(--border); margin: 14px 0; }
   selection-signature layer that captures <strong>who</strong> contests the front.
   Every transformation between <span class="mono">rider_results.time_gap</span> and
   the serving features is documented with exact formulas and source locations.<br>
-  Branch: <span class="mono">webscrape-refactor</span> @ <span class="mono">4e87815</span>+ (2026-06-11).
+  Branch: <span class="mono">webscrape-refactor</span> @ <span class="mono">4282974</span>+ (2026-08-10).
 </p>
 
 <!-- =========================================================== -->
@@ -1018,7 +1018,7 @@ race_dominant_profile = <span class="fn">argmax</span>(all six)</div>
 <!-- SELECTION SIGNATURES (2026-06) -->
 <!-- =========================================================== -->
 
-<h2 id="s10">10. Selection signatures — <em>who</em> contests the front <span class="chip next">next retrain</span></h2>
+<h2 id="s10">10. Selection signatures — <em>who</em> contests the front <span class="chip live">live</span></h2>
 
 <div class="stage s-score">
   <div class="stage-head">
@@ -1089,6 +1089,73 @@ rider_sig_vs_field = rider_sig_share − field_share[rider's best_profile]</div>
 </div>
 
 <!-- =========================================================== -->
+<!-- DAY-TYPE MENU (2026-08) -->
+<!-- =========================================================== -->
+
+<h2 id="s10b">10b. The day-type menu — composition space as a serving vocabulary <span class="chip live">live</span></h2>
+
+<div class="stage s-score">
+  <div class="stage-head">
+    <div class="stage-num">2026-08</div>
+    <h3>From per-race signatures to a fixed menu of day types</h3>
+  </div>
+  <p class="stage-purpose">
+    The day-type menu takes §10's composition space one step further: instead of predicting
+    each race's own signature, it partitions <em>all</em> historical stage days into a fixed
+    vocabulary of <strong>11 day types</strong>, so a human can key an upcoming stage to one
+    ("mountain escape", "split sprint"…) and a dedicated retrieval ranker can pull the riders
+    who historically contest days like it. Frozen artifact:
+    <span class="mono">models/production/day_menu_v1.json</span>.
+  </p>
+
+  <div class="metric">
+    <div class="metric-head"><h4>Construction (menu v1, frozen 2026-08-09)</h4></div>
+    <div class="formula"><span class="cmt"># day representation: realized top-15 archetype shares (composition only —</span>
+<span class="cmt"># finishing shape deliberately excluded; who ≈ 2× more forward-predictable than how)</span>
+
+<span class="cmt"># macro routing (mechanical):</span>
+itt     : winning_time &lt; 75 min
+bunch   : mass sprint, or bunch sprint with winner group ≥ 20% of field
+gc_day  : winner (or front-5 median) inside morning GC top-10
+
+<span class="cmt"># residual days (n=951 junk-filtered): GMM k=8, seed 42, full covariance</span>
+<span class="cmt"># → 8 analog items in two families:</span>
+escape/climb  : res_2 mountain escape · res_4 hard puncheur · res_6 rouleur power
+power-sprint  : res_3 survivor gallop · res_7 split sprint · res_1 fast-finisher
+(+ res_0 chaos — discouraged; res_5 degenerate — never select)
+
+<span class="cmt"># assignment of any new day = stored-parameter GMM predict — NEVER a refit</span></div>
+    <p class="desc">Within a family the items are graded neighbours (kernel overlap cos⁸ ≈ 0.8 —
+      a one-grade miss costs little; weight two items when torn); across families they barely
+      overlap (similarity down to 0.17). A post-Tour drift check (refit on +12% data) showed
+      zero cross-family flow — only within-family re-partitioning — so v1 stands.</p>
+  </div>
+
+  <div class="metric">
+    <div class="metric-head"><h4>Rider kernels — history weighted by day similarity</h4></div>
+    <div class="formula"><span class="cmt"># similarity between a day's composition c and a historical ride's day c_h:</span>
+w = cos(c, c_h)<sup>γ</sup> · 2<sup>−Δdays / 730</sup>          <span class="cmt"># γ = 8, two-year half-life</span>
+
+<span class="cmt"># per rider, strictly as-of race morning (no same-day rides):</span>
+dtm_k_expos      = Σ w                        <span class="cmt"># similarity-weighted exposure</span>
+dtm_k_attend     = Σ w·[top-15] / Σ w         <span class="cmt"># attendance rate on days like this</span>
+dtm_k_top3       = Σ w·[top-3]  / Σ w
+dtm_k_perf_place = Σ w·place    / Σ w         <span class="cmt"># mean finish on days like this</span>
+
+<span class="cmt"># NaN below min effective n = 3.0; decay factorizes → per-rider cumsums + merge_asof</span></div>
+    <p class="meta-line"><span class="lbl">src:</span> prediction_tools/day_menu.py — load_menu(), assign_residual_items(), label_days(), kernel_cumulants(), attach_day_menu_features() / attach_day_menu_serving()</p>
+    <p class="meta-line"><span class="lbl">gate:</span> retrieval-only architecture validated 2026-08-09 — pricing neutral (+0.0005 honest LL); judgment-key ceiling +2.45pp top-15 pool coverage / −1.84 winner rank on residual days (5/5 folds)</p>
+  </div>
+
+  <div class="note">
+    Scoping is even stricter than §10's: the 14 <span class="mono">dtm_*</span> columns are seen
+    only by the <span class="mono">bucket_daymenu</span> retrieval variant, never by any pricing
+    head (feature attachment in pricing heads: +0.011 honest log loss, 0/5 folds — dead). The
+    keyed board re-orders the shortlist; every price still comes from the production stack.
+  </div>
+</div>
+
+<!-- =========================================================== -->
 <!-- SUMMARY -->
 <!-- =========================================================== -->
 
@@ -1118,10 +1185,19 @@ rider_results (top-10) &nbsp;+&nbsp; best_profile snapshots (as-of-then)<br>
 sig_sprint … sig_time_trial, sig_wg_prop, sig_n_refs, rider_sig_share, rider_contest_fit, rider_sig_vs_field
 </div>
 
+<div class="section-intro" style="font-family:var(--mono); font-size:12px; color:#cbd5e1;">
+<span style="color:var(--text-faint)">// the third reading (stage days, since 2026-08): the day-type menu</span><br>
+realized top-15 archetype shares per stage day<br>
+&nbsp;&nbsp;↓ &nbsp;&nbsp; macro rules (itt / bunch / gc_day) &nbsp;+&nbsp; GMM k=8 stored-parameter assign (residual days)<br>
+day_menu_v1.json &nbsp;(11 items, 2 families)<br>
+&nbsp;&nbsp;↓ &nbsp;&nbsp; cos<sup>8</sup> composition kernel × 730-day half-life, as-of race morning<br>
+dtm_sig_* fills &nbsp;+&nbsp; dtm_k_{expos, attend, top3, perf_place} &nbsp;→&nbsp; bucket_daymenu (retrieval only)
+</div>
+
 <hr>
 
 <p class="subtitle">
-  Sources (all read from <span class="mono">webscrape-refactor</span>, 2026-06-11):
+  Sources (all read from <span class="mono">webscrape-refactor</span>, 2026-08-10):
   <span class="mono">webscrape_tools/database/race_feature_extraction.py</span>
   (trim, calculate_statistical_features, calculate_engineered_features),
   <span class="mono">webscrape_tools/database/statistical_measures.py</span>

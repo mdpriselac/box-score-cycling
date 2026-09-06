@@ -1,0 +1,5 @@
+build/
+worker/
+wrangler.jsonc
+Archive.zip
+.assetsignore

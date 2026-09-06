@@ -94,7 +94,9 @@ def main() -> int:
     ap.add_argument("--lang", default="nl_NL")
     ap.add_argument("--market", default="NL")
     ap.add_argument("--match", default="(tour de france 2026)",
-                    help="case-insensitive substring an event name must contain "
+                    help="case-insensitive substring an event name must contain; "
+                         "matched against BOTH the localised name and englishName, "
+                         "so 'vuelta a espa' finds the Dutch 'Ronde van Spanje' "
                          "(default excludes TdF Femmes; use 'tour de france' to include it)")
     ap.add_argument("--out-root", default=str(OUT_ROOT),
                     help="odds archive root (default: this campaign's odds/); "
@@ -125,17 +127,19 @@ def main() -> int:
     events = []
     for item in listview.get("events", []):
         ev = item.get("event", item)
-        name = ev.get("name", "")
-        if args.match.lower() in name.lower():
+        # The feed localises event names (the Vuelta is "Ronde van Spanje" on
+        # the NL brand), so match the English name as well.
+        names = f"{ev.get('name', '')} | {ev.get('englishName', '')}"
+        if args.match.lower() in names.lower():
             events.append(ev)
 
     if not events:
         print(f"No events matching '{args.match}' in the feed.")
-        print("Either all TdF markets are live/settled right now (run earlier in the day),")
+        print("Either all its markets are live/settled right now (run earlier in the day),")
         print("or the feed is geo-filtered — try with the NL VPN on.")
         return 1
 
-    print(f"Found {len(events)} TdF events:")
+    print(f"Found {len(events)} matching events:")
     for ev in events:
         print(f"  {ev['id']}  {ev.get('start', '?'):>22}  {ev['name']}")
 

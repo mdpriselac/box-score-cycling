@@ -22,9 +22,9 @@ html = f"""<!DOCTYPE html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>How the Cycling Race Predictor Prices a Race</title>
-<meta name="description" content="A LightGBM prediction stack for professional cycling: how the model heads work, Tour de France 2026 predictions, and how they compare with the bookmakers.">
+<meta name="description" content="A LightGBM prediction stack for professional cycling: how the model heads work, the new day-type retrieval channel, Tour de France 2026 predictions, and how they compare with the bookmakers.">
 <meta property="og:title" content="How the Cycling Race Predictor Prices a Race">
-<meta property="og:description" content="Seven model heads, one pricing layer — plus live Tour de France 2026 predictions and a model-vs-bookmaker comparison.">
+<meta property="og:description" content="Seven pricing heads, one pricing layer, and a new day-type retrieval channel — plus Tour de France 2026 predictions and a model-vs-bookmaker comparison.">
 <meta property="og:type" content="website">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚴</text></svg>">
 <style>

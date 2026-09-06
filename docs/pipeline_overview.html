@@ -274,15 +274,16 @@ hr { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
   <a href="pipeline_overview.html" class="active">Pipeline</a>
   <a href="race_features_reference.html">Race Features</a>
   <a href="metrics_reference.html">Metrics Reference</a>
-  <span class="nav-updated">updated 2026-06-11</span>
+  <span class="nav-updated">updated 2026-08-10</span>
 </nav>
 
 <h1>Cycling Prediction Pipeline</h1>
 <p class="subtitle">
   Conceptual overview of data flow from web scrape → SQLite → features → LightGBM models → race prediction → web display.<br>
-  Branch: <span class="mono">webscrape-refactor</span> @ <span class="mono">4e87815</span>+ (2026-06-11) — <em>production pipeline</em>.
-  Items marked <span class="chip next">next retrain</span> are merged and validated; they activate when the weekly
-  pipeline next retrains (the saved models in <span class="mono">models/production/</span> are from 2026-06-10, pre-stack).
+  Branch: <span class="mono">webscrape-refactor</span> @ <span class="mono">4282974</span>+ (2026-08-10) — <em>production pipeline</em>.
+  The saved models in <span class="mono">models/production/</span> are from the <strong>2026-08-09 retrain</strong>:
+  the Arm-C stack, contested Elo, DNF pricing multiplication, and the day-menu retrieval variant are all
+  <span class="chip live">live</span>. No <span class="chip next">next retrain</span> items are currently outstanding.
 </p>
 
 <div class="legend">
@@ -324,8 +325,8 @@ hr { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
   </a>
   <a class="flow-card c-train" href="#stage5">
     <div class="num">STAGE 05</div>
-    <div class="title">Train 9 LGBM heads</div>
-    <div class="line">Bucket / Gap / 3× Probability / LambdaRank / GC outlook ×2 / DNF</div>
+    <div class="title">Train 10 LGBM heads</div>
+    <div class="line">Bucket / Gap / 3× Probability / LambdaRank / GC outlook ×2 / DNF / day-menu bucket</div>
   </a>
   <a class="flow-card c-infer" href="#stage6">
     <div class="num">STAGE 06</div>
@@ -509,7 +510,7 @@ race_feature_gradients</div>
         <li><strong>gradients</strong> — parallel slope/shape extraction over the 19 tables → race profile scores.</li>
         <li><strong>features</strong> — batched, resumable writer for <span class="mono">rider_competition_snapshots</span> (now incl. the 15 <span class="mono">v2_*/v3_*</span> trajectory/EMA form columns) + <span class="mono">competition_field_features</span>.</li>
         <li><strong>race-state</strong> — reconstructs mid-race GC standings per completed stage and writes the 23 within-race state features to <span class="mono">rider_race_state</span> (validated vs stored final GCs; suspect races get no rows). <span class="chip live">live</span></li>
-        <li><strong>elo-snapshots</strong> — replays all result sheets chronologically through the contested-comparison Elo engine and saves as-of-then rating snapshots (~560K rows). <span class="chip next">next retrain</span></li>
+        <li><strong>elo-snapshots</strong> — replays all result sheets chronologically through the contested-comparison Elo engine and saves as-of-then rating snapshots (~575K rows). <span class="chip live">live</span></li>
       </ul>
     </div>
     <div class="stage-col">
@@ -582,15 +583,15 @@ rider_competition_snapshots
   ⨝ rider_results
     (place_bucket, time_gap)
 
-643,042 samples · 5,724 comps
-2016-01-18 → 2026-06-10</div>
+668,433 samples · 5,905 comps
+2016-01-18 → 2026-08-09</div>
     </div>
     <div class="stage-col">
       <h4>Derived feature engineering (<span class="mono">FeatureEngineer</span>)</h4>
       <ul>
         <li>All the classic interaction features: <span class="mono">profile_weighted_expected</span>, <span class="mono">rider_vs_field_*</span>, <span class="mono">relevant_type/category_avg_bucket</span>, team-role flags, form flags, <span class="mono">gc_specialist_score</span>, gap features (see <a href="metrics_reference.html">Metrics Reference</a> §7).</li>
         <li>Type-aware imputation (age by tour level; <span class="mono">*_avg_bucket</span> → 5.0; <span class="mono">*_count</span> → 0) — trajectory <span class="mono">v2_*/v3_*</span> and stack columns are exempt and stay NaN.</li>
-        <li><strong>Arm-C stack frame <span class="chip next">next retrain</span>:</strong> bucket + contender heads additionally receive 17 columns — 2 meta-OOF (<span class="mono">oof_time_gap_pred</span>, <span class="mono">oof_lambdarank_win_p</span>), 11 one-day contest-signature features (stage/GC rows NaN by scope), 4 contested-Elo features. Time-gap, weighted, calibrated, and LambdaRank heads stay on the plain frame.</li>
+        <li><strong>Arm-C stack frame <span class="chip live">live</span>:</strong> bucket + contender heads additionally receive 17 columns — 2 meta-OOF (<span class="mono">oof_time_gap_pred</span>, <span class="mono">oof_lambdarank_win_p</span>), 11 one-day contest-signature features (stage/GC rows NaN by scope), 4 contested-Elo features. Time-gap, weighted, calibrated, and LambdaRank heads stay on the plain frame.</li>
       </ul>
     </div>
     <div class="stage-col">
@@ -598,7 +599,7 @@ rider_competition_snapshots
       <div class="io-box">Split by competition date:
   train      = &lt; 95th pct date
   early_stop = ≥ 95th pct date
-  (cutoff 2026-02-01 last run)
+  (cutoff 2026-03-25 last run)
 
 OOF side-runs, 5 temporal folds:
   classifier_expected_bucket
@@ -635,11 +636,12 @@ by a model trained without it</div>
 <div class="stage c-train" id="stage5">
   <div class="stage-head">
     <div class="stage-num">STAGE 05</div>
-    <h3>Train Nine LightGBM Heads</h3>
+    <h3>Train Ten LightGBM Heads</h3>
   </div>
   <p class="stage-purpose">
     Four pipeline steps train the full model suite: <span class="mono">train</span> (the
-    five-model core, plus the OOF side-runs), <span class="mono">train-lambdarank</span>
+    five-model core, plus the OOF side-runs and the day-menu retrieval variant),
+    <span class="mono">train-lambdarank</span>
     (full-field probability head), <span class="mono">train-gc-outlook</span> (state-aware
     mid-race GC head, 2 models), and <span class="mono">train-dnf</span> (finish-risk head).
     All artifacts land in <span class="mono">models/production/</span> via
@@ -667,22 +669,24 @@ seed                    42
       <ul>
         <li><strong>Time gap</strong> — regression on <span class="mono">log1p(time_gap)</span>, finishers only, 3600 s cap. Doubles as the base model for the <span class="mono">oof_time_gap_pred</span> stack feature.</li>
         <li><strong>LambdaRank base + OOF</strong> — produces leak-free <span class="mono">oof_lambdarank_win_p</span> for the stack frame.</li>
-        <li><strong>Bucket</strong> — regression on <span class="mono">place_bucket</span> (164 features incl. state; +stack cols at next retrain). Ranking signal + OOF feed for the contender filter.</li>
-        <li><strong>Probability (weighted)</strong> — 8-class softmax, balanced weights, temperature-calibrated (T≈0.80).</li>
-        <li><strong>Probability (calibrated)</strong> — 8-class softmax, no weights (T≈1.01).</li>
-        <li><strong>Probability (contender)</strong> — 5-class softmax on the top-15 per race by OOF bucket; lr 0.01; consumes <span class="mono">classifier_expected_bucket</span> (+ stack cols at next retrain). T≈0.98.</li>
+        <li><strong>Bucket</strong> — regression on <span class="mono">place_bucket</span> (181 features: 164 incl. state + 17 stack cols). Ranking signal + OOF feed for the contender filter.</li>
+        <li><strong>Probability (weighted)</strong> — 8-class softmax, balanced weights, temperature-calibrated (T≈0.76).</li>
+        <li><strong>Probability (calibrated)</strong> — 8-class softmax, no weights (T≈0.99).</li>
+        <li><strong>Probability (contender)</strong> — 5-class softmax on the top-15 per race by OOF bucket; lr 0.01; consumes <span class="mono">classifier_expected_bucket</span> + the 17 stack cols. T≈1.06.</li>
+        <li><strong>Day-menu variant <span class="chip live">live</span></strong> — after <span class="mono">registry.save()</span>: rebuild the day-type signature table DB-fresh, label days against frozen menu v1, compute per-rider kernel cumulants (~642K rides → <span class="mono">day_menu_kernels.parquet</span>), train <span class="mono">bucket_daymenu</span> (195 = 181 + 14 <span class="mono">dtm_*</span> features). Retrieval-only at serve; non-fatal if it fails (production suite is already saved).</li>
       </ul>
       <h4>Separate steps</h4>
       <ul>
         <li><strong>train-lambdarank</strong> — <span class="mono">objective='lambdarank'</span>, label gains 2<sup>rel</sup>−1 = [0,1,3,7,15,31,63], ndcg@[1,3,5,10], grouped by competition; per-race softmax with fitted temperature (T≈0.70). 141 features (stateless by design — state variants tested and rejected).</li>
-        <li><strong>train-gc-outlook</strong> — bucket + contender pair retrained on 342K mid-race checkpoint rows, state features only.</li>
-        <li><strong>train-dnf</strong> — binary P(DNF) head, ~100 features, AUC ≈ 0.883. <span class="chip next">next retrain</span></li>
+        <li><strong>train-gc-outlook</strong> — bucket + contender pair retrained on 356K mid-race checkpoint rows, state features only.</li>
+        <li><strong>train-dnf</strong> — binary P(DNF) head, ~100 features, AUC ≈ 0.889, calibration ratio ≈ 1.01. <span class="chip live">live</span></li>
       </ul>
     </div>
     <div class="stage-col">
       <h4>Saved artifacts</h4>
       <div class="io-box">models/production/
   bucket_model.txt
+  bucket_model_daymenu.txt
   time_gap_model.txt
   probability_model_weighted.txt
   probability_model_calibrated.txt
@@ -690,9 +694,13 @@ seed                    42
   lambdarank_model.txt
   gc_outlook_bucket_model.txt
   gc_outlook_contender_model.txt
-  dnf_model.txt            ← next
+  dnf_model.txt
+  win_calibration.json
   contested_rating_
-    snapshots.parquet      ← next
+    snapshots.parquet
+  day_menu_v1.json
+  day_menu_kernels.parquet
+    (gitignored, rebuilt each train)
   *_feature_engineer.pkl (per head)
   metadata.json
   gc_outlook_metadata.json
@@ -702,7 +710,7 @@ seed                    42
 
   <div class="gotcha">
     Step order matters twice over: the contender model needs the bucket model's OOF
-    predictions, and (from the next retrain) the bucket/contender pair need the time-gap
+    predictions, and the bucket/contender pair need the time-gap
     and LambdaRank base models' OOF outputs plus the Elo snapshot artifact. The pipeline
     encodes these dependencies; don't run <span class="mono">--only train</span> against a
     stale snapshot/state table after schema changes.
@@ -713,7 +721,8 @@ seed                    42
     <span class="file-line">cycling_project/prediction_tools/train_lambdarank_production.py <span class="annot"># LambdaRank head + temperature</span></span>
     <span class="file-line">cycling_project/prediction_tools/gc_outlook.py <span class="annot"># GC outlook training + inference</span></span>
     <span class="file-line">cycling_project/prediction_tools/dnf_predictor.py <span class="annot"># DNF head (labels from pickle status rows)</span></span>
-    <span class="file-line">cycling_project/prediction_tools/model_registry.py <span class="annot"># save/load all heads + metadata</span></span>
+    <span class="file-line">cycling_project/prediction_tools/day_menu.py <span class="annot"># menu artifact, labeler, kernels, bucket_daymenu attach/serve</span></span>
+    <span class="file-line">cycling_project/prediction_tools/model_registry.py <span class="annot"># save/load all heads + metadata (incl. bucket variants)</span></span>
   </div>
 </div>
 
@@ -745,17 +754,19 @@ Loaded:
   field features (startlist)
   reference-edition race profile
   rider_race_state (if mid-race)
-  contested-Elo snapshots ← next
-  signature context       ← next</div>
+  contested-Elo snapshots
+  signature context (one-day)
+  day-menu kernels (keyed stages)</div>
     </div>
     <div class="stage-col">
       <h4>Flow</h4>
       <ul>
         <li><span class="mono">assemble_prediction_df()</span> merges snapshots + startlist + field + reference profile; <strong>live form re-aging</strong> (<span class="mono">live_form.py</span>, default on) recomputes all 21 form features as of today — without it, <span class="mono">days_since_last_race</span> is stale for 100% of riders (mean 7 days vs true 43).</li>
-        <li>Stack columns default to <strong>NaN</strong> (LightGBM's trained "unavailable" branch); <span class="mono">attach_stack_features()</span> overwrites them with real values — base-model predictions, Elo as-of-today, one-day signatures from references + startlist. <span class="chip next">next retrain</span></li>
+        <li>Stack columns default to <strong>NaN</strong> (LightGBM's trained "unavailable" branch); <span class="mono">attach_stack_features()</span> overwrites them with real values — base-model predictions, Elo as-of-today, one-day signatures from references + startlist. <span class="chip live">live</span></li>
         <li><span class="mono">FeatureEngineer.transform()</span> reuses the fitted column set — identical schema vs training, per head.</li>
         <li>Bucket score (+ time gap) → ranking; multiclass cascade → cumulative probabilities → odds; LambdaRank → calibrated win/podium; GC outlook if state rows exist.</li>
-        <li>Planned at pricing layer: multiply finisher-conditioned market probabilities by the DNF head's P(finish). <span class="chip next">next retrain</span></li>
+        <li>Pricing layer: win corrector (logit shift) → 0.2/0.8 cascade–LambdaRank blend → finisher-conditioned market probabilities × the DNF head's P(finish); each step book-preserving. <span class="chip live">live</span></li>
+        <li><strong>Day-type keyed serving</strong> (campaign toolchain, <span class="mono">predict_stage_scenarios.py</span> — not yet a web-app input): a <span class="mono">day_key</span> attaches the keyed item's composition + rider kernels and re-ranks the board with <span class="mono">bucket_daymenu</span>; promoted riders get contender pricing via <span class="mono">extra_contender_ids</span>; <strong>prices always come from the production heads</strong>. <span class="chip live">live</span></li>
       </ul>
     </div>
     <div class="stage-col">
@@ -848,9 +859,9 @@ gc_outlook_* (when mid-race)</div>
 <h2>3. Feature Taxonomy</h2>
 <p class="subtitle">
   What the models "know" about each (rider × race) pair, grouped by semantic role.
-  164 columns reach the bucket head (141 + 23 race-state); the LambdaRank head uses the
-  141 stateless ones; the Arm-C stack adds 17 more to bucket + contender at the next
-  retrain. Exact formulas: <a href="metrics_reference.html">Metrics Reference</a>.
+  181 columns reach the bucket head (141 + 23 race-state + 17 Arm-C stack); the LambdaRank
+  head uses the 141 stateless ones; the day-menu retrieval variant adds 14
+  <span class="mono">dtm_*</span> columns on top (195). Exact formulas: <a href="metrics_reference.html">Metrics Reference</a>.
 </p>
 
 <div class="feat-grid">
@@ -968,7 +979,7 @@ gc_outlook_* (when mid-race)</div>
   </div>
 
   <div class="feat-card">
-    <h4>Stack — Meta-OOF + Signatures + Elo <span class="chip next">next retrain</span></h4>
+    <h4>Stack — Meta-OOF + Signatures + Elo <span class="chip live">live</span></h4>
     <div class="tag-list">
       <span class="tag">oof_time_gap_pred</span><span class="tag">oof_lambdarank_win_p</span>
       <span class="tag">sig_sprint</span><span class="tag">sig_mountain</span><span class="tag">sig_hilly</span>
@@ -980,6 +991,25 @@ gc_outlook_* (when mid-race)</div>
       <span class="tag">contested_rating_delta90</span><span class="tag">contested_rating_vs_field</span>
     </div>
     <p class="note">The 17 Arm-C columns for bucket + contender. Gate result: market_avg_log_loss −0.0040 ± 0.0014 (5/5 folds) and winner capture ≈ +1.2pp vs baseline. Signatures are one-day-scoped (stage rows NaN); Elo NaN for never-rated riders.</p>
+  </div>
+
+  <div class="feat-card">
+    <h4>Day-menu retrieval — <span class="mono">dtm_*</span> <span class="chip live">live</span></h4>
+    <div class="tag-list">
+      <span class="tag">dtm_sig_sprint</span><span class="tag">dtm_sig_mountain</span><span class="tag">dtm_sig_hilly</span>
+      <span class="tag">dtm_sig_rolling</span><span class="tag">dtm_sig_breakaway</span><span class="tag">dtm_sig_time_trial</span>
+      <span class="tag">dtm_sig_wg_prop</span>
+      <span class="tag">dtm_rider_sig_share</span><span class="tag">dtm_rider_sig_vs_field</span>
+      <span class="tag">dtm_rider_contest_fit</span>
+      <span class="tag">dtm_k_expos</span><span class="tag">dtm_k_attend</span>
+      <span class="tag">dtm_k_top3</span><span class="tag">dtm_k_perf_place</span>
+    </div>
+    <p class="note">The 14 day-type columns seen ONLY by <span class="mono">bucket_daymenu</span>
+      (the keyed retrieval ranker) — never by any pricing head (gate verdict: feature attachment
+      in pricing heads costs +0.011 honest log loss, 0/5 folds). Fills = the keyed item's canonical
+      composition; kernels = per-rider similarity-weighted history on days like this (exposure /
+      attendance / top-3 rate / mean finish; γ=8 composition kernel, 730-day half-life, strictly
+      as-of race morning). Unkeyed rows all-NaN.</p>
   </div>
 
   <div class="feat-card">
@@ -1016,7 +1046,7 @@ gc_outlook_* (when mid-race)</div>
     <tr>
       <td class="mname">Bucket</td>
       <td><span class="mono">regression</span></td>
-      <td><span class="mono">place_bucket ∈ [0,6]</span> as continuous; DNF rows dropped; sample-weighted; 164 features incl. race state (+17 stack next retrain)</td>
+      <td><span class="mono">place_bucket ∈ [0,6]</span> as continuous; DNF rows dropped; sample-weighted; 181 features incl. race state + 17 stack</td>
       <td>Continuous score 0–7</td>
       <td>Ranking sort key; OOF feed for the contender filter.</td>
     </tr>
@@ -1030,21 +1060,21 @@ gc_outlook_* (when mid-race)</div>
     <tr>
       <td class="mname">Probability (weighted)</td>
       <td><span class="mono">multiclass</span> (8)</td>
-      <td>All buckets incl. 7; balanced weights; T≈0.80</td>
+      <td>All buckets incl. 7; balanced weights; T≈0.76</td>
       <td>8-class → cumulative</td>
       <td>Sportsbook odds display (discrimination-leaning).</td>
     </tr>
     <tr>
       <td class="mname">Probability (calibrated)</td>
       <td><span class="mono">multiclass</span> (8)</td>
-      <td>Same, no weights; T≈1.01</td>
+      <td>Same, no weights; T≈0.99</td>
       <td>8-class distribution</td>
       <td>Calibration-leaning fallback views.</td>
     </tr>
     <tr>
       <td class="mname">Probability (contender)</td>
       <td><span class="mono">multiclass</span> (5), lr 0.01</td>
-      <td>Top-15 per race by OOF bucket; buckets 4–6 merged; consumes <span class="mono">classifier_expected_bucket</span> (+stack next retrain); T≈0.98</td>
+      <td>Top-15 per race by OOF bucket; buckets 4–6 merged; consumes <span class="mono">classifier_expected_bucket</span> + stack; T≈1.06</td>
       <td>5-class (win/podium/top5/top15/rest)</td>
       <td><strong>The "scout"</strong> — headline Win/Podium/Top-N % in the app. ~24% winner capture.</td>
     </tr>
@@ -1058,16 +1088,23 @@ gc_outlook_* (when mid-race)</div>
     <tr>
       <td class="mname">GC outlook (×2)</td>
       <td><span class="mono">regression + multiclass</span> (5)</td>
-      <td>Final-GC bucket from mid-race checkpoints; <strong>state features only</strong>; 342K checkpoint rows</td>
+      <td>Final-GC bucket from mid-race checkpoints; <strong>state features only</strong>; 356K checkpoint rows</td>
       <td>Final-GC Win/Podium/Top 5/Top 15 %</td>
       <td>"GC Outlook" app section for in-progress stage races (+18.3pp early-race winner capture vs carry-forward).</td>
     </tr>
     <tr>
-      <td class="mname">DNF head <span class="chip next">next</span></td>
+      <td class="mname">DNF head <span class="chip live">live</span></td>
       <td><span class="mono">binary</span></td>
-      <td>DNF/OOT/DSQ vs finish (DNS excluded); ~100 features incl. shrunk DNF history; AUC ≈ 0.883</td>
+      <td>DNF/OOT/DSQ vs finish (DNS excluded); ~100 features incl. shrunk DNF history; AUC ≈ 0.889</td>
       <td>P(finish) per rider</td>
       <td>Pricing layer only: P(market) = P(market|finish) × P(finish). Never fed into finisher-conditioned heads (tested: hurts).</td>
+    </tr>
+    <tr>
+      <td class="mname">Day-menu bucket <span class="chip live">live</span></td>
+      <td><span class="mono">regression</span></td>
+      <td>Same target as Bucket; 195 features = 181 + 14 <span class="mono">dtm_*</span>; trains on oracle-keyed stage days + one-day self-keys (88.9% kernel coverage)</td>
+      <td>Keyed ranking score</td>
+      <td><strong>Retrieval only</strong>: board order + contender-pool membership when a stage carries a <span class="mono">day_key</span>. Never prices — gate verdicts forbid dtm features in pricing heads and conditional boards as prices.</td>
     </tr>
   </tbody>
 </table>
@@ -1101,7 +1138,7 @@ gc_outlook_* (when mid-race)</div>
 <details>
   <summary>Data volumes &amp; known skew</summary>
   <ul>
-    <li>643,042 training samples, 5,724 competitions, 2016-01-18 → 2026-06-10 (DB current to 2026-06-10).</li>
+    <li>668,433 training samples, 5,905 competitions, 2016-01-18 → 2026-08-09 (DB current to 2026-08-09, incl. the full Tour de France 2026 and the healed 2025 late-season block).</li>
     <li>Snapshots table covers 2010 → present (1M+ rows) so 2016-era training rows still see real career history.</li>
     <li>Heavily imbalanced: bucket 6 ≈ 58%, bucket 0 ≈ 0.9%. Sample weights / class filters cope.</li>
     <li>Training filters: <span class="mono">start_date ≥ 2016-01-01</span> (moved from 2018 on 2026-04-18 after a scaling sweep), <span class="mono">races_career ≥ 10</span>.</li>
@@ -1147,7 +1184,7 @@ gc_outlook_* (when mid-race)</div>
 <hr>
 
 <p class="subtitle">
-  Sources of truth (read from <span class="mono">webscrape-refactor</span>, 2026-06-11):
+  Sources of truth (read from <span class="mono">webscrape-refactor</span>, 2026-08-10):
   <span class="mono">update_pipeline.py</span>,
   <span class="mono">prediction_tools/{data_pipeline, feature_engineering, train_production_model,
   train_lambdarank_production, gc_outlook, dnf_predictor, contested_rating,

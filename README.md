@@ -39,13 +39,15 @@ The update pipeline (`cycling_project/update_pipeline.py`) is a single script th
 7. **Percentile tables** — builds statistical percentile tables for target years
 8. **Gradient calculation** — computes performance gradients for unprocessed competitions
 9. **Feature precomputation** — rebuilds rider snapshots and field-level features
-10. **Train production model** — retrains the multiclass cascade (bucket + time gap + multiclass + calibrated + contender)
-11. **Train LambdaRank head** — trains the full-field LambdaRank probability head and appends it to the registry
+10. **Stage-race state and Elo snapshots** — refreshes the live-state and contested-rating inputs
+11. **Train production model** — retrains the bucket, time-gap, probability, calibrated, contender, LambdaRank, and day-menu ranking heads
+12. **Train auxiliary heads** — refreshes standalone LambdaRank, GC outlook, and DNF artifacts
+13. **Validate the release** — verifies the content-addressed manifest for every production artifact before serving
 
 ### Usage
 
 ```bash
-# Full pipeline (all 11 steps)
+# Full pipeline
 uv run python -m cycling_project.update_pipeline
 
 # Preview what would run without executing
@@ -73,7 +75,7 @@ uv run python -m cycling_project.update_pipeline --only train
 uv run python -m cycling_project.update_pipeline -v
 ```
 
-Valid `--only` step names: `scrape-lists`, `scrape-data`, `migrate`, `place-bucket`, `bib`, `experience`, `percentiles`, `gradients`, `features`, `train`, `train-lambdarank`.
+Valid `--only` step names also include `race-state`, `elo-snapshots`, `train-gc-outlook`, `train-dnf`, and `validate-release`; see `--help` for the complete list.
 
 ### Configuration
 
@@ -81,13 +83,15 @@ The pipeline resolves paths automatically from the project root. Scraped data de
 
 ## Other Workflows
 
-**Predict a race**: Enter a FirstCycling URL in the web app, select reference races, generate predictions. Two probability heads are shown side-by-side (multiclass + LambdaRank) with disagreement highlighting; every prediction run is persisted to the `prediction_log` table for retrospective comparison against actual results and book-implied odds.
+**Predict a race**: Enter a FirstCycling URL in the web app, select reference races, generate predictions. Both the app and the headless stage builder use the same fail-fast `PredictionService`. Predictions are persisted idempotently to `prediction_log`: an exact rerun updates the existing opinion, while a changed release, scenario, field, profile, day key, or race state creates a new auditable run.
 
 **Train models manually**:
 - Multiclass cascade: `uv run python -m cycling_project.prediction_tools.train_production_model`
 - LambdaRank head only (appends to existing registry): `uv run python -m cycling_project.prediction_tools.train_lambdarank_production`
 
-See `DEPLOYMENT_PLAN.md` for Streamlit Cloud deployment instructions and `experiment_log.md` for the model evaluation history.
+See `CLOUDFLARE_DEPLOYMENT_PLAN.md` for the current deployment architecture,
+`DEPLOYMENT_PLAN.md` for the superseded Streamlit proposal, and
+`experiment_log.md` for the model evaluation history.
 
 ## Claude Code Integration
 

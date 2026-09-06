@@ -7,8 +7,8 @@ Generate a per-stage prediction page for the netlify site.
 Reads the stage's scenario config + the per-scenario prediction JSONs written
 by predict_stage_scenarios.py (+ the archived FirstCycling results, once the
 stage has been raced and capture_results.py has run), writes
-netlify_site/stageNN.html, refreshes the stage-links strip in
-predictor-architecture.html (between STAGES markers), and reruns
+netlify_site/[prefix]stageNN.html, refreshes that campaign's stage-links
+strip in predictor-architecture.html (between its own markers), and reruns
 make_netlify.py so index.html stays current.
 
 Rerun after the stage to append the results section — the page upgrades in
@@ -28,8 +28,49 @@ from pathlib import Path
 HERE = Path(__file__).parent
 SITE_DIR = HERE.parent
 PROJECT_ROOT = SITE_DIR.parent
-RESULTS_ROOT = PROJECT_ROOT / "performance_eval" / "tour-de-france-2026" / "results"
-PREDICTIONS_ROOT = PROJECT_ROOT / "performance_eval" / "tour-de-france-2026" / "predictions"
+# Campaign archives — rebound in main() from the config's own campaign
+# directory (<campaign>/predictions/stage_NN/scenarios.json), so the builder
+# reads the right race's data. These defaults keep the TdF paths for any
+# import-time use.
+CAMPAIGN_ROOT = PROJECT_ROOT / "performance_eval" / "tour-de-france-2026"
+RESULTS_ROOT = CAMPAIGN_ROOT / "results"
+PREDICTIONS_ROOT = CAMPAIGN_ROOT / "predictions"
+
+# Per-campaign site naming + branding, keyed by campaign directory name and
+# rebound in main(). `prefix` namespaces every page this builder writes, so a
+# second race publishes alongside the first instead of overwriting it; `marker`
+# names its own strip block in predictor-architecture.html. The TdF entry keeps
+# an empty prefix — its pages are already published as stageNN.html.
+CAMPAIGN_BRANDING = {
+    "tour-de-france-2026": {
+        "prefix": "", "marker": "STAGES",
+        "race_name": "Tour de France 2026", "short_name": "TdF 2026",
+        "hub_title": "The Tour, stage by stage", "diary_label": "Tour diary",
+        "views_label": "the full Tour views", "n_stages": 21,
+        # Pages this builder does not generate but whose links belong on the
+        # strip/backlink. Without these a rebuild silently drops them — the
+        # TdF review link was hand-added post-race and lost on regeneration.
+        "extra_links": [("review.html", "Post-race review")],
+        "hub_backlink_extra": ('&nbsp;·&nbsp; <a href="review.html"><b>Post-race '
+                               "review: how the model's Tour went →</b></a>"),
+    },
+    "vuelta-2026": {
+        "prefix": "vuelta-", "marker": "VUELTA-STAGES",
+        "race_name": "Vuelta a España 2026", "short_name": "Vuelta 2026",
+        "hub_title": "The Vuelta, stage by stage", "diary_label": "Vuelta diary",
+        "views_label": "the full race views", "n_stages": 21,
+        "extra_links": [], "hub_backlink_extra": "",
+    },
+}
+CAMPAIGN = CAMPAIGN_BRANDING["tour-de-france-2026"]
+
+
+def resolve_campaign(campaign_dir_name, config):
+    """Branding for this campaign; a config may override any key via "site"."""
+    base = dict(CAMPAIGN_BRANDING.get(campaign_dir_name,
+                                      CAMPAIGN_BRANDING["tour-de-france-2026"]))
+    base.update(config.get("site") or {})
+    return base
 SOURCE_HTML = HERE / "predictor-architecture.html"
 
 SCORE_ORDER = [
@@ -571,18 +612,23 @@ def stage_strip():
     for cfg in sorted(PREDICTIONS_ROOT.glob("stage_*/scenarios.json")):
         c = json.loads(cfg.read_text())
         n = int(c["stage"])
-        page = SITE_DIR / f"stage{n:02d}.html"
+        pfx = CAMPAIGN["prefix"]
+        page = SITE_DIR / f"{pfx}stage{n:02d}.html"
         if page.exists():
             results = RESULTS_ROOT / f"stage_{n:02d}" / "results.json"
             mark = ' <span class="done">✓</span>' if results.exists() else ""
-            items.append(f'<a href="stage{n:02d}.html">Stage {n}</a>{mark}')
+            items.append(f'<a href="{pfx}stage{n:02d}.html">Stage {n}</a>{mark}')
     if not items:
         return ""
-    lead = ('<a href="stages.html"><b>Stage-by-stage predictions '
+    pfx = CAMPAIGN["prefix"]
+    lead = (f'<a href="{pfx}stages.html"><b>Stage-by-stage predictions '
             '&amp; reflections →</b></a> · '
-            '<a href="gc.html"><b>GC tracker</b></a>')
+            f'<a href="{pfx}gc.html"><b>GC tracker</b></a>')
+    for href, label in CAMPAIGN.get("extra_links") or []:
+        lead += f' · <a href="{href}"><b>{label}</b></a>'
     return (STRIP_CSS + '\n<div class="stage-strip"><b style="color:var(--ink)">'
-            'Tour diary:</b> ' + lead + " · " + " · ".join(items) + "</div>")
+            f'{CAMPAIGN["diary_label"]}:</b> ' + lead + " · "
+            + " · ".join(items) + "</div>")
 
 
 def hub_card(config, scen, results):
@@ -607,24 +653,27 @@ def hub_card(config, scen, results):
                 f'{esc(fav["rider_name"])} <b>{fav["book_odds"]:.2f}</b> '
                 f'({pct(fav["book_devig"])} devig)</div>' if fav else "")
 
+    cancelled = bool(config.get("cancelled"))
     if results:
         finishers = [r for r in results["results"]
                      if str(r.get("place", "")).isdigit()]
         winner = min(finishers, key=lambda r: int(r["place"])) if finishers else None
         status = (f'<span class="chip done-chip">Won by {esc(winner["name"])}</span>'
                   if winner else '<span class="chip">results in</span>')
+    elif cancelled:
+        status = '<span class="chip void-chip">stage cancelled — not scored</span>'
     else:
         status = '<span class="chip wait-chip">awaiting results</span>'
 
     refl = config.get("reflection")
     refl_html = ""
-    if refl and results:
+    if refl and (results or cancelled):
         paras = [refl] if isinstance(refl, str) else list(refl)
         refl_html = ('<div class="refl">' +
                      "".join(f"<p>{esc(p)}</p>" for p in paras) + "</div>")
 
     return f"""<div class="card stage-card">
-<div class="stage-head"><h3><a href="stage{n:02d}.html">Stage {n} — {esc(config.get('date', ''))}</a></h3>{status}</div>
+<div class="stage-head"><h3><a href="{CAMPAIGN['prefix']}stage{n:02d}.html">Stage {n} — {esc(config.get('date', ''))}</a></h3>{status}</div>
 {"".join(picks)}
 {fav_html}
 {refl_html}
@@ -641,6 +690,8 @@ HUB_EXTRA_CSS = """
         text-transform:uppercase;padding:2px 9px;border-radius:99px;border:1px solid var(--line);color:var(--slate)}
   .done-chip{background:var(--green-soft);color:var(--green);border-color:var(--green-soft)}
   .wait-chip{background:var(--yellow-soft);border-color:var(--yellow-soft);color:#7a6410}
+  .void-chip{background:#ece9e4;border-color:#ddd8d1;color:#6b6259;text-decoration:line-through;
+             text-decoration-thickness:1px;text-underline-offset:2px}
   .pickline{font-family:var(--sans);font-size:14px;padding:3px 0;font-variant-numeric:tabular-nums}
   .pickline .scen{display:inline-block;min-width:170px;padding-right:12px;
                   color:var(--slate);font-size:12.5px;
@@ -695,9 +746,9 @@ def gc_card():
 {rows}</table></div>
 <div class="note">Model win = pre-race heads with live form (book-preserving).
 The outlook head is state-aware but per-rider — its probabilities don't sum
-to one book, and {through if through else 'few'}/21 stages is the thinnest
+to one book, and {through if through else 'few'}/{CAMPAIGN['n_stages']} stages is the thinnest
 state it sees; read it as "how safe is the current position", not as odds.
-<b><a href="gc.html">Full stage-by-stage GC tracker →</a></b></div>
+<b><a href="{CAMPAIGN['prefix']}gc.html">Full stage-by-stage GC tracker →</a></b></div>
 </div>"""
 
 
@@ -712,15 +763,15 @@ def build_stages_hub():
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>TdF 2026 · Stage-by-stage predictions &amp; reflections</title>
+<title>{CAMPAIGN['short_name']} · Stage-by-stage predictions &amp; reflections</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚴</text></svg>">
 <style>{CSS}{HUB_EXTRA_CSS}</style>
 </head>
 <body>
 <div class="wrap">
 <header>
-  <div class="eyebrow">Cycling race predictor · Tour de France 2026</div>
-  <h1>The Tour, stage by stage</h1>
+  <div class="eyebrow">Cycling race predictor · {CAMPAIGN['race_name']}</div>
+  <h1>{CAMPAIGN['hub_title']}</h1>
   <p class="standfirst">Every stage gets priced the morning before under several
   course readings, compared with the bookmaker's line, and settled against the
   result — with a reflection on what the model got right and why.</p>
@@ -729,7 +780,7 @@ def build_stages_hub():
     <span><b>{settled}</b>&nbsp;settled</span>
     <span>updated&nbsp;<b>{datetime.now().strftime('%Y-%m-%d')}</b></span>
   </div>
-  <p class="backlink"><a href="index.html">← System overview, season boards &amp; the full Tour views</a></p>
+  <p class="backlink"><a href="index.html">← System overview, season boards &amp; {CAMPAIGN['views_label']}</a> {CAMPAIGN.get('hub_backlink_extra', '')}</p>
 </header>
 <section>
 {cards}
@@ -741,17 +792,21 @@ Kambi (Unibet) archive; results from FirstCycling. Full methodology on the
 </body>
 </html>
 """
-    out = SITE_DIR / "stages.html"
+    out = SITE_DIR / f"{CAMPAIGN['prefix']}stages.html"
     out.write_text(page)
     print(f"Wrote {out} ({out.stat().st_size/1024:.0f} KB)")
 
 
 def inject_strip():
     src = SOURCE_HTML.read_text()
-    block = f"<!-- STAGES:START -->\n{stage_strip()}\n<!-- STAGES:END -->"
-    if "<!-- STAGES:START -->" in src:
-        pre = src.split("<!-- STAGES:START -->")[0]
-        post = src.split("<!-- STAGES:END -->")[1]
+    # Each campaign owns its own marker pair, so publishing the Vuelta diary
+    # leaves the Tour's strip in place (and vice versa).
+    mk = CAMPAIGN["marker"]
+    start, end = f"<!-- {mk}:START -->", f"<!-- {mk}:END -->"
+    block = f"{start}\n{stage_strip()}\n{end}"
+    if start in src:
+        pre = src.split(start)[0]
+        post = src.split(end)[1]
         src = pre + block + post
     else:
         anchor = "<!-- ================= HEADS VIEW ================= -->"
@@ -761,7 +816,14 @@ def inject_strip():
 
 def main():
     config_path = Path(sys.argv[1]).resolve()
+
+    global CAMPAIGN_ROOT, RESULTS_ROOT, PREDICTIONS_ROOT, CAMPAIGN
+    CAMPAIGN_ROOT = config_path.parents[2]
+    RESULTS_ROOT = CAMPAIGN_ROOT / "results"
+    PREDICTIONS_ROOT = CAMPAIGN_ROOT / "predictions"
+
     config, scen, results = load_stage(config_path)
+    CAMPAIGN = resolve_campaign(CAMPAIGN_ROOT.name, config)
     if not scen:
         sys.exit("No scenario prediction JSONs found next to the config.")
     n = int(config["stage"])
@@ -774,14 +836,14 @@ def main():
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>TdF 2026 · Stage {n} — model predictions</title>
+<title>{CAMPAIGN['short_name']} · Stage {n} — model predictions</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚴</text></svg>">
 <style>{CSS}</style>
 </head>
 <body>
 <div class="wrap">
 <header>
-  <div class="eyebrow">Cycling race predictor · Tour de France 2026</div>
+  <div class="eyebrow">Cycling race predictor · {CAMPAIGN['race_name']}</div>
   <h1>Stage {n} — {esc(config.get('date', ''))}</h1>
   <p class="standfirst">The same production stack priced under {len(scen)} course
   readings, against the bookmaker's pre-stage line. Each scenario is one opinion
@@ -792,7 +854,7 @@ def main():
     <span>models retrained&nbsp;<b>{esc(model_version)}</b></span>
     <span>book snapshot&nbsp;<b>{esc(book_note)}</b></span>
   </div>
-  <p class="backlink"><a href="index.html">← System overview, season boards &amp; the full Tour views</a></p>
+  <p class="backlink"><a href="index.html">← System overview, season boards &amp; {CAMPAIGN['views_label']}</a></p>
 </header>
 
 <section>
@@ -823,13 +885,13 @@ def main():
 {reflection_html(config)}
 
 <div class="footer">Generated {datetime.now().strftime('%Y-%m-%d %H:%M')} ·
-prediction JSONs in performance_eval/tour-de-france-2026/predictions/stage_{n:02d}/ ·
+prediction JSONs in {esc(str(PREDICTIONS_ROOT.relative_to(PROJECT_ROOT)))}/stage_{n:02d}/ ·
 odds archive {esc(book_note)} · all runs logged to prediction_log for settlement.</div>
 </div>
 </body>
 </html>
 """
-    out = SITE_DIR / f"stage{n:02d}.html"
+    out = SITE_DIR / f"{CAMPAIGN['prefix']}stage{n:02d}.html"
     out.write_text(page)
     print(f"Wrote {out} ({out.stat().st_size/1024:.0f} KB)")
 

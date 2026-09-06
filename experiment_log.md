@@ -2470,3 +2470,43 @@ Next: serve-side key (tier 2/3) + full-stack integration gate.**
 **P2 retrieval at the automated tier: FAILS** — rmix pool15 +0.0052 (3/5) vs the +0.015 bar; winner rank −0.934 (5/5 neg) vs −1.00. Surfacing reproduces gate4's ranking-channel numbers exactly (same bucket_k + keys). **rorc ceiling: pool15 +0.0245 (5/5), rank −1.843 (5/5), front recall +0.0229 — at +0.0005 pricing cost.** Formal PASS_rmix = FALSE (pre-registered discipline; the automated key is too weak, consistent with the selector's 12% residual accuracy and the null v2 probe — the key is strategic, not observable).
 
 **Where this leaves the program (decision to the user):** the retrieval-only architecture achieves the program's goal — the full +2.45pp/−1.84 hard-day retrieval at ~zero pricing cost — **at the judgment-key tier**, which is how the system is actually operated (user, 2026-08-09: judgment always in the loop; scope = retrieval, not mass). Options: (a) wire the ranking channel with judgment-priority keys (judgment > od self-key > mixture fallback; worst case ≈ status quo given P1); (b) scenario-layer only. Remaining measurement gap before (a): **tier-3 read-selection eval** — score the archived TdF 2026 scenario picks against the oracle labels to locate judgment between rmix and rorc; uses existing data, no CV run. Honest caveat: rorc is an upper bound — judgment ≠ oracle, and its quality is currently unmeasured.
+
+## 2026-08-29 — Experiment and ML-hygiene backlog
+
+The LambdaRank train/serve contract mismatch has been corrected and the full
+production suite retrained. The following work remains, in priority order.
+
+1. **Prospective-only day-key evaluation and agent design.** Do not reconstruct
+   historical judgment keys: a post-result terrain/tactics read is neither
+   honest nor plausibly reproducible. Continue recording human morning keys as
+   immutable prospective decisions. Design the eventual LLM/agent key picker
+   around information archived before the stage—odds and market shape, route
+   and terrain, start list and live GC state, plus contemporary news and team
+   tactics. Archive its inputs, key distribution, rationale, timestamp, and
+   model/prompt version before the race. Compare prospective human and agent
+   keys with the settled oracle label only after the result. The existing
+   oracle CV remains a ceiling on retrieval value, not evidence that a
+   serve-time selector can attain it.
+2. **Race-level probability coherence.** Test a post-ranking calibration or
+   projection that produces a 100% win book and coherent podium/top-5/top-15
+   capacities without degrading ranking. Evaluate with equal-race-weighted log
+   loss, reliability by probability/odds tier, and de-vigged closing odds in
+   addition to the existing rider-row metrics.
+3. **All-label refit protocol.** Select boosting iterations without consuming
+   the newest labels as permanent early-stop-only data, then refit the trees on
+   all eligible labels while retaining an honest, separate or cross-fitted
+   calibration procedure. Gate against the current chronological protocol.
+4. **Per-head explicit feature contracts.** Replace blacklist discovery with
+   allowlisted schemas and ablate separate one-day, stage-1, stage-2+, and GC
+   regimes. Require train/serve schema hashes and prove that irrelevant or
+   all-missing feature families cannot reshape unrelated heads.
+5. **Cold-start cohort.** Measure riders with fewer than ten career races as a
+   dedicated serving slice; compare the current out-of-distribution behavior
+   with explicit priors or a cold-start branch.
+6. **Soft contender gating.** Compare the hard top-15 cascade with a calibrated
+   soft gate or mixture-of-experts formulation, reporting winner coverage,
+   probability quality, and stability rather than top-1 capture alone.
+7. **Locked prospective champion/challenger evaluation.** Treat timestamped
+   pre-race predictions as the final selection set, preserve every model and
+   input identity, and avoid reusing the same historical seasons as an
+   effectively adaptive test set.

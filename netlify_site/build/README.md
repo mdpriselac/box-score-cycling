@@ -29,9 +29,10 @@ under the view toggle on index.html. Per stage:
    format).
 2. `uv run python netlify_site/build/predict_stage_scenarios.py <scenarios.json> [--only k1,k2]`
    — runs each scenario through the arm-C serving path, writes `<key>.json`
-   next to the config, logs every run to prediction_log (tagged
-   model_version). Use `--only` / `--no-log` to avoid duplicate log opinions
-   when re-running unchanged scenarios.
+   next to the config and logs the run to prediction_log. Logging is
+   idempotent: an unchanged rerun updates the same opinion, while a changed
+   release, scenario, active field, profile, day key, or race state creates a
+   distinct opinion. Use `--no-log` for artifact-only dry reruns.
 3. `python3 netlify_site/build/build_stage_page.py <scenarios.json>`
    — writes stageNN.html, refreshes the stage strip (STAGES markers in
    predictor-architecture.html), reruns make_netlify.py.
@@ -48,6 +49,17 @@ config with `"target": "gc"` (see `predictions/gc/scenarios.json`) keeps the
 main heads pre-race and adds the state-aware GC outlook head
 (gc_outlook_* in JSON + prediction_log); the hub then shows a "GC picture"
 card from the latest GC run.
+
+`build_gc_tracker.py <gc scenarios.json>` writes the full tracker page —
+`netlify_site/[prefix]gc.html`, already linked from the stage strip and the
+hub's GC card. It takes the GC config path (no argument = the TdF config, so
+the Tour's `gc.html` still builds from a bare call), resolves the results and
+prediction archives against that config's own campaign directory, and reads
+the scenario key + `tag` from it, so a second race publishes alongside the
+first. Note that `state_through_stage` in prediction_log is a COUNT of the
+stages that fed the state, not a stage number: with a cancelled stage in
+`void_stages` the two diverge for the rest of the race, and the builder maps
+the count back to the calendar stage before pulling that evening's `gc.csv`.
 
 `build_stage_page.py` also regenerates `stages.html` — the Tour-diary hub
 (one card per stage: scenario picks, book favourite, status chip, winner +

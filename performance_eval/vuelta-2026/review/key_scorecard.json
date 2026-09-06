@@ -1,0 +1,391 @@
+[
+ {
+  "stage": 1,
+  "oracle_item": "itt",
+  "day_class": "itt",
+  "rule_type": "tiny_group",
+  "wg_size": 2,
+  "wg_prop": 0.0109,
+  "winning_time": 657.0,
+  "winner": "Pogacar Tadej",
+  "winner_gc_morning": null,
+  "front5_gc_median": null,
+  "top15_shares": {
+   "sprint": 0.067,
+   "mountain": 0.133,
+   "hilly": 0.0,
+   "rolling": 0.067,
+   "breakaway": 0.0,
+   "time_trial": 0.733
+  },
+  "top15_unknown": 0.0,
+  "day_key": {
+   "itt": 1.0
+  },
+  "key_source": "config-root",
+  "exact": true,
+  "covered": true,
+  "weight_on_true": 1.0,
+  "scored_at": "2026-08-25T11:14:03.176074"
+ },
+ {
+  "stage": 2,
+  "oracle_item": "bunch",
+  "day_class": "bunch",
+  "rule_type": "mass_sprint",
+  "wg_size": 41,
+  "wg_prop": 0.224,
+  "winning_time": 17267.0,
+  "winner": "Brennan Matthew",
+  "winner_gc_morning": 16,
+  "front5_gc_median": 16.0,
+  "top15_shares": {
+   "sprint": 0.4,
+   "mountain": 0.067,
+   "hilly": 0.133,
+   "rolling": 0.267,
+   "breakaway": 0.0,
+   "time_trial": 0.133
+  },
+  "top15_unknown": 0.0,
+  "day_key": {
+   "res_7": 0.55,
+   "res_1": 0.45
+  },
+  "key_source": "config-root",
+  "exact": false,
+  "covered": false,
+  "weight_on_true": 0.0,
+  "scored_at": "2026-08-25T11:14:04.606382"
+ },
+ {
+  "stage": 4,
+  "oracle_item": "gc_day",
+  "day_class": "gc_day",
+  "rule_type": "solo",
+  "wg_size": 1,
+  "wg_prop": 0.0055,
+  "winning_time": 9635.0,
+  "winner": "Pogacar Tadej",
+  "winner_gc_morning": 1,
+  "front5_gc_median": 43.0,
+  "top15_shares": {
+   "sprint": 0.0,
+   "mountain": 0.6,
+   "hilly": 0.0,
+   "rolling": 0.133,
+   "breakaway": 0.0,
+   "time_trial": 0.267
+  },
+  "top15_unknown": 0.0,
+  "day_key": {
+   "gc_day": 0.6,
+   "res_2": 0.4
+  },
+  "key_source": "config-root",
+  "exact": true,
+  "covered": true,
+  "weight_on_true": 0.6,
+  "scored_at": "2026-08-25T11:14:06.020308"
+ },
+ {
+  "stage": 5,
+  "oracle_item": "bunch",
+  "day_class": "bunch",
+  "rule_type": "mass_sprint",
+  "wg_size": 89,
+  "wg_prop": 0.4944,
+  "winning_time": 13622.0,
+  "winner": "Brennan Matthew",
+  "winner_gc_morning": 96,
+  "front5_gc_median": 96.0,
+  "top15_shares": {
+   "sprint": 0.533,
+   "mountain": 0.133,
+   "hilly": 0.2,
+   "rolling": 0.0,
+   "breakaway": 0.067,
+   "time_trial": 0.067
+  },
+  "top15_unknown": 0.0,
+  "day_key": {
+   "res_7": 0.5,
+   "bunch": 0.35,
+   "res_3": 0.15
+  },
+  "key_source": "config-root",
+  "exact": false,
+  "covered": true,
+  "weight_on_true": 0.35,
+  "scored_at": "2026-08-26T12:29:11.652739"
+ },
+ {
+  "stage": 6,
+  "oracle_item": "gc_day",
+  "day_class": "gc_day",
+  "rule_type": "tiny_group",
+  "wg_size": 2,
+  "wg_prop": 0.0112,
+  "winning_time": 15160.0,
+  "winner": "Pogacar Tadej",
+  "winner_gc_morning": 1,
+  "front5_gc_median": 6.0,
+  "top15_shares": {
+   "sprint": 0.067,
+   "mountain": 0.533,
+   "hilly": 0.0,
+   "rolling": 0.333,
+   "breakaway": 0.0,
+   "time_trial": 0.067
+  },
+  "top15_unknown": 0.0,
+  "day_key": {
+   "res_2": 0.65,
+   "gc_day": 0.35
+  },
+  "key_source": "config-root",
+  "exact": false,
+  "covered": true,
+  "weight_on_true": 0.35,
+  "scored_at": "2026-08-27T13:27:01.976785"
+ },
+ {
+  "stage": 7,
+  "oracle_item": "res_2",
+  "day_class": "residual",
+  "rule_type": "itt_like",
+  "wg_size": 1,
+  "wg_prop": 0.0056,
+  "winning_time": 13787.0,
+  "winner": "Leknessund Andreas",
+  "winner_gc_morning": 92,
+  "front5_gc_median": 27.0,
+  "top15_shares": {
+   "sprint": 0.0,
+   "mountain": 0.467,
+   "hilly": 0.0,
+   "rolling": 0.4,
+   "breakaway": 0.0,
+   "time_trial": 0.133
+  },
+  "top15_unknown": 0.0,
+  "day_key": {
+   "gc_day": 0.6,
+   "res_2": 0.4
+  },
+  "key_source": "config-root",
+  "exact": false,
+  "covered": true,
+  "weight_on_true": 0.4,
+  "scored_at": "2026-08-28T16:53:57.883834"
+ },
+ {
+  "stage": 8,
+  "oracle_item": "bunch",
+  "day_class": "bunch",
+  "rule_type": "mass_sprint",
+  "wg_size": 148,
+  "wg_prop": 0.8555,
+  "winning_time": 13626.0,
+  "winner": "Coquard Bryan",
+  "winner_gc_morning": 124,
+  "front5_gc_median": 136.0,
+  "top15_shares": {
+   "sprint": 0.467,
+   "mountain": 0.133,
+   "hilly": 0.2,
+   "rolling": 0.0,
+   "breakaway": 0.067,
+   "time_trial": 0.133
+  },
+  "top15_unknown": 0.0,
+  "day_key": {
+   "bunch": 0.6,
+   "res_3": 0.25,
+   "res_7": 0.15
+  },
+  "key_source": "config-root",
+  "exact": true,
+  "covered": true,
+  "weight_on_true": 0.6,
+  "scored_at": "2026-08-29T13:45:08.800927"
+ },
+ {
+  "stage": 9,
+  "oracle_item": "gc_day",
+  "day_class": "gc_day",
+  "rule_type": "tiny_group",
+  "wg_size": 2,
+  "wg_prop": 0.0118,
+  "winning_time": 18640.0,
+  "winner": "Mas Enric",
+  "winner_gc_morning": 1,
+  "front5_gc_median": 3.0,
+  "top15_shares": {
+   "sprint": 0.0,
+   "mountain": 0.667,
+   "hilly": 0.0,
+   "rolling": 0.267,
+   "breakaway": 0.0,
+   "time_trial": 0.067
+  },
+  "top15_unknown": 0.0,
+  "day_key": {
+   "gc_day": 1.0
+  },
+  "key_source": "config-root",
+  "exact": true,
+  "covered": true,
+  "weight_on_true": 1.0,
+  "scored_at": "2026-08-30T21:05:43.533228"
+ },
+ {
+  "stage": 10,
+  "oracle_item": "bunch",
+  "day_class": "bunch",
+  "rule_type": "mass_sprint",
+  "wg_size": 68,
+  "wg_prop": 0.4072,
+  "winning_time": 14861.0,
+  "winner": "Tronchon Bastien",
+  "winner_gc_morning": 79,
+  "front5_gc_median": 95.0,
+  "top15_shares": {
+   "sprint": 0.4,
+   "mountain": 0.2,
+   "hilly": 0.067,
+   "rolling": 0.0,
+   "breakaway": 0.067,
+   "time_trial": 0.267
+  },
+  "top15_unknown": 0.0,
+  "day_key": {
+   "bunch": 0.5,
+   "res_3": 0.3,
+   "res_7": 0.2
+  },
+  "key_source": "config-root",
+  "exact": true,
+  "covered": true,
+  "weight_on_true": 0.5,
+  "scored_at": "2026-09-01T17:11:32.650349"
+ },
+ {
+  "stage": 11,
+  "oracle_item": "bunch",
+  "day_class": "bunch",
+  "rule_type": "mass_sprint",
+  "wg_size": 96,
+  "wg_prop": 0.5783,
+  "winning_time": 11838.0,
+  "winner": "Brennan Matthew",
+  "winner_gc_morning": 122,
+  "front5_gc_median": 125.0,
+  "top15_shares": {
+   "sprint": 0.6,
+   "mountain": 0.133,
+   "hilly": 0.133,
+   "rolling": 0.0,
+   "breakaway": 0.0,
+   "time_trial": 0.133
+  },
+  "top15_unknown": 0.0,
+  "day_key": {
+   "bunch": 0.65,
+   "res_3": 0.2,
+   "res_1": 0.15
+  },
+  "key_source": "config-root",
+  "exact": true,
+  "covered": true,
+  "weight_on_true": 0.65,
+  "scored_at": "2026-09-02T17:48:31.280666"
+ },
+ {
+  "stage": 12,
+  "oracle_item": "gc_day",
+  "day_class": "gc_day",
+  "rule_type": "solo",
+  "wg_size": 1,
+  "wg_prop": 0.0063,
+  "winning_time": 16193.0,
+  "winner": "Omrzel Jakob",
+  "winner_gc_morning": 10,
+  "front5_gc_median": 34.0,
+  "top15_shares": {
+   "sprint": 0.0,
+   "mountain": 0.467,
+   "hilly": 0.0,
+   "rolling": 0.4,
+   "breakaway": 0.0,
+   "time_trial": 0.133
+  },
+  "top15_unknown": 0.0,
+  "day_key": {
+   "res_2": 0.55,
+   "gc_day": 0.45
+  },
+  "key_source": "config-root",
+  "exact": false,
+  "covered": true,
+  "weight_on_true": 0.45,
+  "scored_at": "2026-09-04T13:40:18.740390"
+ },
+ {
+  "stage": 13,
+  "oracle_item": "res_2",
+  "day_class": "residual",
+  "rule_type": "tiny_group",
+  "wg_size": 2,
+  "wg_prop": 0.0129,
+  "winning_time": 16440.0,
+  "winner": "van Aert Wout",
+  "winner_gc_morning": 45,
+  "front5_gc_median": 51.0,
+  "top15_shares": {
+   "sprint": 0.0,
+   "mountain": 0.333,
+   "hilly": 0.2,
+   "rolling": 0.333,
+   "breakaway": 0.0,
+   "time_trial": 0.133
+  },
+  "top15_unknown": 0.0,
+  "day_key": null,
+  "exact": null,
+  "covered": null,
+  "weight_on_true": null,
+  "key_source": null,
+  "scored_at": "2026-09-04T13:43:30.677706"
+ },
+ {
+  "stage": 14,
+  "oracle_item": "res_2",
+  "day_class": "residual",
+  "rule_type": "itt_like",
+  "wg_size": 2,
+  "wg_prop": 0.0133,
+  "winning_time": 15309.0,
+  "winner": "Brenner Marco",
+  "winner_gc_morning": 42,
+  "front5_gc_median": 42.0,
+  "top15_shares": {
+   "sprint": 0.0,
+   "mountain": 0.6,
+   "hilly": 0.0,
+   "rolling": 0.2,
+   "breakaway": 0.0,
+   "time_trial": 0.2
+  },
+  "top15_unknown": 0.0,
+  "day_key": {
+   "gc_day": 0.6,
+   "res_2": 0.4
+  },
+  "key_source": "config-root",
+  "exact": false,
+  "covered": true,
+  "weight_on_true": 0.4,
+  "scored_at": "2026-09-05T17:25:00.431972"
+ }
+]

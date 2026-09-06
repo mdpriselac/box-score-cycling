@@ -1,7 +1,7 @@
 """
-Config-driven TdF 2026 stage prediction runner — headless arm-C serving path.
+Config-driven stage prediction runner — headless arm-C serving path.
 
-Reads a per-stage scenario config (performance_eval/tour-de-france-2026/
+Reads a per-stage scenario config (performance_eval/<campaign>/
 predictions/stage_NN/scenarios.json), runs each scenario, writes one JSON per
 scenario next to the config, and logs every run to prediction_log with a
 tagged model_version (same fields as the web app writes).
@@ -17,9 +17,10 @@ Scenario spec (in the config's "scenarios" map):
                                      keys: sprint, mountain, hilly, rolling,
                                      breakaway, time_trial); gradients and
                                      metadata inherited from the base average.
-    tag:       suffix appended to model_version in prediction_log — rerunning
-               a scenario logs a NEW opinion under the same tag, so use --only
-               to avoid duplicate logging of unchanged scenarios.
+    tag:       suffix appended to model_version in prediction_log. Exact
+               reruns update the same semantic opinion; changed release,
+               scenario, field, profile, day key, or race state creates a new
+               run identity.
     day_key:   optional {menu_item: weight} map (e.g. {"res_2": 0.6,
                "res_4": 0.4}; see day_menu_v1_reference.md). When present and
                the day-menu channel is installed, the kernod bucket model
@@ -50,37 +51,32 @@ import numpy as np
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from cycling_project.prediction_tools import day_menu as day_menu_mod
-from cycling_project.prediction_tools.dnf_predictor import load_production_dnf_head
-from cycling_project.prediction_tools.gc_outlook import GCOutlookHead
 from cycling_project.prediction_tools.live_race_state import (
-    attach_race_state,
     fetch_live_race_state,
 )
 from cycling_project.prediction_tools.future_race_loader import (
-    assemble_prediction_df,
-    attach_stack_features,
     average_race_profiles,
     compute_field_features,
     get_latest_rider_snapshots,
     get_reference_race_profile,
-    load_production_rating_snapshots,
     match_riders_to_db,
     scrape_or_load_startlist,
 )
-from cycling_project.prediction_tools.model_registry import ModelRegistry
 from cycling_project.prediction_tools.prediction_log import (
     PredictionLogRow,
+    PredictionRunIdentity,
     log_predictions,
+    prediction_input_fingerprint,
     resolve_competition_id,
 )
-from cycling_project.prediction_tools.pricing_layer import apply_pricing_layer
-from cycling_project.prediction_tools.win_calibration import load_corrector
+from cycling_project.prediction_tools.prediction_service import (
+    PredictionRequest,
+    PredictionService,
+)
 
 MODEL_DIR = PROJECT_ROOT / "models" / "production"
 DB_PATH = str(PROJECT_ROOT / "cycling_project" / "webscrape_tools" / "database"
               / "database" / "cycling_races.db")
-ODDS_ROOT = PROJECT_ROOT / "performance_eval" / "tour-de-france-2026" / "odds"
 
 SCORE_KEY_MAP = {
     "sprint": "race_sprint_score", "mountain": "race_mountain_score",
@@ -100,6 +96,15 @@ RESULT_COLS = [
 ]
 
 
+def json_number(value):
+    """Return a finite JSON number, or None for missing/non-finite values."""
+    return (
+        float(value)
+        if value is not None and np.isfinite(value)
+        else None
+    )
+
+
 def norm_name(s):
     s = unicodedata.normalize("NFKD", s)
     s = "".join(c for c in s if not unicodedata.combining(c))
@@ -107,13 +112,38 @@ def norm_name(s):
     return " ".join(sorted(s.split()))
 
 
-def load_book(config):
-    """Rider -> win-market outcome from the archived Kambi capture."""
-    odds_file = ODDS_ROOT / config["odds_capture"]
+def campaign_odds_root(config, config_path):
+    """This campaign's odds archive.
+
+    Configs live at <campaign>/predictions/{stage_NN,gc}/scenarios.json, so the
+    campaign root is two levels up — the runner works for any campaign
+    directory (TdF, Vuelta, ...) with no flag. A config may override with an
+    "odds_root" key (absolute, or relative to the project root).
+    """
+    override = config.get("odds_root")
+    if override:
+        root = Path(override)
+        return root if root.is_absolute() else PROJECT_ROOT / root
+    return config_path.parents[2] / "odds"
+
+
+def load_book(config, odds_root):
+    """Rider -> win-market outcome from the archived Kambi capture.
+
+    Both "odds_capture" and "event_id" are optional: a post-hoc board for a
+    stage whose market was never captured (a missed day) has no book to
+    compare against, and should still run with empty book columns rather than
+    raising.
+    """
+    capture = config.get("odds_capture")
+    event_id = config.get("event_id")
+    if not capture or not event_id:
+        return {}, None
+    odds_file = odds_root / capture
     if not odds_file.exists():
         return {}, None
     mk = json.loads(odds_file.read_text())
-    for bo in mk.get(str(config["event_id"]), {}).get("betoffers", []):
+    for bo in mk.get(str(event_id), {}).get("betoffers", []):
         if bo["criterion"] == "Winnaar" and bo["bet_offer_type"] == "Winnaar":
             return {norm_name(o["name"]): o for o in bo["outcomes"]}, odds_file.name
     return {}, odds_file.name
@@ -166,33 +196,9 @@ def main():
         sys.exit(f"No scenarios matched --only={args.only}")
 
     print("Loading production registry + serving artifacts...", flush=True)
-    registry = ModelRegistry(str(MODEL_DIR))
-    bucket_pred, time_gap_pred, race_ranker, lambdarank_pred = registry.load_with_ranker(
-        ranking_method="ensemble")
-    win_corrector = load_corrector(MODEL_DIR)
-    dnf_bundle = load_production_dnf_head(MODEL_DIR)
-    rating_snaps = load_production_rating_snapshots()
-    saved_at = registry.get_metadata().get("saved_at", "")
-    lr_temp = getattr(lambdarank_pred, "temperature", None)
-
-    # Day-menu retrieval channel (Option A, 2026-08-09): when a scenario
-    # carries a day_key, the kernod bucket ranks the board (pool membership
-    # + order); the production heads above price it, untouched. Absent any
-    # piece, serving falls back to the production board.
-    dm_menu = dm_cum = dm_bucket = None
-    try:
-        dm_bucket = registry.load_bucket_variant("daymenu")
-        if dm_bucket is not None:
-            dm_menu = day_menu_mod.load_menu()
-            dm_cum = day_menu_mod.load_kernels()
-            print(f"day-menu channel ready: menu {dm_menu.version}, "
-                  f"kernels {len(dm_cum):,} rows", flush=True)
-        else:
-            print("day-menu channel: bucket_daymenu absent — production board only",
-                  flush=True)
-    except Exception as e:
-        dm_menu = dm_cum = dm_bucket = None
-        print(f"[warn] day-menu channel unavailable: {e}", flush=True)
+    service = PredictionService.from_production(MODEL_DIR, db_path=DB_PATH)
+    release_id = service.artifacts.model_version
+    print(f"validated production release {release_id[:12]}", flush=True)
 
     teams, from_cache = scrape_or_load_startlist(
         int(config["fc_race_id"]), int(config["year"]), db_path=DB_PATH)
@@ -209,26 +215,27 @@ def main():
     # ── within-race state (mirrors web app step 3) ──
     # stage >= 2: state feeds the MAIN models; gc: state feeds only the
     # separate GC outlook head — main GC prediction stays pre-race.
-    state_df, state_info, gc_outlook_head = None, None, None
+    state_df, state_info = None, None
     want_state = (target == "gc") or (stage_number and stage_number >= 2)
     if want_state:
+        # "void_stages" in the config = stages CANCELLED outright. They add
+        # no time to anyone, so the reconstruction skips them instead of
+        # treating them as a contiguity break — without this a cancelled stage
+        # freezes state at the stage before it for the rest of the race.
         state_df, state_info = fetch_live_race_state(
             int(config["fc_race_id"]), int(config["year"]),
             target_stage_number=stage_number if target == "stage" else None,
             db_path=DB_PATH,
+            void_stages=config.get("void_stages"),
         )
         print(f"race state: available={state_info.get('available')} "
               f"through stage {state_info.get('stages_completed')} "
               f"(sources {state_info.get('sources')}; "
               f"missing {state_info.get('missing_stages')}; "
+              f"void {state_info.get('void_stages')}; "
               f"leader {state_info.get('leader_name')})", flush=True)
-    if target == "gc":
-        gc_outlook_head = GCOutlookHead.load(str(MODEL_DIR))
-        if gc_outlook_head is None:
-            print("[warn] GC outlook head not installed", flush=True)
     state_through = (int(state_info["stages_completed"])
                      if state_info and state_info.get("available") else None)
-    main_state_df = state_df if target == "stage" else None
 
     # ── drop riders no longer in the race ──
     # Active field = riders still in the reconstructed standings (abandons
@@ -259,7 +266,7 @@ def main():
     snapshots = get_latest_rider_snapshots(matched["rider_id"].tolist(), DB_PATH)
     field_features = compute_field_features(snapshots)
     team_map = matched.set_index("rider_id")["team_name"].to_dict()
-    book, book_source = load_book(config)
+    book, book_source = load_book(config, campaign_odds_root(config, config_path))
 
     for key, spec in todo.items():
         prof, ref_meta, ref_ids = build_profile(spec, DB_PATH)
@@ -268,57 +275,30 @@ def main():
             f"{sk}={prof[fk]:.2f}" for sk, fk in SCORE_KEY_MAP.items()
             if prof.get(fk) is not None), flush=True)
 
-        form_status = {}
-        pred_df = assemble_prediction_df(snapshots, matched, field_features,
-                                         prof, form_status=form_status)
-        pred_df = attach_race_state(pred_df, main_state_df)
-        pred_df = attach_stack_features(pred_df, time_gap_pred, lambdarank_pred,
-                                        rating_snapshots=rating_snaps,
-                                        signature_context=None)
-
-        # ── day-menu ranking channel ──
         day_key = spec.get("day_key") or config.get("day_key")
-        dm_scores = None
-        if day_key and dm_bucket is not None:
-            dm_scores = day_menu_mod.serving_board_scores(
-                pred_df, dm_bucket, day_key, dm_menu, dm_cum,
-                field_features, config["date"])
-            dm_order = np.argsort(np.argsort(dm_scores))  # 0-based ranks
-            dm_pool_ids = set(
-                pred_df["rider_id"].astype(int).to_numpy()[dm_order < 15])
-            print(f"  day key: {day_key} -> kernod board "
-                  f"(pool of {len(dm_pool_ids)})", flush=True)
-        elif day_key:
-            print("  [warn] day_key set but day-menu channel unavailable — "
-                  "production board", flush=True)
-
-        result = race_ranker.predict_race(
-            pred_df, return_details=True,
-            extra_contender_ids=dm_pool_ids if dm_scores is not None else None)
-        if dm_scores is not None:
-            smap = dict(zip(pred_df["rider_id"].astype(int), dm_scores))
-            result["daymenu_score"] = result["rider_id"].astype(int).map(smap)
-            ranks = result["daymenu_score"].rank(method="first")
-            result["daymenu_rank"] = ranks.astype(int)
-            result["in_daymenu_pool"] = ranks <= 15
-        lr_map = dict(zip(pred_df["rider_id"].astype(int),
-                          pred_df["oof_lambdarank_win_p"].astype(float)))
-        result["lambdarank_win_p"] = result["rider_id"].astype(int).map(lr_map)
-        for col in ("contested_rating", "contested_rating_n"):
-            elo_map = dict(zip(pred_df["rider_id"].astype(int), pred_df[col]))
-            result[col] = result["rider_id"].astype(int).map(elo_map)
-
-        priced, warnings = apply_pricing_layer(result, pred_df, prof,
-                                               win_corrector=win_corrector,
-                                               dnf_bundle=dnf_bundle,
-                                               stage_number=stage_number,
-                                               db_path=DB_PATH)
-        for w in warnings:
+        prediction = service.predict(PredictionRequest(
+            snapshots=snapshots,
+            matched_riders=matched,
+            field_features=field_features,
+            profile=prof,
+            target_type=target,
+            stage_number=stage_number,
+            race_state=state_df,
+            reference_competition_ids=ref_ids,
+            day_key=day_key,
+            race_date=config["date"],
+            asof_date=config["date"],
+        ))
+        for w in prediction.warnings:
             print(f"  [warn] {w}", flush=True)
+        if prediction.board == "daymenu":
+            print(f"  day key: {day_key} -> kernod board", flush=True)
 
-        cols = [c for c in RESULT_COLS if c in priced.columns]
-        board_col = "daymenu_rank" if dm_scores is not None else "predicted_rank"
-        tab = priced.sort_values(board_col)[cols].copy()
+        cols = [c for c in RESULT_COLS if c in prediction.riders.columns]
+        board_col = (
+            "daymenu_rank" if prediction.board == "daymenu" else "predicted_rank"
+        )
+        tab = prediction.riders.sort_values(board_col)[cols].copy()
         tab["team_name"] = tab["rider_id"].map(team_map)
         records = json.loads(tab.to_json(orient="records"))
         for r in records:
@@ -327,20 +307,22 @@ def main():
             r["book_devig"] = b.get("devig") if b else None
 
         # GC targets: state-aware outlook head alongside the pre-race heads
-        outlook_by_rider = {}
-        if gc_outlook_head is not None and state_df is not None:
-            outlook_frame = assemble_prediction_df(
-                snapshots, matched, field_features, prof,
-                form_status=form_status)
-            outlook_frame = attach_race_state(outlook_frame, state_df)
-            gco = gc_outlook_head.predict(outlook_frame)
-            if not gco.empty:
-                outlook_by_rider = gco.set_index("rider_id").to_dict("index")
+        if prediction.gc_outlook is not None:
+            outlook_by_rider = (
+                prediction.gc_outlook.set_index("rider_id").to_dict("index")
+            )
             for r in records:
                 o = outlook_by_rider.get(int(r["rider_id"]), {})
                 for k2 in ("gc_outlook_win_p", "gc_outlook_podium_p",
                            "gc_outlook_top5_p", "gc_outlook_top15_p"):
-                    r[k2] = o.get(k2)
+                    value = o.get(k2)
+                    # Pandas keeps non-contender values as floating NaN.
+                    # Python's json module will otherwise emit the non-standard
+                    # token `NaN`, which strict JSON consumers (including
+                    # JSON.parse in a Worker/browser) reject.  Missing outlook
+                    # prices are part of the public artifact contract, so
+                    # represent them as JSON null.
+                    r[k2] = json_number(value)
 
         out_path = out_dir / f"{key}.json"
         out_path.write_text(json.dumps({
@@ -349,12 +331,12 @@ def main():
             "stage_number": stage_number,
             "references": ref_meta,
             "note": spec.get("note"),
-            "model_version": f"{saved_at}|{spec['tag']}",
-            "day_key": day_key if dm_scores is not None else None,
-            "board": "daymenu" if dm_scores is not None else "production",
+            "model_version": f"{release_id}|{spec['tag']}",
+            "day_key": prediction.day_key,
+            "board": prediction.board,
             "avg_profile": {k: prof.get(k) for k in prof
                             if not hasattr(prof.get(k), "shape")},
-            "form_status": form_status,
+            "form_status": prediction.form_status,
             "book_source": book_source,
             "target": target,
             "state": ({"through_stage": state_through,
@@ -371,13 +353,13 @@ def main():
                 stage_number=stage_number, competition_id=comp_id,
                 rider_id=int(r["rider_id"]), rider_name=r["rider_name"],
                 reference_comp_ids=list(ref_ids),
-                model_version=f"{saved_at}|{spec['tag']}",
+                model_version=f"{release_id}|{spec['tag']}",
                 multiclass_win_p=r.get("prob_win"),
                 multiclass_podium_p=r.get("prob_podium"),
                 multiclass_top5_p=r.get("prob_top5"),
                 multiclass_top15_p=r.get("prob_top15"),
                 lambdarank_win_p=r.get("lambdarank_win_p"),
-                lambdarank_temperature=lr_temp,
+                lambdarank_temperature=prediction.lambdarank_temperature,
                 state_through_stage=state_through,
                 gc_outlook_win_p=r.get("gc_outlook_win_p"),
                 gc_outlook_podium_p=r.get("gc_outlook_podium_p"),
@@ -390,7 +372,21 @@ def main():
                 dnf_adj_top15_p=r.get("dnf_adj_top15_p"),
                 blend_win_p=r.get("blend_win_p"),
             ) for r in records]
-            n = log_predictions(conn, log_rows)
+            run_identity = PredictionRunIdentity(
+                fc_race_id=str(config["fc_race_id"]),
+                year=int(config["year"]),
+                stage_number=stage_number,
+                model_version=f"{release_id}|{spec['tag']}",
+                reference_comp_ids=ref_ids,
+                state_through_stage=state_through,
+                scenario_key=key,
+                target=target,
+                day_key=json.dumps(day_key, sort_keys=True) if day_key else None,
+                input_fingerprint=prediction_input_fingerprint(
+                    matched["rider_id"], prof, config["date"]
+                ),
+            )
+            n = log_predictions(conn, log_rows, run_identity=run_identity)
             print(f"  saved {out_path.name}; logged {n} rows "
                   f"(...|{spec['tag']}, comp_id={comp_id})", flush=True)
         else:

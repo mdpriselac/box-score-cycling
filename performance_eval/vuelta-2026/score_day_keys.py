@@ -28,7 +28,10 @@ Oracle construction (mirrors prediction_tools/day_menu.label_days):
   itt      winning time < labeler.itt_seconds
   bunch    rule_label mass_sprint, or bunch_sprint with wg_prop >= wide_bs_prop
   gc_day   stage winner (or front-5 median) inside morning-GC top gc_top —
-           morning GC = the newest standings_*.json archived BEFORE the stage
+           morning GC = the newest standings_*.json archived BEFORE the stage,
+           falling back to the newest results/stage_NN/gc.csv (mid-race the
+           race page serves only the DNF board, which would otherwise disable
+           the gc_day branch outright)
   residual stored-parameter GMM assignment on the realized top-15 archetype
            shares (as-of rider best_profile snapshots from the DB)
 """
@@ -71,22 +74,54 @@ def latest_archived_stage() -> int:
     return stages[-1]
 
 
-def morning_gc_ranks(stage_results_fetched_at: str) -> dict:
-    """fc_rider_id -> GC place from the newest standings archived BEFORE the
-    stage's results capture (i.e. the previous evening's GC)."""
-    race_page = RESULTS_ROOT / "race_page"
-    cutoff = stage_results_fetched_at[:10]
-    cands = sorted(race_page.glob("standings_*.json"))
-    prior = [p for p in cands if p.stem.split("_")[1] < cutoff]
-    if not prior:
+def morning_gc_ranks(stage_results_fetched_at: str, stage: int = None) -> dict:
+    """fc_rider_id -> GC place as it stood the morning of this stage.
+
+    Primary source is the newest race-page standings snapshot archived BEFORE
+    the stage's results capture. MID-RACE THAT SOURCE IS USUALLY EMPTY: while a
+    stage race is running, FirstCycling's race page serves only the DNF board
+    (every row place='DNF'), so the digit filter below drops everything and the
+    map comes back {}. An empty map silently disables the gc_day branch of the
+    oracle entirely — every GC day then falls through to a residual item — so
+    when the race page yields nothing we fall back to the per-stage
+    ``results/stage_NN/gc.csv``, which is parsed off the STAGE page and is the
+    real classification. Walks back from stage-1 to the newest archived one,
+    the same way build_stage_page.standings_pool_ids does.
+    """
+    def _from_race_page():
+        race_page = RESULTS_ROOT / "race_page"
+        cutoff = stage_results_fetched_at[:10]
+        cands = sorted(race_page.glob("standings_*.json"))
+        prior = [p for p in cands if p.stem.split("_")[1] < cutoff]
+        if not prior:
+            return {}
+        snap = json.loads(prior[-1].read_text())
+        out = {}
+        for r in snap.get("results", []):
+            place = str(r.get("place", "")).strip()
+            if place.isdigit():
+                out[str(r.get("rider_id"))] = int(place)
+        return out
+
+    def _from_stage_gc():
+        if stage is None:
+            return {}
+        import csv as _csv
+        for nn in range(int(stage) - 1, 0, -1):
+            f = RESULTS_ROOT / f"stage_{nn:02d}" / "gc.csv"
+            if not f.exists():
+                continue
+            out = {}
+            with f.open() as fh:
+                for r in _csv.DictReader(fh):
+                    place = str(r.get("place", "")).strip()
+                    if place.isdigit():
+                        out[str(r.get("rider_id"))] = int(place)
+            if out:
+                return out
         return {}
-    snap = json.loads(prior[-1].read_text())
-    out = {}
-    for r in snap.get("results", []):
-        place = str(r.get("place", "")).strip()
-        if place.isdigit():
-            out[str(r.get("rider_id"))] = int(place)
-    return out
+
+    return _from_race_page() or _from_stage_gc()
 
 
 def rider_profiles(fc_ids: list) -> dict:
@@ -128,7 +163,7 @@ def oracle_item(stage: int, menu) -> dict:
     shares6 = np.array([[shares_all.get(a, 0.0) for a in ARCH]])
 
     cfg = menu.labeler
-    gc = morning_gc_ranks(d.get("fetched_at", ""))
+    gc = morning_gc_ranks(d.get("fetched_at", ""), stage)
     winner_gc = gc.get(str(rows[0]["rider_id"])) if rows else None
     front5 = [gc.get(str(r["rider_id"])) for r in rows[:5]]
     front5 = [g for g in front5 if g is not None]
@@ -167,6 +202,13 @@ def logged_key(stage: int) -> dict | None:
     if not cfg_path.exists():
         return None
     cfg = json.loads(cfg_path.read_text())
+    if cfg.get("post_hoc"):
+        # Config written AFTER the stage (a missed-day backfill). It contains
+        # no morning read, and the scenario-level fallback below would happily
+        # promote a hindsight scenario's day_key into the tier-3 archive as if
+        # it had been logged in advance — scoring a fabricated exact. A
+        # post_hoc config is never a logged key.
+        return None
     key = cfg.get("day_key")
     if key is None:
         for spec in cfg.get("scenarios", {}).values():

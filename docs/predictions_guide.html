@@ -179,7 +179,7 @@ hr { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
   <a href="pipeline_overview.html">Pipeline</a>
   <a href="race_features_reference.html">Race Features</a>
   <a href="metrics_reference.html">Metrics Reference</a>
-  <span class="nav-updated">updated 2026-06-11</span>
+  <span class="nav-updated">updated 2026-08-10</span>
 </nav>
 
 <h1>Reading the Predictions</h1>
@@ -439,24 +439,50 @@ hr { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
 </div>
 
 <!-- =========================================================== -->
-<h2 id="dnf">6. Finishing risk — the abandon model <span class="chip next">next retrain</span></h2>
+<h2 id="dnf">6. Finishing risk — the abandon model <span class="chip live">live</span></h2>
 
 <div class="colcard dnf" style="margin: 14px 0">
-  <h3>What's changing</h3>
+  <h3>How it works</h3>
   <p>
-    Today's probabilities largely assume the rider completes the race. A dedicated
+    The raw model probabilities assume the rider completes the race. A dedicated
     <strong>abandon model</strong> (trained on 1.26M start records, of which 10.6% ended in
-    a DNF) is validated and being wired into the pricing layer. Once live, displayed prices
-    become:
+    a DNF; discrimination AUC ≈ 0.89) supplies the missing factor at the pricing layer, so
+    displayed adjusted prices are:
   </p>
   <p style="font-family:var(--mono); font-size:13px; color:var(--text)">
     P(podium) = P(podium <em>given they finish</em>) × P(they finish)
   </p>
   <p>
-    In backtests this matters most for <strong>one-day classics</strong> — crash-heavy
+    This matters most for <strong>one-day classics</strong> — crash-heavy
     races where some fast finishers carry real abandon risk — and it changes little for
     most stage-race favourites. The model separates "did not start" from "did not finish",
     and knows each rider's abandon history, age, and how deep into a stage race they are.
+    It is applied only at the pricing layer — mixing it into the finish-conditioned models
+    was tested and made prices worse.
+  </p>
+</div>
+
+<!-- =========================================================== -->
+<h2 id="daymenu">6b. Day-type keyed boards <span class="chip live">live</span></h2>
+
+<div class="colcard" style="margin: 14px 0">
+  <h3>Campaign stage pages only (new, August 2026)</h3>
+  <p>
+    On grand-tour campaign pages (the Tour diary, and the Vuelta 2026 going forward) a stage
+    can carry a <strong>day-type key</strong> — a human's morning read of what kind of day it
+    is, from a fixed menu of eleven types ("mountain-escape day", "split sprint",
+    "survivor's gallop"…). When a stage is keyed, a dedicated retrieval ranker re-picks
+    <em>who is on the contender shortlist and in what order</em>, using a decade of evidence
+    about which riders contest days like that. The page shows the key as a
+    <strong>"keyed:"</strong> chip.
+  </p>
+  <p>
+    The crucial reading rule: <strong>a key never changes a price.</strong> Every probability
+    on the page still comes from the untouched production models above; the key only governs
+    board order and who makes the shortlist. If a promoted long-shot looks interesting, judge
+    them by their (unchanged) prices. This split was chosen deliberately — every tested design
+    that let the day type touch prices made them worse. The web app itself doesn't take keys
+    yet; they live in the campaign toolchain.
   </p>
 </div>
 

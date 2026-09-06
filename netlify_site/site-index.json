@@ -1,0 +1,882 @@
+{
+ "generated_at": "2026-09-05 17:30",
+ "site_name": "Cycling Race Predictor",
+ "races": [
+  {
+   "slug": "vuelta-a-espana",
+   "year": 2026,
+   "name": "Vuelta a España 2026",
+   "short_name": "Vuelta 2026",
+   "type": "stage_race",
+   "status": "in_progress",
+   "start_date": "2026-08-22",
+   "end_date": "2026-09-13",
+   "blurb": "The live campaign: day-type keys chosen each morning, stage predictions published before the flag drops, and a GC tracker updated as the race reshapes itself.",
+   "campaign_dir": "performance_eval/vuelta-2026",
+   "url": "/race/vuelta-a-espana/2026",
+   "pages": {
+    "gc": {
+     "url": "/race/vuelta-a-espana/2026/gc",
+     "asset": "/vuelta-gc.html",
+     "title": "GC tracker"
+    },
+    "stages": {
+     "url": "/race/vuelta-a-espana/2026/stages",
+     "asset": "/vuelta-stages.html",
+     "title": "Stage-by-stage diary"
+    }
+   },
+   "stages": [
+    {
+     "stage": 1,
+     "date": "2026-08-22",
+     "label": "Stage 1 — Monaco ITT, 9.4 km",
+     "status": "settled",
+     "predicted": true,
+     "url": null,
+     "asset": null,
+     "day_key": {
+      "itt": 1.0
+     }
+    },
+    {
+     "stage": 2,
+     "date": "2026-08-23",
+     "label": "Stage 2 — Monaco → Manosque, 214.3 km",
+     "status": "settled",
+     "predicted": true,
+     "url": "/race/vuelta-a-espana/2026/stage-02",
+     "asset": "/vuelta-stage02.html",
+     "day_key": {
+      "res_7": 0.55,
+      "res_1": 0.45
+     }
+    },
+    {
+     "stage": 3,
+     "date": "2026-08-24",
+     "label": "Stage 3 — Gruissan → Font-Romeu, 174 km",
+     "status": "cancelled",
+     "predicted": true,
+     "url": "/race/vuelta-a-espana/2026/stage-03",
+     "asset": "/vuelta-stage03.html",
+     "day_key": {
+      "gc_day": 0.75,
+      "res_2": 0.25
+     }
+    },
+    {
+     "stage": 4,
+     "date": "2026-08-25",
+     "label": "Stage 4 — Andorra la Vella → Andorra la Vella, 104.8 km",
+     "status": "settled",
+     "predicted": true,
+     "url": "/race/vuelta-a-espana/2026/stage-04",
+     "asset": "/vuelta-stage04.html",
+     "day_key": {
+      "gc_day": 0.6,
+      "res_2": 0.4
+     }
+    },
+    {
+     "stage": 5,
+     "date": "2026-08-26",
+     "label": "Stage 5 — Falset → Roquetes, 173.4 km",
+     "status": "settled",
+     "predicted": true,
+     "url": "/race/vuelta-a-espana/2026/stage-05",
+     "asset": "/vuelta-stage05.html",
+     "day_key": {
+      "res_7": 0.5,
+      "bunch": 0.35,
+      "res_3": 0.15
+     }
+    },
+    {
+     "stage": 6,
+     "date": "2026-08-27",
+     "label": "Stage 6 — Alcossebre → Castellón, 177.4 km",
+     "status": "settled",
+     "predicted": true,
+     "url": "/race/vuelta-a-espana/2026/stage-06",
+     "asset": "/vuelta-stage06.html",
+     "day_key": {
+      "res_2": 0.65,
+      "gc_day": 0.35
+     }
+    },
+    {
+     "stage": 7,
+     "date": "2026-08-28",
+     "label": "Stage 7 — Vall d'Alba → Aramón Valdelinares, 149.8 km",
+     "status": "settled",
+     "predicted": true,
+     "url": "/race/vuelta-a-espana/2026/stage-07",
+     "asset": "/vuelta-stage07.html",
+     "day_key": {
+      "gc_day": 0.6,
+      "res_2": 0.4
+     }
+    },
+    {
+     "stage": 8,
+     "date": "2026-08-29",
+     "label": "Stage 8 — Puçol → Xeraco, 171 km",
+     "status": "settled",
+     "predicted": true,
+     "url": "/race/vuelta-a-espana/2026/stage-08",
+     "asset": "/vuelta-stage08.html",
+     "day_key": {
+      "bunch": 0.6,
+      "res_3": 0.25,
+      "res_7": 0.15
+     }
+    },
+    {
+     "stage": 9,
+     "date": "2026-08-30",
+     "label": "Stage 9 — La Vila Joiosa/Villajoyosa → Alto de Aitana, 187.4 km",
+     "status": "settled",
+     "predicted": true,
+     "url": "/race/vuelta-a-espana/2026/stage-09",
+     "asset": "/vuelta-stage09.html",
+     "day_key": {
+      "gc_day": 1.0
+     }
+    },
+    {
+     "stage": 10,
+     "date": "2026-09-01",
+     "label": "Stage 10 — Sant Mateu → Vinaròs region, 1 September 2026",
+     "status": "settled",
+     "predicted": true,
+     "url": "/race/vuelta-a-espana/2026/stage-10",
+     "asset": "/vuelta-stage10.html",
+     "day_key": {
+      "bunch": 0.5,
+      "res_3": 0.3,
+      "res_7": 0.2
+     }
+    },
+    {
+     "stage": 11,
+     "date": "2026-09-02",
+     "label": "Stage 11 — Cartagena → Lorca, 151.3 km",
+     "status": "settled",
+     "predicted": true,
+     "url": "/race/vuelta-a-espana/2026/stage-11",
+     "asset": "/vuelta-stage11.html",
+     "day_key": {
+      "bunch": 0.65,
+      "res_3": 0.2,
+      "res_1": 0.15
+     }
+    },
+    {
+     "stage": 12,
+     "date": "2026-09-03",
+     "label": "Stage 12 — Vera → Observatorio de Calar Alto, 166.6 km",
+     "status": "settled",
+     "predicted": true,
+     "url": "/race/vuelta-a-espana/2026/stage-12",
+     "asset": "/vuelta-stage12.html",
+     "day_key": {
+      "res_2": 0.55,
+      "gc_day": 0.45
+     }
+    },
+    {
+     "stage": 13,
+     "date": "2026-09-04",
+     "label": "Stage 13 — 4 September 2026 (no prediction made)",
+     "status": "settled",
+     "predicted": true,
+     "url": "/race/vuelta-a-espana/2026/stage-13",
+     "asset": "/vuelta-stage13.html"
+    },
+    {
+     "stage": 14,
+     "date": "2026-09-05",
+     "label": "Stage 14 — Jaén → Sierra de la Pandera, 154.5 km",
+     "status": "settled",
+     "predicted": true,
+     "url": "/race/vuelta-a-espana/2026/stage-14",
+     "asset": "/vuelta-stage14.html",
+     "day_key": {
+      "gc_day": 0.6,
+      "res_2": 0.4
+     }
+    },
+    {
+     "stage": 15,
+     "date": "2026-09-06",
+     "label": "Stage 15 — Palma del Río → Córdoba, 110.2 km (shortened from 189.7 km, extreme-heat protocol)",
+     "status": "predicted",
+     "predicted": true,
+     "url": "/race/vuelta-a-espana/2026/stage-15",
+     "asset": "/vuelta-stage15.html",
+     "day_key": {
+      "bunch": 0.55,
+      "res_3": 0.3,
+      "res_1": 0.15
+     }
+    },
+    {
+     "stage": 16,
+     "date": null,
+     "label": "Stage 16",
+     "status": "upcoming",
+     "predicted": false,
+     "url": null,
+     "asset": null
+    },
+    {
+     "stage": 17,
+     "date": null,
+     "label": "Stage 17",
+     "status": "upcoming",
+     "predicted": false,
+     "url": null,
+     "asset": null
+    },
+    {
+     "stage": 18,
+     "date": null,
+     "label": "Stage 18",
+     "status": "upcoming",
+     "predicted": false,
+     "url": null,
+     "asset": null
+    },
+    {
+     "stage": 19,
+     "date": null,
+     "label": "Stage 19",
+     "status": "upcoming",
+     "predicted": false,
+     "url": null,
+     "asset": null
+    },
+    {
+     "stage": 20,
+     "date": null,
+     "label": "Stage 20",
+     "status": "upcoming",
+     "predicted": false,
+     "url": null,
+     "asset": null
+    },
+    {
+     "stage": 21,
+     "date": null,
+     "label": "Stage 21",
+     "status": "upcoming",
+     "predicted": false,
+     "url": null,
+     "asset": null
+    }
+   ],
+   "n_stages": 21,
+   "n_settled": 13,
+   "n_predicted": 15
+  },
+  {
+   "slug": "tour-de-france",
+   "year": 2026,
+   "name": "Tour de France 2026",
+   "short_name": "TdF 2026",
+   "type": "stage_race",
+   "status": "settled",
+   "start_date": "2026-07-04",
+   "end_date": "2026-07-26",
+   "blurb": "Twenty-one stages predicted the evening before and settled the evening after — the model's first full grand tour in public, benchmarked against the market throughout.",
+   "campaign_dir": "performance_eval/tour-de-france-2026",
+   "url": "/race/tour-de-france/2026",
+   "pages": {
+    "gc": {
+     "url": "/race/tour-de-france/2026/gc",
+     "asset": "/gc.html",
+     "title": "GC tracker"
+    },
+    "stages": {
+     "url": "/race/tour-de-france/2026/stages",
+     "asset": "/stages.html",
+     "title": "Stage-by-stage diary"
+    },
+    "review": {
+     "url": "/race/tour-de-france/2026/review",
+     "asset": "/review.html",
+     "title": "Post-race review"
+    }
+   },
+   "stages": [
+    {
+     "stage": 1,
+     "date": "2026-07-04",
+     "label": "Stage 1",
+     "status": "settled",
+     "predicted": false,
+     "url": null,
+     "asset": null
+    },
+    {
+     "stage": 2,
+     "date": "2026-07-05",
+     "label": "Stage 2",
+     "status": "settled",
+     "predicted": true,
+     "url": "/race/tour-de-france/2026/stage-02",
+     "asset": "/stage02.html"
+    },
+    {
+     "stage": 3,
+     "date": "2026-07-06",
+     "label": "Stage 3",
+     "status": "settled",
+     "predicted": true,
+     "url": "/race/tour-de-france/2026/stage-03",
+     "asset": "/stage03.html"
+    },
+    {
+     "stage": 4,
+     "date": "2026-07-07",
+     "label": "Stage 4",
+     "status": "settled",
+     "predicted": true,
+     "url": "/race/tour-de-france/2026/stage-04",
+     "asset": "/stage04.html"
+    },
+    {
+     "stage": 5,
+     "date": "2026-07-08",
+     "label": "Stage 5",
+     "status": "settled",
+     "predicted": true,
+     "url": "/race/tour-de-france/2026/stage-05",
+     "asset": "/stage05.html"
+    },
+    {
+     "stage": 6,
+     "date": "2026-07-09",
+     "label": "Stage 6",
+     "status": "settled",
+     "predicted": true,
+     "url": "/race/tour-de-france/2026/stage-06",
+     "asset": "/stage06.html"
+    },
+    {
+     "stage": 7,
+     "date": "2026-07-10",
+     "label": "Stage 7",
+     "status": "settled",
+     "predicted": true,
+     "url": "/race/tour-de-france/2026/stage-07",
+     "asset": "/stage07.html"
+    },
+    {
+     "stage": 8,
+     "date": "2026-07-11",
+     "label": "Stage 8",
+     "status": "settled",
+     "predicted": true,
+     "url": "/race/tour-de-france/2026/stage-08",
+     "asset": "/stage08.html"
+    },
+    {
+     "stage": 9,
+     "date": "2026-07-12",
+     "label": "Stage 9",
+     "status": "settled",
+     "predicted": true,
+     "url": "/race/tour-de-france/2026/stage-09",
+     "asset": "/stage09.html"
+    },
+    {
+     "stage": 10,
+     "date": "2026-07-14",
+     "label": "Stage 10",
+     "status": "settled",
+     "predicted": true,
+     "url": "/race/tour-de-france/2026/stage-10",
+     "asset": "/stage10.html"
+    },
+    {
+     "stage": 11,
+     "date": "2026-07-15",
+     "label": "Stage 11",
+     "status": "settled",
+     "predicted": true,
+     "url": "/race/tour-de-france/2026/stage-11",
+     "asset": "/stage11.html"
+    },
+    {
+     "stage": 12,
+     "date": "2026-07-16",
+     "label": "Stage 12",
+     "status": "settled",
+     "predicted": true,
+     "url": "/race/tour-de-france/2026/stage-12",
+     "asset": "/stage12.html"
+    },
+    {
+     "stage": 13,
+     "date": "2026-07-17",
+     "label": "Stage 13",
+     "status": "settled",
+     "predicted": true,
+     "url": "/race/tour-de-france/2026/stage-13",
+     "asset": "/stage13.html"
+    },
+    {
+     "stage": 14,
+     "date": "2026-07-18",
+     "label": "Stage 14",
+     "status": "settled",
+     "predicted": true,
+     "url": "/race/tour-de-france/2026/stage-14",
+     "asset": "/stage14.html"
+    },
+    {
+     "stage": 15,
+     "date": "2026-07-19",
+     "label": "Stage 15",
+     "status": "settled",
+     "predicted": true,
+     "url": "/race/tour-de-france/2026/stage-15",
+     "asset": "/stage15.html"
+    },
+    {
+     "stage": 16,
+     "date": "2026-07-21",
+     "label": "Stage 16",
+     "status": "settled",
+     "predicted": true,
+     "url": "/race/tour-de-france/2026/stage-16",
+     "asset": "/stage16.html"
+    },
+    {
+     "stage": 17,
+     "date": "2026-07-22",
+     "label": "Stage 17",
+     "status": "settled",
+     "predicted": true,
+     "url": "/race/tour-de-france/2026/stage-17",
+     "asset": "/stage17.html"
+    },
+    {
+     "stage": 18,
+     "date": "2026-07-23",
+     "label": "Stage 18",
+     "status": "settled",
+     "predicted": true,
+     "url": "/race/tour-de-france/2026/stage-18",
+     "asset": "/stage18.html"
+    },
+    {
+     "stage": 19,
+     "date": "2026-07-24",
+     "label": "Stage 19",
+     "status": "settled",
+     "predicted": true,
+     "url": "/race/tour-de-france/2026/stage-19",
+     "asset": "/stage19.html"
+    },
+    {
+     "stage": 20,
+     "date": "2026-07-25",
+     "label": "Stage 20",
+     "status": "settled",
+     "predicted": true,
+     "url": "/race/tour-de-france/2026/stage-20",
+     "asset": "/stage20.html"
+    },
+    {
+     "stage": 21,
+     "date": "2026-07-26",
+     "label": "Stage 21",
+     "status": "settled",
+     "predicted": true,
+     "url": "/race/tour-de-france/2026/stage-21",
+     "asset": "/stage21.html"
+    }
+   ],
+   "n_stages": 21,
+   "n_settled": 21,
+   "n_predicted": 20
+  },
+  {
+   "slug": "tour-of-the-alps-2026",
+   "year": 2026,
+   "name": "Tour of the Alps 2026",
+   "type": "stage_race",
+   "status": "archive",
+   "circa": "2026-04",
+   "campaign_dir": "performance_eval/tour-of-the-alps-2026",
+   "url": null,
+   "pages": {},
+   "stages": []
+  },
+  {
+   "slug": "amstel-gold-2026",
+   "year": 2026,
+   "name": "Amstel Gold Race 2026",
+   "type": "one_day",
+   "status": "archive",
+   "circa": "2026-04",
+   "campaign_dir": "performance_eval/amstel-gold-2026",
+   "url": null,
+   "pages": {},
+   "stages": []
+  },
+  {
+   "slug": "la-fleche-wallone-2026",
+   "year": 2026,
+   "name": "La Flèche Wallonne 2026",
+   "type": "one_day",
+   "status": "archive",
+   "circa": "2026-04",
+   "campaign_dir": "performance_eval/la-fleche-wallone-2026",
+   "url": null,
+   "pages": {},
+   "stages": []
+  },
+  {
+   "slug": "lbl-2026",
+   "year": 2026,
+   "name": "Liège–Bastogne–Liège 2026",
+   "type": "one_day",
+   "status": "archive",
+   "circa": "2026-04",
+   "campaign_dir": "performance_eval/LBL-2026",
+   "url": null,
+   "pages": {},
+   "stages": []
+  },
+  {
+   "slug": "tour-de-romandie-2026",
+   "year": 2026,
+   "name": "Tour de Romandie 2026",
+   "type": "stage_race",
+   "status": "archive",
+   "circa": "2026-04",
+   "campaign_dir": "performance_eval/tour-de-romandie-2026",
+   "url": null,
+   "pages": {},
+   "stages": []
+  },
+  {
+   "slug": "strade-bianche-2026",
+   "year": 2026,
+   "name": "Strade Bianche 2026",
+   "type": "one_day",
+   "status": "archive",
+   "circa": "2026-03",
+   "campaign_dir": "performance_eval/strade-bianche-2026",
+   "url": null,
+   "pages": {},
+   "stages": []
+  },
+  {
+   "slug": "paris-nice-2026",
+   "year": 2026,
+   "name": "Paris–Nice 2026",
+   "type": "stage_race",
+   "status": "archive",
+   "circa": null,
+   "campaign_dir": "performance_eval/paris-nice-2026",
+   "url": null,
+   "pages": {},
+   "stages": []
+  },
+  {
+   "slug": "tirreno-adriatico-2026",
+   "year": 2026,
+   "name": "Tirreno–Adriatico 2026",
+   "type": "stage_race",
+   "status": "archive",
+   "circa": null,
+   "campaign_dir": "performance_eval/tirreno-adriatico-2026",
+   "url": null,
+   "pages": {},
+   "stages": []
+  },
+  {
+   "slug": "catalunya-2026",
+   "year": 2026,
+   "name": "Volta a Catalunya 2026",
+   "type": "stage_race",
+   "status": "archive",
+   "circa": null,
+   "campaign_dir": "performance_eval/catalunya-2026",
+   "url": null,
+   "pages": {},
+   "stages": []
+  },
+  {
+   "slug": "e3-2026",
+   "year": 2026,
+   "name": "E3 Classic 2026",
+   "type": "one_day",
+   "status": "archive",
+   "circa": null,
+   "campaign_dir": "performance_eval/e3-2026",
+   "url": null,
+   "pages": {},
+   "stages": []
+  },
+  {
+   "slug": "tour-of-bruges-2026",
+   "year": 2026,
+   "name": "Tour of Bruges 2026",
+   "type": "one_day",
+   "status": "archive",
+   "circa": null,
+   "campaign_dir": "performance_eval/tour-of-bruges-2026",
+   "url": null,
+   "pages": {},
+   "stages": []
+  },
+  {
+   "slug": "flanders-2026",
+   "year": 2026,
+   "name": "Tour of Flanders 2026",
+   "type": "one_day",
+   "status": "archive",
+   "circa": null,
+   "campaign_dir": "performance_eval/flanders-2026",
+   "url": null,
+   "pages": {},
+   "stages": []
+  }
+ ],
+ "months": [
+  "2026-07",
+  "2026-08",
+  "2026-09"
+ ],
+ "default_month": "2026-09",
+ "aliases": {
+  "/index.html": "/model",
+  "/vuelta-gc.html": "/race/vuelta-a-espana/2026/gc",
+  "/vuelta-stages.html": "/race/vuelta-a-espana/2026/stages",
+  "/vuelta-stage02.html": "/race/vuelta-a-espana/2026/stage-02",
+  "/vuelta-stage03.html": "/race/vuelta-a-espana/2026/stage-03",
+  "/vuelta-stage04.html": "/race/vuelta-a-espana/2026/stage-04",
+  "/vuelta-stage05.html": "/race/vuelta-a-espana/2026/stage-05",
+  "/vuelta-stage06.html": "/race/vuelta-a-espana/2026/stage-06",
+  "/vuelta-stage07.html": "/race/vuelta-a-espana/2026/stage-07",
+  "/vuelta-stage08.html": "/race/vuelta-a-espana/2026/stage-08",
+  "/vuelta-stage09.html": "/race/vuelta-a-espana/2026/stage-09",
+  "/vuelta-stage10.html": "/race/vuelta-a-espana/2026/stage-10",
+  "/vuelta-stage11.html": "/race/vuelta-a-espana/2026/stage-11",
+  "/vuelta-stage12.html": "/race/vuelta-a-espana/2026/stage-12",
+  "/vuelta-stage13.html": "/race/vuelta-a-espana/2026/stage-13",
+  "/vuelta-stage14.html": "/race/vuelta-a-espana/2026/stage-14",
+  "/vuelta-stage15.html": "/race/vuelta-a-espana/2026/stage-15",
+  "/gc.html": "/race/tour-de-france/2026/gc",
+  "/stages.html": "/race/tour-de-france/2026/stages",
+  "/review.html": "/race/tour-de-france/2026/review",
+  "/stage02.html": "/race/tour-de-france/2026/stage-02",
+  "/stage03.html": "/race/tour-de-france/2026/stage-03",
+  "/stage04.html": "/race/tour-de-france/2026/stage-04",
+  "/stage05.html": "/race/tour-de-france/2026/stage-05",
+  "/stage06.html": "/race/tour-de-france/2026/stage-06",
+  "/stage07.html": "/race/tour-de-france/2026/stage-07",
+  "/stage08.html": "/race/tour-de-france/2026/stage-08",
+  "/stage09.html": "/race/tour-de-france/2026/stage-09",
+  "/stage10.html": "/race/tour-de-france/2026/stage-10",
+  "/stage11.html": "/race/tour-de-france/2026/stage-11",
+  "/stage12.html": "/race/tour-de-france/2026/stage-12",
+  "/stage13.html": "/race/tour-de-france/2026/stage-13",
+  "/stage14.html": "/race/tour-de-france/2026/stage-14",
+  "/stage15.html": "/race/tour-de-france/2026/stage-15",
+  "/stage16.html": "/race/tour-de-france/2026/stage-16",
+  "/stage17.html": "/race/tour-de-france/2026/stage-17",
+  "/stage18.html": "/race/tour-de-france/2026/stage-18",
+  "/stage19.html": "/race/tour-de-france/2026/stage-19",
+  "/stage20.html": "/race/tour-de-france/2026/stage-20",
+  "/stage21.html": "/race/tour-de-france/2026/stage-21"
+ },
+ "clean_routes": {
+  "/": {
+   "asset": "/_frame/home.html"
+  },
+  "/races": {
+   "asset": "/_frame/races.html"
+  },
+  "/model": {
+   "asset": "/index.html"
+  },
+  "/race/vuelta-a-espana/2026": {
+   "asset": "/_frame/race/vuelta-a-espana-2026.html"
+  },
+  "/race/vuelta-a-espana/2026/gc": {
+   "asset": "/vuelta-gc.html",
+   "base": true
+  },
+  "/race/vuelta-a-espana/2026/stages": {
+   "asset": "/vuelta-stages.html",
+   "base": true
+  },
+  "/race/vuelta-a-espana/2026/stage-02": {
+   "asset": "/vuelta-stage02.html",
+   "base": true
+  },
+  "/race/vuelta-a-espana/2026/stage-03": {
+   "asset": "/vuelta-stage03.html",
+   "base": true
+  },
+  "/race/vuelta-a-espana/2026/stage-04": {
+   "asset": "/vuelta-stage04.html",
+   "base": true
+  },
+  "/race/vuelta-a-espana/2026/stage-05": {
+   "asset": "/vuelta-stage05.html",
+   "base": true
+  },
+  "/race/vuelta-a-espana/2026/stage-06": {
+   "asset": "/vuelta-stage06.html",
+   "base": true
+  },
+  "/race/vuelta-a-espana/2026/stage-07": {
+   "asset": "/vuelta-stage07.html",
+   "base": true
+  },
+  "/race/vuelta-a-espana/2026/stage-08": {
+   "asset": "/vuelta-stage08.html",
+   "base": true
+  },
+  "/race/vuelta-a-espana/2026/stage-09": {
+   "asset": "/vuelta-stage09.html",
+   "base": true
+  },
+  "/race/vuelta-a-espana/2026/stage-10": {
+   "asset": "/vuelta-stage10.html",
+   "base": true
+  },
+  "/race/vuelta-a-espana/2026/stage-11": {
+   "asset": "/vuelta-stage11.html",
+   "base": true
+  },
+  "/race/vuelta-a-espana/2026/stage-12": {
+   "asset": "/vuelta-stage12.html",
+   "base": true
+  },
+  "/race/vuelta-a-espana/2026/stage-13": {
+   "asset": "/vuelta-stage13.html",
+   "base": true
+  },
+  "/race/vuelta-a-espana/2026/stage-14": {
+   "asset": "/vuelta-stage14.html",
+   "base": true
+  },
+  "/race/vuelta-a-espana/2026/stage-15": {
+   "asset": "/vuelta-stage15.html",
+   "base": true
+  },
+  "/race/tour-de-france/2026": {
+   "asset": "/_frame/race/tour-de-france-2026.html"
+  },
+  "/race/tour-de-france/2026/gc": {
+   "asset": "/gc.html",
+   "base": true
+  },
+  "/race/tour-de-france/2026/stages": {
+   "asset": "/stages.html",
+   "base": true
+  },
+  "/race/tour-de-france/2026/review": {
+   "asset": "/review.html",
+   "base": true
+  },
+  "/race/tour-de-france/2026/stage-02": {
+   "asset": "/stage02.html",
+   "base": true
+  },
+  "/race/tour-de-france/2026/stage-03": {
+   "asset": "/stage03.html",
+   "base": true
+  },
+  "/race/tour-de-france/2026/stage-04": {
+   "asset": "/stage04.html",
+   "base": true
+  },
+  "/race/tour-de-france/2026/stage-05": {
+   "asset": "/stage05.html",
+   "base": true
+  },
+  "/race/tour-de-france/2026/stage-06": {
+   "asset": "/stage06.html",
+   "base": true
+  },
+  "/race/tour-de-france/2026/stage-07": {
+   "asset": "/stage07.html",
+   "base": true
+  },
+  "/race/tour-de-france/2026/stage-08": {
+   "asset": "/stage08.html",
+   "base": true
+  },
+  "/race/tour-de-france/2026/stage-09": {
+   "asset": "/stage09.html",
+   "base": true
+  },
+  "/race/tour-de-france/2026/stage-10": {
+   "asset": "/stage10.html",
+   "base": true
+  },
+  "/race/tour-de-france/2026/stage-11": {
+   "asset": "/stage11.html",
+   "base": true
+  },
+  "/race/tour-de-france/2026/stage-12": {
+   "asset": "/stage12.html",
+   "base": true
+  },
+  "/race/tour-de-france/2026/stage-13": {
+   "asset": "/stage13.html",
+   "base": true
+  },
+  "/race/tour-de-france/2026/stage-14": {
+   "asset": "/stage14.html",
+   "base": true
+  },
+  "/race/tour-de-france/2026/stage-15": {
+   "asset": "/stage15.html",
+   "base": true
+  },
+  "/race/tour-de-france/2026/stage-16": {
+   "asset": "/stage16.html",
+   "base": true
+  },
+  "/race/tour-de-france/2026/stage-17": {
+   "asset": "/stage17.html",
+   "base": true
+  },
+  "/race/tour-de-france/2026/stage-18": {
+   "asset": "/stage18.html",
+   "base": true
+  },
+  "/race/tour-de-france/2026/stage-19": {
+   "asset": "/stage19.html",
+   "base": true
+  },
+  "/race/tour-de-france/2026/stage-20": {
+   "asset": "/stage20.html",
+   "base": true
+  },
+  "/race/tour-de-france/2026/stage-21": {
+   "asset": "/stage21.html",
+   "base": true
+  },
+  "/calendar/2026/07": {
+   "asset": "/_frame/calendar/2026-07.html"
+  },
+  "/calendar/2026/08": {
+   "asset": "/_frame/calendar/2026-08.html"
+  },
+  "/calendar/2026/09": {
+   "asset": "/_frame/calendar/2026-09.html"
+  }
+ }
+}

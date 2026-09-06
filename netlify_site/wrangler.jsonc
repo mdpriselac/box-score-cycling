@@ -1,0 +1,18 @@
+// Cloudflare Worker config for the public site (phase 1: static assets +
+// clean-URL router). Local preview:
+//     npx wrangler dev --config netlify_site/wrangler.jsonc
+// Deploy (once the Cloudflare account/domain decisions in
+// CLOUDFLARE_DEPLOYMENT_PLAN.md are made):
+//     npx wrangler deploy --config netlify_site/wrangler.jsonc
+{
+  "name": "cycling-race-predictor",
+  "main": "worker/index.js",
+  "compatibility_date": "2026-08-01",
+  "assets": {
+    "directory": ".",
+    "binding": "ASSETS",
+    // The worker owns routing: aliases must redirect and clean URLs must be
+    // rewritten before any asset is served.
+    "run_worker_first": true
+  }
+}

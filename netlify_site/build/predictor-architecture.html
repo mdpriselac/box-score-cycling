@@ -296,12 +296,13 @@
 <header class="col">
   <div class="eyebrow">Cycling Race Predictor · System overview</div>
   <h1>How the model prices a bike race</h1>
-  <p class="standfirst">Seven LightGBM heads, one pricing layer, and a decade of result sheets — a tour of every number the prediction app shows, what each one actually measures, and how they fit together.</p>
+  <p class="standfirst">Seven LightGBM heads, one pricing layer, and a decade of result sheets — a tour of every number the prediction app shows, what each one actually measures, and how they fit together. New since the Tour: a day-type retrieval channel that re-picks who's in the conversation without touching a single price.</p>
   <div class="meta">
-    <span><b>643K</b>&nbsp;rider-race training rows</span>
-    <span><b>5,724</b>&nbsp;competitions, 2016–2026</span>
-    <span><b>141</b>&nbsp;features per rider</span>
-    <span><b>7</b>&nbsp;model heads</span>
+    <span><b>668K</b>&nbsp;rider-race training rows</span>
+    <span><b>5,905</b>&nbsp;competitions, 2016–2026</span>
+    <span><b>181</b>&nbsp;features per rider</span>
+    <span><b>7</b>&nbsp;pricing heads&nbsp;+&nbsp;<b>1</b>&nbsp;retrieval ranker</span>
+    <span>retrained&nbsp;<b>2026-08-09</b></span>
   </div>
 </header>
 
@@ -326,6 +327,17 @@
 </style>
 <div class="stage-strip"><b style="color:var(--ink)">Tour diary:</b> <a href="stages.html"><b>Stage-by-stage predictions &amp; reflections →</b></a> · <a href="gc.html"><b>GC tracker</b></a> · <a href="review.html"><b>Post-race review</b></a> · <a href="stage02.html">Stage 2</a> <span class="done">✓</span> · <a href="stage03.html">Stage 3</a> <span class="done">✓</span> · <a href="stage04.html">Stage 4</a> <span class="done">✓</span> · <a href="stage05.html">Stage 5</a> <span class="done">✓</span> · <a href="stage06.html">Stage 6</a> <span class="done">✓</span> · <a href="stage07.html">Stage 7</a> <span class="done">✓</span> · <a href="stage08.html">Stage 8</a> <span class="done">✓</span> · <a href="stage09.html">Stage 9</a> <span class="done">✓</span> · <a href="stage10.html">Stage 10</a> <span class="done">✓</span> · <a href="stage11.html">Stage 11</a> <span class="done">✓</span> · <a href="stage12.html">Stage 12</a> <span class="done">✓</span> · <a href="stage13.html">Stage 13</a> <span class="done">✓</span> · <a href="stage14.html">Stage 14</a> <span class="done">✓</span> · <a href="stage15.html">Stage 15</a> <span class="done">✓</span> · <a href="stage16.html">Stage 16</a> <span class="done">✓</span> · <a href="stage17.html">Stage 17</a> <span class="done">✓</span> · <a href="stage18.html">Stage 18</a> <span class="done">✓</span> · <a href="stage19.html">Stage 19</a> <span class="done">✓</span> · <a href="stage20.html">Stage 20</a> <span class="done">✓</span> · <a href="stage21.html">Stage 21</a> <span class="done">✓</span></div>
 <!-- STAGES:END -->
+
+<!-- VUELTA-STAGES:START -->
+<style>
+.stage-strip{max-width:1020px;margin:10px auto 0;font-family:var(--sans);
+  font-size:13px;color:var(--slate);display:flex;flex-wrap:wrap;gap:6px 14px;
+  align-items:center;justify-content:center}
+.stage-strip a{color:var(--blue);text-decoration:none;border-bottom:1px solid var(--blue-soft);font-weight:600}
+.stage-strip .done{color:var(--green)}
+</style>
+<div class="stage-strip"><b style="color:var(--ink)">Vuelta diary:</b> <a href="vuelta-stages.html"><b>Stage-by-stage predictions &amp; reflections →</b></a> · <a href="vuelta-gc.html"><b>GC tracker</b></a> · <a href="vuelta-stage02.html">Stage 2</a> <span class="done">✓</span> · <a href="vuelta-stage03.html">Stage 3</a> · <a href="vuelta-stage04.html">Stage 4</a> <span class="done">✓</span> · <a href="vuelta-stage05.html">Stage 5</a> <span class="done">✓</span> · <a href="vuelta-stage06.html">Stage 6</a> <span class="done">✓</span> · <a href="vuelta-stage07.html">Stage 7</a> <span class="done">✓</span> · <a href="vuelta-stage08.html">Stage 8</a> <span class="done">✓</span> · <a href="vuelta-stage09.html">Stage 9</a> <span class="done">✓</span> · <a href="vuelta-stage10.html">Stage 10</a> <span class="done">✓</span> · <a href="vuelta-stage11.html">Stage 11</a> <span class="done">✓</span> · <a href="vuelta-stage12.html">Stage 12</a> <span class="done">✓</span> · <a href="vuelta-stage13.html">Stage 13</a> <span class="done">✓</span> · <a href="vuelta-stage14.html">Stage 14</a> <span class="done">✓</span> · <a href="vuelta-stage15.html">Stage 15</a></div>
+<!-- VUELTA-STAGES:END -->
 
 <!-- ================= HEADS VIEW ================= -->
 <div id="view-heads" hidden>
@@ -678,7 +690,7 @@
 <section class="col">
   <p class="kicker">The friendly tour</p>
   <h2>What is this thing?</h2>
-  <p>It's a computer program that has studied ten years of professional bike-race results — over 600,000 of them — and uses what it learned to estimate each rider's chances before a race: chance of winning, of finishing on the podium, of making the top 5, and so on.</p>
+  <p>It's a computer program that has studied ten years of professional bike-race results — over 660,000 of them — and uses what it learned to estimate each rider's chances before a race: chance of winning, of finishing on the podium, of making the top 5, and so on.</p>
   <p>Think of it like a weather forecast, but for bike races. A forecast doesn't tell you <em>it will definitely rain</em>; it says "70% chance of rain," and a good forecaster is right about 7 times out of 10 when they say that. This system aims for the same thing: percentages you can actually trust, race after race.</p>
 
   <div class="plain-steps wide">
@@ -691,8 +703,8 @@
 
 <section class="col">
   <p class="kicker">The team behind the forecast</p>
-  <h2>Seven specialists, one prediction</h2>
-  <p>Under the hood it isn't one big brain — it's a panel of seven specialists, each trained to answer one question really well. Like a good cycling team, each has a job:</p>
+  <h2>A panel of specialists, one prediction</h2>
+  <p>Under the hood it isn't one big brain — it's a panel of specialists, each trained to answer one question really well. Like a good cycling team, each has a job:</p>
 
   <div class="wide cards">
     <div class="card">
@@ -742,6 +754,12 @@
       <p class="q">"Is the Tipster selling winners short?"</p>
       <p>Over thousands of races we measured that the Bold Tipster is slightly too shy about winners' chances. This is a single, carefully measured nudge that corrects for it — like knowing your bathroom scale reads a pound heavy and adjusting accordingly.</p>
     </div>
+
+    <div class="card">
+      <h4>The Casting Director <span class="aka">day-menu ranker · new</span></h4>
+      <p class="q">"Given the kind of day this is, who belongs in the conversation?"</p>
+      <p>The newest hire, added after the Tour. Tell it what kind of stage tomorrow is — a mountain-escape day, a split sprint — and it re-picks the shortlist of favorites using ten years of "who actually shows up on days like this." It only decides who's on the shortlist and in what order; it never touches anyone's price.</p>
+    </div>
   </div>
 </section>
 
@@ -780,6 +798,15 @@
 </section>
 
 <section class="col">
+  <p class="kicker">New for the Vuelta 2026</p>
+  <h2>Telling the machine what kind of day it is</h2>
+  <p>The Tour de France was a month-long exam, and the machine mostly passed: bunch sprints and summit finishes were priced well. But it also exposed the one place the machine is structurally weak — the in-between stages, where a breakaway stays away or a late attacker wins from a small group. On those days the pre-race favorites list kept featuring the usual stars, while the actual winner came from a type of rider the boards had buried.</p>
+  <p>The fix is <em>not</em> new percentages. We tested that thoroughly, and every version of "let the day type change the prices" made the predictions worse. What works is narrower and safer: a <strong>menu of eleven day types</strong> — mountain-escape day, hard puncheur day, split sprint, survivor's gallop, and so on — each defined by <em>who historically contests the front</em> on days like it, not by the shape of the course.</p>
+  <p>Each race morning, a human reads the stage and keys it to a menu item (or a weighted mix of two — "60% mountain escape, 40% hard puncheur"). The <strong>Casting Director</strong> then re-picks the shortlist: riders who thrive on that kind of day move up into the favorites conversation, riders who don't slide out of it. Everything else stays exactly as before — the prices still come from the same specialists, untouched. If the key is wrong, the cost is a worse shortlist for a day, never a corrupted price.</p>
+  <p>In the dress rehearsal we replayed Tour stage 4 — a hilly stage won from a hard late move — with the key "mountain escape day." The keyed shortlist put Mads Pedersen first (he won it), pulled several eventual breakaway riders up from as deep as 88th, and dropped Tadej Pogačar down the list <em>while his win price stayed exactly the same</em>. The Vuelta a España is the live test: every morning's key gets logged before the stage, and every evening it's graded against what actually happened.</p>
+</section>
+
+<section class="col">
   <p class="kicker">Keeping it honest</p>
   <h2>Can it see the future? How good is it really?</h2>
   <p>The model learned by replaying ten years of races under one strict rule: when predicting any race from the past, it's only allowed to use what was knowable <em>the day before</em> that race. No peeking at results that hadn't happened yet — the software equivalent of predicting last Sunday's race using only the previous Saturday's newspaper.</p>
@@ -798,7 +825,7 @@
 
   <div class="wide">
     <div class="diagram-frame">
-      <svg viewBox="0 0 980 520" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Flow diagram of the prediction stack">
+      <svg viewBox="0 0 980 586" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Flow diagram of the prediction stack">
         <defs>
           <marker id="arr" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto">
             <path d="M0,0 L8,4 L0,8 z" fill="#5C6470"/>
@@ -837,7 +864,7 @@
         <!-- startlist -->
         <rect class="bx" x="10" y="70" width="118" height="64" rx="5"/>
         <text class="lbl" x="69" y="97" text-anchor="middle">Startlist</text>
-        <text class="sub" x="69" y="114" text-anchor="middle">+ 141 features/rider</text>
+        <text class="sub" x="69" y="114" text-anchor="middle">+ 164 features/rider</text>
 
         <!-- bucket head -->
         <rect class="bx" x="168" y="70" width="140" height="64" rx="5"/>
@@ -916,9 +943,14 @@
         <rect class="bx" x="168" y="452" width="500" height="56" rx="5" stroke-dasharray="5 4"/>
         <text class="lbl" x="418" y="474" text-anchor="middle">GC outlook head (separate panel)</text>
         <text class="sub" x="418" y="491" text-anchor="middle">mid-race only: final GC given standings after stage k — runs beside the stack, not through it</text>
+
+        <!-- day-menu retrieval aside -->
+        <rect class="bx" x="168" y="522" width="500" height="56" rx="5" stroke-dasharray="5 4"/>
+        <text class="lbl" x="418" y="544" text-anchor="middle">Day-menu retrieval channel (keyed stage days · new Aug 2026)</text>
+        <text class="sub" x="418" y="561" text-anchor="middle">a day-type-featured ranker re-picks the top-15 gate for the keyed day — every price above is unchanged</text>
       </svg>
     </div>
-    <p class="caption">The main line ranks, gates, and prices. Two side lines — a calibration head and a finishing head — join at the pricing layer rather than being averaged in earlier. The GC outlook head runs beside the stack, not through it.</p>
+    <p class="caption">The main line ranks, gates, and prices. Two side lines — a calibration head and a finishing head — join at the pricing layer rather than being averaged in earlier. The GC outlook head runs beside the stack, not through it; the new day-menu channel can re-decide <em>who passes the top-15 gate</em> on a keyed stage day, but never touches a price.</p>
   </div>
 
   <p style="margin-top:18px">A one-line mental model: <em>the bucket head ranks the field → the cascade prices the top → the corrector fixes its win bias → the blend borrows LambdaRank's calibration → the DNF adjustment makes the prices honest</em> — and every intermediate number stays visible in the table rather than being swallowed by the final one.</p>
@@ -985,7 +1017,7 @@
         <span class="chip pop-starters">All starters</span>
         <span class="chip obj">Binary classifier</span>
       </div>
-      <p>The only head whose training population includes riders who abandoned. Every other probability is implicitly "given that they finish" — this head supplies the missing factor (AUC ≈ 0.88). Applied only at the pricing layer; mixing it into the finish-conditioned heads was tested and made things worse.</p>
+      <p>The only head whose training population includes riders who abandoned. Every other probability is implicitly "given that they finish" — this head supplies the missing factor (AUC ≈ 0.89). Applied only at the pricing layer; mixing it into the finish-conditioned heads was tested and made things worse.</p>
     </div>
 
     <div class="card">
@@ -1015,7 +1047,7 @@
         <span class="chip pop-top15">Contender rows</span>
         <span class="chip obj">Logit shift</span>
       </div>
-      <p>A single fitted parameter, not a model: a logit-scale shift that fixes the cascade's measured win-market under-confidence (validation calibration 0.95 → 1.00 at the last training run). Applied before anything else in the pricing layer.</p>
+      <p>A single fitted parameter, not a model: a logit-scale shift that fixes the cascade's measured win-market under-confidence (validation calibration 0.97 → 1.00 at the last training run). Applied before anything else in the pricing layer.</p>
     </div>
   </div>
 </section>
@@ -1081,6 +1113,43 @@
 
 <div class="divider" aria-hidden="true">
   <svg viewBox="0 0 1020 34" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M0,26 L150,26 L250,9 L340,25 L500,25 L610,6 L700,21 L870,21 L960,11 L1020,27" fill="none" stroke="#E5E3DB" stroke-width="2"/>
+    <path d="M0,26 L150,26 L250,9 L340,25 L500,25 L610,6 L700,21 L870,21 L960,11 L1020,27 L1020,34 L0,34 Z" fill="#F1EFE8" opacity=".6"/>
+  </svg>
+</div>
+
+<section class="col" id="daymenu">
+  <p class="kicker">New — August 2026</p>
+  <h2>The day-type retrieval channel</h2>
+  <p>The Tour exposed the stack's one structural hole: transition stages decided by a surviving break or a hard late move. The boards priced sprints and summit finishes well, but on those in-between days the winner repeatedly came from a rider class the pre-race top 15 had buried. A month of gated experiments produced a fix — and, just as importantly, established what the fix is <em>not allowed to be</em>.</p>
+
+  <h3>The menu</h3>
+  <p>Eleven <strong>day types</strong>, defined in rider-composition space — <em>who contests the front ~15</em> (sprinters, climbers, puncheurs, rouleurs, break specialists…), not what the profile looks like. Three are routed mechanically (individual time trial; full bunch sprint; GC day, where the overall contenders fight for the win). The other eight are analog day types learned from a decade of stages, organized in two sharply distinct families: <strong>escape/climb</strong> (mountain escape → hard puncheur → rouleur power group) and <strong>power-sprint</strong> (survivor's gallop → split sprint → fast-finisher group). Within a family the items are graded neighbors; across families they barely overlap. The menu is a frozen artifact — assigning a day is a stored-parameter lookup, never a refit.</p>
+
+  <h3>The ranker</h3>
+  <p>A retrained variant of the bucket head with 14 extra columns: the keyed day type's canonical composition, plus per-rider <em>kernel affinities</em> — how often the rider shows up, and how they finish, on historically similar days (exposure, attendance, top-3 rate, mean finish), computed strictly as-of race morning from 642K historical rider-rides with a two-year half-life. It engages only when a stage is keyed.</p>
+
+  <h3>What it may and may not do</h3>
+  <p>Every stronger use of this signal was tested and failed honestly, which is why the channel is retrieval-only:</p>
+  <div class="table-frame">
+    <table>
+      <thead><tr><th>Design</th><th>Verdict</th><th>Evidence</th></tr></thead>
+      <tbody>
+        <tr><td>Day-type features inside the pricing heads</td><td><b>Rejected</b></td><td>+0.011 log loss vs the market benchmark, worse on 5 of 5 folds — a global tax paid even by races the channel never touches</td></tr>
+        <tr><td>Conditional boards served as prices</td><td><b>Rejected</b></td><td>+0.016 even with <em>perfect</em> keys. The signal is top-15-grade: day-type affinity says who shows up at the front, not who wins the kick</td></tr>
+        <tr><td>Retrieval only — pool membership and board order</td><td><b>Shipped</b></td><td>Pricing neutral (+0.0005); with judgment-grade keys, top-15 pool coverage +2.45pp and mean winner rank −1.84 on the hard residual days, 5 of 5 folds</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>The structural guarantee follows from the wiring, not from good intentions: the keyed ranker can only change <em>who passes the top-15 gate and in what order</em>. Riders it promotes are priced by the same production contender cascade, corrector, blend, and DNF adjustment as anyone else. A wrong key costs pool composition for a day; it cannot corrupt a price.</p>
+
+  <h3>Serving it at the Vuelta</h3>
+  <p>Each race morning, a human keys the stage to a menu item or a weighted mix ("mountain escape 0.6 / hard puncheur 0.4" — the mix happens at the ranking-score level, never by averaging prices). Stage pages show the key as a <em>keyed:</em> chip; unkeyed stages serve the plain production board; one-day races key themselves from their own historical signature. In the dress rehearsal — Tour stage 4 replayed under a mountain-escape key — the keyed board put Mads Pedersen first (he won), promoted the eventual break riders from as deep as 88th into the pool, and dropped Pogačar down the order with his price untouched.</p>
+  <p>The Vuelta a España 2026 is the channel's prospective evaluation: every morning's key is archived before the stage, every evening it's scored against an oracle labeler that keys the day from the actual result. That scorecard — not the Tour replay — will decide whether human day-reading is close enough to the ceiling for the channel to stay on by default.</p>
+</section>
+
+<div class="divider" aria-hidden="true">
+  <svg viewBox="0 0 1020 34" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
     <path d="M0,28 L140,28 L240,10 L320,24 L480,24 L580,5 L680,22 L840,22 L940,12 L1020,26" fill="none" stroke="#E5E3DB" stroke-width="2"/>
     <path d="M0,28 L140,28 L240,10 L320,24 L480,24 L580,5 L680,22 L840,22 L940,12 L1020,26 L1020,34 L0,34 Z" fill="#F1EFE8" opacity=".6"/>
   </svg>
@@ -1110,6 +1179,7 @@
         <tr><td class="mono">Elo · Elo n</td><td><span class="tag t-rank">Rating</span></td><td>Contested-comparison rating and how many duels back it</td></tr>
         <tr><td class="mono">Odds (win…top 30)</td><td><span class="tag t-mc">Cascade</span></td><td>Decimal / American / fractional, from corrected probabilities</td></tr>
         <tr><td class="mono">GC Outlook panel</td><td><span class="tag t-mix">GC head</span></td><td>Mid-race only: final-GC probabilities given current standings</td></tr>
+        <tr><td class="mono">Keyed board (stage pages)</td><td><span class="tag t-rank">Retrieval</span></td><td>Board order under the morning's day-type key; pool changes, prices don't</td></tr>
       </tbody>
     </table>
   </div>
@@ -1120,15 +1190,15 @@
 <section class="col" id="data">
   <p class="kicker">The engine room</p>
   <h2>What it's all built on</h2>
-  <p>A weekly pipeline scrapes results from FirstCycling, migrates them into SQLite, and precomputes ~1.1M point-in-time rider snapshots back to 2010 — every feature strictly "as of the day before the race," so the models never peek at the future. Training covers 2016–2026: about 643K rider-race rows across 5,724 competitions at the WorldTour, ProSeries, and .1 levels.</p>
-  <p>Each rider carries 141 features into a prediction: long-run quality percentiles, recent-form trajectories (recomputed live as of prediction day), team context, race-profile fit against the course's gradients, contested Elo, and the stacked head outputs described above. Every prediction run is persisted, so the system continuously builds the dataset needed to judge itself against real books.</p>
+  <p>A weekly pipeline scrapes results from FirstCycling, migrates them into SQLite, and precomputes ~1.1M point-in-time rider snapshots back to 2010 — every feature strictly "as of the day before the race," so the models never peek at the future. Training covers 2016–2026: about 668K rider-race rows across 5,905 competitions at the WorldTour, ProSeries, and .1 levels. The full suite was last retrained on 2026-08-09, on a corpus current through that day — including the complete Tour de France 2026 and a repaired 2025 late-season block (a source-site markup change had silently un-dated 35 races, Vuelta 2025 among them; they were caught, re-scraped, and re-migrated before this training run).</p>
+  <p>Each rider carries 164 features into a prediction — long-run quality percentiles, recent-form trajectories (recomputed live as of prediction day), team context, race-profile fit against the course's gradients — plus 17 stacked columns (head outputs, contested Elo, contest signatures), for 181 into the flagship ranking head; the day-menu variant adds 14 more. Every prediction run is persisted, so the system continuously builds the dataset needed to judge itself against real books.</p>
 </section>
 
 </div>
 <!-- ================= end technical view ================= -->
 
 <footer class="col">
-  Cycling Race Predictor — system overview. LightGBM heads over FirstCycling historical data, 2016–2026. Probabilities are model estimates, not betting advice.
+  Cycling Race Predictor — system overview. LightGBM heads over FirstCycling historical data, 2016–2026; models last retrained 2026-08-09. Probabilities are model estimates, not betting advice.
 </footer>
 
 </div>
