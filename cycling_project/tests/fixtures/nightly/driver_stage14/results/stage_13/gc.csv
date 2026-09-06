@@ -1,0 +1,156 @@
+place,name,rider_id,team,team_id,gap,dob
+1,Mas Enric,1527,Movistar Team,39654,0,1995
+2,Roglic Primoz,18655,Red Bull-BORA-hansgrohe,43656,105.0,1989
+3,Gall Felix,48547,Decathlon CMA CGM Team,40474,126.0,1998
+4,Carapaz Richard,23097,EF Education-EasyPost,39797,233.0,1993
+5,Onley Oscar,120433,Netcompany INEOS Cycling Team,29252,269.0,2002
+6,Omrzel Jakob,208369,Bahrain Victorious,38975,299.0,2006
+7,Skjelmose Mattias,77103,Lidl-Trek,31681,332.0,2000
+8,Kuss Sepp,48008,Team Visma | Lease a Bike,28242,478.0,1994
+9,Tejada Harold,64106,XDS Astana Team,44515,513.0,1997
+10,Berthet Clément,57961,Groupama-FDJ United,39001,666.0,1997
+11,Rodriguez Cristian,16947,XDS Astana Team,44515,670.0,1995
+12,Bisiaux Léo,184536,Decathlon CMA CGM Team,40474,816.0,2005
+13,Riccitello Matthew,113499,Decathlon CMA CGM Team,40474,1035.0,2002
+14,Widar Jarno,186117,Lotto-Intermarché,39318,1065.0,2005
+15,Martin-Guyonnet Guillaume,10990,Groupama-FDJ United,39001,1328.0,1993
+16,Rodríguez Juan,183692,EF Education-EasyPost,39797,1556.0,2003
+17,Pickering Finlay,139005,Team Jayco-AlUla,39199,1834.0,2003
+18,Buitrago Santiago,81835,Bahrain Victorious,38975,2289.0,1999
+19,Hirt Jan,6269,NSN Cycling Team,38561,2382.0,1991
+20,Aparicio Mario,84012,Burgos Burpellet BH,44473,2438.0,2000
+21,García Raúl,114755,Movistar Team,39654,2641.0,2001
+22,Zana Filippo,66439,Soudal Quick-Step,26331,2684.0,1999
+23,Svestad-Bårdseng Embret,113457,Netcompany INEOS Cycling Team,29252,2895.0,2002
+24,Berrade Urko,57355,Equipo Kern Pharma,39319,2906.0,1997
+25,Johannessen Tobias Halland,87900,Uno-X Mobility,31698,3041.0,1999
+26,Buchmann Emanuel,9344,Cofidis,44516,3224.0,1992
+27,Haig Jack,19784,Netcompany INEOS Cycling Team,29252,3229.0,1993
+28,Leemreize Gijs,79955,Team Picnic PostNL,34179,3430.0,1999
+29,Bouwman Koen,18564,Team Jayco-AlUla,39199,3550.0,1993
+30,Debruyne Ramses,113415,Alpecin-Premier Tech,38373,3726.0,2002
+31,Bilbao Pello,4863,Bahrain Victorious,38975,3814.0,1990
+32,Scotson Callum,42175,Decathlon CMA CGM Team,40474,3981.0,1996
+33,Madouas Valentin,37379,Groupama-FDJ United,39001,3985.0,1996
+34,Konrad Patrick,6245,Lidl-Trek,31681,4332.0,1991
+35,Rodriguez Carlos,84926,Netcompany INEOS Cycling Team,29252,4621.0,2001
+36,Tuckwell Luke,167245,Red Bull-BORA-hansgrohe,43656,4640.0,2004
+37,Landa Mikel,2278,Soudal Quick-Step,26331,4656.0,1989
+38,Diaz Jose Manuel,45106,Burgos Burpellet BH,44473,4665.0,1995
+39,Valter Attila,69890,Bahrain Victorious,38975,4695.0,1998
+40,van Aert Wout,18258,Team Visma | Lease a Bike,28242,4742.0,1994
+41,Vansevenant Mauri,70034,Soudal Quick-Step,26331,4861.0,1999
+42,Brenner Marco,111801,Tudor Pro Cycling Team,39194,4861.0,2002
+43,Paret-Peintre Valentin,97944,Soudal Quick-Step,26331,4969.0,2001
+44,Warbasse Lawrence,14123,Tudor Pro Cycling Team,39194,4970.0,1990
+45,Dunbar Edward,27283,Pinarello-Q36.5 Pro Cycling Team,44779,4986.0,1996
+46,Mulubrhan Henok,71607,XDS Astana Team,44515,5069.0,1999
+47,Hofstetter Hugo,32892,NSN Cycling Team,38561,5071.0,1994
+48,Molard Rudy,6222,Groupama-FDJ United,39001,5191.0,1989
+49,Albanese Vincenzo,37351,EF Education-EasyPost,39797,5361.0,1996
+50,Laurance Axel,95714,Netcompany INEOS Cycling Team,29252,5369.0,2001
+51,Kron Andreas,53723,Uno-X Mobility,31698,5470.0,1998
+52,Wilksch Hannes,96128,Tudor Pro Cycling Team,39194,5637.0,2001
+53,Ruiz Ibon,89666,Equipo Kern Pharma,39319,5728.0,1999
+54,Nordhagen Jørgen,179420,Team Visma | Lease a Bike,28242,5745.0,2005
+55,Vader Milan,60067,Pinarello-Q36.5 Pro Cycling Team,44779,5817.0,1996
+56,Vermaerke Kevin,82912,UAE Team Emirates-XRG,25778,5846.0,2000
+57,Paleni Enzo,112244,Groupama-FDJ United,39001,5849.0,2002
+58,Shaw James,37375,EF Education-EasyPost,39797,5871.0,1996
+59,Küng Stefan,16724,Tudor Pro Cycling Team,39194,5962.0,1993
+60,Thompson Reuben,111844,Lotto-Intermarché,39318,5967.0,2001
+61,Armirail Bruno,22272,Team Visma | Lease a Bike,28242,6108.0,1994
+62,Kämna Lennard,27289,Lidl-Trek,31681,6109.0,1996
+63,Camprubí Marcel,136820,Pinarello-Q36.5 Pro Cycling Team,44779,6166.0,2001
+64,Ourselin Paul,32592,Cofidis,44516,6168.0,1994
+65,Leknessund Andreas,66973,Uno-X Mobility,31698,6178.0,1999
+66,Rochas Rémy,27303,Groupama-FDJ United,39001,6220.0,1996
+67,Bernard Julien,17182,Lidl-Trek,31681,6229.0,1992
+68,Dalby Simon,129977,Uno-X Mobility,31698,6251.0,2003
+69,Miquel Delgado Pau,96297,Bahrain Victorious,38975,6268.0,2000
+70,Gloag Thomas,83761,Pinarello-Q36.5 Pro Cycling Team,44779,6274.0,2001
+71,De Pestel Sander,47120,Decathlon CMA CGM Team,40474,6329.0,1998
+72,Faura José Luis,125761,Burgos Burpellet BH,44473,6336.0,2000
+73,Fortunato Lorenzo,27271,XDS Astana Team,44515,6337.0,1996
+74,Labrosse Jordan,112245,Decathlon CMA CGM Team,40474,6454.0,2002
+75,Tronchon Bastien,112241,Groupama-FDJ United,39001,6523.0,2002
+76,Garofoli Gianmarco,115396,Soudal Quick-Step,26331,6612.0,2002
+77,Romeo Iván,139004,Movistar Team,39654,6681.0,2003
+78,Barta William,27190,Tudor Pro Cycling Team,39194,6709.0,1996
+79,Craps Lars,94805,Lotto-Intermarché,39318,6913.0,2001
+80,Weiss Fabian,109986,Tudor Pro Cycling Team,39194,6925.0,2002
+81,Porter Rudy,76145,Team Jayco-AlUla,39199,7030.0,2000
+82,Mosca Jacopo,20397,Lidl-Trek,31681,7039.0,1993
+83,Fisher-Black Finn,75998,Red Bull-BORA-hansgrohe,43656,7128.0,2001
+84,Samitier Sergio,46626,Cofidis,44516,7230.0,1995
+85,Alleno Clément,104482,Burgos Burpellet BH,44473,7281.0,2000
+86,Canal Carlos,107572,Movistar Team,39654,7294.0,2001
+87,Martí Pau,172089,NSN Cycling Team,38561,7428.0,2004
+88,Wandahl Frederik,82254,Red Bull-BORA-hansgrohe,43656,7429.0,2001
+89,Houle Hugo,3199,Alpecin-Premier Tech,38373,7575.0,1990
+90,Kruijswijk Steven,730,Team Visma | Lease a Bike,28242,7663.0,1987
+91,Moniquet Sylvain,51348,Cofidis,44516,7936.0,1998
+92,Herrada Jesus,2325,Burgos Burpellet BH,44473,7945.0,1990
+93,Nys Thibau,120686,Lidl-Trek,31681,7953.0,2002
+94,Almeida João,50303,UAE Team Emirates-XRG,25778,7985.0,1998
+95,Thalmann Roland,20401,Tudor Pro Cycling Team,39194,8044.0,1993
+96,Hamilton Lucas,37445,Netcompany INEOS Cycling Team,29252,8045.0,1996
+97,Romele Alessandro,153310,XDS Astana Team,44515,8075.0,2003
+98,Azparren Xabier,65759,Pinarello-Q36.5 Pro Cycling Team,44779,8148.0,1999
+99,Vermeersch Gianni,7964,Red Bull-BORA-hansgrohe,43656,8176.0,1992
+100,Rota Lorenzo,27275,Lotto-Intermarché,39318,8249.0,1995
+101,Dversnes Fredrik,66347,Uno-X Mobility,31698,8346.0,1997
+102,Brennan Matthew,187473,Team Visma | Lease a Bike,28242,8421.0,2005
+103,Schultz Nick,16576,NSN Cycling Team,38561,8454.0,1994
+104,Glivar Gal,114583,Alpecin-Premier Tech,38373,8478.0,2002
+105,Castrillo Pablo,106295,Movistar Team,39654,8537.0,2001
+106,Calzoni Walter,96990,Pinarello-Q36.5 Pro Cycling Team,44779,8561.0,2001
+107,Arcas Jorge,25695,Movistar Team,39654,8629.0,1992
+108,Fedorov Yevgeniy,75603,XDS Astana Team,44515,8742.0,2000
+109,van Bekkum Darren,149518,XDS Astana Team,44515,8789.0,2002
+110,de la Cruz David,7590,Pinarello-Q36.5 Pro Cycling Team,44779,8840.0,1989
+111,Cort Magnus,7695,Uno-X Mobility,31698,8847.0,1993
+112,Tjøtta Martin,101789,Uno-X Mobility,31698,8849.0,2001
+113,Hamilton Chris,42185,Team Picnic PostNL,34179,8861.0,1995
+114,Sosa Ivan,61639,Equipo Kern Pharma,39319,9070.0,1997
+115,Ermakov Roman,115902,Bahrain Victorious,38975,9082.0,2004
+116,Rafferty Darren,129150,EF Education-EasyPost,39797,9138.0,2003
+117,Paasschens Mathijs,38301,Bahrain Victorious,38975,9167.0,1996
+118,Gogl Michael,9894,Alpecin-Premier Tech,38373,9215.0,1993
+119,de Jong Timo,64653,Team Picnic PostNL,34179,9415.0,1999
+120,Coquard Bryan,16752,Cofidis,44516,9449.0,1992
+121,Elosegui Iñigo,46167,Equipo Kern Pharma,39319,9477.0,1998
+122,Wenzel Mats,117614,Equipo Kern Pharma,39319,9550.0,2002
+123,Cobo Ivan,84013,Equipo Kern Pharma,39319,9695.0,2000
+124,Moscon Gianni,28781,Red Bull-BORA-hansgrohe,43656,9862.0,1994
+125,Aular Orluis,37221,Movistar Team,39654,9895.0,1996
+126,Dainese Alberto,71333,Soudal Quick-Step,26331,9993.0,1998
+127,Thornley Callum,176522,Red Bull-BORA-hansgrohe,43656,10062.0,2003
+128,Braet Vito,75468,Lotto-Intermarché,39318,10096.0,2000
+129,Van den Bossche Fabio,76172,Soudal Quick-Step,26331,10173.0,2000
+130,Covi Alessandro,45987,Team Jayco-AlUla,39199,10236.0,1998
+131,Mackellar Alastair,160291,EF Education-EasyPost,39797,10268.0,2002
+132,Laporte Christophe,14737,Team Visma | Lease a Bike,28242,10292.0,1992
+133,Le Gac Olivier,10871,Groupama-FDJ United,39001,10316.0,1993
+134,Tiller Rasmus,37303,Uno-X Mobility,31698,10452.0,1996
+135,Steinhauser Georg,96148,EF Education-EasyPost,39797,10563.0,2001
+136,Chamberlain Oscar,187450,Decathlon CMA CGM Team,40474,10632.0,2005
+137,Renard Alexis,70759,Cofidis,44516,10657.0,1999
+138,Macias Cesar,156105,Burgos Burpellet BH,44473,10672.0,2003
+139,Fernandez Sinuhé,101678,Burgos Burpellet BH,44473,10684.0,2000
+140,Kretschy Moritz,115328,NSN Cycling Team,38561,10810.0,2002
+141,Double Paul,72410,Team Jayco-AlUla,39199,10881.0,1996
+142,Sütterlin Jasha,6414,Team Jayco-AlUla,39199,10897.0,1992
+143,Brustenga Marc,65570,Equipo Kern Pharma,39319,10925.0,1999
+144,Martinez Juan,183888,Team Picnic PostNL,34179,10950.0,2004
+145,Govekar Matevz,82552,Bahrain Victorious,38975,11197.0,2000
+146,De Schuyteneer Steffen,184945,Lotto-Intermarché,39318,11235.0,2005
+147,Oliveira Ivo,37777,UAE Team Emirates-XRG,25778,11559.0,1996
+148,Hellemose Asbjørn,71185,Team Jayco-AlUla,39199,11610.0,1999
+149,Meeus Jordi,45364,Red Bull-BORA-hansgrohe,43656,11653.0,1998
+150,Rouland Louis,119973,Cofidis,44516,11871.0,2002
+151,Novak Domen,27210,UAE Team Emirates-XRG,25778,12156.0,1995
+152,Hayter Ethan,45349,Soudal Quick-Step,26331,12531.0,1998
+153,Roosen Timo,22133,Team Picnic PostNL,34179,12711.0,1993
+154,Peace Oliver,187145,Team Picnic PostNL,34179,12912.0,2005
+155,Norsgaard Mathias Sunekær,38481,Lidl-Trek,31681,14665.0,1997

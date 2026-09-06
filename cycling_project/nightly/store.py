@@ -640,6 +640,26 @@ class FakeStore(_rs.FakeStore):
         self.ledger_dir = self.root / "ledger"
         self.staging_dir = self.root / STAGING_BUCKET
         self._seq: Dict[str, int] = {}
+        self._load_ledger()
+
+    def _load_ledger(self) -> None:
+        """Rows appended by earlier processes (a human approval, a previous run) stay visible."""
+        if not self.ledger_dir.is_dir():
+            return
+        for path in sorted(self.ledger_dir.glob("*.jsonl")):
+            table = path.stem
+            for line in path.read_text(encoding="utf-8").splitlines():
+                if not line.strip():
+                    continue
+                try:
+                    record = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+                self.rows.setdefault(table, []).append(record)
+                try:
+                    self._seq[table] = max(self._seq.get(table, 0), int(record.get("id") or 0))
+                except (TypeError, ValueError):
+                    pass
 
     # -- helpers --------------------------------------------------------------
     def _deny(self, msg: str) -> None:

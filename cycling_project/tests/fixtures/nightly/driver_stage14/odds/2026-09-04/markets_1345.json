@@ -1,0 +1,1514 @@
+{
+ "1028797734": {
+  "event_name": "Etappe 14 (Ronde van Spanje 2026)",
+  "start": "2026-09-05T11:33:00Z",
+  "betoffers": [
+   {
+    "betoffer_id": 2688324174,
+    "criterion": "Winnaar",
+    "bet_offer_type": "Winnaar",
+    "outcomes": [
+     {
+      "name": "Andreas Kron",
+      "label": "Andreas Kron",
+      "odds": 301.0,
+      "implied": 0.0033222591362126247,
+      "devig": 0.0021455153501728367
+     },
+     {
+      "name": "Andreas Leknessund",
+      "label": "Andreas Leknessund",
+      "odds": 151.0,
+      "implied": 0.006622516556291391,
+      "devig": 0.004276821989417376
+     },
+     {
+      "name": "Attila Valter",
+      "label": "Attila Valter",
+      "odds": 401.0,
+      "implied": 0.0024937655860349127,
+      "devig": 0.0016104741157157703
+     },
+     {
+      "name": "Bruno Armirail",
+      "label": "Bruno Armirail",
+      "odds": 301.0,
+      "implied": 0.0033222591362126247,
+      "devig": 0.0021455153501728367
+     },
+     {
+      "name": "Carlos Rodriguez",
+      "label": "Carlos Rodriguez",
+      "odds": 67.0,
+      "implied": 0.014925373134328358,
+      "devig": 0.009638807767194385
+     },
+     {
+      "name": "Cl\u00e9ment Berthet",
+      "label": "Cl\u00e9ment Berthet",
+      "odds": 41.0,
+      "implied": 0.024390243902439025,
+      "devig": 0.01575122244882985
+     },
+     {
+      "name": "Cristian Rodriguez",
+      "label": "Cristian Rodriguez",
+      "odds": 19.0,
+      "implied": 0.05263157894736842,
+      "devig": 0.033989480021159146
+     },
+     {
+      "name": "Darren Rafferty",
+      "label": "Darren Rafferty",
+      "odds": 501.0,
+      "implied": 0.001996007984031936,
+      "devig": 0.001289022196411225
+     },
+     {
+      "name": "David de la Cruz",
+      "label": "David de la Cruz",
+      "odds": 301.0,
+      "implied": 0.0033222591362126247,
+      "devig": 0.0021455153501728367
+     },
+     {
+      "name": "Domen Novak",
+      "label": "Domen Novak",
+      "odds": 501.0,
+      "implied": 0.001996007984031936,
+      "devig": 0.001289022196411225
+     },
+     {
+      "name": "Eddie Dunbar",
+      "label": "Eddie Dunbar",
+      "odds": 126.0,
+      "implied": 0.007936507936507936,
+      "devig": 0.005125397780968443
+     },
+     {
+      "name": "Emanuel Buchmann",
+      "label": "Emanuel Buchmann",
+      "odds": 501.0,
+      "implied": 0.001996007984031936,
+      "devig": 0.001289022196411225
+     },
+     {
+      "name": "Embret Svestad-B\u00e5rdseng",
+      "label": "Embret Svestad-B\u00e5rdseng",
+      "odds": 151.0,
+      "implied": 0.006622516556291391,
+      "devig": 0.004276821989417376
+     },
+     {
+      "name": "Enric Mas",
+      "label": "Enric Mas",
+      "odds": 3.75,
+      "implied": 0.26666666666666666,
+      "devig": 0.1722133654405397
+     },
+     {
+      "name": "Felix Gall",
+      "label": "Felix Gall",
+      "odds": 13.0,
+      "implied": 0.07692307692307693,
+      "devig": 0.049676932338617225
+     },
+     {
+      "name": "Filippo Zana",
+      "label": "Filippo Zana",
+      "odds": 81.0,
+      "implied": 0.012345679012345678,
+      "devig": 0.007972840992617579
+     },
+     {
+      "name": "Finlay Pickering",
+      "label": "Finlay Pickering",
+      "odds": 201.0,
+      "implied": 0.004975124378109453,
+      "devig": 0.0032129359223981285
+     },
+     {
+      "name": "Finn Fisher-Black",
+      "label": "Finn Fisher-Black",
+      "odds": 501.0,
+      "implied": 0.001996007984031936,
+      "devig": 0.001289022196411225
+     },
+     {
+      "name": "Georg Steinhauser",
+      "label": "Georg Steinhauser",
+      "odds": 151.0,
+      "implied": 0.006622516556291391,
+      "devig": 0.004276821989417376
+     },
+     {
+      "name": "Gianmarco Garofoli",
+      "label": "Gianmarco Garofoli",
+      "odds": 301.0,
+      "implied": 0.0033222591362126247,
+      "devig": 0.0021455153501728367
+     },
+     {
+      "name": "Gijs Leemreize",
+      "label": "Gijs Leemreize",
+      "odds": 301.0,
+      "implied": 0.0033222591362126247,
+      "devig": 0.0021455153501728367
+     },
+     {
+      "name": "Guillaume Martin",
+      "label": "Guillaume Martin",
+      "odds": 401.0,
+      "implied": 0.0024937655860349127,
+      "devig": 0.0016104741157157703
+     },
+     {
+      "name": "Harold Tejada",
+      "label": "Harold Tejada",
+      "odds": 51.0,
+      "implied": 0.0196078431372549,
+      "devig": 0.012662747458863213
+     },
+     {
+      "name": "Hugo Houle",
+      "label": "Hugo Houle",
+      "odds": 601.0,
+      "implied": 0.0016638935108153079,
+      "devig": 0.001074542629620672
+     },
+     {
+      "name": "Ibon Ruiz",
+      "label": "Ibon Ruiz",
+      "odds": 201.0,
+      "implied": 0.004975124378109453,
+      "devig": 0.0032129359223981285
+     },
+     {
+      "name": "Ivan Ramiro Sosa",
+      "label": "Ivan Ramiro Sosa",
+      "odds": 51.0,
+      "implied": 0.0196078431372549,
+      "devig": 0.012662747458863213
+     },
+     {
+      "name": "Iv\u00e1n Romeo",
+      "label": "Iv\u00e1n Romeo",
+      "odds": 201.0,
+      "implied": 0.004975124378109453,
+      "devig": 0.0032129359223981285
+     },
+     {
+      "name": "Jack Haig",
+      "label": "Jack Haig",
+      "odds": 151.0,
+      "implied": 0.006622516556291391,
+      "devig": 0.004276821989417376
+     },
+     {
+      "name": "Jakob Omrzel",
+      "label": "Jakob Omrzel",
+      "odds": 29.0,
+      "implied": 0.034482758620689655,
+      "devig": 0.022268969669035306
+     },
+     {
+      "name": "James Shaw",
+      "label": "James Shaw",
+      "odds": 601.0,
+      "implied": 0.0016638935108153079,
+      "devig": 0.001074542629620672
+     },
+     {
+      "name": "Jan Hirt",
+      "label": "Jan Hirt",
+      "odds": 201.0,
+      "implied": 0.004975124378109453,
+      "devig": 0.0032129359223981285
+     },
+     {
+      "name": "Jarno Widar",
+      "label": "Jarno Widar",
+      "odds": 13.0,
+      "implied": 0.07692307692307693,
+      "devig": 0.049676932338617225
+     },
+     {
+      "name": "Jesus Herrada",
+      "label": "Jesus Herrada",
+      "odds": 301.0,
+      "implied": 0.0033222591362126247,
+      "devig": 0.0021455153501728367
+     },
+     {
+      "name": "Jose Manuel Diaz",
+      "label": "Jose Manuel Diaz",
+      "odds": 101.0,
+      "implied": 0.009900990099009901,
+      "devig": 0.006394060598039841
+     },
+     {
+      "name": "Jo\u00e3o Almeida",
+      "label": "Jo\u00e3o Almeida",
+      "odds": 26.0,
+      "implied": 0.038461538461538464,
+      "devig": 0.024838466169308612
+     },
+     {
+      "name": "Juan Felipe Rodriguez",
+      "label": "Juan Felipe Rodriguez",
+      "odds": 41.0,
+      "implied": 0.024390243902439025,
+      "devig": 0.01575122244882985
+     },
+     {
+      "name": "Juan Guillermo Mart\u00ednez",
+      "label": "Juan Guillermo Mart\u00ednez",
+      "odds": 601.0,
+      "implied": 0.0016638935108153079,
+      "devig": 0.001074542629620672
+     },
+     {
+      "name": "Julien Bernard",
+      "label": "Julien Bernard",
+      "odds": 601.0,
+      "implied": 0.0016638935108153079,
+      "devig": 0.001074542629620672
+     },
+     {
+      "name": "J\u00f8rgen Nordhagen",
+      "label": "J\u00f8rgen Nordhagen",
+      "odds": 51.0,
+      "implied": 0.0196078431372549,
+      "devig": 0.012662747458863213
+     },
+     {
+      "name": "Kevin Vermaerke",
+      "label": "Kevin Vermaerke",
+      "odds": 51.0,
+      "implied": 0.0196078431372549,
+      "devig": 0.012662747458863213
+     },
+     {
+      "name": "Koen Bouwman",
+      "label": "Koen Bouwman",
+      "odds": 201.0,
+      "implied": 0.004975124378109453,
+      "devig": 0.0032129359223981285
+     },
+     {
+      "name": "Larry Warbasse",
+      "label": "Larry Warbasse",
+      "odds": 601.0,
+      "implied": 0.0016638935108153079,
+      "devig": 0.001074542629620672
+     },
+     {
+      "name": "Lars Craps",
+      "label": "Lars Craps",
+      "odds": 301.0,
+      "implied": 0.0033222591362126247,
+      "devig": 0.0021455153501728367
+     },
+     {
+      "name": "Lennard Kamna",
+      "label": "Lennard Kamna",
+      "odds": 301.0,
+      "implied": 0.0033222591362126247,
+      "devig": 0.0021455153501728367
+     },
+     {
+      "name": "Lorenzo Fortunato",
+      "label": "Lorenzo Fortunato",
+      "odds": 26.0,
+      "implied": 0.038461538461538464,
+      "devig": 0.024838466169308612
+     },
+     {
+      "name": "Luke Tuckwell",
+      "label": "Luke Tuckwell",
+      "odds": 81.0,
+      "implied": 0.012345679012345678,
+      "devig": 0.007972840992617579
+     },
+     {
+      "name": "L\u00e9o Bisiaux",
+      "label": "L\u00e9o Bisiaux",
+      "odds": 34.0,
+      "implied": 0.029411764705882353,
+      "devig": 0.01899412118829482
+     },
+     {
+      "name": "Marcel Camprub\u00ed",
+      "label": "Marcel Camprub\u00ed",
+      "odds": 151.0,
+      "implied": 0.006622516556291391,
+      "devig": 0.004276821989417376
+     },
+     {
+      "name": "Marco Brenner",
+      "label": "Marco Brenner",
+      "odds": 201.0,
+      "implied": 0.004975124378109453,
+      "devig": 0.0032129359223981285
+     },
+     {
+      "name": "Mario Aparicio",
+      "label": "Mario Aparicio",
+      "odds": 401.0,
+      "implied": 0.0024937655860349127,
+      "devig": 0.0016104741157157703
+     },
+     {
+      "name": "Martin Tjotta",
+      "label": "Martin Tjotta",
+      "odds": 501.0,
+      "implied": 0.001996007984031936,
+      "devig": 0.001289022196411225
+     },
+     {
+      "name": "Mats Wenzel",
+      "label": "Mats Wenzel",
+      "odds": 601.0,
+      "implied": 0.0016638935108153079,
+      "devig": 0.001074542629620672
+     },
+     {
+      "name": "Matthew Riccitello",
+      "label": "Matthew Riccitello",
+      "odds": 67.0,
+      "implied": 0.014925373134328358,
+      "devig": 0.009638807767194385
+     },
+     {
+      "name": "Mattias Skjelmose",
+      "label": "Mattias Skjelmose",
+      "odds": 67.0,
+      "implied": 0.014925373134328358,
+      "devig": 0.009638807767194385
+     },
+     {
+      "name": "Mauri Vansevenant",
+      "label": "Mauri Vansevenant",
+      "odds": 101.0,
+      "implied": 0.009900990099009901,
+      "devig": 0.006394060598039841
+     },
+     {
+      "name": "Mikel Landa",
+      "label": "Mikel Landa",
+      "odds": 81.0,
+      "implied": 0.012345679012345678,
+      "devig": 0.007972840992617579
+     },
+     {
+      "name": "Milan Vader",
+      "label": "Milan Vader",
+      "odds": 301.0,
+      "implied": 0.0033222591362126247,
+      "devig": 0.0021455153501728367
+     },
+     {
+      "name": "Oscar Onley",
+      "label": "Oscar Onley",
+      "odds": 19.0,
+      "implied": 0.05263157894736842,
+      "devig": 0.033989480021159146
+     },
+     {
+      "name": "Pablo Castrillo",
+      "label": "Pablo Castrillo",
+      "odds": 151.0,
+      "implied": 0.006622516556291391,
+      "devig": 0.004276821989417376
+     },
+     {
+      "name": "Patrick Konrad",
+      "label": "Patrick Konrad",
+      "odds": 301.0,
+      "implied": 0.0033222591362126247,
+      "devig": 0.0021455153501728367
+     },
+     {
+      "name": "Pau Mart\u00ed",
+      "label": "Pau Mart\u00ed",
+      "odds": 601.0,
+      "implied": 0.0016638935108153079,
+      "devig": 0.001074542629620672
+     },
+     {
+      "name": "Paul Double",
+      "label": "Paul Double",
+      "odds": 201.0,
+      "implied": 0.004975124378109453,
+      "devig": 0.0032129359223981285
+     },
+     {
+      "name": "Pello Bilbao",
+      "label": "Pello Bilbao",
+      "odds": 126.0,
+      "implied": 0.007936507936507936,
+      "devig": 0.005125397780968443
+     },
+     {
+      "name": "Primoz Roglic",
+      "label": "Primoz Roglic",
+      "odds": 21.0,
+      "implied": 0.047619047619047616,
+      "devig": 0.030752386685810658
+     },
+     {
+      "name": "Ramses Debruyne",
+      "label": "Ramses Debruyne",
+      "odds": 81.0,
+      "implied": 0.012345679012345678,
+      "devig": 0.007972840992617579
+     },
+     {
+      "name": "Ra\u00fal Garc\u00eda Pierna",
+      "label": "Ra\u00fal Garc\u00eda Pierna",
+      "odds": 201.0,
+      "implied": 0.004975124378109453,
+      "devig": 0.0032129359223981285
+     },
+     {
+      "name": "Richard Carapaz",
+      "label": "Richard Carapaz",
+      "odds": 19.0,
+      "implied": 0.05263157894736842,
+      "devig": 0.033989480021159146
+     },
+     {
+      "name": "R\u00e9my Rochas",
+      "label": "R\u00e9my Rochas",
+      "odds": 301.0,
+      "implied": 0.0033222591362126247,
+      "devig": 0.0021455153501728367
+     },
+     {
+      "name": "Santiago Buitrago",
+      "label": "Santiago Buitrago",
+      "odds": 6.5,
+      "implied": 0.15384615384615385,
+      "devig": 0.09935386467723445
+     },
+     {
+      "name": "Sepp Kuss",
+      "label": "Sepp Kuss",
+      "odds": 13.0,
+      "implied": 0.07692307692307693,
+      "devig": 0.049676932338617225
+     },
+     {
+      "name": "Simon Dalby",
+      "label": "Simon Dalby",
+      "odds": 151.0,
+      "implied": 0.006622516556291391,
+      "devig": 0.004276821989417376
+     },
+     {
+      "name": "Steven Kruijswijk",
+      "label": "Steven Kruijswijk",
+      "odds": 601.0,
+      "implied": 0.0016638935108153079,
+      "devig": 0.001074542629620672
+     },
+     {
+      "name": "Thibau Nys",
+      "label": "Thibau Nys",
+      "odds": 601.0,
+      "implied": 0.0016638935108153079,
+      "devig": 0.001074542629620672
+     },
+     {
+      "name": "Thomas Gloag",
+      "label": "Thomas Gloag",
+      "odds": 301.0,
+      "implied": 0.0033222591362126247,
+      "devig": 0.0021455153501728367
+     },
+     {
+      "name": "Tobias Halland Johannessen",
+      "label": "Tobias Halland Johannessen",
+      "odds": 26.0,
+      "implied": 0.038461538461538464,
+      "devig": 0.024838466169308612
+     },
+     {
+      "name": "Urko Berrade",
+      "label": "Urko Berrade",
+      "odds": 29.0,
+      "implied": 0.034482758620689655,
+      "devig": 0.022268969669035306
+     },
+     {
+      "name": "Valentin Madouas",
+      "label": "Valentin Madouas",
+      "odds": 301.0,
+      "implied": 0.0033222591362126247,
+      "devig": 0.0021455153501728367
+     },
+     {
+      "name": "Valentin Paret-Peintre",
+      "label": "Valentin Paret-Peintre",
+      "odds": 23.0,
+      "implied": 0.043478260869565216,
+      "devig": 0.02807826610443582
+     },
+     {
+      "name": "Vincenzo Albanese",
+      "label": "Vincenzo Albanese",
+      "odds": 601.0,
+      "implied": 0.0016638935108153079,
+      "devig": 0.001074542629620672
+     },
+     {
+      "name": "Walter Calzoni",
+      "label": "Walter Calzoni",
+      "odds": 301.0,
+      "implied": 0.0033222591362126247,
+      "devig": 0.0021455153501728367
+     },
+     {
+      "name": "Will Barta",
+      "label": "Will Barta",
+      "odds": 501.0,
+      "implied": 0.001996007984031936,
+      "devig": 0.001289022196411225
+     },
+     {
+      "name": "Wout Van Aert",
+      "label": "Wout Van Aert",
+      "odds": 151.0,
+      "implied": 0.006622516556291391,
+      "devig": 0.004276821989417376
+     },
+     {
+      "name": "Xabier Mikel Azparren",
+      "label": "Xabier Mikel Azparren",
+      "odds": 501.0,
+      "implied": 0.001996007984031936,
+      "devig": 0.001289022196411225
+     }
+    ],
+    "book_sum": 1.0,
+    "overround": 1.5485
+   }
+  ]
+ },
+ "1028635359": {
+  "event_name": "Algemeen Klassement (Ronde van Spanje 2026)",
+  "start": "2026-09-13T14:23:00Z",
+  "betoffers": [
+   {
+    "betoffer_id": 2676596111,
+    "criterion": "Winnaar",
+    "bet_offer_type": "Winnaar",
+    "outcomes": [
+     {
+      "name": "Cl\u00e9ment Berthet",
+      "label": "Cl\u00e9ment Berthet",
+      "odds": 1001.0,
+      "implied": 0.000999000999000999,
+      "devig": 0.0008214525826857459
+     },
+     {
+      "name": "Cristian Rodriguez",
+      "label": "Cristian Rodriguez",
+      "odds": 401.0,
+      "implied": 0.0024937655860349127,
+      "devig": 0.002050558691442473
+     },
+     {
+      "name": "Enric Mas",
+      "label": "Enric Mas",
+      "odds": 1.28,
+      "implied": 0.78125,
+      "devig": 0.6424015900534622
+     },
+     {
+      "name": "Felix Gall",
+      "label": "Felix Gall",
+      "odds": 13.0,
+      "implied": 0.07692307692307693,
+      "devig": 0.06325184886680243
+     },
+     {
+      "name": "Guillaume Martin",
+      "label": "Guillaume Martin",
+      "odds": 1501.0,
+      "implied": 0.0006662225183211193,
+      "devig": 0.0005478174785266034
+     },
+     {
+      "name": "Harold Tejada",
+      "label": "Harold Tejada",
+      "odds": 251.0,
+      "implied": 0.00398406374501992,
+      "devig": 0.0032759921723841895
+     },
+     {
+      "name": "Jarno Widar",
+      "label": "Jarno Widar",
+      "odds": 1001.0,
+      "implied": 0.000999000999000999,
+      "devig": 0.0008214525826857459
+     },
+     {
+      "name": "Jo\u00e3o Almeida",
+      "label": "Jo\u00e3o Almeida",
+      "odds": 3001.0,
+      "implied": 0.0003332222592469177,
+      "devig": 0.00027400001175222646
+     },
+     {
+      "name": "L\u00e9o Bisiaux",
+      "label": "L\u00e9o Bisiaux",
+      "odds": 1001.0,
+      "implied": 0.000999000999000999,
+      "devig": 0.0008214525826857459
+     },
+     {
+      "name": "Matthew Riccitello",
+      "label": "Matthew Riccitello",
+      "odds": 601.0,
+      "implied": 0.0016638935108153079,
+      "devig": 0.001368176431395061
+     },
+     {
+      "name": "Mattias Skjelmose",
+      "label": "Mattias Skjelmose",
+      "odds": 51.0,
+      "implied": 0.0196078431372549,
+      "devig": 0.01612302029938101
+     },
+     {
+      "name": "Primoz Roglic",
+      "label": "Primoz Roglic",
+      "odds": 4.5,
+      "implied": 0.2222222222222222,
+      "devig": 0.1827275633929848
+     },
+     {
+      "name": "Oscar Onley",
+      "label": "Oscar Onley",
+      "odds": 26.0,
+      "implied": 0.038461538461538464,
+      "devig": 0.03162592443340122
+     },
+     {
+      "name": "Santiago Buitrago",
+      "label": "Santiago Buitrago",
+      "odds": 1501.0,
+      "implied": 0.0006662225183211193,
+      "devig": 0.0005478174785266034
+     },
+     {
+      "name": "Sepp Kuss",
+      "label": "Sepp Kuss",
+      "odds": 101.0,
+      "implied": 0.009900990099009901,
+      "devig": 0.00814132708186566
+     },
+     {
+      "name": "Ibon Ruiz",
+      "label": "Ibon Ruiz",
+      "odds": 4001.0,
+      "implied": 0.00024993751562109475,
+      "devig": 0.00020551712953472423
+     },
+     {
+      "name": "Richard Carapaz",
+      "label": "Richard Carapaz",
+      "odds": 26.0,
+      "implied": 0.038461538461538464,
+      "devig": 0.03162592443340122
+     },
+     {
+      "name": "Jakob Omrzel",
+      "label": "Jakob Omrzel",
+      "odds": 67.0,
+      "implied": 0.014925373134328358,
+      "devig": 0.012272746795051219
+     },
+     {
+      "name": "Juan Felipe Rodriguez",
+      "label": "Juan Felipe Rodriguez",
+      "odds": 1501.0,
+      "implied": 0.0006662225183211193,
+      "devig": 0.0005478174785266034
+     },
+     {
+      "name": "Ramses Debruyne",
+      "label": "Ramses Debruyne",
+      "odds": 3001.0,
+      "implied": 0.0003332222592469177,
+      "devig": 0.00027400001175222646
+     },
+     {
+      "name": "Tobias Halland Johannessen",
+      "label": "Tobias Halland Johannessen",
+      "odds": 3001.0,
+      "implied": 0.0003332222592469177,
+      "devig": 0.00027400001175222646
+     }
+    ],
+    "book_sum": 1.0,
+    "overround": 1.2161
+   },
+   {
+    "betoffer_id": 2681632857,
+    "criterion": "Winnaar",
+    "bet_offer_type": "(1-3)",
+    "outcomes": [
+     {
+      "name": "Enric Mas",
+      "label": "Enric Mas",
+      "odds": 1.08,
+      "implied": 0.9259259259259259,
+      "devig": 0.7966772558021271
+     },
+     {
+      "name": "Felix Gall",
+      "label": "Felix Gall",
+      "odds": 1.16,
+      "implied": 0.8620689655172413,
+      "devig": 0.7417339967812907
+     },
+     {
+      "name": "Oscar Onley",
+      "label": "Oscar Onley",
+      "odds": 5.5,
+      "implied": 0.18181818181818182,
+      "devig": 0.1564384429575086
+     },
+     {
+      "name": "Jo\u00e3o Almeida",
+      "label": "Jo\u00e3o Almeida",
+      "odds": 501.0,
+      "implied": 0.001996007984031936,
+      "devig": 0.0017173880963399146
+     },
+     {
+      "name": "Mattias Skjelmose",
+      "label": "Mattias Skjelmose",
+      "odds": 7.5,
+      "implied": 0.13333333333333333,
+      "devig": 0.11472152483550631
+     },
+     {
+      "name": "Primoz Roglic",
+      "label": "Primoz Roglic",
+      "odds": 1.11,
+      "implied": 0.9009009009009009,
+      "devig": 0.7751454380777453
+     },
+     {
+      "name": "Matthew Riccitello",
+      "label": "Matthew Riccitello",
+      "odds": 151.0,
+      "implied": 0.006622516556291391,
+      "devig": 0.0056980889818960085
+     },
+     {
+      "name": "L\u00e9o Bisiaux",
+      "label": "L\u00e9o Bisiaux",
+      "odds": 201.0,
+      "implied": 0.004975124378109453,
+      "devig": 0.004280653911772623
+     },
+     {
+      "name": "Sepp Kuss",
+      "label": "Sepp Kuss",
+      "odds": 21.0,
+      "implied": 0.047619047619047616,
+      "devig": 0.040971973155537966
+     },
+     {
+      "name": "Cristian Rodriguez",
+      "label": "Cristian Rodriguez",
+      "odds": 51.0,
+      "implied": 0.0196078431372549,
+      "devig": 0.01687081247580975
+     },
+     {
+      "name": "Santiago Buitrago",
+      "label": "Santiago Buitrago",
+      "odds": 401.0,
+      "implied": 0.0024937655860349127,
+      "devig": 0.002145664429591764
+     },
+     {
+      "name": "Harold Tejada",
+      "label": "Harold Tejada",
+      "odds": 34.0,
+      "implied": 0.029411764705882353,
+      "devig": 0.025306218713714627
+     },
+     {
+      "name": "Jarno Widar",
+      "label": "Jarno Widar",
+      "odds": 151.0,
+      "implied": 0.006622516556291391,
+      "devig": 0.0056980889818960085
+     },
+     {
+      "name": "Cl\u00e9ment Berthet",
+      "label": "Cl\u00e9ment Berthet",
+      "odds": 101.0,
+      "implied": 0.009900990099009901,
+      "devig": 0.008518925111547497
+     },
+     {
+      "name": "Guillaume Martin",
+      "label": "Guillaume Martin",
+      "odds": 201.0,
+      "implied": 0.004975124378109453,
+      "devig": 0.004280653911772623
+     },
+     {
+      "name": "Ibon Ruiz",
+      "label": "Ibon Ruiz",
+      "odds": 801.0,
+      "implied": 0.0012484394506866417,
+      "devig": 0.0010741715808568007
+     },
+     {
+      "name": "Richard Carapaz",
+      "label": "Richard Carapaz",
+      "odds": 4.5,
+      "implied": 0.2222222222222222,
+      "devig": 0.19120254139251047
+     },
+     {
+      "name": "Jakob Omrzel",
+      "label": "Jakob Omrzel",
+      "odds": 8.5,
+      "implied": 0.11764705882352941,
+      "devig": 0.10122487485485851
+     },
+     {
+      "name": "Juan Felipe Rodriguez",
+      "label": "Juan Felipe Rodriguez",
+      "odds": 301.0,
+      "implied": 0.0033222591362126247,
+      "devig": 0.0028585097550375325
+     },
+     {
+      "name": "Ramses Debruyne",
+      "label": "Ramses Debruyne",
+      "odds": 501.0,
+      "implied": 0.001996007984031936,
+      "devig": 0.0017173880963399146
+     },
+     {
+      "name": "Tobias Halland Johannessen",
+      "label": "Tobias Halland Johannessen",
+      "odds": 501.0,
+      "implied": 0.001996007984031936,
+      "devig": 0.0017173880963399146
+     }
+    ],
+    "book_sum": 3.0,
+    "overround": 1.1622
+   }
+  ]
+ },
+ "1028797618": {
+  "event_name": "Bergklassement (Ronde van Spanje 2026)",
+  "start": "2026-09-13T14:23:00Z",
+  "betoffers": [
+   {
+    "betoffer_id": 2681648142,
+    "criterion": "Winnaar",
+    "bet_offer_type": "Winnaar",
+    "outcomes": [
+     {
+      "name": "Andreas Kron",
+      "label": "Andreas Kron",
+      "odds": 1001.0,
+      "implied": 0.000999000999000999,
+      "devig": 0.0007484931605833643
+     },
+     {
+      "name": "Andreas Leknessund",
+      "label": "Andreas Leknessund",
+      "odds": 101.0,
+      "implied": 0.009900990099009901,
+      "devig": 0.007418234195484631
+     },
+     {
+      "name": "Carlos Rodriguez",
+      "label": "Carlos Rodriguez",
+      "odds": 501.0,
+      "implied": 0.001996007984031936,
+      "devig": 0.001495492322842211
+     },
+     {
+      "name": "Cl\u00e9ment Berthet",
+      "label": "Cl\u00e9ment Berthet",
+      "odds": 301.0,
+      "implied": 0.0033222591362126247,
+      "devig": 0.0024891749293818864
+     },
+     {
+      "name": "Cristian Rodriguez",
+      "label": "Cristian Rodriguez",
+      "odds": 81.0,
+      "implied": 0.012345679012345678,
+      "devig": 0.009249896959801824
+     },
+     {
+      "name": "Enric Mas",
+      "label": "Enric Mas",
+      "odds": 6.0,
+      "implied": 0.16666666666666666,
+      "devig": 0.12487360895732462
+     },
+     {
+      "name": "Felix Gall",
+      "label": "Felix Gall",
+      "odds": 51.0,
+      "implied": 0.0196078431372549,
+      "devig": 0.01469101281850878
+     },
+     {
+      "name": "Filippo Zana",
+      "label": "Filippo Zana",
+      "odds": 301.0,
+      "implied": 0.0033222591362126247,
+      "devig": 0.0024891749293818864
+     },
+     {
+      "name": "Gregor M\u00fchlberger",
+      "label": "Gregor M\u00fchlberger",
+      "odds": 301.0,
+      "implied": 0.0033222591362126247,
+      "devig": 0.0024891749293818864
+     },
+     {
+      "name": "Harold Tejada",
+      "label": "Harold Tejada",
+      "odds": 201.0,
+      "implied": 0.004975124378109453,
+      "devig": 0.003727570416636556
+     },
+     {
+      "name": "Ivan Ramiro Sosa",
+      "label": "Ivan Ramiro Sosa",
+      "odds": 301.0,
+      "implied": 0.0033222591362126247,
+      "devig": 0.0024891749293818864
+     },
+     {
+      "name": "Jan Hirt",
+      "label": "Jan Hirt",
+      "odds": 501.0,
+      "implied": 0.001996007984031936,
+      "devig": 0.001495492322842211
+     },
+     {
+      "name": "Jarno Widar",
+      "label": "Jarno Widar",
+      "odds": 81.0,
+      "implied": 0.012345679012345678,
+      "devig": 0.009249896959801824
+     },
+     {
+      "name": "Jo\u00e3o Almeida",
+      "label": "Jo\u00e3o Almeida",
+      "odds": 201.0,
+      "implied": 0.004975124378109453,
+      "devig": 0.003727570416636556
+     },
+     {
+      "name": "J\u00f8rgen Nordhagen",
+      "label": "J\u00f8rgen Nordhagen",
+      "odds": 801.0,
+      "implied": 0.0012484394506866417,
+      "devig": 0.0009353828386316451
+     },
+     {
+      "name": "Kevin Vermaerke",
+      "label": "Kevin Vermaerke",
+      "odds": 501.0,
+      "implied": 0.001996007984031936,
+      "devig": 0.001495492322842211
+     },
+     {
+      "name": "Koen Bouwman",
+      "label": "Koen Bouwman",
+      "odds": 801.0,
+      "implied": 0.0012484394506866417,
+      "devig": 0.0009353828386316451
+     },
+     {
+      "name": "Lorenzo Fortunato",
+      "label": "Lorenzo Fortunato",
+      "odds": 19.0,
+      "implied": 0.05263157894736842,
+      "devig": 0.039433771249681455
+     },
+     {
+      "name": "L\u00e9o Bisiaux",
+      "label": "L\u00e9o Bisiaux",
+      "odds": 301.0,
+      "implied": 0.0033222591362126247,
+      "devig": 0.0024891749293818864
+     },
+     {
+      "name": "Marco Brenner",
+      "label": "Marco Brenner",
+      "odds": 501.0,
+      "implied": 0.001996007984031936,
+      "devig": 0.001495492322842211
+     },
+     {
+      "name": "Matthew Riccitello",
+      "label": "Matthew Riccitello",
+      "odds": 201.0,
+      "implied": 0.004975124378109453,
+      "devig": 0.003727570416636556
+     },
+     {
+      "name": "Mattias Skjelmose",
+      "label": "Mattias Skjelmose",
+      "odds": 151.0,
+      "implied": 0.006622516556291391,
+      "devig": 0.004961865256582435
+     },
+     {
+      "name": "Mikel Landa",
+      "label": "Mikel Landa",
+      "odds": 301.0,
+      "implied": 0.0033222591362126247,
+      "devig": 0.0024891749293818864
+     },
+     {
+      "name": "Oscar Onley",
+      "label": "Oscar Onley",
+      "odds": 101.0,
+      "implied": 0.009900990099009901,
+      "devig": 0.007418234195484631
+     },
+     {
+      "name": "Pablo Castrillo",
+      "label": "Pablo Castrillo",
+      "odds": 801.0,
+      "implied": 0.0012484394506866417,
+      "devig": 0.0009353828386316451
+     },
+     {
+      "name": "Paul Double",
+      "label": "Paul Double",
+      "odds": 301.0,
+      "implied": 0.0033222591362126247,
+      "devig": 0.0024891749293818864
+     },
+     {
+      "name": "Primoz Roglic",
+      "label": "Primoz Roglic",
+      "odds": 151.0,
+      "implied": 0.006622516556291391,
+      "devig": 0.004961865256582435
+     },
+     {
+      "name": "Ramses Debruyne",
+      "label": "Ramses Debruyne",
+      "odds": 301.0,
+      "implied": 0.0033222591362126247,
+      "devig": 0.0024891749293818864
+     },
+     {
+      "name": "Richard Carapaz",
+      "label": "Richard Carapaz",
+      "odds": 51.0,
+      "implied": 0.0196078431372549,
+      "devig": 0.01469101281850878
+     },
+     {
+      "name": "Santiago Buitrago",
+      "label": "Santiago Buitrago",
+      "odds": 1.4,
+      "implied": 0.7142857142857143,
+      "devig": 0.5351726098171056
+     },
+     {
+      "name": "Sepp Kuss",
+      "label": "Sepp Kuss",
+      "odds": 81.0,
+      "implied": 0.012345679012345678,
+      "devig": 0.009249896959801824
+     },
+     {
+      "name": "Tobias Halland Johannessen",
+      "label": "Tobias Halland Johannessen",
+      "odds": 101.0,
+      "implied": 0.009900990099009901,
+      "devig": 0.007418234195484631
+     },
+     {
+      "name": "Valentin Paret-Peintre",
+      "label": "Valentin Paret-Peintre",
+      "odds": 201.0,
+      "implied": 0.004975124378109453,
+      "devig": 0.003727570416636556
+     },
+     {
+      "name": "Walter Calzoni",
+      "label": "Walter Calzoni",
+      "odds": 201.0,
+      "implied": 0.004975124378109453,
+      "devig": 0.003727570416636556
+     },
+     {
+      "name": "Wout Van Aert",
+      "label": "Wout Van Aert",
+      "odds": 5.0,
+      "implied": 0.2,
+      "devig": 0.14984833074878956
+     },
+     {
+      "name": "Eddie Dunbar",
+      "label": "Eddie Dunbar",
+      "odds": 801.0,
+      "implied": 0.0012484394506866417,
+      "devig": 0.0009353828386316451
+     },
+     {
+      "name": "Jakob Omrzel",
+      "label": "Jakob Omrzel",
+      "odds": 101.0,
+      "implied": 0.009900990099009901,
+      "devig": 0.007418234195484631
+     },
+     {
+      "name": "Juan Felipe Rodriguez",
+      "label": "Juan Felipe Rodriguez",
+      "odds": 301.0,
+      "implied": 0.0033222591362126247,
+      "devig": 0.0024891749293818864
+     },
+     {
+      "name": "Marcel Camprub\u00ed",
+      "label": "Marcel Camprub\u00ed",
+      "odds": 501.0,
+      "implied": 0.001996007984031936,
+      "devig": 0.001495492322842211
+     },
+     {
+      "name": "Pello Bilbao",
+      "label": "Pello Bilbao",
+      "odds": 801.0,
+      "implied": 0.0012484394506866417,
+      "devig": 0.0009353828386316451
+     }
+    ],
+    "book_sum": 1.0,
+    "overround": 1.3347
+   }
+  ]
+ },
+ "1028797617": {
+  "event_name": "Jongerenklassement (Ronde van Spanje 2026)",
+  "start": "2026-09-13T14:23:00Z",
+  "betoffers": [
+   {
+    "betoffer_id": 2681638947,
+    "criterion": "Winnaar",
+    "bet_offer_type": "Winnaar",
+    "outcomes": [
+     {
+      "name": "Finlay Pickering",
+      "label": "Finlay Pickering",
+      "odds": 101.0,
+      "implied": 0.009900990099009901,
+      "devig": 0.00810867636571353
+     },
+     {
+      "name": "Iv\u00e1n Romeo",
+      "label": "Iv\u00e1n Romeo",
+      "odds": 1501.0,
+      "implied": 0.0006662225183211193,
+      "devig": 0.0005456204616502775
+     },
+     {
+      "name": "Jarno Widar",
+      "label": "Jarno Widar",
+      "odds": 26.0,
+      "implied": 0.038461538461538464,
+      "devig": 0.031499088959117946
+     },
+     {
+      "name": "J\u00f8rgen Nordhagen",
+      "label": "J\u00f8rgen Nordhagen",
+      "odds": 801.0,
+      "implied": 0.0012484394506866417,
+      "devig": 0.0010224423382485224
+     },
+     {
+      "name": "Luke Tuckwell",
+      "label": "Luke Tuckwell",
+      "odds": 401.0,
+      "implied": 0.0024937655860349127,
+      "devig": 0.002042334944980216
+     },
+     {
+      "name": "L\u00e9o Bisiaux",
+      "label": "L\u00e9o Bisiaux",
+      "odds": 15.0,
+      "implied": 0.06666666666666667,
+      "devig": 0.054598420862471096
+     },
+     {
+      "name": "Marco Brenner",
+      "label": "Marco Brenner",
+      "odds": 801.0,
+      "implied": 0.0012484394506866417,
+      "devig": 0.0010224423382485224
+     },
+     {
+      "name": "Matthew Riccitello",
+      "label": "Matthew Riccitello",
+      "odds": 26.0,
+      "implied": 0.038461538461538464,
+      "devig": 0.031499088959117946
+     },
+     {
+      "name": "Oscar Onley",
+      "label": "Oscar Onley",
+      "odds": 1.4,
+      "implied": 0.7142857142857143,
+      "devig": 0.5849830806693332
+     },
+     {
+      "name": "Pablo Castrillo",
+      "label": "Pablo Castrillo",
+      "odds": 1501.0,
+      "implied": 0.0006662225183211193,
+      "devig": 0.0005456204616502775
+     },
+     {
+      "name": "Ra\u00fal Garc\u00eda Pierna",
+      "label": "Ra\u00fal Garc\u00eda Pierna",
+      "odds": 501.0,
+      "implied": 0.001996007984031936,
+      "devig": 0.001634683259355422
+     },
+     {
+      "name": "Valentin Paret-Peintre",
+      "label": "Valentin Paret-Peintre",
+      "odds": 1001.0,
+      "implied": 0.000999000999000999,
+      "devig": 0.0008181581547822842
+     },
+     {
+      "name": "Gianmarco Garofoli",
+      "label": "Gianmarco Garofoli",
+      "odds": 801.0,
+      "implied": 0.0012484394506866417,
+      "devig": 0.0010224423382485224
+     },
+     {
+      "name": "Jakob Omrzel",
+      "label": "Jakob Omrzel",
+      "odds": 3.25,
+      "implied": 0.3076923076923077,
+      "devig": 0.25199271167294357
+     },
+     {
+      "name": "Juan Felipe Rodriguez",
+      "label": "Juan Felipe Rodriguez",
+      "odds": 41.0,
+      "implied": 0.024390243902439025,
+      "devig": 0.01997503202285528
+     },
+     {
+      "name": "Ramses Debruyne",
+      "label": "Ramses Debruyne",
+      "odds": 151.0,
+      "implied": 0.006622516556291391,
+      "devig": 0.005423684191636202
+     },
+     {
+      "name": "Thomas Gloag",
+      "label": "Thomas Gloag",
+      "odds": 1501.0,
+      "implied": 0.0006662225183211193,
+      "devig": 0.0005456204616502775
+     },
+     {
+      "name": "Embret Svestad-B\u00e5rdseng",
+      "label": "Embret Svestad-B\u00e5rdseng",
+      "odds": 301.0,
+      "implied": 0.0033222591362126247,
+      "devig": 0.0027208515379968986
+     }
+    ],
+    "book_sum": 1.0,
+    "overround": 1.221
+   }
+  ]
+ },
+ "1028797615": {
+  "event_name": "Puntenklassement (Ronde van Spanje 2026)",
+  "start": "2026-09-13T14:23:00Z",
+  "betoffers": [
+   {
+    "betoffer_id": 2681642020,
+    "criterion": "Winnaar",
+    "bet_offer_type": "Winnaar",
+    "outcomes": [
+     {
+      "name": "Alberto Dainese",
+      "label": "Alberto Dainese",
+      "odds": 1001.0,
+      "implied": 0.000999000999000999,
+      "devig": 0.000879554024222809
+     },
+     {
+      "name": "Alessandro Romele",
+      "label": "Alessandro Romele",
+      "odds": 41.0,
+      "implied": 0.024390243902439025,
+      "devig": 0.021473989713342242
+     },
+     {
+      "name": "Andreas Leknessund",
+      "label": "Andreas Leknessund",
+      "odds": 1001.0,
+      "implied": 0.000999000999000999,
+      "devig": 0.000879554024222809
+     },
+     {
+      "name": "Axel Laurance",
+      "label": "Axel Laurance",
+      "odds": 1001.0,
+      "implied": 0.000999000999000999,
+      "devig": 0.000879554024222809
+     },
+     {
+      "name": "Bryan Coquard",
+      "label": "Bryan Coquard",
+      "odds": 41.0,
+      "implied": 0.024390243902439025,
+      "devig": 0.021473989713342242
+     },
+     {
+      "name": "Christophe Laporte",
+      "label": "Christophe Laporte",
+      "odds": 501.0,
+      "implied": 0.001996007984031936,
+      "devig": 0.0017573524515908819
+     },
+     {
+      "name": "Enric Mas",
+      "label": "Enric Mas",
+      "odds": 801.0,
+      "implied": 0.0012484394506866417,
+      "devig": 0.001099168012792799
+     },
+     {
+      "name": "Ethan Hayter",
+      "label": "Ethan Hayter",
+      "odds": 201.0,
+      "implied": 0.004975124378109453,
+      "devig": 0.0043802665584429445
+     },
+     {
+      "name": "Jarno Widar",
+      "label": "Jarno Widar",
+      "odds": 801.0,
+      "implied": 0.0012484394506866417,
+      "devig": 0.001099168012792799
+     },
+     {
+      "name": "Jordi Meeus",
+      "label": "Jordi Meeus",
+      "odds": 301.0,
+      "implied": 0.0033222591362126247,
+      "devig": 0.0029250284991595744
+     },
+     {
+      "name": "Magnus Cort Nielsen",
+      "label": "Magnus Cort Nielsen",
+      "odds": 301.0,
+      "implied": 0.0033222591362126247,
+      "devig": 0.0029250284991595744
+     },
+     {
+      "name": "Matthew Brennan",
+      "label": "Matthew Brennan",
+      "odds": 7.5,
+      "implied": 0.13333333333333333,
+      "devig": 0.11739114376627091
+     },
+     {
+      "name": "Orluis Aular",
+      "label": "Orluis Aular",
+      "odds": 1001.0,
+      "implied": 0.000999000999000999,
+      "devig": 0.000879554024222809
+     },
+     {
+      "name": "Oscar Onley",
+      "label": "Oscar Onley",
+      "odds": 1001.0,
+      "implied": 0.000999000999000999,
+      "devig": 0.000879554024222809
+     },
+     {
+      "name": "Pau Miquel",
+      "label": "Pau Miquel",
+      "odds": 1001.0,
+      "implied": 0.000999000999000999,
+      "devig": 0.000879554024222809
+     },
+     {
+      "name": "Primoz Roglic",
+      "label": "Primoz Roglic",
+      "odds": 1001.0,
+      "implied": 0.000999000999000999,
+      "devig": 0.000879554024222809
+     },
+     {
+      "name": "Thibau Nys",
+      "label": "Thibau Nys",
+      "odds": 2001.0,
+      "implied": 0.0004997501249375312,
+      "devig": 0.00043999679072815185
+     },
+     {
+      "name": "Wout Van Aert",
+      "label": "Wout Van Aert",
+      "odds": 1.08,
+      "implied": 0.9259259259259259,
+      "devig": 0.8152162761546592
+     },
+     {
+      "name": "Bastien Tronchon",
+      "label": "Bastien Tronchon",
+      "odds": 401.0,
+      "implied": 0.0024937655860349127,
+      "devig": 0.0021955949582220247
+     },
+     {
+      "name": "Hugo Hofstetter",
+      "label": "Hugo Hofstetter",
+      "odds": 1001.0,
+      "implied": 0.000999000999000999,
+      "devig": 0.000879554024222809
+     },
+     {
+      "name": "Vincenzo Albanese",
+      "label": "Vincenzo Albanese",
+      "odds": 1501.0,
+      "implied": 0.0006662225183211193,
+      "devig": 0.0005865646757142118
+     }
+    ],
+    "book_sum": 1.0,
+    "overround": 1.1358
+   }
+  ]
+ }
+}

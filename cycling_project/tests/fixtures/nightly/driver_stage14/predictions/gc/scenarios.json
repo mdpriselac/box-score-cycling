@@ -1,0 +1,27 @@
+{
+  "target": "gc",
+  "fc_race_id": "23",
+  "year": 2026,
+  "date": "2026-09-05",
+  "label": "General Classification",
+  "odds_capture": "2026-09-05/markets_1720.json",
+  "event_id": "1028635359",
+  "scenarios": {
+    "vuelta_gc": {
+      "label": "Final GC — Vuelta editions archetype, state through stage 14",
+      "short": "GC after stage 14",
+      "refs": [
+        10948,
+        53,
+        224,
+        1449,
+        2019
+      ],
+      "tag": "gc_vuelta_editions_state",
+      "note": "Pre-race heads on the averaged Vuelta 2021-25 GC profile (mountain ~0.22 / rolling ~0.78). Live form as-of the run date. State through stage 9. THE RACE TURNED OVER: Pogacar abandoned on stage 8 (DNF on the flat run to Coquard's sprint) while leading by 3:34, and the classification he was sitting on top of collapsed into a genuine four-man contest. Mas leads after winning at Alto de Aitana on stage 9 ahead of Onley on the same time, with Roglic +1:18, Gall +1:39, Onley +2:20, then Carapaz +3:26, Skjelmose +3:55, Kuss +4:09 and Tejada +4:39. The book has Mas 2.30 and Roglic 2.50 as near co-favourites, Gall 5.00, Onley 7.00 — an open race where two days ago it was a procession. Rest day 2026-08-31; stage 10 is 2026-09-01. Stage 3 (Font-Romeu) was cancelled and is passed as a void stage. Rerun after each evening's seed_state_cache.py. State through stage 14 (Sierra de la Pandera): a 44-man escape took the stage — Brenner from Buitrago by a second, Cristian Rodriguez third — and behind it Mas attacked at 2.7 km to go, dropped Skjelmose and Onley, and finished together with Gall, Roglic and Carapaz after Roglic's own accelerations failed to shed him; the four crossed on the same time, with Kuss at 17 seconds and Onley/Omrzel at 35. Mas now leads Gall by 2:06, Roglic 2:10, Carapaz 4:24, Onley 5:44, Omrzel 6:14, Skjelmose 6:49; Cristian Rodriguez climbed to 8th at 7:01. The book after the stage has Mas 1.20 (69.5% devig), Roglic 6.00, Gall 9.00, Carapaz 34.0. Same-day odds snapshot (2026-09-05 17:20). Stage 3 cancelled, passed as a void stage. Rerun after each evening's seed_state_cache.py."
+    }
+  },
+  "void_stages": [
+    3
+  ]
+}

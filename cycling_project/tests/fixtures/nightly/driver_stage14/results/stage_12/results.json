@@ -1,0 +1,1505 @@
+{
+ "stage": "12",
+ "stage_name": "Stage: 12",
+ "url": "https://firstcycling.com/race.php?r=23&y=2026&e=12",
+ "date": "2026-09-03",
+ "race_time": 16193.0,
+ "fetched_at": "2026-09-04T13:38:27",
+ "n_results": 166,
+ "results": [
+  {
+   "place": "1",
+   "name": "Omrzel Jakob",
+   "rider_id": "208369",
+   "team": "Bahrain Victorious",
+   "team_id": "38975",
+   "gap": 0,
+   "dob": "2006"
+  },
+  {
+   "place": "2",
+   "name": "Berrade Urko",
+   "rider_id": "57355",
+   "team": "Equipo Kern Pharma",
+   "team_id": "39319",
+   "gap": 116.0,
+   "dob": "1997"
+  },
+  {
+   "place": "3",
+   "name": "Buitrago Santiago",
+   "rider_id": "81835",
+   "team": "Bahrain Victorious",
+   "team_id": "38975",
+   "gap": 133.0,
+   "dob": "1999"
+  },
+  {
+   "place": "4",
+   "name": "Lutsenko Alexey",
+   "rider_id": "6230",
+   "team": "NSN Cycling Team",
+   "team_id": "38561",
+   "gap": 169.0,
+   "dob": "1992"
+  },
+  {
+   "place": "5",
+   "name": "Vansevenant Mauri",
+   "rider_id": "70034",
+   "team": "Soudal Quick-Step",
+   "team_id": "26331",
+   "gap": 173.0,
+   "dob": "1999"
+  },
+  {
+   "place": "6",
+   "name": "Mas Enric",
+   "rider_id": "1527",
+   "team": "Movistar Team",
+   "team_id": "39654",
+   "gap": 176.0,
+   "dob": "1995"
+  },
+  {
+   "place": "7",
+   "name": "Gall Felix",
+   "rider_id": "48547",
+   "team": "Decathlon CMA CGM Team",
+   "team_id": "40474",
+   "gap": 203.0,
+   "dob": "1998"
+  },
+  {
+   "place": "8",
+   "name": "Roglic Primoz",
+   "rider_id": "18655",
+   "team": "Red Bull-BORA-hansgrohe",
+   "team_id": "43656",
+   "gap": 203.0,
+   "dob": "1989"
+  },
+  {
+   "place": "9",
+   "name": "Carapaz Richard",
+   "rider_id": "23097",
+   "team": "EF Education-EasyPost",
+   "team_id": "39797",
+   "gap": 203.0,
+   "dob": "1993"
+  },
+  {
+   "place": "10",
+   "name": "M\u00fchlberger Gregor",
+   "rider_id": "16578",
+   "team": "Decathlon CMA CGM Team",
+   "team_id": "40474",
+   "gap": 230.0,
+   "dob": "1994"
+  },
+  {
+   "place": "11",
+   "name": "Diaz Jose Manuel",
+   "rider_id": "45106",
+   "team": "Burgos Burpellet BH",
+   "team_id": "44473",
+   "gap": 305.0,
+   "dob": "1995"
+  },
+  {
+   "place": "12",
+   "name": "Onley Oscar",
+   "rider_id": "120433",
+   "team": "Netcompany INEOS Cycling Team",
+   "team_id": "29252",
+   "gap": 305.0,
+   "dob": "2002"
+  },
+  {
+   "place": "13",
+   "name": "Bisiaux L\u00e9o",
+   "rider_id": "184536",
+   "team": "Decathlon CMA CGM Team",
+   "team_id": "40474",
+   "gap": 313.0,
+   "dob": "2005"
+  },
+  {
+   "place": "14",
+   "name": "Vermaerke Kevin",
+   "rider_id": "82912",
+   "team": "UAE Team Emirates-XRG",
+   "team_id": "25778",
+   "gap": 367.0,
+   "dob": "2000"
+  },
+  {
+   "place": "15",
+   "name": "Tuckwell Luke",
+   "rider_id": "167245",
+   "team": "Red Bull-BORA-hansgrohe",
+   "team_id": "43656",
+   "gap": 378.0,
+   "dob": "2004"
+  },
+  {
+   "place": "16",
+   "name": "Skjelmose Mattias",
+   "rider_id": "77103",
+   "team": "Lidl-Trek",
+   "team_id": "31681",
+   "gap": 403.0,
+   "dob": "2000"
+  },
+  {
+   "place": "17",
+   "name": "Rodriguez Cristian",
+   "rider_id": "16947",
+   "team": "XDS Astana Team",
+   "team_id": "44515",
+   "gap": 403.0,
+   "dob": "1995"
+  },
+  {
+   "place": "18",
+   "name": "Berthet Cl\u00e9ment",
+   "rider_id": "57961",
+   "team": "Groupama-FDJ United",
+   "team_id": "39001",
+   "gap": 405.0,
+   "dob": "1997"
+  },
+  {
+   "place": "19",
+   "name": "Riccitello Matthew",
+   "rider_id": "113499",
+   "team": "Decathlon CMA CGM Team",
+   "team_id": "40474",
+   "gap": 405.0,
+   "dob": "2002"
+  },
+  {
+   "place": "20",
+   "name": "Kuss Sepp",
+   "rider_id": "48008",
+   "team": "Team Visma | Lease a Bike",
+   "team_id": "28242",
+   "gap": 405.0,
+   "dob": "1994"
+  },
+  {
+   "place": "21",
+   "name": "Tejada Harold",
+   "rider_id": "64106",
+   "team": "XDS Astana Team",
+   "team_id": "44515",
+   "gap": 410.0,
+   "dob": "1997"
+  },
+  {
+   "place": "22",
+   "name": "Garc\u00eda Ra\u00fal",
+   "rider_id": "114755",
+   "team": "Movistar Team",
+   "team_id": "39654",
+   "gap": 467.0,
+   "dob": "2001"
+  },
+  {
+   "place": "23",
+   "name": "Haig Jack",
+   "rider_id": "19784",
+   "team": "Netcompany INEOS Cycling Team",
+   "team_id": "29252",
+   "gap": 467.0,
+   "dob": "1993"
+  },
+  {
+   "place": "24",
+   "name": "Pickering Finlay",
+   "rider_id": "139005",
+   "team": "Team Jayco-AlUla",
+   "team_id": "39199",
+   "gap": 498.0,
+   "dob": "2003"
+  },
+  {
+   "place": "25",
+   "name": "Rodr\u00edguez Juan",
+   "rider_id": "183692",
+   "team": "EF Education-EasyPost",
+   "team_id": "39797",
+   "gap": 718.0,
+   "dob": "2003"
+  },
+  {
+   "place": "26",
+   "name": "Bilbao Pello",
+   "rider_id": "4863",
+   "team": "Bahrain Victorious",
+   "team_id": "38975",
+   "gap": 814.0,
+   "dob": "1990"
+  },
+  {
+   "place": "27",
+   "name": "Widar Jarno",
+   "rider_id": "186117",
+   "team": "Lotto-Intermarch\u00e9",
+   "team_id": "39318",
+   "gap": 823.0,
+   "dob": "2005"
+  },
+  {
+   "place": "28",
+   "name": "Hirt Jan",
+   "rider_id": "6269",
+   "team": "NSN Cycling Team",
+   "team_id": "38561",
+   "gap": 823.0,
+   "dob": "1991"
+  },
+  {
+   "place": "29",
+   "name": "Rochas R\u00e9my",
+   "rider_id": "27303",
+   "team": "Groupama-FDJ United",
+   "team_id": "39001",
+   "gap": 849.0,
+   "dob": "1996"
+  },
+  {
+   "place": "30",
+   "name": "Leemreize Gijs",
+   "rider_id": "79955",
+   "team": "Team Picnic PostNL",
+   "team_id": "34179",
+   "gap": 852.0,
+   "dob": "1999"
+  },
+  {
+   "place": "31",
+   "name": "Aparicio Mario",
+   "rider_id": "84012",
+   "team": "Burgos Burpellet BH",
+   "team_id": "44473",
+   "gap": 856.0,
+   "dob": "2000"
+  },
+  {
+   "place": "32",
+   "name": "Martin-Guyonnet Guillaume",
+   "rider_id": "10990",
+   "team": "Groupama-FDJ United",
+   "team_id": "39001",
+   "gap": 856.0,
+   "dob": "1993"
+  },
+  {
+   "place": "33",
+   "name": "Buchmann Emanuel",
+   "rider_id": "9344",
+   "team": "Cofidis",
+   "team_id": "44516",
+   "gap": 856.0,
+   "dob": "1992"
+  },
+  {
+   "place": "34",
+   "name": "Bouwman Koen",
+   "rider_id": "18564",
+   "team": "Team Jayco-AlUla",
+   "team_id": "39199",
+   "gap": 865.0,
+   "dob": "1993"
+  },
+  {
+   "place": "35",
+   "name": "Scotson Callum",
+   "rider_id": "42175",
+   "team": "Decathlon CMA CGM Team",
+   "team_id": "40474",
+   "gap": 989.0,
+   "dob": "1996"
+  },
+  {
+   "place": "36",
+   "name": "Albanese Vincenzo",
+   "rider_id": "37351",
+   "team": "EF Education-EasyPost",
+   "team_id": "39797",
+   "gap": 1141.0,
+   "dob": "1996"
+  },
+  {
+   "place": "37",
+   "name": "Nordhagen J\u00f8rgen",
+   "rider_id": "179420",
+   "team": "Team Visma | Lease a Bike",
+   "team_id": "28242",
+   "gap": 1187.0,
+   "dob": "2005"
+  },
+  {
+   "place": "38",
+   "name": "Johannessen Tobias Halland",
+   "rider_id": "87900",
+   "team": "Uno-X Mobility",
+   "team_id": "31698",
+   "gap": 1187.0,
+   "dob": "1999"
+  },
+  {
+   "place": "39",
+   "name": "Mulubrhan Henok",
+   "rider_id": "71607",
+   "team": "XDS Astana Team",
+   "team_id": "44515",
+   "gap": 1187.0,
+   "dob": "1999"
+  },
+  {
+   "place": "40",
+   "name": "Madouas Valentin",
+   "rider_id": "37379",
+   "team": "Groupama-FDJ United",
+   "team_id": "39001",
+   "gap": 1187.0,
+   "dob": "1996"
+  },
+  {
+   "place": "41",
+   "name": "Brenner Marco",
+   "rider_id": "111801",
+   "team": "Tudor Pro Cycling Team",
+   "team_id": "39194",
+   "gap": 1187.0,
+   "dob": "2002"
+  },
+  {
+   "place": "42",
+   "name": "Konrad Patrick",
+   "rider_id": "6245",
+   "team": "Lidl-Trek",
+   "team_id": "31681",
+   "gap": 1344.0,
+   "dob": "1991"
+  },
+  {
+   "place": "43",
+   "name": "Bernard Julien",
+   "rider_id": "17182",
+   "team": "Lidl-Trek",
+   "team_id": "31681",
+   "gap": 1344.0,
+   "dob": "1992"
+  },
+  {
+   "place": "44",
+   "name": "Svestad-B\u00e5rdseng Embret",
+   "rider_id": "113457",
+   "team": "Netcompany INEOS Cycling Team",
+   "team_id": "29252",
+   "gap": 1390.0,
+   "dob": "2002"
+  },
+  {
+   "place": "45",
+   "name": "Rodriguez Carlos",
+   "rider_id": "84926",
+   "team": "Netcompany INEOS Cycling Team",
+   "team_id": "29252",
+   "gap": 1390.0,
+   "dob": "2001"
+  },
+  {
+   "place": "46",
+   "name": "de la Cruz David",
+   "rider_id": "7590",
+   "team": "Pinarello-Q36.5 Pro Cycling Team",
+   "team_id": "44779",
+   "gap": 1390.0,
+   "dob": "1989"
+  },
+  {
+   "place": "47",
+   "name": "Landa Mikel",
+   "rider_id": "2278",
+   "team": "Soudal Quick-Step",
+   "team_id": "26331",
+   "gap": 1390.0,
+   "dob": "1989"
+  },
+  {
+   "place": "48",
+   "name": "Almeida Jo\u00e3o",
+   "rider_id": "50303",
+   "team": "UAE Team Emirates-XRG",
+   "team_id": "25778",
+   "gap": 1390.0,
+   "dob": "1998"
+  },
+  {
+   "place": "49",
+   "name": "Hamilton Chris",
+   "rider_id": "42185",
+   "team": "Team Picnic PostNL",
+   "team_id": "34179",
+   "gap": 1390.0,
+   "dob": "1995"
+  },
+  {
+   "place": "50",
+   "name": "Thompson Reuben",
+   "rider_id": "111844",
+   "team": "Lotto-Intermarch\u00e9",
+   "team_id": "39318",
+   "gap": 1390.0,
+   "dob": "2001"
+  },
+  {
+   "place": "51",
+   "name": "Valter Attila",
+   "rider_id": "69890",
+   "team": "Bahrain Victorious",
+   "team_id": "38975",
+   "gap": 1411.0,
+   "dob": "1998"
+  },
+  {
+   "place": "52",
+   "name": "Zana Filippo",
+   "rider_id": "66439",
+   "team": "Soudal Quick-Step",
+   "team_id": "26331",
+   "gap": 1554.0,
+   "dob": "1999"
+  },
+  {
+   "place": "53",
+   "name": "Fortunato Lorenzo",
+   "rider_id": "27271",
+   "team": "XDS Astana Team",
+   "team_id": "44515",
+   "gap": 1636.0,
+   "dob": "1996"
+  },
+  {
+   "place": "54",
+   "name": "Romeo Iv\u00e1n",
+   "rider_id": "139004",
+   "team": "Movistar Team",
+   "team_id": "39654",
+   "gap": 1638.0,
+   "dob": "2003"
+  },
+  {
+   "place": "55",
+   "name": "Castrillo Pablo",
+   "rider_id": "106295",
+   "team": "Movistar Team",
+   "team_id": "39654",
+   "gap": 1638.0,
+   "dob": "2001"
+  },
+  {
+   "place": "56",
+   "name": "De Pestel Sander",
+   "rider_id": "47120",
+   "team": "Decathlon CMA CGM Team",
+   "team_id": "40474",
+   "gap": 1638.0,
+   "dob": "1998"
+  },
+  {
+   "place": "57",
+   "name": "Ourselin Paul",
+   "rider_id": "32592",
+   "team": "Cofidis",
+   "team_id": "44516",
+   "gap": 1638.0,
+   "dob": "1994"
+  },
+  {
+   "place": "58",
+   "name": "Laurance Axel",
+   "rider_id": "95714",
+   "team": "Netcompany INEOS Cycling Team",
+   "team_id": "29252",
+   "gap": 1638.0,
+   "dob": "2001"
+  },
+  {
+   "place": "59",
+   "name": "Paret-Peintre Valentin",
+   "rider_id": "97944",
+   "team": "Soudal Quick-Step",
+   "team_id": "26331",
+   "gap": 1638.0,
+   "dob": "2001"
+  },
+  {
+   "place": "60",
+   "name": "Faura Jos\u00e9 Luis",
+   "rider_id": "125761",
+   "team": "Burgos Burpellet BH",
+   "team_id": "44473",
+   "gap": 1757.0,
+   "dob": "2000"
+  },
+  {
+   "place": "61",
+   "name": "Mosca Jacopo",
+   "rider_id": "20397",
+   "team": "Lidl-Trek",
+   "team_id": "31681",
+   "gap": 1757.0,
+   "dob": "1993"
+  },
+  {
+   "place": "62",
+   "name": "Kron Andreas",
+   "rider_id": "53723",
+   "team": "Uno-X Mobility",
+   "team_id": "31698",
+   "gap": 1757.0,
+   "dob": "1998"
+  },
+  {
+   "place": "63",
+   "name": "Hellemose Asbj\u00f8rn",
+   "rider_id": "71185",
+   "team": "Team Jayco-AlUla",
+   "team_id": "39199",
+   "gap": 1757.0,
+   "dob": "1999"
+  },
+  {
+   "place": "64",
+   "name": "K\u00e4mna Lennard",
+   "rider_id": "27289",
+   "team": "Lidl-Trek",
+   "team_id": "31681",
+   "gap": 1757.0,
+   "dob": "1996"
+  },
+  {
+   "place": "65",
+   "name": "Herrada Jesus",
+   "rider_id": "2325",
+   "team": "Burgos Burpellet BH",
+   "team_id": "44473",
+   "gap": 1757.0,
+   "dob": "1990"
+  },
+  {
+   "place": "66",
+   "name": "Dunbar Edward",
+   "rider_id": "27283",
+   "team": "Pinarello-Q36.5 Pro Cycling Team",
+   "team_id": "44779",
+   "gap": 1757.0,
+   "dob": "1996"
+  },
+  {
+   "place": "67",
+   "name": "Houle Hugo",
+   "rider_id": "3199",
+   "team": "Alpecin-Premier Tech",
+   "team_id": "38373",
+   "gap": 1757.0,
+   "dob": "1990"
+  },
+  {
+   "place": "68",
+   "name": "van Aert Wout",
+   "rider_id": "18258",
+   "team": "Team Visma | Lease a Bike",
+   "team_id": "28242",
+   "gap": 1757.0,
+   "dob": "1994"
+  },
+  {
+   "place": "69",
+   "name": "Kruijswijk Steven",
+   "rider_id": "730",
+   "team": "Team Visma | Lease a Bike",
+   "team_id": "28242",
+   "gap": 1757.0,
+   "dob": "1987"
+  },
+  {
+   "place": "70",
+   "name": "Hofstetter Hugo",
+   "rider_id": "32892",
+   "team": "NSN Cycling Team",
+   "team_id": "38561",
+   "gap": 1757.0,
+   "dob": "1994"
+  },
+  {
+   "place": "71",
+   "name": "Debruyne Ramses",
+   "rider_id": "113415",
+   "team": "Alpecin-Premier Tech",
+   "team_id": "38373",
+   "gap": 1757.0,
+   "dob": "2002"
+  },
+  {
+   "place": "72",
+   "name": "Craps Lars",
+   "rider_id": "94805",
+   "team": "Lotto-Intermarch\u00e9",
+   "team_id": "39318",
+   "gap": 1757.0,
+   "dob": "2001"
+  },
+  {
+   "place": "73",
+   "name": "Dalby Simon",
+   "rider_id": "129977",
+   "team": "Uno-X Mobility",
+   "team_id": "31698",
+   "gap": 1757.0,
+   "dob": "2003"
+  },
+  {
+   "place": "74",
+   "name": "Sosa Ivan",
+   "rider_id": "61639",
+   "team": "Equipo Kern Pharma",
+   "team_id": "39319",
+   "gap": 1884.0,
+   "dob": "1997"
+  },
+  {
+   "place": "75",
+   "name": "Leknessund Andreas",
+   "rider_id": "66973",
+   "team": "Uno-X Mobility",
+   "team_id": "31698",
+   "gap": 2013.0,
+   "dob": "1999"
+  },
+  {
+   "place": "76",
+   "name": "Tj\u00f8tta Martin",
+   "rider_id": "101789",
+   "team": "Uno-X Mobility",
+   "team_id": "31698",
+   "gap": 2109.0,
+   "dob": "2001"
+  },
+  {
+   "place": "77",
+   "name": "Weiss Fabian",
+   "rider_id": "109986",
+   "team": "Tudor Pro Cycling Team",
+   "team_id": "39194",
+   "gap": 2109.0,
+   "dob": "2002"
+  },
+  {
+   "place": "78",
+   "name": "Thalmann Roland",
+   "rider_id": "20401",
+   "team": "Tudor Pro Cycling Team",
+   "team_id": "39194",
+   "gap": 2109.0,
+   "dob": "1993"
+  },
+  {
+   "place": "79",
+   "name": "Dversnes Fredrik",
+   "rider_id": "66347",
+   "team": "Uno-X Mobility",
+   "team_id": "31698",
+   "gap": 2109.0,
+   "dob": "1997"
+  },
+  {
+   "place": "80",
+   "name": "Elosegui I\u00f1igo",
+   "rider_id": "46167",
+   "team": "Equipo Kern Pharma",
+   "team_id": "39319",
+   "gap": 2109.0,
+   "dob": "1998"
+  },
+  {
+   "place": "81",
+   "name": "Wilksch Hannes",
+   "rider_id": "96128",
+   "team": "Tudor Pro Cycling Team",
+   "team_id": "39194",
+   "gap": 2109.0,
+   "dob": "2001"
+  },
+  {
+   "place": "82",
+   "name": "Martinez Juan",
+   "rider_id": "183888",
+   "team": "Team Picnic PostNL",
+   "team_id": "34179",
+   "gap": 2109.0,
+   "dob": "2004"
+  },
+  {
+   "place": "83",
+   "name": "Glivar Gal",
+   "rider_id": "114583",
+   "team": "Alpecin-Premier Tech",
+   "team_id": "38373",
+   "gap": 2109.0,
+   "dob": "2002"
+  },
+  {
+   "place": "84",
+   "name": "Porter Rudy",
+   "rider_id": "76145",
+   "team": "Team Jayco-AlUla",
+   "team_id": "39199",
+   "gap": 2109.0,
+   "dob": "2000"
+  },
+  {
+   "place": "85",
+   "name": "van Bekkum Darren",
+   "rider_id": "149518",
+   "team": "XDS Astana Team",
+   "team_id": "44515",
+   "gap": 2109.0,
+   "dob": "2002"
+  },
+  {
+   "place": "86",
+   "name": "Moscon Gianni",
+   "rider_id": "28781",
+   "team": "Red Bull-BORA-hansgrohe",
+   "team_id": "43656",
+   "gap": 2109.0,
+   "dob": "1994"
+  },
+  {
+   "place": "87",
+   "name": "Alleno Cl\u00e9ment",
+   "rider_id": "104482",
+   "team": "Burgos Burpellet BH",
+   "team_id": "44473",
+   "gap": 2109.0,
+   "dob": "2000"
+  },
+  {
+   "place": "88",
+   "name": "S\u00fctterlin Jasha",
+   "rider_id": "6414",
+   "team": "Team Jayco-AlUla",
+   "team_id": "39199",
+   "gap": 2109.0,
+   "dob": "1992"
+  },
+  {
+   "place": "89",
+   "name": "Covi Alessandro",
+   "rider_id": "45987",
+   "team": "Team Jayco-AlUla",
+   "team_id": "39199",
+   "gap": 2109.0,
+   "dob": "1998"
+  },
+  {
+   "place": "90",
+   "name": "Tiller Rasmus",
+   "rider_id": "37303",
+   "team": "Uno-X Mobility",
+   "team_id": "31698",
+   "gap": 2109.0,
+   "dob": "1996"
+  },
+  {
+   "place": "91",
+   "name": "Garofoli Gianmarco",
+   "rider_id": "115396",
+   "team": "Soudal Quick-Step",
+   "team_id": "26331",
+   "gap": 2109.0,
+   "dob": "2002"
+  },
+  {
+   "place": "92",
+   "name": "K\u00fcng Stefan",
+   "rider_id": "16724",
+   "team": "Tudor Pro Cycling Team",
+   "team_id": "39194",
+   "gap": 2109.0,
+   "dob": "1993"
+  },
+  {
+   "place": "93",
+   "name": "Paasschens Mathijs",
+   "rider_id": "38301",
+   "team": "Bahrain Victorious",
+   "team_id": "38975",
+   "gap": 2109.0,
+   "dob": "1996"
+  },
+  {
+   "place": "94",
+   "name": "Vader Milan",
+   "rider_id": "60067",
+   "team": "Pinarello-Q36.5 Pro Cycling Team",
+   "team_id": "44779",
+   "gap": 2109.0,
+   "dob": "1996"
+  },
+  {
+   "place": "95",
+   "name": "Kretschy Moritz",
+   "rider_id": "115328",
+   "team": "NSN Cycling Team",
+   "team_id": "38561",
+   "gap": 2109.0,
+   "dob": "2002"
+  },
+  {
+   "place": "96",
+   "name": "Armirail Bruno",
+   "rider_id": "22272",
+   "team": "Team Visma | Lease a Bike",
+   "team_id": "28242",
+   "gap": 2109.0,
+   "dob": "1994"
+  },
+  {
+   "place": "97",
+   "name": "Warbasse Lawrence",
+   "rider_id": "14123",
+   "team": "Tudor Pro Cycling Team",
+   "team_id": "39194",
+   "gap": 2109.0,
+   "dob": "1990"
+  },
+  {
+   "place": "98",
+   "name": "Molard Rudy",
+   "rider_id": "6222",
+   "team": "Groupama-FDJ United",
+   "team_id": "39001",
+   "gap": 2109.0,
+   "dob": "1989"
+  },
+  {
+   "place": "99",
+   "name": "Fedorov Yevgeniy",
+   "rider_id": "75603",
+   "team": "XDS Astana Team",
+   "team_id": "44515",
+   "gap": 2109.0,
+   "dob": "2000"
+  },
+  {
+   "place": "100",
+   "name": "Fernandez Sinuh\u00e9",
+   "rider_id": "101678",
+   "team": "Burgos Burpellet BH",
+   "team_id": "44473",
+   "gap": 2109.0,
+   "dob": "2000"
+  },
+  {
+   "place": "101",
+   "name": "Samitier Sergio",
+   "rider_id": "46626",
+   "team": "Cofidis",
+   "team_id": "44516",
+   "gap": 2109.0,
+   "dob": "1995"
+  },
+  {
+   "place": "102",
+   "name": "Ermakov Roman",
+   "rider_id": "115902",
+   "team": "Bahrain Victorious",
+   "team_id": "38975",
+   "gap": 2109.0,
+   "dob": "2004"
+  },
+  {
+   "place": "103",
+   "name": "Cobo Ivan",
+   "rider_id": "84013",
+   "team": "Equipo Kern Pharma",
+   "team_id": "39319",
+   "gap": 2109.0,
+   "dob": "2000"
+  },
+  {
+   "place": "104",
+   "name": "Cort Magnus",
+   "rider_id": "7695",
+   "team": "Uno-X Mobility",
+   "team_id": "31698",
+   "gap": 2109.0,
+   "dob": "1993"
+  },
+  {
+   "place": "105",
+   "name": "Schultz Nick",
+   "rider_id": "16576",
+   "team": "NSN Cycling Team",
+   "team_id": "38561",
+   "gap": 2109.0,
+   "dob": "1994"
+  },
+  {
+   "place": "106",
+   "name": "Gloag Thomas",
+   "rider_id": "83761",
+   "team": "Pinarello-Q36.5 Pro Cycling Team",
+   "team_id": "44779",
+   "gap": 2109.0,
+   "dob": "2001"
+  },
+  {
+   "place": "107",
+   "name": "Paleni Enzo",
+   "rider_id": "112244",
+   "team": "Groupama-FDJ United",
+   "team_id": "39001",
+   "gap": 2109.0,
+   "dob": "2002"
+  },
+  {
+   "place": "108",
+   "name": "Labrosse Jordan",
+   "rider_id": "112245",
+   "team": "Decathlon CMA CGM Team",
+   "team_id": "40474",
+   "gap": 2109.0,
+   "dob": "2002"
+  },
+  {
+   "place": "109",
+   "name": "Miquel Delgado Pau",
+   "rider_id": "96297",
+   "team": "Bahrain Victorious",
+   "team_id": "38975",
+   "gap": 2109.0,
+   "dob": "2000"
+  },
+  {
+   "place": "110",
+   "name": "Barta William",
+   "rider_id": "27190",
+   "team": "Tudor Pro Cycling Team",
+   "team_id": "39194",
+   "gap": 2109.0,
+   "dob": "1996"
+  },
+  {
+   "place": "111",
+   "name": "Calzoni Walter",
+   "rider_id": "96990",
+   "team": "Pinarello-Q36.5 Pro Cycling Team",
+   "team_id": "44779",
+   "gap": 2109.0,
+   "dob": "2001"
+  },
+  {
+   "place": "112",
+   "name": "Rota Lorenzo",
+   "rider_id": "27275",
+   "team": "Lotto-Intermarch\u00e9",
+   "team_id": "39318",
+   "gap": 2109.0,
+   "dob": "1995"
+  },
+  {
+   "place": "113",
+   "name": "Tronchon Bastien",
+   "rider_id": "112241",
+   "team": "Groupama-FDJ United",
+   "team_id": "39001",
+   "gap": 2109.0,
+   "dob": "2002"
+  },
+  {
+   "place": "114",
+   "name": "de Jong Timo",
+   "rider_id": "64653",
+   "team": "Team Picnic PostNL",
+   "team_id": "34179",
+   "gap": 2109.0,
+   "dob": "1999"
+  },
+  {
+   "place": "115",
+   "name": "Brustenga Marc",
+   "rider_id": "65570",
+   "team": "Equipo Kern Pharma",
+   "team_id": "39319",
+   "gap": 2109.0,
+   "dob": "1999"
+  },
+  {
+   "place": "116",
+   "name": "Shaw James",
+   "rider_id": "37375",
+   "team": "EF Education-EasyPost",
+   "team_id": "39797",
+   "gap": 2109.0,
+   "dob": "1996"
+  },
+  {
+   "place": "117",
+   "name": "Ruiz Ibon",
+   "rider_id": "89666",
+   "team": "Equipo Kern Pharma",
+   "team_id": "39319",
+   "gap": 2109.0,
+   "dob": "1999"
+  },
+  {
+   "place": "118",
+   "name": "Mart\u00ed Pau",
+   "rider_id": "172089",
+   "team": "NSN Cycling Team",
+   "team_id": "38561",
+   "gap": 2109.0,
+   "dob": "2004"
+  },
+  {
+   "place": "119",
+   "name": "Le Gac Olivier",
+   "rider_id": "10871",
+   "team": "Groupama-FDJ United",
+   "team_id": "39001",
+   "gap": 2109.0,
+   "dob": "1993"
+  },
+  {
+   "place": "120",
+   "name": "Mackellar Alastair",
+   "rider_id": "160291",
+   "team": "EF Education-EasyPost",
+   "team_id": "39797",
+   "gap": 2141.0,
+   "dob": "2002"
+  },
+  {
+   "place": "121",
+   "name": "Chamberlain Oscar",
+   "rider_id": "187450",
+   "team": "Decathlon CMA CGM Team",
+   "team_id": "40474",
+   "gap": 2141.0,
+   "dob": "2005"
+  },
+  {
+   "place": "122",
+   "name": "Rafferty Darren",
+   "rider_id": "129150",
+   "team": "EF Education-EasyPost",
+   "team_id": "39797",
+   "gap": 2141.0,
+   "dob": "2003"
+  },
+  {
+   "place": "123",
+   "name": "Wenzel Mats",
+   "rider_id": "117614",
+   "team": "Equipo Kern Pharma",
+   "team_id": "39319",
+   "gap": 2187.0,
+   "dob": "2002"
+  },
+  {
+   "place": "124",
+   "name": "Novak Domen",
+   "rider_id": "27210",
+   "team": "UAE Team Emirates-XRG",
+   "team_id": "25778",
+   "gap": 2236.0,
+   "dob": "1995"
+  },
+  {
+   "place": "125",
+   "name": "Moniquet Sylvain",
+   "rider_id": "51348",
+   "team": "Cofidis",
+   "team_id": "44516",
+   "gap": 2236.0,
+   "dob": "1998"
+  },
+  {
+   "place": "126",
+   "name": "Oliveira Ivo",
+   "rider_id": "37777",
+   "team": "UAE Team Emirates-XRG",
+   "team_id": "25778",
+   "gap": 2236.0,
+   "dob": "1996"
+  },
+  {
+   "place": "127",
+   "name": "Hamilton Lucas",
+   "rider_id": "37445",
+   "team": "Netcompany INEOS Cycling Team",
+   "team_id": "29252",
+   "gap": 2236.0,
+   "dob": "1996"
+  },
+  {
+   "place": "128",
+   "name": "Vermeersch Gianni",
+   "rider_id": "7964",
+   "team": "Red Bull-BORA-hansgrohe",
+   "team_id": "43656",
+   "gap": 2236.0,
+   "dob": "1992"
+  },
+  {
+   "place": "129",
+   "name": "Govekar Matevz",
+   "rider_id": "82552",
+   "team": "Bahrain Victorious",
+   "team_id": "38975",
+   "gap": 2236.0,
+   "dob": "2000"
+  },
+  {
+   "place": "130",
+   "name": "Fisher-Black Finn",
+   "rider_id": "75998",
+   "team": "Red Bull-BORA-hansgrohe",
+   "team_id": "43656",
+   "gap": 2236.0,
+   "dob": "2001"
+  },
+  {
+   "place": "131",
+   "name": "Romele Alessandro",
+   "rider_id": "153310",
+   "team": "XDS Astana Team",
+   "team_id": "44515",
+   "gap": 2236.0,
+   "dob": "2003"
+  },
+  {
+   "place": "132",
+   "name": "Coquard Bryan",
+   "rider_id": "16752",
+   "team": "Cofidis",
+   "team_id": "44516",
+   "gap": 2346.0,
+   "dob": "1992"
+  },
+  {
+   "place": "133",
+   "name": "Gogl Michael",
+   "rider_id": "9894",
+   "team": "Alpecin-Premier Tech",
+   "team_id": "38373",
+   "gap": 2356.0,
+   "dob": "1993"
+  },
+  {
+   "place": "134",
+   "name": "Sivakov Pavel",
+   "rider_id": "37280",
+   "team": "UAE Team Emirates-XRG",
+   "team_id": "25778",
+   "gap": 2403.0,
+   "dob": "1997"
+  },
+  {
+   "place": "135",
+   "name": "Thornley Callum",
+   "rider_id": "176522",
+   "team": "Red Bull-BORA-hansgrohe",
+   "team_id": "43656",
+   "gap": 2428.0,
+   "dob": "2003"
+  },
+  {
+   "place": "136",
+   "name": "Brennan Matthew",
+   "rider_id": "187473",
+   "team": "Team Visma | Lease a Bike",
+   "team_id": "28242",
+   "gap": 2428.0,
+   "dob": "2005"
+  },
+  {
+   "place": "137",
+   "name": "Wandahl Frederik",
+   "rider_id": "82254",
+   "team": "Red Bull-BORA-hansgrohe",
+   "team_id": "43656",
+   "gap": 2428.0,
+   "dob": "2001"
+  },
+  {
+   "place": "138",
+   "name": "Peace Oliver",
+   "rider_id": "187145",
+   "team": "Team Picnic PostNL",
+   "team_id": "34179",
+   "gap": 2428.0,
+   "dob": "2005"
+  },
+  {
+   "place": "139",
+   "name": "Roosen Timo",
+   "rider_id": "22133",
+   "team": "Team Picnic PostNL",
+   "team_id": "34179",
+   "gap": 2428.0,
+   "dob": "1993"
+  },
+  {
+   "place": "140",
+   "name": "Dainese Alberto",
+   "rider_id": "71333",
+   "team": "Soudal Quick-Step",
+   "team_id": "26331",
+   "gap": 2428.0,
+   "dob": "1998"
+  },
+  {
+   "place": "141",
+   "name": "Macias Cesar",
+   "rider_id": "156105",
+   "team": "Burgos Burpellet BH",
+   "team_id": "44473",
+   "gap": 2428.0,
+   "dob": "2003"
+  },
+  {
+   "place": "142",
+   "name": "Renard Alexis",
+   "rider_id": "70759",
+   "team": "Cofidis",
+   "team_id": "44516",
+   "gap": 2428.0,
+   "dob": "1999"
+  },
+  {
+   "place": "143",
+   "name": "Azparren Xabier",
+   "rider_id": "65759",
+   "team": "Pinarello-Q36.5 Pro Cycling Team",
+   "team_id": "44779",
+   "gap": 2428.0,
+   "dob": "1999"
+  },
+  {
+   "place": "144",
+   "name": "Van den Bossche Fabio",
+   "rider_id": "76172",
+   "team": "Soudal Quick-Step",
+   "team_id": "26331",
+   "gap": 2428.0,
+   "dob": "2000"
+  },
+  {
+   "place": "145",
+   "name": "Laporte Christophe",
+   "rider_id": "14737",
+   "team": "Team Visma | Lease a Bike",
+   "team_id": "28242",
+   "gap": 2428.0,
+   "dob": "1992"
+  },
+  {
+   "place": "146",
+   "name": "Aular Orluis",
+   "rider_id": "37221",
+   "team": "Movistar Team",
+   "team_id": "39654",
+   "gap": 2428.0,
+   "dob": "1996"
+  },
+  {
+   "place": "147",
+   "name": "Canal Carlos",
+   "rider_id": "107572",
+   "team": "Movistar Team",
+   "team_id": "39654",
+   "gap": 2428.0,
+   "dob": "2001"
+  },
+  {
+   "place": "148",
+   "name": "Arcas Jorge",
+   "rider_id": "25695",
+   "team": "Movistar Team",
+   "team_id": "39654",
+   "gap": 2428.0,
+   "dob": "1992"
+  },
+  {
+   "place": "149",
+   "name": "Nys Thibau",
+   "rider_id": "120686",
+   "team": "Lidl-Trek",
+   "team_id": "31681",
+   "gap": 2428.0,
+   "dob": "2002"
+  },
+  {
+   "place": "150",
+   "name": "Braet Vito",
+   "rider_id": "75468",
+   "team": "Lotto-Intermarch\u00e9",
+   "team_id": "39318",
+   "gap": 2428.0,
+   "dob": "2000"
+  },
+  {
+   "place": "151",
+   "name": "De Schuyteneer Steffen",
+   "rider_id": "184945",
+   "team": "Lotto-Intermarch\u00e9",
+   "team_id": "39318",
+   "gap": 2428.0,
+   "dob": "2005"
+  },
+  {
+   "place": "152",
+   "name": "Steinhauser Georg",
+   "rider_id": "96148",
+   "team": "EF Education-EasyPost",
+   "team_id": "39797",
+   "gap": 2428.0,
+   "dob": "2001"
+  },
+  {
+   "place": "153",
+   "name": "Double Paul",
+   "rider_id": "72410",
+   "team": "Team Jayco-AlUla",
+   "team_id": "39199",
+   "gap": 2428.0,
+   "dob": "1996"
+  },
+  {
+   "place": "154",
+   "name": "Hayter Ethan",
+   "rider_id": "45349",
+   "team": "Soudal Quick-Step",
+   "team_id": "26331",
+   "gap": 2434.0,
+   "dob": "1998"
+  },
+  {
+   "place": "155",
+   "name": "Rouland Louis",
+   "rider_id": "119973",
+   "team": "Cofidis",
+   "team_id": "44516",
+   "gap": 2434.0,
+   "dob": "2002"
+  },
+  {
+   "place": "156",
+   "name": "Camprub\u00ed Marcel",
+   "rider_id": "136820",
+   "team": "Pinarello-Q36.5 Pro Cycling Team",
+   "team_id": "44779",
+   "gap": 2434.0,
+   "dob": "2001"
+  },
+  {
+   "place": "157",
+   "name": "Busatto Francesco",
+   "rider_id": "119784",
+   "team": "Alpecin-Premier Tech",
+   "team_id": "38373",
+   "gap": 2480.0,
+   "dob": "2002"
+  },
+  {
+   "place": "158",
+   "name": "Meeus Jordi",
+   "rider_id": "45364",
+   "team": "Red Bull-BORA-hansgrohe",
+   "team_id": "43656",
+   "gap": 2681.0,
+   "dob": "1998"
+  },
+  {
+   "place": "159",
+   "name": "Sentjens Sente",
+   "rider_id": "187282",
+   "team": "Alpecin-Premier Tech",
+   "team_id": "38373",
+   "gap": 2681.0,
+   "dob": "2005"
+  },
+  {
+   "place": "160",
+   "name": "Norsgaard Mathias Sunek\u00e6r",
+   "rider_id": "38481",
+   "team": "Lidl-Trek",
+   "team_id": "31681",
+   "gap": 2806.0,
+   "dob": "1997"
+  },
+  {
+   "place": "DNS",
+   "name": "De Vylder Lindsay",
+   "rider_id": "32870",
+   "team": "Alpecin-Premier Tech",
+   "team_id": "38373",
+   "gap": "",
+   "dob": "1995"
+  },
+  {
+   "place": "DNS",
+   "name": "Gonz\u00e1lez David",
+   "rider_id": "46778",
+   "team": "Pinarello-Q36.5 Pro Cycling Team",
+   "team_id": "44779",
+   "gap": "",
+   "dob": "1996"
+  },
+  {
+   "place": "DNS",
+   "name": "Tulett Ben",
+   "rider_id": "94645",
+   "team": "Team Visma | Lease a Bike",
+   "team_id": "28242",
+   "gap": "",
+   "dob": "2001"
+  },
+  {
+   "place": "DNF",
+   "name": "McKenzie Hamish",
+   "rider_id": "167264",
+   "team": "Team Jayco-AlUla",
+   "team_id": "39199",
+   "gap": "",
+   "dob": "2004"
+  },
+  {
+   "place": "DNF",
+   "name": "Kluckers Arthur",
+   "rider_id": "76409",
+   "team": "Tudor Pro Cycling Team",
+   "team_id": "39194",
+   "gap": "",
+   "dob": "2000"
+  },
+  {
+   "place": "DNF",
+   "name": "Vine Jay",
+   "rider_id": "88703",
+   "team": "UAE Team Emirates-XRG",
+   "team_id": "25778",
+   "gap": "",
+   "dob": "1995"
+  }
+ ]
+}

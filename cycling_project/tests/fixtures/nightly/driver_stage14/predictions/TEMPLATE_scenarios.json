@@ -1,0 +1,26 @@
+{
+  "stage": 1,
+  "fc_race_id": "23",
+  "year": 2026,
+  "date": "2026-08-22",
+  "label": "Stage 1",
+  "odds_capture": "YYYY-MM-DD/markets_HHMM.json",
+  "event_id": "FILL_FROM_ODDS_PROVENANCE",
+  "day_key": {"res_3": 1.0},
+  "scenarios": {
+    "main_read": {
+      "label": "The official morning read",
+      "short": "Main read",
+      "refs": [0],
+      "tag": "vuelta_st01_main",
+      "note": "day_key at config root is the logged tier-3 read; a scenario may override with its own day_key to explore an alternative."
+    },
+    "alt_read": {
+      "label": "Alternative branch",
+      "short": "Alt",
+      "refs": [0],
+      "tag": "vuelta_st01_alt",
+      "day_key": {"res_2": 0.7, "res_4": 0.3}
+    }
+  }
+}

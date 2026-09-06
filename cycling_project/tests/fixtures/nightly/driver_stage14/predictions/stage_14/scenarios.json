@@ -1,0 +1,91 @@
+{
+  "stage": 14,
+  "fc_race_id": "23",
+  "year": 2026,
+  "date": "2026-09-05",
+  "label": "Stage 14 — Jaén → Sierra de la Pandera, 154.5 km",
+  "odds_capture": "2026-09-04/markets_1345.json",
+  "event_id": "1028797734",
+  "void_stages": [
+    3
+  ],
+  "day_key": {
+    "gc_day": 0.6,
+    "res_2": 0.4
+  },
+  "day_key_note": "OFFICIAL MORNING READ (tier-3 archive) — and this DEPARTS from the working read of 'a mountain top finish but not a super hard day, probably not a shattered GC finish'. The road book contradicts both halves. Jaén to the Sierra de la Pandera is 154.5 km with 4,338 m of climbing and, in the previews' phrase, virtually no flat road — that is not a step down from Calar Alto's 4,568 m, it is the same order of day over a shorter distance, and well above Valdelinares' 3,572 m. The finish is the hardest of the race: 11.4 km at 7.2% averaged, but the shape is what matters — a 600 m wall at over 10% (the Muro de Valdepeñas de Jaén) just before the foot, then from 4.5 km to go two solid kilometres of double-digit gradient with a 15% ramp at the flamme rouge, pitches quoted as high as 21%, in 40°C. Locally it is called the Angliru of the South, and since 2002 it has never failed to move the general classification. So 'probably not a shattered GC finish' is the one call I am confident is wrong: this climb is a shattering instrument in a way Calar Alto's irregular top explicitly was not. WHERE THE READ IS RIGHT is the break question, and it keeps res_2 at a real 0.40. This Vuelta has already given two mountain days away — Valdelinares and Calar Alto — and the market is pricing a third: behind Mas at 3.75 (17.2%) the second choice is Santiago Buitrago at 6.50 (9.9%), who sits 18th at +38:09 and was third out of the break at Calar Alto, with Widar (14th), Cristian Rodriguez (11th), Paret-Peintre (43rd), Johannessen (25th), Berrade (24th) and Fortunato (73rd) all priced inside 26.0. Adding the book across the current GC top-10 (Mas, Roglic, Gall, Carapaz, Onley, Omrzel, Skjelmose, Kuss) gives roughly 40%, leaving ~60% outside it. THE ARGUMENT THAT TIPS IT to gc_day is a structural difference from Calar Alto that the market does not seem to be pricing: there, climbing began at km 7.7 and a break had an enormous launchpad; here the first categorised climb is Puerto de los Villares at km 80, with Locubín at ~km 100, so the decisive terrain is compressed into the last 75 km and a break has far less road in which to build a lead it can defend. Combine that with the steepest finish of the race — the tool a chasing GC group has lacked all week — and with Mas obliged to defend 1:45 from Roglic while Gall (+2:06), Carapaz (+3:53) and Onley (+4:29) all still have a live claim, and the balance goes to the GC group. Stage 12's lesson is explicitly carried: chase incentive predicts whether the GC group RACES, not whether the break is CAUGHT. What is different today is that the terrain gives them the means as well as the motive.",
+  "scenarios": {
+    "gc_showdown": {
+      "label": "The Pandera does what it always does — the GC group settles it",
+      "short": "GC showdown",
+      "refs": [
+        1529,
+        151,
+        242,
+        10961,
+        974
+      ],
+      "tag": "vuelta_st14_gc_showdown",
+      "note": "The base case. Two kilometres of double-digit gradient from 4.5 km to go, a 15% ramp at the flamme rouge and 40°C is as selective an ending as this race has, and unlike Calar Alto there is no irregular upper half to let dropped riders return — only a few hundred metres of dip and rise right at the top. References are hard Grand Tour and WT mountain days won by a GC leader from a group of two (mountain 0.41-0.49 over rolling): Pogacar's Peyragudes 2022, Vingegaard's TdF 2024 stage 11, Roglic's Angliru 2023, Almeida's Vuelta 2025 stage 13, Roglic's Dauphine 2024 stage 7. Inherits the config-root day key. Note the oracle's second route to gc_day — the front-5 median inside the morning top-10 — fires here even if a breakaway rider wins, provided the GC men fill the places behind him, which on a climb this steep is the likely shape."
+    },
+    "mountain_break": {
+      "label": "A third one gets away — the market's card, and this race's habit",
+      "short": "Mountain break",
+      "refs": [
+        10874,
+        10962,
+        10853,
+        10865,
+        10602
+      ],
+      "tag": "vuelta_st14_mountain_break",
+      "day_key": {
+        "res_2": 0.85,
+        "gc_day": 0.15
+      },
+      "exclude_top_gc": 10,
+      "exclude_gc_source": "standings",
+      "note": "The alternative, and it has a strong recent record on this race rather than being a theoretical hedge — Valdelinares and Calar Alto both went to the escape, the second of them to a rider the boards had at #23. References are the canonical mountain-escape days (mountain 0.47-0.52 over rolling, winner groups of 1 to 4): Carapaz's TdF 2026 stage 18, Soler's Vuelta 2025 stage 14, Barre's Pologne 2026 stage 6, van der Poel's TdF 2026 stage 9, Narvaez's Giro 2026 stage 11. The conditional pool cuts the GC top 10 — everyone inside 11:06, through Berthet — which frees the market's whole card: Buitrago (18th), Widar (14th), Cristian Rodriguez (11th), Bisiaux (12th), Berrade (24th), Johannessen (25th), Paret-Peintre (43rd) and Fortunato (73rd). Note the cut deliberately keeps Omrzel OUT of the free pool: he won from the break at Calar Alto but that win moved him to 6th on GC at +4:59, so he is now a rider the leaders have to watch rather than one they will let go — which is also why a repeat by him would score gc_day rather than res_2."
+    },
+    "muro_splits_it": {
+      "label": "The Muro splits it early — a small group of the very best contests the wall",
+      "short": "Muro splits it",
+      "refs": [
+        10866,
+        10870,
+        10859,
+        10968,
+        10488
+      ],
+      "tag": "vuelta_st14_muro_splits_it",
+      "day_key": {
+        "gc_day": 1.0
+      },
+      "note": "The most selective branch, drawn because the finish genuinely supports it and because the campaign has under-priced the shattering read before. The 600 m wall at over 10% arrives before the Pandera proper, so riders can reach the foot of the final climb already isolated, and the double-digit kilometres at 4.5-2.5 km to go are where a single rider can take minutes rather than seconds. References are the shattering-summit archetype (mountain 0.45-0.55, winner group 1): Pogacar's TdF 2026 stages 10, 14 and 3, Vingegaard's Vuelta 2025 stage 20 and Catalunya 2026 stage 6. The gap between this board and 'GC showdown' is how much of each contender's case rests on surviving in a group versus climbing with the very best when the road hits 15%."
+    },
+    "hindsight": {
+      "label": "Hindsight (post-hoc) — the day as raced: a 44-man escape, a four-up finish, the GC group at 4:12",
+      "short": "Hindsight (post-hoc)",
+      "refs": [
+        218,
+        1445,
+        2572,
+        4402,
+        5183
+      ],
+      "tag": "vuelta_st14_hindsight",
+      "day_key": {
+        "res_2": 1.0
+      },
+      "note": "Post-race reconstruction, NOT a prediction — run with --no-log and never written to prediction_log. Forty-four riders went clear in a frantic opening and were given seven minutes; on the Pandera the escape came down to Buitrago, Brenner, Cristian Rodriguez and Sosa, Buitrago attacked on the steepest section, Brenner came back to him as the road eased and passed him metres from the line to win by a second, Rodriguez 11 seconds back and Sosa 14. The first GC riders — Mas and Gall together — were 21st and 22nd at 4:12, with Roglic at 4:37, Carapaz at 4:43, Kuss at 5:09, Onley and Omrzel at 5:27 and Skjelmose at 5:29. References are Grand Tour mountain stages won from an escape by a two- or three-up finish with the GC group minutes behind (winner groups of 2-3, tiny margins, under 15% of the field inside two minutes): Zana's Giro 2023 stage 18 at Val di Zoldo, Kämna's Etna stage at the Giro 2022, Kwiatkowski's TdF 2020 stage 18, van Garderen's Giro 2017 stage 18 at Ortisei and Pantano's TdF 2016 stage 15 at Culoz — a set disjoint from every prior board on this race. The question, as at Valdelinares and Calar Alto: does a profile built from days the escape actually won recover Brenner (#22-50 on the morning boards) or Sosa (#33-42), or is this the break-membership wall again?"
+    }
+  },
+  "reflection": [
+    "The escape won for the third time in four mountain stages, and it won in the one way the morning read had argued against. Marco Brenner took Tudor's first Grand Tour stage from a 44-rider break, beating Santiago Buitrago by a second after the Colombian had attacked on the steepest section and been reeled back as the gradient eased; Cristian Rodriguez was third at 11 seconds and Ivan Sosa fourth at 14. The first GC riders home — Mas and Gall, together — were 21st and 22nd at 4:12. The oracle labelled the day res_2 (winner group of two, realized front a climbers' escape, first GC man outside the front five), and the key of gc_day 0.6 / res_2 0.4 scored covered at 0.40. The tier-3 record stands at 6/12 exact, 11/12 covered, mean weight 0.53.",
+    "The terrain half of the read was right and the oracle does not credit it, which is now the campaign's recurring shape on mountain days. The Pandera did exactly what the road book promised: Mas attacked at 2.7 km to go and dropped Skjelmose, Roglic accelerated inside 1.5 km and could not shed him, and the classification moved — Roglic lost 25 seconds and drops to third behind Gall, Carapaz lost 31, Onley 1:15, Skjelmose 1:17. A 'shattering instrument' is precisely what the finish proved to be. But the oracle labels the day by who wins, not by what happens behind, and the escape had seven minutes at the foot of the climb. The morning note's own sentence — 'chase incentive predicts whether the GC group RACES, not whether the break is CAUGHT' — was the right refinement; the mistake was drawing the wrong conclusion from it.",
+    "The launchpad argument was the specific error, and it is worth naming so the next read does not repeat it. The case for gc_day at 0.6 rested on a structural difference from Calar Alto: there the climbing began at km 7.7, here the first categorised climb came at km 80, so a break would have far less road in which to build a defensible lead. That was true and irrelevant. The break did not need the climbs to build its lead — it went in the opening kilometres on flat roads and was allowed seven minutes because of who was in it: forty-four riders with every team represented, UAE sending Almeida, Vermaerke and Oliveira, and Movistar — the leader's own team — placing Castrillo and Garcia Pierna in it. Once the red jersey's team has two men up the road, the chase-incentive question answers itself: Movistar will not chase their own satellites, and Red Bull and Decathlon needed to attack Mas, not close a gap for him. A launchpad check measures where a break can extend a lead; the size and composition of the move, and whether the leader's team is in it, decide whether it gets one at all. Applied properly, the incentive test pointed to res_2 by lunchtime, and the market — which had 60% of its probability outside the GC top-10 and Buitrago second choice at 9.9% — had read it right.",
+    "Where the retrieval channel did its job was, again, on the branch board rather than the official one. The 'mountain break' board, keyed res_2 0.85 with the GC top-10 cut, surfaced five of the actual top 15 inside its pool of fifteen against the production board's two — Paret-Peintre #6, Nordhagen #4, Zana #7, Buitrago #12, Almeida #13 — while the official 'GC showdown' board managed two against one. Buitrago, the market's second choice, sat #12-19 across the boards at about 1.1%, and Brenner — a 101.0 shot on the book at 0.3% — was #22 on the break board and #41-50 elsewhere; Sosa was #33-42. That is the same break-membership wall as Valdelinares and Calar Alto: the model can rank the climbers who might be in a move, but nothing it sees tells it who will be, and a 44-man escape makes the pool almost the whole peloton minus the top ten.",
+    "The hindsight board, built on five escape-won mountain days and keyed res_2 outright, is the seventh consecutive post-hoc reconstruction to fail to beat the morning read on the winner. It retrieves the same five of the top 15 that the 'mountain break' board found prospectively (production: one), moves Paret-Peintre to #4 and Buitrago to #11, and still leaves Brenner at #25 and Sosa at #23 at 0.3% each. Better course knowledge would not have found them; they were found by being in a 44-man move, which is not a thing the model sees.",
+    "The race state going into the last week. Mas leads Gall by 2:06 and Roglic by 2:10, Carapaz at 4:24, Onley 5:44, Omrzel 6:14, Skjelmose 6:49, and Cristian Rodriguez climbed to 8th at 7:01 from the break. The book has effectively decided — Mas 1.20 (69.5% devig), Roglic 6.00, Gall 9.00 — and the two GC heads have moved further apart rather than closer: the state-aware outlook has Mas 34.5% / Roglic 26.2% / Gall 3.0%, still concentrated on the two men it decided were the race before Gall had shown himself, while the blend has Roglic 29.6% / Gall 17.9% / Onley 16.1% / Mas 8.6% because it never sees the standings. Neither is within twenty points of the market on the leader. Five more riders left the race — Busatto, Lutsenko, Mühlberger, Sentjens and Sivakov — leaving 150."
+  ]
+}

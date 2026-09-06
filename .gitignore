@@ -163,3 +163,8 @@ supabase/**/signing_keys*.json
 
 # test fixtures may legitimately contain CSV archives
 !cycling_project/tests/fixtures/**/*.csv
+
+# nightly driver scratch (chip H): FakeStore mirrors and captured subprocess logs
+performance_eval/*/runs/fakestore/
+performance_eval/*/runs/*/logs/
+performance_eval/runs/fakestore/

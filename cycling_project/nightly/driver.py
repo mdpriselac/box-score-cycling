@@ -1,0 +1,1354 @@
+"""``python -m cycling_project.nightly <command>`` — the daily runbook as code.
+
+Spec: NIGHTLY_AGENT_WORKFLOW.md §2.2 (commands), §2.8 (ingest) and
+``performance_eval/vuelta-2026/DAILY_RUNBOOK.md`` (the process). The driver
+is deterministic and idempotent on ``(campaign, unit, phase)``; judgment
+(day keys, scenario references, prose, route overrides) is never produced
+here — when it is missing the driver stops with exit 10 and an operator task.
+
+Exit codes: ``0`` done · ``10`` waiting for input (``operator_task`` in the
+JSON) · ``20`` failed (``error_class``, ``step``, ``log_path``). Every run
+and step is recorded through ``store.start_run`` / ``add_step`` /
+``finish_run`` and mirrored to ``performance_eval/<campaign>/runs/<date>/``.
+Existing scripts are subprocessed unchanged (``PYTHONUNBUFFERED=1``, logs
+captured); SQLite-writing steps take a global file lock.
+
+There is no ``publish`` or ``commit`` command and no git operation anywhere
+in this module (``assert_no_git`` guards every subprocess).
+
+Commands: ``bootstrap`` · ``plan`` · ``night`` · ``settle`` · ``preview`` ·
+``ingest`` · ``bundle`` · ``refs`` · ``validate`` · ``upload`` · ``status``.
+``--dry-run`` everywhere: no fetch, ``--no-log``, a ``FakeStore``, scripts
+recorded but not executed.
+"""
+
+from __future__ import annotations
+
+import argparse
+import contextlib
+import csv
+import datetime as dt
+import fcntl
+import json
+import math
+import os
+import re
+import shutil
+import sqlite3
+import subprocess
+import sys
+import time
+import traceback
+import uuid
+from dataclasses import dataclass, field
+from pathlib import Path
+from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Tuple
+
+from cycling_project.db_path import ENV_VAR as DB_ENV_VAR, default_db_path
+from cycling_project.nightly import day_key_record as rec
+from cycling_project.nightly import pcs_ingest
+from cycling_project.nightly.crosswalk import CROSSWALK_CSV, build_operator_task, read_crosswalk_csv
+from cycling_project.nightly.secrets import load_local_env, redact
+from cycling_project.webscrape_tools.logging_config import get_logger
+
+logger = get_logger(__name__)
+
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+PERF_EVAL = PROJECT_ROOT / "performance_eval"
+TDF_TOOLS = PERF_EVAL / "tour-de-france-2026"
+SITE_BUILD = PROJECT_ROOT / "netlify_site" / "build"
+SITE_DIR = PROJECT_ROOT / "netlify_site"
+SCRIPTS = {
+    "seed_state_cache": TDF_TOOLS / "seed_state_cache.py",
+    "capture_odds": TDF_TOOLS / "capture_odds.py",
+    "predict": SITE_BUILD / "predict_stage_scenarios.py",
+    "gc_tracker": SITE_BUILD / "build_gc_tracker.py",
+    "stage_page": SITE_BUILD / "build_stage_page.py",
+    "site_index": SITE_BUILD / "build_site_index.py",
+    "site_frame": SITE_BUILD / "build_site_frame.py",
+    "score_day_keys": PERF_EVAL / "vuelta-2026" / "score_day_keys.py",
+}
+
+EXIT_DONE, EXIT_WAITING, EXIT_FAILED = 0, 10, 20
+PHASES_UNIT = ("settle", "preview", "ingest", "bundle", "validate", "upload")
+ONE_DAY_UNIT = "race"
+TEMPLATE_NAME = "TEMPLATE_scenarios.json"
+COMPLETED_INDEX = "completed.json"
+FAKESTORE_DIRNAME = "fakestore"
+LAMBDARANK_SUM_TOL = 0.02
+COVERAGE_WARN, COVERAGE_FAIL = 0.99, 0.90
+STATE_SENTENCE_RE = re.compile(r"State through stage \d+", re.I)
+
+
+# ---------------------------------------------------------------------------
+# Errors and records
+# ---------------------------------------------------------------------------
+
+class WaitingForInput(Exception):
+    """A judgment or a human confirmation is needed: exit 10 with an operator task."""
+
+    def __init__(self, kind: str, summary: str, detail: Optional[Dict[str, Any]] = None, urgency: str = "tonight"):
+        super().__init__(summary)
+        self.kind, self.summary, self.detail, self.urgency = kind, summary, detail or {}, urgency
+
+
+class DriverFailure(Exception):
+    """A step failed: exit 20 with ``error_class`` / ``step`` / ``log_path``."""
+
+    def __init__(self, error_class: str, message: str, *, log_path: Optional[Path] = None,
+                 detail: Optional[Dict[str, Any]] = None):
+        super().__init__(message)
+        self.error_class, self.log_path, self.detail = error_class, log_path, detail or {}
+
+
+def assert_no_git(argv: Sequence[str]) -> None:
+    """The driver never runs git — not as a command, not through a shell."""
+    for a in argv:
+        base = os.path.basename(str(a))
+        if base == "git" or base.startswith("git-"):
+            raise DriverFailure("forbidden_command", f"git is not a driver operation: {argv}")
+
+
+def _utcnow() -> str:
+    return dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds")
+
+
+def _read_json(path: Path, default: Any = None) -> Any:
+    if not path.exists():
+        return default
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def _write_json(path: Path, value: Any) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(value, indent=1, ensure_ascii=False, default=str) + "\n", encoding="utf-8")
+
+
+def fmt_gap(seconds: Optional[float]) -> str:
+    if seconds is None:
+        return "?"
+    s = int(round(float(seconds)))
+    h, rem = divmod(s, 3600)
+    m, sec = divmod(rem, 60)
+    return f"{h}:{m:02d}:{sec:02d}" if h else f"{m}:{sec:02d}"
+
+
+# ---------------------------------------------------------------------------
+# Campaign
+# ---------------------------------------------------------------------------
+
+@dataclass
+class Campaign:
+    dir: Path
+    cfg: Dict[str, Any] = field(default_factory=dict)
+
+    @classmethod
+    def load(cls, spec: str | Path) -> "Campaign":
+        p = Path(spec)
+        if not p.is_dir():
+            cand = PERF_EVAL / str(spec)
+            if cand.is_dir():
+                p = cand
+            else:
+                raise DriverFailure("campaign_missing", f"no campaign directory for {spec!r}")
+        cfg = _read_json(p / "campaign.json", {}) or {}
+        return cls(dir=p.resolve(), cfg=cfg)
+
+    @property
+    def slug(self) -> str:
+        return str(self.cfg.get("slug") or self.dir.name)
+
+    @property
+    def fc_race_id(self) -> Optional[str]:
+        v = self.cfg.get("fc_race_id")
+        return str(v) if v is not None else None
+
+    @property
+    def year(self) -> Optional[int]:
+        v = self.cfg.get("year")
+        return int(v) if v is not None else None
+
+    @property
+    def is_stage_race(self) -> bool:
+        return bool(self.cfg.get("is_stage_race", True))
+
+    @property
+    def timezone(self) -> str:
+        return str(self.cfg.get("timezone") or "UTC")
+
+    @property
+    def void_stages(self) -> List[int]:
+        return [int(x) for x in (self.cfg.get("void_stages") or [])]
+
+    @property
+    def stages(self) -> List[Dict[str, Any]]:
+        return [s for s in (self.cfg.get("stages") or []) if s.get("number") is not None]
+
+    @property
+    def site_prefix(self) -> str:
+        return str(((self.cfg.get("site") or {}).get("prefix")) or "")
+
+    def unit_for(self, stage: Optional[int]) -> str:
+        return f"stage_{int(stage):02d}" if stage is not None else ONE_DAY_UNIT
+
+    @staticmethod
+    def stage_of(unit: str) -> Optional[int]:
+        if unit.startswith("stage_"):
+            try:
+                return int(unit.split("_", 1)[1])
+            except ValueError:
+                return None
+        return None
+
+    def stage_date(self, stage: Optional[int]) -> Optional[str]:
+        if stage is None:
+            return self.cfg.get("start_date") or self.cfg.get("date")
+        for s in self.stages:
+            if int(s["number"]) == int(stage):
+                return s.get("date")
+        return None
+
+    def results_dir(self, unit: str) -> Path:
+        return self.dir / "results" / unit
+
+    def pred_dir(self, unit: str) -> Path:
+        return self.dir / "predictions" / unit
+
+    def runs_dir(self) -> Path:
+        return self.dir / "runs"
+
+    def today(self, override: Optional[dt.date] = None) -> dt.date:
+        if override:
+            return override
+        try:
+            from zoneinfo import ZoneInfo
+            return dt.datetime.now(ZoneInfo(self.timezone)).date()
+        except Exception:  # noqa: BLE001 — unknown zone name
+            return dt.datetime.now(dt.timezone.utc).date()
+
+    def previous_config(self, stage: int) -> Optional[Dict[str, Any]]:
+        for n in range(stage - 1, 0, -1):
+            cfg = _read_json(self.pred_dir(self.unit_for(n)) / "scenarios.json")
+            if cfg:
+                return cfg
+        return None
+
+    def latest_results_stage(self, before: Optional[int] = None) -> Optional[int]:
+        best = None
+        for p in (self.dir / "results").glob("stage_*"):
+            n = self.stage_of(p.name)
+            if n is None or not (p / "results.csv").exists():
+                continue
+            if before is not None and n >= before:
+                continue
+            best = n if best is None else max(best, n)
+        return best
+
+
+# ---------------------------------------------------------------------------
+# Store resolution and the SQLite lock
+# ---------------------------------------------------------------------------
+
+def resolve_store(kind: str, root: Optional[Path], *, dry_run: bool, campaign: Optional[Campaign]) -> Any:
+    from cycling_project.nightly import store as _store
+    if dry_run or kind == "fake":
+        base = root or (campaign.runs_dir() / FAKESTORE_DIRNAME if campaign else PERF_EVAL / "runs" / FAKESTORE_DIRNAME)
+        return _store.FakeStore(Path(base), role="agent")
+    load_local_env()
+    have = bool(os.environ.get("SUPABASE_URL") and os.environ.get("SUPABASE_NIGHTLY_KEY"))
+    if kind == "supabase" or (kind == "auto" and have):
+        if not have:
+            raise DriverFailure("credentials", "SUPABASE_URL and SUPABASE_NIGHTLY_KEY are required for --store supabase")
+        return _store.SupabaseStore(role="agent")
+    base = root or (campaign.runs_dir() / FAKESTORE_DIRNAME if campaign else PERF_EVAL / "runs" / FAKESTORE_DIRNAME)
+    logger.info("no Supabase credentials; using FakeStore at %s", base)
+    return _store.FakeStore(Path(base), role="agent")
+
+
+@contextlib.contextmanager
+def sqlite_lock(db_path: Path, timeout_s: float = 600.0):
+    """Global advisory lock around every SQLite-writing step (threads share the container)."""
+    lock_path = Path(str(db_path) + ".nightly.lock")
+    try:
+        lock_path.parent.mkdir(parents=True, exist_ok=True)
+        fh = open(lock_path, "a+")
+    except OSError:
+        lock_path = PERF_EVAL / "runs" / "sqlite.nightly.lock"
+        lock_path.parent.mkdir(parents=True, exist_ok=True)
+        fh = open(lock_path, "a+")
+    deadline = time.time() + timeout_s
+    try:
+        while True:
+            try:
+                fcntl.flock(fh.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+                break
+            except OSError:
+                if time.time() > deadline:
+                    raise DriverFailure("lock_timeout", f"could not lock {lock_path} within {timeout_s}s")
+                time.sleep(0.5)
+        yield
+    finally:
+        try:
+            fcntl.flock(fh.fileno(), fcntl.LOCK_UN)
+        finally:
+            fh.close()
+
+
+# ---------------------------------------------------------------------------
+# The driver
+# ---------------------------------------------------------------------------
+
+class Driver:
+    def __init__(self, campaign: Optional[Campaign], store: Any, *, dry_run: bool = False,
+                 today: Optional[dt.date] = None, no_log: bool = False, force: bool = False,
+                 python: Optional[str] = None, crosswalk_csv: Optional[Path] = None,
+                 db_path: Optional[Path] = None, agent_key: Optional[Path] = None,
+                 release_tag: Optional[str] = None):
+        self.campaign = campaign
+        self.store = store
+        self.dry_run = dry_run
+        self.today_override = today
+        self.no_log = no_log or dry_run
+        self.force = force
+        self.python = python or sys.executable
+        self.crosswalk_csv = Path(crosswalk_csv) if crosswalk_csv else CROSSWALK_CSV
+        self.db_path = Path(db_path) if db_path else default_db_path()
+        self.agent_key = Path(agent_key) if agent_key else None
+        self.release_tag = release_tag or os.environ.get("NIGHTLY_RELEASE_TAG")
+        # per-run state
+        self.run: Optional[Dict[str, Any]] = None
+        self.record: Dict[str, Any] = {}
+        self.record_path: Optional[Path] = None
+        self.built_pages: List[Path] = []
+        self.plog_watermark: Optional[int] = None
+
+    # -- helpers ----------------------------------------------------------------
+    @property
+    def today(self) -> dt.date:
+        return self.campaign.today(self.today_override) if self.campaign else (self.today_override or dt.date.today())
+
+    def _say(self, msg: str) -> None:
+        print(redact(msg), file=sys.stderr, flush=True)
+
+    def _completed_index(self) -> Dict[str, Any]:
+        return _read_json(self.campaign.runs_dir() / COMPLETED_INDEX, {}) or {}
+
+    def _mark_completed(self, unit: Optional[str], phase: str) -> None:
+        if self.dry_run:
+            return
+        idx = self._completed_index()
+        idx[f"{unit or '-'}:{phase}"] = {"run_id": self.run["run_id"] if self.run else None,
+                                          "finished_at": _utcnow(), "date": str(self.today)}
+        _write_json(self.campaign.runs_dir() / COMPLETED_INDEX, idx)
+
+    def _already_done(self, unit: Optional[str], phase: str) -> Optional[Dict[str, Any]]:
+        if self.force:
+            return None
+        return self._completed_index().get(f"{unit or '-'}:{phase}")
+
+    # -- run/step recording ----------------------------------------------------
+    def begin(self, unit: Optional[str], phase: str, meta: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+        slug = self.campaign.slug if self.campaign else None
+        self.run = self.store.start_run(slug, unit, phase, release_tag=self.release_tag,
+                                        meta={"dry_run": self.dry_run, "today": str(self.today), **(meta or {})})
+        self.run.setdefault("run_id", str(uuid.uuid4()))
+        self.built_pages = []
+        self.record = {"run_id": self.run["run_id"], "campaign": slug, "unit": unit, "phase": phase,
+                       "started_at": _utcnow(), "dry_run": self.dry_run, "today": str(self.today),
+                       "state": "running", "steps": []}
+        if self.campaign:
+            day_dir = self.campaign.runs_dir() / str(self.today)
+            name = f"{phase}_{unit}.json" if unit else f"{phase}.json"
+            self.record_path = day_dir / name
+            self._flush()
+        self.plog_watermark = self._prediction_log_max_id()
+        return self.run
+
+    def _flush(self) -> None:
+        if self.record_path:
+            _write_json(self.record_path, self.record)
+
+    def _record_step(self, step: str, state: str, *, started: float, exit_code: Optional[int] = None,
+                     detail: Optional[Dict[str, Any]] = None, log_path: Optional[Path] = None) -> None:
+        finished = _utcnow()
+        duration_ms = int((time.time() - started) * 1000)
+        entry = {"step": step, "state": state, "finished_at": finished, "duration_ms": duration_ms,
+                 "exit_code": exit_code, "detail": detail or {}, "log_path": str(log_path) if log_path else None}
+        self.record["steps"].append(entry)
+        self._flush()
+        try:
+            self.store.add_step(self.run["run_id"], step, state, finished_at=finished, duration_ms=duration_ms,
+                                exit_code=exit_code, detail=detail or {},
+                                log_key=str(log_path.relative_to(PROJECT_ROOT)) if log_path and log_path.is_relative_to(PROJECT_ROOT) else None)
+        except Exception as exc:  # noqa: BLE001 — the local record is the fallback ledger
+            self._say(f"  [store] add_step failed: {exc}")
+
+    def finish(self, state: str, exit_code: int, detail: Optional[Dict[str, Any]] = None) -> None:
+        self.record.update({"state": state, "exit_code": exit_code, "finished_at": _utcnow(), "result": detail or {}})
+        self._flush()
+        try:
+            self.store.finish_run(self.run["run_id"], state, exit_code, detail=detail or {})
+        except Exception as exc:  # noqa: BLE001
+            self._say(f"  [store] finish_run failed: {exc}")
+
+    def step(self, name: str, fn: Callable[[], Any], *, skip: Optional[str] = None) -> Any:
+        """Run one python step; records ok/skipped/waiting/failed and re-raises."""
+        started = time.time()
+        if skip:
+            self._say(f"- {name}: skipped ({skip})")
+            self._record_step(name, "skipped", started=started, detail={"reason": skip})
+            return None
+        self._say(f"- {name}")
+        try:
+            out = fn()
+        except WaitingForInput as w:
+            self._record_step(name, "waiting", started=started, exit_code=EXIT_WAITING,
+                              detail={"kind": w.kind, "summary": w.summary})
+            raise
+        except DriverFailure as f:
+            self._record_step(name, "failed", started=started, exit_code=EXIT_FAILED,
+                              detail={"error_class": f.error_class, "message": str(f), **f.detail}, log_path=f.log_path)
+            raise
+        except Exception as exc:  # noqa: BLE001
+            self._record_step(name, "failed", started=started, exit_code=EXIT_FAILED,
+                              detail={"error_class": type(exc).__name__, "message": str(exc),
+                                      "trace": traceback.format_exc()[-2000:]})
+            raise DriverFailure(type(exc).__name__, str(exc)) from exc
+        detail = out if isinstance(out, dict) and out.get("_detail") else {}
+        self._record_step(name, "ok", started=started, exit_code=0, detail=detail.get("_detail") if detail else {})
+        return out
+
+    def script(self, name: str, argv: Sequence[str], *, lock: bool = False, ok_codes: Iterable[int] = (0,),
+               cwd: Optional[Path] = None) -> Dict[str, Any]:
+        """Subprocess an existing script unchanged; captured log; dry-run records the argv only."""
+        argv = [str(a) for a in argv]
+        assert_no_git(argv)
+        started = time.time()
+        log_path = None
+        if self.campaign:
+            log_dir = self.campaign.runs_dir() / str(self.today) / "logs"
+            log_dir.mkdir(parents=True, exist_ok=True)
+            unit = self.record.get("unit") or "-"
+            log_path = log_dir / f"{self.record.get('phase', 'run')}_{unit}_{name}.log"
+        if self.dry_run:
+            self._say(f"- {name}: skipped (dry-run) :: {' '.join(argv)}")
+            self._record_step(name, "skipped", started=started, detail={"reason": "dry-run", "argv": argv})
+            return {"skipped": True, "argv": argv, "returncode": None}
+        env = {**os.environ, "PYTHONUNBUFFERED": "1", "SCRAPER_USE_BROWSER": os.environ.get("SCRAPER_USE_BROWSER", "0")}
+        env[DB_ENV_VAR] = str(self.db_path)
+        self._say(f"- {name}: {' '.join(argv)}")
+        lock_cm = sqlite_lock(self.db_path) if lock else contextlib.nullcontext()
+        with lock_cm, open(log_path, "w", encoding="utf-8") if log_path else contextlib.nullcontext() as fh:
+            proc = subprocess.run(argv, cwd=str(cwd or PROJECT_ROOT), env=env, stdout=subprocess.PIPE,
+                                  stderr=subprocess.STDOUT, text=True)
+            text = redact(proc.stdout or "")
+            if fh:
+                fh.write(text)
+        tail = text[-1500:]
+        detail = {"argv": argv, "returncode": proc.returncode, "tail": tail}
+        if proc.returncode not in set(ok_codes):
+            self._record_step(name, "failed", started=started, exit_code=proc.returncode, detail=detail, log_path=log_path)
+            raise DriverFailure("subprocess", f"{name} exited {proc.returncode}", log_path=log_path,
+                                detail={"argv": argv, "tail": tail})
+        self._record_step(name, "ok", started=started, exit_code=proc.returncode,
+                          detail={"argv": argv, "returncode": proc.returncode}, log_path=log_path)
+        return {"skipped": False, "argv": argv, "returncode": proc.returncode, "stdout": text}
+
+    # -- top-level wrapper -----------------------------------------------------
+    def run_phase(self, unit: Optional[str], phase: str, body: Callable[[], Dict[str, Any]],
+                  *, idempotent: bool = True) -> Tuple[int, Dict[str, Any]]:
+        done = self._already_done(unit, phase) if (idempotent and self.campaign) else None
+        if done:
+            out = {"status": "done", "already": True, "campaign": self.campaign.slug, "unit": unit, "phase": phase,
+                   "previous_run": done}
+            return EXIT_DONE, out
+        self.begin(unit, phase)
+        base = {"campaign": self.campaign.slug if self.campaign else None, "unit": unit, "phase": phase,
+                "run_id": self.run["run_id"], "dry_run": self.dry_run, "record": str(self.record_path) if self.record_path else None}
+        try:
+            result = body() or {}
+        except WaitingForInput as w:
+            task = build_operator_task(w.kind, self.campaign.slug if self.campaign else None, w.summary,
+                                       {**w.detail, "unit": unit, "phase": phase, "run_id": self.run["run_id"]}, w.urgency)
+            task_row = None
+            try:
+                task_row = self.store.insert_task(task)
+            except Exception as exc:  # noqa: BLE001
+                self._say(f"  [store] insert_task failed: {exc}")
+            self.finish("waiting", EXIT_WAITING, {"operator_task": task})
+            return EXIT_WAITING, {**base, "status": "waiting_for_input", "operator_task": task,
+                                  "operator_task_id": (task_row or {}).get("id")}
+        except DriverFailure as f:
+            self.finish("failed", EXIT_FAILED, {"error_class": f.error_class, "message": str(f)})
+            return EXIT_FAILED, {**base, "status": "failed", "error_class": f.error_class, "message": str(f),
+                                 "step": self.record["steps"][-1]["step"] if self.record["steps"] else None,
+                                 "log_path": str(f.log_path) if f.log_path else None, "detail": f.detail}
+        self.finish("ok", EXIT_DONE, result)
+        if idempotent:
+            self._mark_completed(unit, phase)
+        return EXIT_DONE, {**base, "status": "done", **result}
+
+    # ------------------------------------------------------------------------
+    # plan / night
+    # ------------------------------------------------------------------------
+    def plan(self, horizon_days: int = 1) -> Dict[str, Any]:
+        c = self.campaign
+        today = self.today
+        store_void: set = set()
+        try:
+            for s in self.store.stages(c.slug) or []:
+                if s.get("void") and s.get("unit"):
+                    n = c.stage_of(s["unit"])
+                    if n is not None:
+                        store_void.add(n)
+        except Exception:  # noqa: BLE001
+            pass
+        void = set(c.void_stages) | store_void
+        units: List[Dict[str, Any]] = []
+        if c.is_stage_race:
+            entries = [(int(s["number"]), s.get("date")) for s in c.stages]
+        else:
+            entries = [(None, c.stage_date(None))]
+        prev_settled = True
+        latest_archived = c.latest_results_stage() if c.is_stage_race else None
+        for number, date_s in sorted(entries, key=lambda t: (t[0] is None, t[0] or 0)):
+            if not date_s:
+                continue
+            d = dt.date.fromisoformat(date_s)
+            unit = c.unit_for(number)
+            if number is not None and number in void:
+                units.append({"unit": unit, "date": date_s, "void": True, "due": []})
+                continue
+            has_results = (c.results_dir(unit) / "results.csv").exists()
+            pred = c.pred_dir(unit)
+            has_boards = pred.is_dir() and any(p.suffix == ".json" and p.name not in ("scenarios.json", "route.json", "route_raw.json",
+                                                                                    "route.override.json", "agent_key.json",
+                                                                                    "agent_key_response.json", "retro_facts.json")
+                                               and not p.name.startswith("editorial_") for p in pred.iterdir())
+            has_pcs = (c.results_dir(unit) / "pcs").is_dir()
+            due: List[str] = []
+            flags: List[str] = []
+            if d <= today and not has_results:
+                # A stage below the latest archived one is a missed day: the runbook's
+                # "a missed day cannot be recovered" — it is a gap, not a due settle,
+                # unless the acquisition thread has actually put PCS pages there.
+                if number is not None and latest_archived is not None and number < latest_archived and not has_pcs:
+                    flags.append("gap")
+                else:
+                    due.append("settle")
+                    if d < today:
+                        flags.append("settle_late")
+                    if not has_pcs:
+                        flags.append("awaiting_pcs")
+            if today < d <= today + dt.timedelta(days=horizon_days) and not has_boards:
+                due.append("preview")
+                if not prev_settled:
+                    flags.append("blocked")
+            units.append({"unit": unit, "date": date_s, "void": False, "due": due, "flags": flags,
+                          "has_results": has_results, "has_boards": has_boards, "has_pcs": has_pcs})
+            if d <= today and "gap" not in flags:
+                prev_settled = has_results
+        return {"campaign": c.slug, "today": str(today), "timezone": c.timezone, "void_stages": sorted(void), "units": units,
+                "settle": [u["unit"] for u in units if "settle" in u["due"]],
+                "preview": [u["unit"] for u in units if "preview" in u["due"]]}
+
+    def night(self, horizon_days: int = 1) -> Tuple[int, Dict[str, Any]]:
+        plan = self.plan(horizon_days)
+        results: List[Dict[str, Any]] = []
+        worst = EXIT_DONE
+        for unit in plan["settle"]:
+            code, out = self.settle(unit)
+            results.append(out)
+            worst = max(worst, code)
+            if code != EXIT_DONE:
+                return worst, {"campaign": self.campaign.slug, "status": "stopped", "plan": plan, "runs": results}
+        for unit in plan["preview"]:
+            code, out = self.preview(unit)
+            results.append(out)
+            worst = max(worst, code)
+            if code != EXIT_DONE:
+                return worst, {"campaign": self.campaign.slug, "status": "stopped", "plan": plan, "runs": results}
+        return worst, {"campaign": self.campaign.slug, "status": "done", "plan": plan, "runs": results}
+
+    # ------------------------------------------------------------------------
+    # settle
+    # ------------------------------------------------------------------------
+    def settle(self, unit: str) -> Tuple[int, Dict[str, Any]]:
+        return self.run_phase(unit, "settle", lambda: self._settle_body(unit))
+
+    def _settle_body(self, unit: str) -> Dict[str, Any]:
+        c = self.campaign
+        stage = c.stage_of(unit)
+        results_dir = c.results_dir(unit)
+        out: Dict[str, Any] = {}
+
+        # 1. ingest (PCS → FC-shaped archive)
+        if (results_dir / "results.csv").exists() and not self.force:
+            self.step("ingest", lambda: None, skip="results already archived")
+        else:
+            out["ingest"] = self.step("ingest", lambda: self._ingest(unit))
+
+        # 2. seed the state cache BEFORE the GC refresh (the outlook head reads it)
+        self.script("seed_state_cache", [self.python, SCRIPTS["seed_state_cache"], "--race-id", c.fc_race_id,
+                                         "--year", c.year, "--out-root", results_dir.parent], lock=True)
+
+        # 3. GC config templated, GC predict, tracker
+        gc_cfg_path = c.pred_dir("gc") / "scenarios.json"
+        if gc_cfg_path.exists() and stage is not None:
+            out["gc_config"] = self.step("gc_config", lambda: self._template_gc_config(gc_cfg_path, stage))
+            self.script("gc_predict", [self.python, SCRIPTS["predict"], gc_cfg_path] + (["--no-log"] if self.no_log else []), lock=True)
+            self.script("gc_tracker", [self.python, SCRIPTS["gc_tracker"], gc_cfg_path])
+        else:
+            self.step("gc_config", lambda: None, skip="no predictions/gc/scenarios.json")
+
+        # 4. day-key scoring — always, even for unkeyed stages
+        if stage is not None:
+            self.script("score_day_keys", [self.python, SCRIPTS["score_day_keys"], "--campaign", c.dir, "--stage", stage,
+                                           "--also", "agent"], lock=True)
+
+        # 5. retro facts
+        if stage is not None and (c.pred_dir(unit) / "scenarios.json").exists():
+            out["retro_facts"] = self.step("retro_facts", lambda: self._retro_facts(unit))
+        else:
+            self.step("retro_facts", lambda: None, skip="no scenario config for this unit")
+
+        # 6. pages
+        self._build_pages(unit)
+
+        # 7. upload
+        out["upload"] = self.step("upload", lambda: self._upload(unit, "settle"))
+        return out
+
+    def _ingest(self, unit: str) -> Dict[str, Any]:
+        c = self.campaign
+        if not (c.results_dir(unit) / "pcs").is_dir():
+            raise WaitingForInput("pcs_pages_needed",
+                                  f"{c.slug} {unit}: no PCS pages under results/{unit}/pcs/ (acquisition thread has not run)",
+                                  {"expected": sorted(pcs_ingest.PAGE_FILES.values())})
+        store_rows: List[Dict[str, Any]] = []
+        try:
+            rows = getattr(self.store, "rows", {}).get("crosswalk") if hasattr(self.store, "rows") else None
+            if rows is None and hasattr(self.store, "_select"):
+                rows = self.store._select("crosswalk", {"select": "*"})
+            store_rows = list(rows or [])
+        except Exception as exc:  # noqa: BLE001 — the CSV is the fallback
+            self._say(f"  [store] crosswalk rows unavailable: {exc}")
+        report = pcs_ingest.ingest(c.dir, unit, crosswalk_csv=self.crosswalk_csv, store_rows=store_rows,
+                                   db_path=self.db_path if self.db_path.exists() else None)
+        for kind, meta in report.pages.items():
+            try:
+                self.store.insert_pcs_raw(self.run["run_id"], c.slug, unit, kind, meta.get("source_url") or "",
+                                          object_key=None, ingest_verdict=report.verdict,
+                                          ingest_detail={"sha256": meta["sha256"], "bytes": meta["bytes"], "file": meta["file"],
+                                                         "failing": report.failing if not report.ok else []},
+                                          fetched_at=meta.get("fetched_at"))
+            except Exception as exc:  # noqa: BLE001
+                self._say(f"  [store] insert_pcs_raw failed: {exc}")
+        for w in report.warnings:
+            self._say(f"  note: {w}")
+        if not report.ok:
+            raise WaitingForInput("ingest_failed", f"{c.slug} {unit}: PCS ingest rejected ({len(report.failing)} checks)",
+                                  {"checks": report.failing, "unresolved_riders": report.unresolved, "warnings": report.warnings})
+        return {"verdict": report.verdict, "n_classified": report.n_classified, "n_abandons": report.n_abandons,
+                "winner": report.winner, "winning_time": report.winning_time, "written": report.written,
+                "warnings": report.warnings, "_detail": {"winner": report.winner, "n_classified": report.n_classified}}
+
+    def _template_gc_config(self, gc_cfg_path: Path, stage: int) -> Dict[str, Any]:
+        c = self.campaign
+        cfg = _read_json(gc_cfg_path, {})
+        unit = c.unit_for(stage)
+        res_dir = c.results_dir(unit)
+        gc_rows = list(csv.DictReader(open(res_dir / "gc.csv", newline="", encoding="utf-8"))) if (res_dir / "gc.csv").exists() else []
+        st_rows = list(csv.DictReader(open(res_dir / "results.csv", newline="", encoding="utf-8"))) if (res_dir / "results.csv").exists() else []
+        classified = [r for r in st_rows if str(r.get("place", "")).isdigit()]
+        winner = classified[0]["name"] if classified else None
+        win_time = None
+        rj = _read_json(res_dir / "results.json")
+        if rj:
+            win_time = rj.get("race_time")
+        finish = None
+        for s in c.stages:
+            if int(s["number"]) == stage and s.get("towns"):
+                finish = str(s["towns"]).split("→")[-1].split("-")[-1].strip()
+        parts = []
+        if winner:
+            parts.append(f"{winner} won the stage" + (f" in {fmt_gap(win_time)}" if win_time else "") + ".")
+        if gc_rows:
+            lead = gc_rows[0]
+            chasers = ", ".join(f"{r['name']} {fmt_gap(float(r['gap']))}" for r in gc_rows[2:6] if r.get("gap") not in (None, ""))
+            second = gc_rows[1] if len(gc_rows) > 1 else None
+            gc_txt = f"GC: {lead['name']} leads"
+            if second is not None and second.get("gap") not in (None, ""):
+                gc_txt += f" {second['name']} by {fmt_gap(float(second['gap']))}"
+            if chasers:
+                gc_txt += f", {chasers}"
+            parts.append(gc_txt + ".")
+        voids = sorted(set(c.void_stages) | set(int(v) for v in (cfg.get("void_stages") or [])))
+        if voids:
+            parts.append(("Stage " if len(voids) == 1 else "Stages ") + ", ".join(str(v) for v in voids)
+                         + " cancelled, passed as a void stage.")
+        parts.append("Rerun after each evening's seed_state_cache.py.")
+        sentence = f"State through stage {stage}" + (f" ({finish})" if finish else "") + ": " + " ".join(parts)
+
+        changed = []
+        for key, spec in (cfg.get("scenarios") or {}).items():
+            if not isinstance(spec, dict):
+                continue
+            label = str(spec.get("label") or "")
+            new_label, n = re.subn(r"state through stage \d+", f"state through stage {stage}", label, flags=re.I)
+            if n == 0:
+                new_label = f"{label} — state through stage {stage}" if label else f"GC — state through stage {stage}"
+            short = str(spec.get("short") or "")
+            new_short, n = re.subn(r"after stage \d+", f"after stage {stage}", short, flags=re.I)
+            if n == 0:
+                new_short = f"GC after stage {stage}"
+            note = str(spec.get("note") or "")
+            matches = list(STATE_SENTENCE_RE.finditer(note))
+            if matches:
+                new_note = note[:matches[-1].start()].rstrip() + (" " if note[:matches[-1].start()].strip() else "") + sentence
+            else:
+                new_note = (note.rstrip() + " " if note.strip() else "") + sentence
+            if (new_label, new_short, new_note) != (label, short, note):
+                spec["label"], spec["short"], spec["note"] = new_label, new_short, new_note
+                changed.append(key)
+        date_s = c.stage_date(stage)
+        if date_s:
+            cfg["date"] = date_s
+        cfg["void_stages"] = voids
+        snap = self._newest_snapshot(date_s, cfg.get("event_id")) if date_s else None
+        if snap:
+            cfg["odds_capture"] = snap
+        _write_json(gc_cfg_path, cfg)
+        return {"changed": changed, "state_sentence": sentence, "odds_capture": cfg.get("odds_capture"),
+                "_detail": {"changed": changed, "through_stage": stage}}
+
+    def _newest_snapshot(self, day: Optional[str], event_id: Optional[str]) -> Optional[str]:
+        """``YYYY-MM-DD/markets_HHMM.json`` — newest snapshot on ``day`` (or before) carrying ``event_id``."""
+        odds_root = self.campaign.dir / "odds"
+        if not odds_root.is_dir():
+            return None
+        days = sorted((p for p in odds_root.iterdir() if p.is_dir() and (day is None or p.name <= day)), reverse=True)
+        for d in days:
+            for f in sorted(d.glob("markets_*.json"), reverse=True):
+                if event_id:
+                    try:
+                        if str(event_id) not in json.loads(f.read_text(encoding="utf-8")):
+                            continue
+                    except (OSError, json.JSONDecodeError):
+                        continue
+                return f"{d.name}/{f.name}"
+            if day is not None and d.name == day:
+                break
+        return None
+
+    def _rider_id_map(self) -> Dict[str, int]:
+        from cycling_project.nightly.run_editorial import rider_id_map
+        out: Dict[str, int] = {}
+        for r in read_crosswalk_csv(self.crosswalk_csv):
+            if r.get("fc_rider_id") and r.get("internal_rider_id"):
+                try:
+                    out[str(r["fc_rider_id"])] = int(r["internal_rider_id"])
+                except ValueError:
+                    pass
+        if self.db_path.exists():
+            out.update(rider_id_map(self.db_path))
+        return out
+
+    def _retro_facts(self, unit: str) -> Dict[str, Any]:
+        from cycling_project.nightly.run_editorial import build_facts_bundle
+        c = self.campaign
+        stage = c.stage_of(unit)
+        id_map = self._rider_id_map()
+        bundle = build_facts_bundle(c.dir, unit, "stage_retro", db_path=self.db_path if self.db_path.exists() else None,
+                                    id_map=id_map, name_fallback=False)
+        res_dir = c.results_dir(unit)
+        rows = list(csv.DictReader(open(res_dir / "results.csv", newline="", encoding="utf-8"))) if (res_dir / "results.csv").exists() else []
+        classified = sorted((r for r in rows if str(r.get("place", "")).isdigit()), key=lambda r: int(r["place"]))
+        gaps = []
+        for r in classified:
+            try:
+                gaps.append(float(r["gap"]))
+            except (TypeError, ValueError):
+                pass
+        wg = None
+        rule = None
+        card_row = next((r for r in (_read_json(c.dir / "review" / "key_scorecard.json", []) or []) if r.get("stage") == stage), None)
+        if card_row:
+            wg, rule = card_row.get("wg_size"), card_row.get("rule_type")
+        if wg is None and gaps:
+            try:
+                import numpy as np
+                import pandas as pd
+                from cycling_project.prediction_tools.experiments.front_local_race_typing import comp_features, rule_label
+                feats = comp_features(np.sort(np.array(gaps, dtype=float)) - min(gaps))
+                wg, rule = int(feats["wg_size"]), rule_label(pd.Series(feats))
+            except Exception as exc:  # noqa: BLE001
+                self._say(f"  note: winning group not computed ({exc})")
+        results = bundle.setdefault("results", {})
+        results["winner"] = classified[0]["name"] if classified else None
+        results["winner_fc_rider_id"] = classified[0]["rider_id"] if classified else None
+        results["winning_group"] = wg
+        results["rule_type"] = rule
+        results["abandons"] = [{"status": r["place"], "name": r["name"], "rider_id": r["rider_id"]} for r in rows
+                               if not str(r.get("place", "")).isdigit()]
+        bundle["key_vs_oracle"] = ({k: card_row.get(k) for k in ("day_key", "key_source", "oracle_item", "day_class", "exact",
+                                                                  "covered", "weight_on_true", "agent_key", "agent_exact",
+                                                                  "agent_covered", "agent_weight_on_true", "agent_flagged")}
+                                   if card_row else {"scored": False})
+        bundle["retrieval_summary"] = [{
+            "scenario_key": b.get("scenario_key"), "post_hoc": b.get("post_hoc"),
+            "pool15_with_key": (b.get("retrieval") or {}).get("top15_finishers_in_top15_with_key"),
+            "pool15_production": (b.get("retrieval") or {}).get("top15_finishers_in_top15_production"),
+        } for b in bundle.get("boards") or []]
+        bundle["bundle_kind"] = "driver"
+        bundle["join"] = "rider_id (fc → internal via crosswalk + riders); names never used"
+        bundle["run_id"] = self.run["run_id"]
+        path = c.pred_dir(unit) / "retro_facts.json"
+        _write_json(path, bundle)
+        return {"path": str(path), "winner": results["winner"], "winning_group": wg,
+                "retrieval": bundle["retrieval_summary"],
+                "_detail": {"winner": results["winner"], "winning_group": wg}}
+
+    def _build_pages(self, unit: str) -> None:
+        c = self.campaign
+        cfg = c.pred_dir(unit) / "scenarios.json"
+        if cfg.exists() and c.stage_of(unit) is not None:
+            r = self.script("stage_page", [self.python, SCRIPTS["stage_page"], cfg])
+            if not r.get("skipped"):
+                self.built_pages.append(SITE_DIR / f"{c.site_prefix}stage{c.stage_of(unit):02d}.html")
+        else:
+            self.step("stage_page", lambda: None, skip="no scenario config (one-day pages are chip K)")
+        r = self.script("site_index", [self.python, SCRIPTS["site_index"]])
+        if not r.get("skipped"):
+            self.built_pages.append(SITE_DIR / "site-index.json")
+        r = self.script("site_frame", [self.python, SCRIPTS["site_frame"]])
+        if not r.get("skipped"):
+            self.built_pages.append(SITE_DIR / "_frame")
+        gc_page = SITE_DIR / f"{c.site_prefix}gc.html"
+        if self.record.get("phase") == "settle" and gc_page.exists() and any(s["step"] == "gc_tracker" and s["state"] == "ok" for s in self.record["steps"]):
+            self.built_pages.append(gc_page)
+
+    # ------------------------------------------------------------------------
+    # preview
+    # ------------------------------------------------------------------------
+    def preview(self, unit: str) -> Tuple[int, Dict[str, Any]]:
+        return self.run_phase(unit, "preview", lambda: self._preview_body(unit))
+
+    def _preview_body(self, unit: str) -> Dict[str, Any]:
+        c = self.campaign
+        stage = c.stage_of(unit)
+        out: Dict[str, Any] = {}
+
+        # 1. odds
+        r = self.script("capture_odds", [self.python, SCRIPTS["capture_odds"], "--campaign", c.dir], ok_codes=(0, 1))
+        if not r.get("skipped") and r.get("returncode") == 1:
+            raise WaitingForInput("kambi_match", f"{c.slug}: Kambi answered but the race was not matched — confirm kambi_candidates in campaign.json",
+                                  {"tail": (r.get("stdout") or "")[-800:]})
+        if not r.get("skipped") and "degraded" in (r.get("stdout") or "").lower():
+            self._say("  note: odds capture degraded (every brand blocked) — bookless preview")
+            out["odds"] = "degraded"
+
+        # 2. stage config: create from the template when absent; fill event id + capture
+        out["config"] = self.step("stage_config", lambda: self._ensure_config(unit))
+        cfg_path = c.pred_dir(unit) / "scenarios.json"
+
+        # 3. route facts from the acquisition thread's route_raw (or an operator override)
+        pred = c.pred_dir(unit)
+        if (pred / "route_raw.json").exists() or (pred / "route.override.json").exists():
+            out["route"] = self.step("route_facts", lambda: self._route_facts(unit))
+        else:
+            self.step("route_facts", lambda: None, skip="no route_raw.json / route.override.json")
+
+        # 4. bundle
+        if stage is not None:
+            out["bundle"] = self.step("bundle", lambda: self._bundle(unit))
+        else:
+            self.step("bundle", lambda: None, skip="one-day race: no day key bundle")
+
+        # 5. the key (judgment) + references (judgment)
+        out["key"] = self.step("day_key", lambda: self._resolve_key(unit))
+
+        # 6. predict
+        self.script("predict", [self.python, SCRIPTS["predict"], cfg_path] + (["--no-log"] if self.no_log else []), lock=True)
+
+        # 7. validate
+        out["validate"] = self.step("validate", lambda: self._validate(unit, require_boards=not self.dry_run))
+
+        # 8. pages, 9. upload
+        self._build_pages(unit)
+        out["upload"] = self.step("upload", lambda: self._upload(unit, "preview"))
+        return out
+
+    def _ensure_config(self, unit: str) -> Dict[str, Any]:
+        c = self.campaign
+        stage = c.stage_of(unit)
+        pred = c.pred_dir(unit)
+        cfg_path = pred / "scenarios.json"
+        created = False
+        cfg = _read_json(cfg_path)
+        if cfg is None:
+            template = _read_json(c.dir / "predictions" / TEMPLATE_NAME)
+            if template is None:
+                raise WaitingForInput("scenarios_needed", f"{c.slug} {unit}: no scenarios.json and no {TEMPLATE_NAME}",
+                                      {"path": str(cfg_path)})
+            cfg = json.loads(json.dumps(template))
+            cfg.pop("day_key", None)
+            cfg.pop("day_key_note", None)
+            if stage is not None:
+                cfg["stage"] = stage
+                cfg["label"] = f"Stage {stage}"
+            else:
+                cfg["target"] = "one_day"
+                cfg.pop("stage", None)
+                cfg["label"] = c.cfg.get("name") or c.slug
+            cfg["fc_race_id"] = c.fc_race_id or cfg.get("fc_race_id")
+            cfg["year"] = c.year or cfg.get("year")
+            cfg["date"] = c.stage_date(stage) or cfg.get("date")
+            prev = c.previous_config(stage) if stage else None
+            cfg["void_stages"] = sorted(set(int(v) for v in ((prev or {}).get("void_stages") or [])) | set(c.void_stages))
+            for key, spec in (cfg.get("scenarios") or {}).items():
+                if isinstance(spec, dict) and stage is not None:
+                    spec["tag"] = re.sub(r"_st\d+_", f"_st{stage:02d}_", str(spec.get("tag") or f"{c.slug}_st{stage:02d}_{key}"))
+                    spec["refs"] = []                       # placeholders are never carried forward
+            created = True
+        # fill event id + odds capture when absent
+        filled = []
+        if stage is not None and not cfg.get("event_id"):
+            eid = (c.cfg.get("kambi_event_ids") or {}).get(unit)
+            if eid:
+                cfg["event_id"] = str(eid)
+                filled.append("event_id")
+        if not cfg.get("odds_capture") or cfg.get("odds_capture", "").startswith("YYYY"):
+            snap = self._newest_snapshot(str(self.today), cfg.get("event_id"))
+            if snap:
+                cfg["odds_capture"] = snap
+                filled.append("odds_capture")
+        if created or filled:
+            _write_json(cfg_path, cfg)
+        return {"path": str(cfg_path), "created": created, "filled": filled, "event_id": cfg.get("event_id"),
+                "odds_capture": cfg.get("odds_capture"), "_detail": {"created": created, "filled": filled}}
+
+    def _route_facts(self, unit: str) -> Dict[str, Any]:
+        from cycling_project.nightly.route_facts import RouteFactsError, ingest_route
+        try:
+            res = ingest_route(self.campaign.dir, unit, write=not self.dry_run)
+        except RouteFactsError as exc:
+            self._say(f"  note: route facts not ingested ({exc})")
+            return {"route_facts": "missing", "error": str(exc)}
+        grade = res.get("route_facts") if isinstance(res, dict) else None
+        return {"route_facts": grade, "_detail": {"route_facts": grade}}
+
+    def _bundle(self, unit: str) -> Dict[str, Any]:
+        from cycling_project.nightly.run_day_key import build_bundle
+        stage = self.campaign.stage_of(unit)
+        manifest = build_bundle(self.campaign.dir, stage, force=self.force)
+        return {"manifest_sha256": manifest.get("manifest_sha256"), "odds": manifest.get("odds"),
+                "route_facts": manifest.get("route_facts"), "files": len(manifest.get("entries", [])),
+                "notes": manifest.get("notes"), "_detail": {"odds": manifest.get("odds"), "route_facts": manifest.get("route_facts")}}
+
+    def _resolve_key(self, unit: str) -> Dict[str, Any]:
+        c = self.campaign
+        stage = c.stage_of(unit)
+        cfg_path = c.pred_dir(unit) / "scenarios.json"
+        cfg = _read_json(cfg_path, {})
+        # references are judgment too: a template config cannot be priced
+        placeholders = [k for k, s in (cfg.get("scenarios") or {}).items()
+                        if isinstance(s, dict) and not [x for x in (s.get("refs") or s.get("base_refs") or []) if int(x or 0) > 0]]
+        if placeholders:
+            raise WaitingForInput("scenarios_needed", f"{c.slug} {unit}: scenario references needed for {placeholders} "
+                                  f"(see `nightly refs --archetype …`)", {"path": str(cfg_path), "scenarios": placeholders})
+        if stage is None:
+            return {"source": "one_day", "day_key": None}
+        if cfg.get("day_key"):
+            return {"source": cfg.get("day_key_source") or "config", "day_key": cfg["day_key"]}
+        approved = None
+        try:
+            approved = self.store.approved_day_key(c.slug, unit)
+        except Exception as exc:  # noqa: BLE001
+            self._say(f"  [store] approved_day_key failed: {exc}")
+        if approved:
+            key = (approved.get("evidence") or {}).get("key") if isinstance(approved.get("evidence"), dict) else None
+            key = rec.normalise_key(key) if key else {str(approved["day_key"]): 1.0}
+            cfg["day_key"] = key
+            cfg["day_key_source"] = f"store:approved:{approved.get('id')}"
+            if approved.get("rationale"):
+                cfg["day_key_note"] = approved["rationale"]
+            _write_json(cfg_path, cfg)
+            return {"source": cfg["day_key_source"], "day_key": key}
+        if self.agent_key and self.agent_key.exists():
+            record = _read_json(self.agent_key, {})
+            key = rec.normalise_key(record.get("key") or {})
+            if not key:
+                raise DriverFailure("agent_key_invalid", f"{self.agent_key} carries no key")
+            cfg["day_key"] = key
+            cfg["day_key_author"] = "agent"            # shadow: never scored as the tier-3 read
+            cfg["day_key_source"] = f"agent-shadow:{self.agent_key.name}"
+            _write_json(cfg_path, cfg)
+            return {"source": cfg["day_key_source"], "day_key": key, "shadow": True}
+        raise WaitingForInput("day_key_needed", f"{c.slug} {unit}: day key needed (no config key, no approved day_key_decisions row)",
+                              {"path": str(cfg_path), "bundle": str(c.pred_dir(unit) / "bundle")})
+
+    # ------------------------------------------------------------------------
+    # validate
+    # ------------------------------------------------------------------------
+    def _validate(self, unit: str, *, require_boards: bool = True) -> Dict[str, Any]:
+        c = self.campaign
+        stage = c.stage_of(unit)
+        pred = c.pred_dir(unit)
+        cfg_path = pred / "scenarios.json"
+        problems: List[str] = []
+        warnings: List[str] = []
+        cfg = _read_json(cfg_path)
+        if not cfg:
+            raise WaitingForInput("validate_failed", f"{c.slug} {unit}: no scenarios.json", {"path": str(cfg_path)})
+        for k in ("fc_race_id", "year", "date", "scenarios"):
+            if k not in cfg:
+                problems.append(f"config lacks {k}")
+        if stage is not None and int(cfg.get("stage", -1)) != stage:
+            problems.append(f"config stage {cfg.get('stage')} != {stage}")
+
+        def _check_key(where: str, key: Any) -> None:
+            if key is None:
+                return
+            try:
+                norm = rec.normalise_key(key)
+            except Exception as exc:  # noqa: BLE001
+                problems.append(f"{where}: unreadable day_key ({exc})")
+                return
+            bad = [i for i in norm if i not in rec.MENU_ITEMS]
+            if bad:
+                problems.append(f"{where}: unknown items {bad}")
+            if any(i in rec.FORBIDDEN_ITEMS for i in norm):
+                problems.append(f"{where}: forbidden item res_5")
+            if abs(sum(norm.values()) - 1.0) > rec.WEIGHT_TOLERANCE:
+                problems.append(f"{where}: weights sum to {sum(norm.values()):.3f}")
+
+        _check_key("config root", cfg.get("day_key"))
+        late = False
+        try:
+            late = dt.date.fromisoformat(str(cfg.get("date"))) < self.today
+        except (TypeError, ValueError):
+            pass
+        for key, spec in (cfg.get("scenarios") or {}).items():
+            if not isinstance(spec, dict):
+                problems.append(f"scenario {key}: not an object")
+                continue
+            if not spec.get("tag"):
+                problems.append(f"scenario {key}: no tag")
+            refs = [x for x in (spec.get("refs") or spec.get("base_refs") or [])]
+            if not refs or any(int(x or 0) <= 0 for x in refs):
+                problems.append(f"scenario {key}: placeholder/missing refs")
+            _check_key(f"scenario {key}", spec.get("day_key"))
+            post_hoc = key == "hindsight" or str(spec.get("label", "")).lower().startswith("hindsight") or bool(spec.get("post_hoc"))
+            if late and not cfg.get("day_key") and not post_hoc:
+                problems.append(f"scenario {key}: config dated {cfg.get('date')} written after the stage must carry post_hoc: true")
+            if spec.get("hidden"):
+                continue
+            board = pred / f"{key}.json"
+            if not board.exists():
+                (problems if require_boards else warnings).append(f"scenario {key}: board {board.name} missing")
+                continue
+            try:
+                def _no_nan(x: str) -> Any:
+                    raise ValueError(f"non-finite token {x}")
+                data = json.loads(board.read_text(encoding="utf-8"), parse_constant=_no_nan)
+            except ValueError as exc:
+                problems.append(f"scenario {key}: {exc}")
+                continue
+            riders = data.get("riders") or []
+            if not riders:
+                problems.append(f"scenario {key}: empty board")
+                continue
+            lr = [r.get("lambdarank_win_p") for r in riders]
+            if any(v is None or (isinstance(v, float) and not math.isfinite(v)) for v in lr):
+                problems.append(f"scenario {key}: lambdarank_win_p missing/non-finite")
+            else:
+                s = sum(float(v) for v in lr)
+                if abs(s - 1.0) > LAMBDARANK_SUM_TOL:
+                    problems.append(f"scenario {key}: lambdarank_win_p sums to {s:.3f}")
+            if any(r.get("predicted_rank") is None for r in riders):
+                problems.append(f"scenario {key}: predicted_rank missing")
+            if data.get("day_key") and cfg.get("day_key") and not spec.get("day_key") and \
+                    rec.normalise_key(data["day_key"]) != rec.normalise_key(cfg["day_key"]):
+                problems.append(f"scenario {key}: board keyed {data['day_key']} but config root says {cfg['day_key']} (stale board)")
+        # void stages consistent with the campaign
+        cfg_void = set(int(v) for v in (cfg.get("void_stages") or []))
+        camp_void = set(v for v in c.void_stages if stage is None or v < stage)
+        if camp_void - cfg_void:
+            problems.append(f"void_stages {sorted(cfg_void)} lacks campaign void stages {sorted(camp_void - cfg_void)}")
+        # crosswalk coverage of the current field
+        coverage = self._crosswalk_coverage(stage)
+        if coverage is not None:
+            if coverage < COVERAGE_FAIL:
+                problems.append(f"crosswalk coverage {coverage:.3f} < {COVERAGE_FAIL}")
+            elif coverage < COVERAGE_WARN:
+                warnings.append(f"crosswalk coverage {coverage:.3f} < {COVERAGE_WARN}")
+        result = {"ok": not problems, "problems": problems, "warnings": warnings, "crosswalk_coverage": coverage,
+                  "_detail": {"problems": len(problems), "warnings": len(warnings)}}
+        if problems:
+            raise WaitingForInput("validate_failed", f"{c.slug} {unit}: validation failed ({len(problems)} problems)",
+                                  {"problems": problems, "warnings": warnings})
+        return result
+
+    def _crosswalk_coverage(self, stage: Optional[int]) -> Optional[float]:
+        c = self.campaign
+        latest = c.latest_results_stage(before=stage) if stage is not None else c.latest_results_stage()
+        field_ids: set = set()
+        if latest is not None:
+            rows = csv.DictReader(open(c.results_dir(c.unit_for(latest)) / "results.csv", newline="", encoding="utf-8"))
+            field_ids = {r["rider_id"] for r in rows if str(r.get("place", "")).isdigit()}
+        if not field_ids:
+            return None
+        known = {r.get("fc_rider_id") for r in read_crosswalk_csv(self.crosswalk_csv)}
+        return len(field_ids & known) / len(field_ids)
+
+    # ------------------------------------------------------------------------
+    # upload
+    # ------------------------------------------------------------------------
+    def _prediction_log_max_id(self) -> Optional[int]:
+        if self.dry_run or not self.db_path.exists():
+            return None
+        try:
+            con = sqlite3.connect(f"file:{self.db_path}?mode=ro", uri=True)
+            try:
+                row = con.execute("select max(id) from prediction_log").fetchone()
+                return int(row[0]) if row and row[0] is not None else 0
+            finally:
+                con.close()
+        except sqlite3.Error:
+            return None
+
+    def _prediction_log_rows_since(self, watermark: Optional[int]) -> List[Dict[str, Any]]:
+        if watermark is None or not self.db_path.exists():
+            return []
+        con = sqlite3.connect(f"file:{self.db_path}?mode=ro", uri=True)
+        con.row_factory = sqlite3.Row
+        try:
+            rows = [dict(r) for r in con.execute("select * from prediction_log where id > ? and run_key is not null", (watermark,))]
+        finally:
+            con.close()
+        for r in rows:
+            r.pop("id", None)
+        return rows
+
+    def _upload_file(self, path: Path, key_path: str, *, bucket: Optional[str] = None) -> Optional[str]:
+        from cycling_project.nightly.store import ARTIFACTS_BUCKET, StoreConflictError
+        if not path.is_file():
+            return None
+        kwargs = {"bucket": bucket} if bucket else {}
+        try:
+            return self.store.upload_artifact(self.run["run_id"], key_path, path.read_bytes(), **kwargs)
+        except StoreConflictError:
+            return f"{key_path} (exists)"
+
+    def _upload(self, unit: str, phase: str) -> Dict[str, Any]:
+        from cycling_project.nightly.store import STAGING_BUCKET
+        c = self.campaign
+        uploaded: List[str] = []
+        pred, res = c.pred_dir(unit), c.results_dir(unit)
+        files: List[Path] = []
+        if phase == "settle":
+            files += [res / n for n in ("results.csv", "results.json", "gc.csv", "classifications.json")]
+            files += sorted((res / "pcs").glob("*")) if (res / "pcs").is_dir() else []
+            files += [pred / "retro_facts.json", c.dir / "review" / "key_scorecard.json",
+                      c.dir / "review" / "agent_replay_scorecard.json", c.pred_dir("gc") / "scenarios.json"]
+            files += sorted(p for p in c.pred_dir("gc").glob("*.json") if p.name != "scenarios.json") if c.pred_dir("gc").is_dir() else []
+        else:
+            files += [pred / "scenarios.json", pred / "route.json", pred / "agent_key.json"]
+            files += sorted(p for p in pred.glob("*.json") if p.name not in ("scenarios.json", "route.json", "agent_key.json",
+                                                                             "agent_key_response.json", "retro_facts.json"))
+            files += sorted(p for p in (pred / "bundle").rglob("*") if p.is_file()) if (pred / "bundle").is_dir() else []
+        for f in files:
+            if f.is_file():
+                key = f"{c.slug}/{f.relative_to(c.dir).as_posix()}"
+                k = self._upload_file(f, key)
+                if k:
+                    uploaded.append(k)
+        pages: List[str] = []
+        for p in self.built_pages:
+            targets = sorted(x for x in p.rglob("*") if x.is_file()) if p.is_dir() else [p]
+            for t in targets:
+                k = self._upload_file(t, t.relative_to(SITE_DIR).as_posix(), bucket=STAGING_BUCKET)
+                if k:
+                    pages.append(k)
+        # predictions rows: one per board
+        boards = 0
+        cfg = _read_json(pred / "scenarios.json", {}) or {}
+        board_dirs = [(unit, pred, cfg)] if phase == "preview" else []
+        gc_cfg = _read_json(c.pred_dir("gc") / "scenarios.json")
+        if phase == "settle" and gc_cfg:
+            board_dirs.append(("gc", c.pred_dir("gc"), gc_cfg))
+        for bunit, bdir, bcfg in board_dirs:
+            for key, spec in (bcfg.get("scenarios") or {}).items():
+                bpath = bdir / f"{key}.json"
+                if not isinstance(spec, dict) or not bpath.is_file():
+                    continue
+                data = _read_json(bpath, {}) or {}
+                riders = data.get("riders") or []
+                top = sorted(riders, key=lambda r: (r.get("daymenu_rank") if data.get("board") == "daymenu" else r.get("predicted_rank")) or 9999)[:5]
+                try:
+                    self.store.insert_prediction(
+                        self.run["run_id"], c.slug, bunit, phase, target=data.get("target") or bcfg.get("target", "stage"),
+                        scenario_key=key, day_key=json.dumps(data.get("day_key"), sort_keys=True) if data.get("day_key") else None,
+                        model_version=data.get("model_version"),
+                        config={"label": spec.get("label"), "tag": spec.get("tag"), "refs": spec.get("refs") or spec.get("base_refs"),
+                                "date": bcfg.get("date"), "event_id": bcfg.get("event_id"), "odds_capture": bcfg.get("odds_capture")},
+                        board_key=f"{self.run['run_id']}/{c.slug}/{bpath.relative_to(c.dir).as_posix()}",
+                        summary={"board": data.get("board"), "n_riders": len(riders),
+                                 "top5": [{"name": r.get("rider_name"), "blend_win_p": r.get("blend_win_p")} for r in top]})
+                    boards += 1
+                except Exception as exc:  # noqa: BLE001
+                    self._say(f"  [store] insert_prediction failed for {key}: {exc}")
+        plog_rows = self._prediction_log_rows_since(self.plog_watermark)
+        n_log = 0
+        if plog_rows:
+            try:
+                n_log = self.store.insert_prediction_log_rows(plog_rows, self.run["run_id"])
+            except Exception as exc:  # noqa: BLE001
+                self._say(f"  [store] prediction_log upload failed: {exc}")
+        return {"artifacts": uploaded, "pages": pages, "predictions_rows": boards, "prediction_log_rows": n_log,
+                "_detail": {"artifacts": len(uploaded), "pages": len(pages), "predictions_rows": boards, "prediction_log_rows": n_log}}
+
+    # ------------------------------------------------------------------------
+    # status
+    # ------------------------------------------------------------------------
+    def status(self) -> Dict[str, Any]:
+        out: Dict[str, Any] = {"campaign": self.campaign.slug if self.campaign else None,
+                               "completed": self._completed_index() if self.campaign else {}}
+        rows: List[Dict[str, Any]] = []
+        try:
+            if hasattr(self.store, "rows"):
+                runs = list(self.store.rows.get("runs", []))
+                steps = self.store.rows.get("run_steps", [])
+                for r in runs:
+                    fin = [s for s in steps if s.get("run_id") == r.get("run_id") and s.get("step") == "finish"]
+                    rows.append({**{k: r.get(k) for k in ("run_id", "campaign_slug", "unit", "phase", "started_at")},
+                                 "state": fin[-1]["state"] if fin else "running", "exit_code": fin[-1].get("exit_code") if fin else None,
+                                 "steps": len([s for s in steps if s.get("run_id") == r.get("run_id")])})
+            elif hasattr(self.store, "_select"):
+                params = {"order": "started_at.desc", "limit": "50"}
+                if self.campaign:
+                    params["campaign_slug"] = f"eq.{self.campaign.slug}"
+                rows = self.store._select("run_status", params)
+        except Exception as exc:  # noqa: BLE001
+            out["store_error"] = redact(str(exc))
+        out["runs"] = rows
+        if self.campaign:
+            out["plan"] = self.plan()
+        return out
+
+
+# ---------------------------------------------------------------------------
+# CLI
+# ---------------------------------------------------------------------------
+
+def build_parser() -> argparse.ArgumentParser:
+    ap = argparse.ArgumentParser(prog="python -m cycling_project.nightly", description=__doc__.splitlines()[0])
+    sub = ap.add_subparsers(dest="command", required=True)
+
+    def common(p: argparse.ArgumentParser, *, unit: bool = False, campaign_required: bool = True) -> None:
+        p.add_argument("--campaign", required=campaign_required, help="campaign dir or slug (performance_eval/<slug>)")
+        if unit:
+            p.add_argument("--unit", required=True, help="stage_NN (or 'race' for a one-day)")
+        p.add_argument("--dry-run", action="store_true", help="no fetch, --no-log, FakeStore, scripts recorded not run")
+        p.add_argument("--store", choices=("auto", "supabase", "fake"), default="auto")
+        p.add_argument("--store-root", type=Path, default=None)
+        p.add_argument("--today", type=dt.date.fromisoformat, default=None, help="race-local date override (tests/replay)")
+        p.add_argument("--no-log", action="store_true", help="pass --no-log to the runner (no prediction_log rows)")
+        p.add_argument("--force", action="store_true", help="re-run a phase already completed")
+        p.add_argument("--crosswalk", type=Path, default=None, help="crosswalk CSV override (default performance_eval/crosswalk)")
+        p.add_argument("--db-path", type=Path, default=None)
+        p.add_argument("--release-tag", default=None)
+        p.add_argument("--json", action="store_true", default=True, help=argparse.SUPPRESS)
+
+    sub.add_parser("bootstrap", help="hydrate the container from the newest approved release (delegates to nightly.bootstrap)",
+                   add_help=False)
+    p = sub.add_parser("plan", help="due units for a campaign (settle / preview) as JSON")
+    common(p); p.add_argument("--now", action="store_true", help="plan as of now (default)"); p.add_argument("--horizon-days", type=int, default=1)
+    p = sub.add_parser("night", help="every due settle, then every due preview")
+    common(p); p.add_argument("--horizon-days", type=int, default=1); p.add_argument("--agent-key", type=Path, default=None)
+    p = sub.add_parser("settle", help="ingest → seed → GC → score → retro facts → pages → upload")
+    common(p, unit=True)
+    p = sub.add_parser("preview", help="odds → config → route → bundle → key gate → predict → validate → pages → upload")
+    common(p, unit=True); p.add_argument("--agent-key", type=Path, default=None, help="shadow mode: key the stage from an agent record")
+    p = sub.add_parser("ingest", help="validate the PCS pages and write the FC-shaped results")
+    common(p, unit=True)
+    p = sub.add_parser("bundle", help="freeze predictions/<unit>/bundle/")
+    common(p, unit=True)
+    p = sub.add_parser("validate", help="schema / NaN / lambdarank sum / post_hoc / void_stages / key weights / crosswalk")
+    common(p, unit=True)
+    p = sub.add_parser("upload", help="insert artifacts, pages and rows for a unit")
+    common(p, unit=True); p.add_argument("--phase", choices=("settle", "preview"), required=True)
+    p = sub.add_parser("status", help="ledger view")
+    common(p, campaign_required=False)
+    sub.add_parser("refs", help="reference sets from the signature table (delegates to nightly.refs)", add_help=False)
+    return ap
+
+
+def _emit(code: int, payload: Dict[str, Any]) -> int:
+    payload = dict(payload)
+    payload.setdefault("exit_code", code)
+    print(json.dumps(payload, indent=1, ensure_ascii=False, default=str), flush=True)
+    return code
+
+
+def main(argv: Optional[Sequence[str]] = None) -> int:
+    argv = list(sys.argv[1:] if argv is None else argv)
+    if argv and argv[0] in ("publish", "commit"):
+        return _emit(EXIT_FAILED, {"status": "failed", "error_class": "forbidden_command",
+                                   "message": f"{argv[0]!r} is not a driver command: publication is a Mac step with its own key (§2.9)"})
+    # delegated commands keep their own argparse surface (flags would otherwise be eaten here)
+    if argv and argv[0] == "bootstrap":
+        from cycling_project.nightly.bootstrap import main as bootstrap_main
+        return bootstrap_main(argv[1:])
+    if argv and argv[0] == "refs":
+        from cycling_project.nightly.refs import main as refs_main
+        return refs_main(argv[1:])
+    args = build_parser().parse_args(argv)
+
+    campaign = None
+    if getattr(args, "campaign", None):
+        try:
+            campaign = Campaign.load(args.campaign)
+        except DriverFailure as exc:
+            return _emit(EXIT_FAILED, {"status": "failed", "error_class": exc.error_class, "message": str(exc)})
+    try:
+        store = resolve_store(args.store, args.store_root, dry_run=args.dry_run, campaign=campaign)
+    except DriverFailure as exc:
+        return _emit(EXIT_FAILED, {"status": "failed", "error_class": exc.error_class, "message": str(exc)})
+    driver = Driver(campaign, store, dry_run=args.dry_run, today=args.today, no_log=args.no_log, force=args.force,
+                    crosswalk_csv=args.crosswalk, db_path=args.db_path, agent_key=getattr(args, "agent_key", None),
+                    release_tag=args.release_tag)
+
+    if args.command == "status":
+        return _emit(EXIT_DONE, {"status": "ok", **driver.status()})
+    if campaign is None:
+        return _emit(EXIT_FAILED, {"status": "failed", "error_class": "campaign_missing", "message": "--campaign is required"})
+    if args.command == "plan":
+        return _emit(EXIT_DONE, {"status": "ok", **driver.plan(args.horizon_days)})
+    if args.command == "night":
+        code, out = driver.night(args.horizon_days)
+        return _emit(code, out)
+    if args.command == "settle":
+        code, out = driver.settle(args.unit)
+        return _emit(code, out)
+    if args.command == "preview":
+        code, out = driver.preview(args.unit)
+        return _emit(code, out)
+    if args.command == "ingest":
+        code, out = driver.run_phase(args.unit, "ingest", lambda: {"ingest": driver.step("ingest", lambda: driver._ingest(args.unit))}, idempotent=False)
+        return _emit(code, out)
+    if args.command == "bundle":
+        code, out = driver.run_phase(args.unit, "bundle", lambda: {"bundle": driver.step("bundle", lambda: driver._bundle(args.unit))}, idempotent=False)
+        return _emit(code, out)
+    if args.command == "validate":
+        code, out = driver.run_phase(args.unit, "validate", lambda: {"validate": driver.step("validate", lambda: driver._validate(args.unit))}, idempotent=False)
+        return _emit(code, out)
+    if args.command == "upload":
+        code, out = driver.run_phase(args.unit, "upload", lambda: {"upload": driver.step("upload", lambda: driver._upload(args.unit, args.phase))}, idempotent=False)
+        return _emit(code, out)
+    return _emit(EXIT_FAILED, {"status": "failed", "error_class": "unknown_command", "message": args.command})
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
