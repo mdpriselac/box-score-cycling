@@ -40,12 +40,17 @@ Two facts that change the design relative to `AGENT_DESIGN.md`:
    count not a stage number, the event id must be copied by hand, the
    `--all` flag is mandatory, `post_hoc: true` must be set on any config
    written after the stage. A driver removes that whole class.
-2. **The Mac is not optional.** SQLite DB, the LightGBM release, the Kambi
-   and FirstCycling captures (headed Chrome), and the campaign archives all
-   live here. Any "managed" agent must execute its tools on this machine.
-   Managed Agents supports exactly that: a **self-hosted environment** whose
-   worker runs on the Mac, with the agent loop, scheduling, transcripts,
-   budgets, and versioned agent configs hosted by Anthropic.
+2. **The Mac is not optional, and FirstCycling is not reachable from
+   anywhere else.** FirstCycling sits behind a Cloudflare JS challenge that
+   only a headed real-Chrome profile on this Mac clears; Anthropic's cloud
+   containers and `web_fetch` cannot get it, and it 503s under Grand Tour
+   load anyway. The SQLite DB (3.3 GB), the LightGBM release and the campaign
+   archives also live here. So the nightly agent executes its tools on this
+   machine — Managed Agents supports exactly that via a **self-hosted
+   environment** — and, to stop the nightly depending on the challenge path,
+   **nightly acquisition moves to ProCyclingStats (PCS), translated into the
+   FirstCycling-id baseline by a crosswalk** (§2.8). FirstCycling remains the
+   system of record, scraped by the weekly supervised run.
 
 ---
 
@@ -54,8 +59,8 @@ Two facts that change the design relative to `AGENT_DESIGN.md`:
 ```
 Anthropic (control plane)                      This Mac (execution)
 ──────────────────────────                     ────────────────────────────────────
-Scheduled deployment "evening"  ──fires──►  session ──tool calls──►  EnvironmentWorker (launchd)
-Scheduled deployment "morning"  ──fires──►  session                    │ bash / read / write / edit
+Scheduled deployment "nightly"  ──fires──►  session ──tool calls──►  EnvironmentWorker (launchd)
+   (one tick: settle today, preview tomorrow)                          │ bash / read / write / edit
                                                                         ▼
 Agent: nightly-coordinator  (multiagent roster below)          `uv run python -m cycling_project.nightly …`
   ├─ self            → one thread PER RACE (the "one agent run per race per day")
@@ -89,12 +94,13 @@ single Chrome profile).
 |---|---|
 | Harness | Managed Agents (self-hosted environment on the Mac). `claude -p` / Agent SDK only as a manual fallback. |
 | Model | `claude-opus-5` for coordinator, day-key, editorial; `claude-sonnet-5` for ops-triage and the per-race `self` threads is acceptable once the driver is stable — start everything on Opus. |
-| Scheduling anchors | Two deployments in UTC: **evening** `30 19 * * *` and **morning** `30 5 * * *`; the driver's `plan` converts race-local deadlines. European evening finishes settle at 19:30 UTC; Americas/Asia races settle on the next morning tick. Jitter is ≤ 9 min, so never schedule against a hard deadline. |
+| Scheduling anchors | **One deployment**, `45 19 * * *` UTC (user decision 2026-09-05: a single night run does both the results and the next-day work). European finishes (~15:30 UTC) are settled and Kambi's next-stage market (posted late morning the day before) is already up; North American finishes (Québec/Montréal ~22:00 UTC) settle on the following night and `plan` marks them `settle_late`. Jitter ≤ 9 min; never schedule against a hard deadline. |
 | Race scope | Every `wt`, `pro`, `d1` race in the weekly pipeline's race lists for the horizon (14 days), auto-registered as a campaign once. ~180 races/year, 2–6 active per day. No nightly calendar scrape. |
 | Keys | Human keys; agent key recorded beside it and scored (Gate K population). Promotion per `AGENT_DESIGN.md` §6.2. |
 | Publishing | **Gated.** The driver stages a validated bundle; `publish` requires an operator approval file until Gate E. No Cloudflare account/domain decision yet — deploy target is `wrangler deploy` of `netlify_site/` when it exists. |
 | Prose-less publishing | Allowed for **previews** of races with no human-written scenario notes (numbers-only template); **never** for retros. |
-| Roadbook evidence | Deterministic capture from the organiser page or FirstCycling stage page + operator override file `route.json`; when absent, the bundle records `route_facts: missing` and the day-key agent must weight the family conservatively and set `human_review_required`. |
+| Nightly source | **PCS first** (results, GC, startlists, withdrawals, stage facts) through the crosswalk; FirstCycling only as an operator-present fallback (`--source fc`) and as the weekly baseline. |
+| Roadbook evidence | Deterministic capture from the organiser page or the PCS stage page + operator override file `route.json`; when absent, the bundle records `route_facts: missing` and the day-key agent must weight the family conservatively and set `human_review_required`. |
 | News | v1 news-less. |
 | Veto window | Key locks at the morning tick; unvetoed agent keys stay *recorded*, human key stays *served*, until Gate K. |
 
@@ -138,7 +144,8 @@ all writing `performance_eval/<campaign>/runs/<date>/<phase>.json` + a line in
 | Command | What it runs (today's scripts, unchanged) |
 |---|---|
 | `plan --now <iso>` | Reads every `campaign.json`; emits due units: `{campaign, unit: stage_NN | race, phase: settle | preview | gc}` with race-local deadlines, plus stale/blocked flags (results missing past grace, startlist missing). |
-| `settle <campaign> <unit>` | `capture_results.py --all` → `seed_state_cache.py` → GC refresh (template label/note from state) → `build_gc_tracker.py` → `score_day_keys.py` → settlement facts JSON (`retro_facts.json`: winner group, front 15 vs each board, pool15 with/without key, oracle vs key, abandons, GC deltas, heads split) → `build_stage_page.py` → site index + frame. |
+| `night [--now <iso>]` | The one command the coordinator runs per due race: `settle` for every unit raced today, then `preview` for every unit due tomorrow, in that order (preview needs the seeded state). |
+| `settle <campaign> <unit>` | `capture --source pcs` (PCS → FC-shaped `results/stage_NN/results.csv|json`, `gc.csv`, classifications, via the crosswalk; §2.8) → `seed_state_cache.py` → GC refresh (template label/note from state) → `build_gc_tracker.py` → `score_day_keys.py` → settlement facts JSON (`retro_facts.json`: winner group, front 15 vs each board, pool15 with/without key, oracle vs key, abandons, GC deltas, heads split) → `build_stage_page.py` → site index + frame. |
 | `preview <campaign> <unit>` | `capture_odds.py` (+ localised-name discovery, event id written into the config) → route facts capture → `bundle` → **stops** unless a `day_key` is present in `scenarios.json` (human) or `--agent-key` is passed → `predict_stage_scenarios.py` → validators → `build_stage_page.py` → site index + frame. One-day races skip the key and use `target: one_day` scenarios generated from the campaign's archetype (**needs 2.6**). |
 | `bundle <campaign> <unit>` | Freezes `predictions/<unit>/bundle/` (odds snapshot, route facts, GC csv, startlist + withdrawals, settled-stage ledger from `results/` + `review/key_scorecard.json`, `day_menu_v1_reference.md`, scorecard) and `manifest.json` with sha256s. |
 | `refs --archetype <name> [--exclude-used]` | The signature-table query I did by hand tonight: returns candidate reference competitions for a scenario (mountain escape small-group, hilly escape, bunch, reduced sprint, shattering summit…), disjoint from every ref already used in the campaign. |
@@ -222,20 +229,64 @@ Access exists). Each row: campaign, unit, phase, state, session id (Console
 deep link), operator task, approve button that writes `APPROVED`. The driver
 posts a macOS notification for `waiting_for_input` and `failed`.
 
-### 2.8 Acquisition hardening
+### 2.8 Acquisition: PCS nightly, FirstCycling weekly, one crosswalk between them
 
-- `capture_odds.py`: discovery by `campaign.json.kambi_match` with fallback
-  to fuzzy match on `englishName`; writes the discovered localised name and
-  per-stage event ids back into `campaign.json`; retries; degraded mode
-  when no market (the bundle says so).
-- `capture_results.py`: generic race page → one-day result; stage races
-  unchanged; classifies failures (`empty_parse` markup drift, `403`
-  challenge, `503` origin) into the ops-triage taxonomy.
-- Route facts: `nightly route <campaign> <unit>` fetches the organiser stage
-  page listed in `campaign.json` (lavuelta.es-style structured climbs) and
-  the FirstCycling stage page; writes `route.json`; an operator can drop a
-  hand-written `route.override.json` (tonight's heat-protocol rewrite is the
-  canonical case).
+**Why.** The nightly must not depend on the FirstCycling challenge path: it
+needs a logged-in Mac with a visible Chrome window, it 503s under load, and it
+is the only step that cannot run anywhere but here. ProCyclingStats publishes
+the same facts (stage results with gaps, GC, startlists with withdrawals,
+stage distance/profile) and is reachable with an ordinary polite HTTP client
+(it 403s Anthropic's `web_fetch`, not a normal client with a UA — verify in
+the chip). FirstCycling ids are the baseline of everything downstream, so PCS
+data is **translated, never substituted**: the archive the nightly writes is
+FC-shaped and carries FC rider ids.
+
+- `cycling_project/nightly/pcs.py`: `capture --source pcs <campaign> <unit>`
+  fetches the PCS stage/race result page (+ GC and secondary classifications)
+  and startlist, rate-limited (≥ 3 s, jitter) through the project's client
+  posture (no stealth libs), and writes the same files `capture_results.py`
+  writes today so `seed_state_cache.py`, `score_day_keys.py`,
+  `build_stage_page.py` and the state cache consume them unchanged. The PCS
+  raw HTML is archived beside the FC archive (`results/stage_NN/pcs_*.html`).
+- `cycling_project/nightly/crosswalk.py`: table `rider_crosswalk`
+  (`pcs_slug, fc_rider_id, internal_rider_id, confidence, source, confirmed_by`)
+  in the DB, seeded from the `riders` table (FC id, name, team history,
+  birth year) by normalised-name + team + birth-year matching. Auto-accept
+  only at confidence ≥ 0.97 (exact normalised name + birth year); everything
+  else becomes an operator task with the candidates listed — **wrong is worse
+  than missing**, so the driver never guesses. A PCS rider with no crosswalk
+  row is written with `rider_id = null` and the unit is flagged
+  `waiting_for_input` if any of the top 15 or any GC top 20 is unmatched.
+- **Weekly reconciliation** (in the supervised Mac run, after the FC scrape
+  + migrate): diff each night's PCS-derived `results.csv`/`gc.csv` against
+  the FC pickle for the same stage (place, gap, rider id); log drift to
+  `performance_eval/runs/reconciliation.jsonl`; a mismatch above a threshold
+  opens an operator task. This is what keeps PCS a *sub* and FC the
+  *baseline*.
+- Kambi odds: as before — discovery by `campaign.json.kambi_match` with a
+  fuzzy fallback that proposes (≥ 0.95 auto), localised name + event ids
+  written back, retries, `degraded.json` on geo-block; `--wait-for-stage`
+  polling for a late market.
+- Route facts: `nightly route <campaign> <unit>` from the organiser stage
+  page when `campaign.json.organiser_stage_urls` has one, else the PCS stage
+  page (distance, vertical metres, profile class, finish altitude); FC stage
+  page only in `--source fc` mode. `route.override.json` on top (the stage-15
+  heat rewrite is the canonical case). Missing → `route_facts: missing`,
+  never invented.
+- FirstCycling in the nightly: `--source fc` exists and is what an operator
+  runs when present (today's path); the coordinator never selects it.
+
+### 2.8b Cloud-execution spike (later, low priority)
+
+With PCS-first acquisition the only things pinning the nightly to the Mac
+are the 3.3 GB SQLite DB and the model release. A bounded spike: instrument
+the serving path to inventory every table/row it reads for one stage
+(`rider_competition_snapshots` for the active field, `rider_race_state`,
+`competitions`, kernels parquet), export that slice to a slim DB, and time a
+`predict_stage_scenarios.py` run against it. If the slice is < 500 MB and
+parity holds, Phase B (Anthropic cloud environment or a Cloudflare Container
+per the plan) becomes a packaging job rather than a research one. Not before
+Phase 2.
 
 ### 2.9 Tests + replay
 
@@ -251,7 +302,7 @@ committed ones.
 | Phase | What runs | Human does | Exit gate |
 |---|---|---|---|
 | **0 — Vuelta shadow (now → Sep 13)** | Nothing new in production. `nightly bundle` + day-key agent produce `agent_key.json` each morning from the same bundle the human reads. | Runs the runbook as tonight. | Bundle contents, schema, self-flagging debugged on ~7 stages. |
-| **1 — Driver (Sep 14 → Il Lombardia)** | Driver replaces the runbook commands on the autumn calendar (Québec/Montréal, Lombardia, Guangxi, plus .Pro/.1). | Keys stage races, approves every publish. | Several races with no manual commands except keys + approvals; ledger idempotent on rerun. |
+| **1 — Driver (Sep 14 → Il Lombardia)** | Driver replaces the runbook commands on the autumn calendar (Québec/Montréal, Lombardia, Guangxi, plus .Pro/.1), PCS-sourced with weekly FC reconciliation. | Keys stage races, approves every publish, confirms crosswalk proposals. | Several races with no manual commands except keys + approvals; ledger idempotent on rerun. |
 | **2 — Managed Agents (October)** | Deployments live; coordinator runs the driver; day-key + editorial recorded, ops-triage on failures. | Approves keys and publishes from the inbox. | ≥ 95 % sessions schema-valid; no session exceeded budget; failure table exercised. |
 | **3 — Promotion (2027 season)** | Gate E first (editorial), then Gate K (keys) per `AGENT_DESIGN.md` §6. | Vetoes. | Per gate. |
 | **4 — Cloudflare envelope** | Ledger → D1, bundles → R2, atomic publish pointer, Access-protected inbox. | — | `CLOUDFLARE_DEPLOYMENT_PLAN.md` phases 2–3. |
@@ -260,14 +311,9 @@ committed ones.
 
 ## 4. Prerequisites and risks (read before starting any chip)
 
-- **The working tree is 119 files ahead of `webscrape-refactor` HEAD and the
-  key inputs to this plan are UNTRACKED**: `CLOUDFLARE_DEPLOYMENT_PLAN.md`,
-  `netlify_site/build/build_site_index.py`, `build_site_frame.py`,
-  `site-index.json`, `_frame/`, `prediction_service.py`,
-  `production_release.py`, the Vuelta pages, and `AGENT_DESIGN.md` (in a
-  worktree). Chips run in fresh worktrees from HEAD and will not see any of
-  it. **Commit (or at least stage a WIP commit of) the current state before
-  starting chips 2.1–2.9.**
+- The working tree was committed on `webscrape-refactor` on 2026-09-05
+  (three commits: release/service/retrain, Vuelta campaign + site frame,
+  design docs), so chip worktrees see everything referenced here.
 - Worktrees need the DB symlink (memory: `reference_database_location`).
 - `ant` CLI is not installed and `anthropic` is not a project dependency;
   chip 2.3 adds `anthropic>=1.0` under a `[dependency-groups] agents` group
