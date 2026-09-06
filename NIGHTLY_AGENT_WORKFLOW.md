@@ -236,12 +236,20 @@ the weekly FirstCycling reconciliation is the backstop.
 
 - **pcs-acquirer thread** (per due unit): `web_fetch` the PCS stage result,
   GC, secondary classifications and startlist pages (and the organiser stage
-  page when listed) and write them *verbatim* to
-  `results/<unit>/pcs_raw.json` — every row `{place|status, rider, team,
-  time_or_gap, bib?, age?}` as displayed, plus `source_url`, `fetched_at`,
-  the page's own totals and a `podium_check` from a second page — and
-  `predictions/<unit>/route_raw.json`. Never computes, never fills in,
-  never guesses. The driver inserts the raw file as a `pcs_raw` row.
+  page when listed) and **save each fetched page's content to a file as
+  returned** — `results/<unit>/pcs/<page>.html` — plus a small
+  `pcs_raw.json` index (`source_url`, `fetched_at`, file, the page's own
+  totals). It does not extract, compute or restructure anything: the
+  user's August test agent (`agent_01EXAMPLE466A1EFA1DEDA25`, "Procycling
+  Stats Extractor") established that `web_fetch` content can be written to
+  disk and parsed with BeautifulSoup, and that direct HTTP from the sandbox
+  is 403'd by PCS while `web_fetch` is not. Its verified DOM map (result
+  tabs `ul.resultTabs li.cur` ↔ `div.resTab[data-id]`, `td.ridername a[href^="rider/"]`,
+  `,,` = same time as previous, hidden resolved time after `|`, startlist
+  `div.ridersCont` with `(DNF #n)`/`(DNS #n)` annotations, occasional
+  transposed rider links to cross-check against the team column) is the
+  parser spec. Route facts likewise: the organiser/PCS stage page saved as
+  HTML, parsed deterministically.
 - **`nightly ingest`** validates: row count = classified + DNF/DNS/OTL and
   equals startlist minus prior abandons; gaps parse, monotone non-negative;
   winner time present; every top-15 and GC-top-20 rider crosswalks at
