@@ -107,6 +107,17 @@ match rate and any HTML-fidelity loss (`looks_like_html`, `has_results_table`, `
 offline; `--via-deployment` uses `deployments.run` instead (that fires "Run the nightly cycle."
 first, then the smoke message — more expensive, exercises the deployment object itself).
 
+### Result of the first run (2026-09-06, `sesn_01EXAMPLE14E2A253E7954F1`, $0.58 list)
+
+| Check | Result |
+|---|---|
+| (a) egress substitution + role | **PASS** — `GET /rest/v1/releases` 200 (`content-range: */0`), `PATCH` 403 `42501 permission denied for table releases`, `rpc/whoami` → `nightly_agent` |
+| (b) release bundle | stage 0 exit 3 (no approved release: table and bucket both empty, both readable) — expected until chip B uploads and a human approves a release |
+| (c) PCS acquisition | **FAIL** — `web_fetch` → `url_not_accessible` (two attempts). A Messages-API `web_fetch` against a 2025 PCS stage page fails identically, so PCS (Cloudflare) now blocks Anthropic's fetcher as it blocks plain clients. The August verification no longer holds; §2.8 needs a new acquisition path (e.g. Mac-side headed-Chrome capture uploaded to `nightly-artifacts/`). The acquirer behaved correctly: no HTML, no counts, no timestamp fabricated; `pcs_raw.json` records the error. |
+| (d) git | **PASS** — binary present, no repository under `/workspace`, no remote |
+
+Container facts: `uv` and `python3` 3.11 preinstalled (the pip fallback in stage 0 was not exercised); the sandbox user writing `/mnt/session/outputs` is `claude`. Artifacts: `performance_eval/runs/smoke_20260906T212323Z/` (transcript, session, threads, outputs).
+
 ## 5. Operations
 
 * **Pause / unpause / manual run** (the deployment is created paused; unpausing is a human decision):
