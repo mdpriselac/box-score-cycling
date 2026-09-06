@@ -4,11 +4,15 @@
 #you can always but in t=1 and get redirected to the top level tour of that year
 #t21 is the second level, currently the .Pro level
 
+import json
 import os
+import re
+from datetime import date
 from bs4 import BeautifulSoup
 from time import sleep
 from random import randint
-from typing import List, Tuple, Optional
+from typing import Any, Dict, List, Tuple, Optional
+from urllib.parse import parse_qs, urlparse
 from pathlib import Path
 
 from cycling_project.webscrape_tools.scrape_client import WebClient
@@ -122,6 +126,147 @@ def find_race_data_column(table_tag: BeautifulSoup) -> Optional[int]:
             
     logger.warning("No Race Column found in this table")
     return None
+
+
+def _find_column(table_tag: BeautifulSoup, name: str) -> Optional[int]:
+    """Return the index of a named calendar column, case-insensitively."""
+    thead = table_tag.find("thead")
+    row = thead.find("tr") if thead else None
+    if row:
+        for index, th in enumerate(row.find_all("th")):
+            if name in th.get_text(" ", strip=True).lower():
+                return index
+    return None
+
+
+_MONTHS = {
+    name.lower(): number
+    for number, name in enumerate(
+        ("", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
+    )
+    if name
+}
+
+
+def parse_calendar_dates(value: str, year: int) -> Tuple[Optional[str], Optional[str]]:
+    """Parse FirstCycling's single-day or date-range calendar notation.
+
+    FirstCycling has used both numeric ``dd.mm`` values and abbreviated month
+    names in fixtures.  A range that rolls from December into January is
+    assigned to the following year at its end.
+    """
+    text = " ".join(value.replace("\xa0", " ").split())
+    text = re.sub(r"\s*(?:–|—|-)\s*", "-", text)
+    numeric = re.fullmatch(
+        r"(?P<d1>\d{1,2})[./](?P<m1>\d{1,2})(?:-(?P<d2>\d{1,2})[./](?P<m2>\d{1,2}))?",
+        text,
+    )
+    named = re.fullmatch(
+        r"(?P<d1>\d{1,2})\s+(?P<m1>[A-Za-z]{3})(?:-(?P<d2>\d{1,2})\s+(?P<m2>[A-Za-z]{3}))?",
+        text,
+    )
+    match = numeric or named
+    if not match:
+        return None, None
+
+    def month(raw: str) -> int:
+        return int(raw) if raw.isdigit() else _MONTHS[raw.lower()]
+
+    try:
+        start_month = month(match.group("m1"))
+        start = date(year, start_month, int(match.group("d1")))
+        if match.group("d2"):
+            end_month = month(match.group("m2"))
+            end_year = year + int(end_month < start_month)
+            end = date(end_year, end_month, int(match.group("d2")))
+        else:
+            end = start
+    except (KeyError, ValueError):
+        return None, None
+    return start.isoformat(), end.isoformat()
+
+
+def _race_id(url: str) -> Optional[str]:
+    values = parse_qs(urlparse(url).query).get("r")
+    return values[0] if values else None
+
+
+def _row_country(row: BeautifulSoup) -> Optional[str]:
+    """Best-effort country text from FC flag markup (title/alt/data-code)."""
+    for tag in row.find_all(["span", "img"]):
+        classes = " ".join(tag.get("class") or []).lower()
+        if "flag" not in classes and tag.name != "img":
+            continue
+        for attr in ("title", "alt", "data-country", "data-code"):
+            value = tag.get(attr)
+            if value and str(value).strip():
+                return str(value).strip()
+    return None
+
+
+def extract_calendar_rows(soup: BeautifulSoup, year: int) -> List[Dict[str, Any]]:
+    """Extract dated race records while leaving the legacy ``.txt`` shape alone."""
+    table = find_race_list_table(soup)
+    if table is None:
+        return []
+    race_index = find_race_data_column(table)
+    date_index = _find_column(table, "date")
+    category_index = _find_column(table, "cat")
+    if race_index is None or date_index is None:
+        return []
+
+    records: List[Dict[str, Any]] = []
+    body = table.find("tbody")
+    for row in body.find_all("tr") if body else []:
+        cols = row.find_all("td")
+        if max(race_index, date_index) >= len(cols):
+            continue
+        link = cols[race_index].find("a")
+        if not link or not link.get("href"):
+            continue
+        url = f"{BASE_URL}/{link.get('href').lstrip('/')}"
+        start_date, end_date = parse_calendar_dates(
+            cols[date_index].get_text(" ", strip=True), year
+        )
+        calendar_category = (
+            cols[category_index].get_text(" ", strip=True)
+            if category_index is not None and category_index < len(cols)
+            else None
+        )
+        records.append({
+            "fc_race_id": _race_id(url),
+            "name": link.get("title") or link.get_text(" ", strip=True),
+            "url": url,
+            "start_date": start_date,
+            "end_date": end_date,
+            "calendar_category": calendar_category or None,
+            "is_stage_race": bool(
+                (calendar_category or "").strip().startswith("2.")
+                or (start_date and end_date and start_date != end_date)
+            ),
+            "country": _row_country(row),
+        })
+    return records
+
+
+def _write_calendar_sidecar(path: Path, records: List[Dict[str, Any]]) -> None:
+    """Merge a partial-month scrape into the durable, deterministic sidecar."""
+    existing: List[Dict[str, Any]] = []
+    if path.exists():
+        try:
+            loaded = json.loads(path.read_text())
+            existing = loaded if isinstance(loaded, list) else loaded.get("races", [])
+        except (OSError, json.JSONDecodeError):
+            logger.warning("Ignoring unreadable calendar sidecar %s", path)
+    by_url = {row.get("url"): row for row in existing if row.get("url")}
+    for row in records:
+        old = by_url.get(row.get("url"), {})
+        by_url[row["url"]] = {**old, **{k: v for k, v in row.items() if v is not None}}
+    ordered = sorted(
+        by_url.values(),
+        key=lambda row: (row.get("start_date") or "9999-12-31", row.get("name") or "", row.get("url") or ""),
+    )
+    path.write_text(json.dumps(ordered, indent=2, ensure_ascii=False) + "\n")
 
 def extract_races(soup: BeautifulSoup) -> Optional[List[Tuple[str, str]]]:
     """
@@ -244,6 +389,7 @@ def _process_tour_level_by_months(client: WebClient, year: str, tour_name: str,
     logger.info(f"Getting {tour_name} Race List for {year} months {months}")
 
     all_races = []
+    all_calendar_rows: List[Dict[str, Any]] = []
     seen_urls = set()
 
     for month in months:
@@ -252,6 +398,8 @@ def _process_tour_level_by_months(client: WebClient, year: str, tour_name: str,
             response = client.get(month_url)
             soup = BeautifulSoup(response.text, 'html.parser')
             races = extract_races(soup)
+            calendar_rows = extract_calendar_rows(soup, int(year))
+            all_calendar_rows.extend(calendar_rows)
 
             if races:
                 for race_name, race_url in races:
@@ -289,6 +437,10 @@ def _process_tour_level_by_months(client: WebClient, year: str, tour_name: str,
             tour_file.write(f"{race},{url}\n")
 
     logger.info(f"Saved {len(all_races)} {tour_name} Race(s) for {year} months {months}")
+    _write_calendar_sidecar(
+        Path(tour_dir) / f"{Path(filename).stem}.calendar.json",
+        all_calendar_rows,
+    )
 
 
 def _process_tour_level(client: WebClient, year: str, tour_name: str, tour_url: str,
@@ -310,6 +462,7 @@ def _process_tour_level(client: WebClient, year: str, tour_name: str, tour_url: 
         response = client.get(tour_url)
         soup = BeautifulSoup(response.text, 'html.parser')
         races = extract_races(soup)
+        calendar_rows = extract_calendar_rows(soup, int(year))
         
         if not races or len(races) == 0:
             logger.warning(f"No {tour_name} Races found for {year}")
@@ -320,6 +473,10 @@ def _process_tour_level(client: WebClient, year: str, tour_name: str, tour_url: 
                 tour_file.write(f"{race},{url}\n")
                 
         logger.info(f"Saved {len(races)} {tour_name} Race(s) for {year}")
+        _write_calendar_sidecar(
+            Path(tour_dir) / f"{Path(filename).stem}.calendar.json",
+            calendar_rows,
+        )
         
     except Exception as e:
         logger.error(f"Error processing {tour_name} races for {year}: {e}")

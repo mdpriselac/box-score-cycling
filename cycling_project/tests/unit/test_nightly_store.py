@@ -113,7 +113,8 @@ def test_hosted_and_fake_surfaces_match():
                  "list_artifacts_since", "download_release", "approved_day_key", "approved_runs",
                  "upload_release", "insert_release", "newest_approved_release", "get_release",
                  "download_release_file", "download_artifact",
-                 "insert", "insert_many", "insert_crosswalk_proposals", "insert_reconciliation", "upsert_crosswalk"):
+                 "insert", "insert_many", "insert_crosswalk_proposals", "insert_reconciliation", "upsert_crosswalk",
+                 "sync_calendar", "sync_campaign", "sync_stages"):
         assert callable(getattr(SupabaseStore, name)), name
 
 
@@ -127,6 +128,9 @@ def test_sibling_modules_find_the_client(monkeypatch):
     assert isinstance(resolve_store("fake", Path("/tmp/x")), ReleaseFakeStore)
     monkeypatch.delenv("SUPABASE_NIGHTLY_KEY")
     monkeypatch.setenv("SUPABASE_RELEASE_READER_KEY", "")
+    # Keep this missing-key assertion isolated from a developer's configured
+    # ~/.config/cycling-project/secrets.env.
+    monkeypatch.setattr("cycling_project.nightly.store.load_local_env", lambda *args, **kwargs: None)
     with pytest.raises(StoreError):
         SupabaseStore(role="reader", url="https://ref.supabase.co", key=None)
 

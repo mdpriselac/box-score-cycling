@@ -67,9 +67,26 @@ CAMPAIGN = CAMPAIGN_BRANDING["tour-de-france-2026"]
 
 
 def resolve_campaign(campaign_dir_name, config):
-    """Branding for this campaign; a config may override any key via "site"."""
-    base = dict(CAMPAIGN_BRANDING.get(campaign_dir_name,
-                                      CAMPAIGN_BRANDING["tour-de-france-2026"]))
+    """Branding from campaign.json, with the historical dictionaries as fallback."""
+    base = dict(CAMPAIGN_BRANDING.get(campaign_dir_name, {}))
+    campaign_file = PROJECT_ROOT / "performance_eval" / campaign_dir_name / "campaign.json"
+    try:
+        registry = json.loads(campaign_file.read_text())
+    except (OSError, json.JSONDecodeError):
+        registry = {}
+    if not base:
+        race_name = registry.get("name") or campaign_dir_name.replace("-", " ").title()
+        n_stages = len(registry.get("stages") or []) or 1
+        base = {
+            "prefix": f"{campaign_dir_name}-", "marker": campaign_dir_name.upper(),
+            "race_name": race_name, "short_name": race_name,
+            "hub_title": f"{race_name}, stage by stage", "diary_label": "Race diary",
+            "views_label": "the full race views", "n_stages": n_stages,
+            "extra_links": [], "hub_backlink_extra": "",
+        }
+    base.update(registry.get("site") or {})
+    # A per-stage override remains supported for old configs, but identity now
+    # normally lives once in campaign.json.
     base.update(config.get("site") or {})
     return base
 SOURCE_HTML = HERE / "predictor-architecture.html"

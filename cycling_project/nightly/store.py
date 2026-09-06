@@ -34,6 +34,9 @@ Interfaces served (all three call the same thin transport):
   ``list_artifacts_since``, ``download_artifact``;
 * chip C ``store_local.JsonlStore``: ``insert``, ``insert_many``,
   ``insert_crosswalk_proposals``, ``insert_reconciliation``, ``upsert_crosswalk``.
+* chip D weekly registry (operator only): ``sync_calendar``,
+  ``sync_campaign``, ``sync_stages``. These can fill absent fields but never
+  replace a known value.
 
 ``FakeStore`` implements the same surface in memory (optionally mirrored to
 JSONL + a directory) and enforces the same role rules the database does, so
@@ -136,6 +139,26 @@ def _normalise(table: str, row: Dict[str, Any]) -> Dict[str, Any]:
         if not out.get("confirmed_by"):
             out["confirmed_by"] = None
     return _strip_none(out)
+
+
+def _is_absent(value: Any) -> bool:
+    return value is None or value == "" or value == [] or value == {}
+
+
+def _fill_absent(existing: Dict[str, Any], proposed: Dict[str, Any]) -> Dict[str, Any]:
+    """Return only fields that add information without replacing known data."""
+    additions: Dict[str, Any] = {}
+    for key, value in proposed.items():
+        if key in {"id", "created_at", "updated_at"} or _is_absent(value):
+            continue
+        old = existing.get(key)
+        if isinstance(old, dict) and isinstance(value, dict):
+            nested = _fill_absent(old, value)
+            if nested:
+                additions[key] = {**old, **nested}
+        elif key not in existing or _is_absent(old):
+            additions[key] = value
+    return additions
 
 
 def artifact_key(run_id: str, path: str) -> str:
@@ -245,6 +268,14 @@ class SupabaseStore:
         r = self._rest("POST", table, params=params, json_body=rows, prefer=",".join(prefer),
                        what=f"insert {table}")
         return r.json() if returning else []
+
+    def _patch(self, table: str, params: Dict[str, str], values: Dict[str, Any]) -> List[dict]:
+        if not values:
+            return []
+        return self._rest(
+            "PATCH", table, params=params, json_body=values,
+            prefer="return=representation", what=f"fill absent fields in {table}",
+        ).json()
 
     def _rpc(self, name: str, args: Optional[Dict[str, Any]] = None) -> Any:
         return self._rest("POST", f"rpc/{name}", json_body=args or {}, what=f"rpc {name}").json()
@@ -457,6 +488,57 @@ class SupabaseStore:
 
     def stages(self, campaign_slug: str) -> List[Dict[str, Any]]:
         return self._select("stages", {"campaign_slug": f"eq.{campaign_slug}", "order": "stage_number.asc.nullslast"})
+
+    # -- weekly registry writes (operator only) ------------------------------
+    def sync_calendar(self, rows: Iterable[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """Insert calendar rows or fill null/empty fields; never replace facts."""
+        self._require_operator("calendar sync")
+        out = []
+        for raw in rows:
+            row = _normalise("calendar", raw)
+            found = self._select("calendar", {
+                "fc_race_id": f"eq.{row['fc_race_id']}", "year": f"eq.{row['year']}", "limit": "1",
+            })
+            if not found:
+                out.append(self._insert("calendar", [row])[0])
+                continue
+            additions = _fill_absent(found[0], row)
+            changed = self._patch("calendar", {
+                "fc_race_id": f"eq.{row['fc_race_id']}", "year": f"eq.{row['year']}",
+            }, additions)
+            out.append(changed[0] if changed else found[0])
+        return out
+
+    def sync_campaign(self, row: Dict[str, Any]) -> Dict[str, Any]:
+        """Insert one campaign or fill only fields that were previously absent."""
+        self._require_operator("campaign sync")
+        payload = _normalise("campaigns", row)
+        slug = payload["campaign_slug"]
+        found = self._select("campaigns", {"campaign_slug": f"eq.{slug}", "limit": "1"})
+        if not found:
+            return self._insert("campaigns", [payload])[0]
+        additions = _fill_absent(found[0], payload)
+        changed = self._patch("campaigns", {"campaign_slug": f"eq.{slug}"}, additions)
+        return changed[0] if changed else found[0]
+
+    def sync_stages(self, rows: Iterable[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """Insert stage rows or fill only fields that were previously absent."""
+        self._require_operator("stage sync")
+        out = []
+        for raw in rows:
+            row = _normalise("stages", raw)
+            found = self._select("stages", {
+                "campaign_slug": f"eq.{row['campaign_slug']}", "unit": f"eq.{row['unit']}", "limit": "1",
+            })
+            if not found:
+                out.append(self._insert("stages", [row])[0])
+                continue
+            additions = _fill_absent(found[0], row)
+            changed = self._patch("stages", {
+                "campaign_slug": f"eq.{row['campaign_slug']}", "unit": f"eq.{row['unit']}",
+            }, additions)
+            out.append(changed[0] if changed else found[0])
+        return out
 
     # -- artifacts (nightly-artifacts / site-staging) -------------------------
     def upload_artifact(self, run_id: str, path: str, data: bytes, *, bucket: str = ARTIFACTS_BUCKET,
@@ -722,6 +804,27 @@ class FakeStore(_rs.FakeStore):
 
     def stages(self, campaign_slug):
         return [r for r in self.rows.get("stages", []) if r.get("campaign_slug") == campaign_slug]
+
+    def _sync_registry_row(self, table, row, keys):
+        if self.role != "operator":
+            self._deny(f"{table} sync needs the operator role")
+        payload = _normalise(table, row)
+        found = next((r for r in self.rows.get(table, [])
+                      if all(r.get(k) == payload.get(k) for k in keys)), None)
+        if found is None:
+            return self._append(table, payload)
+        additions = _fill_absent(found, payload)
+        found.update(additions)
+        return found
+
+    def sync_calendar(self, rows):
+        return [self._sync_registry_row("calendar", row, ("fc_race_id", "year")) for row in rows]
+
+    def sync_campaign(self, row):
+        return self._sync_registry_row("campaigns", row, ("campaign_slug",))
+
+    def sync_stages(self, rows):
+        return [self._sync_registry_row("stages", row, ("campaign_slug", "unit")) for row in rows]
 
     # -- storage ----------------------------------------------------------------
     def upload_artifact(self, run_id, path, data: bytes, *, bucket: str = ARTIFACTS_BUCKET, content_type=None) -> str:

@@ -17,11 +17,10 @@ Sources of truth:
   - netlify_site/<prefix>stageNN.html etc.
         presence == a public page exists for the entry
 
-The CAMPAIGNS registry below is the only hand-maintained part: identity,
-slug, page prefix, and race dates for each published campaign (mirroring
-CAMPAIGN_BRANDING in build_stage_page.py). ARCHIVE_CAMPAIGNS lists earlier
-model-vs-market evaluation campaigns that never published pages; they appear
-in /races as archive entries only.
+Published campaign identity is read from each campaign.json.  CAMPAIGNS below
+is a compatibility fallback for an old archive without that file.
+ARCHIVE_CAMPAIGNS lists earlier model-vs-market evaluation campaigns that
+never published pages; they appear in /races as archive entries only.
 """
 
 import json
@@ -95,6 +94,28 @@ def load_json(path):
         return json.loads(path.read_text())
     except (OSError, json.JSONDecodeError):
         return None
+
+
+def load_campaign(camp):
+    """Overlay a published campaign's committed registry record on fallback data."""
+    out = dict(camp)
+    registry = load_json(PERF_ROOT / camp["dir"] / "campaign.json") or {}
+    site = registry.get("site") or {}
+    for key in ("name", "year", "start_date", "end_date"):
+        if registry.get(key) is not None:
+            out[key] = registry[key]
+    if "is_stage_race" in registry:
+        out["type"] = "stage_race" if registry["is_stage_race"] else "one_day"
+    if registry.get("stages"):
+        out["n_stages"] = len(registry["stages"])
+    aliases = {
+        "route_slug": "slug", "prefix": "prefix", "short_name": "short_name",
+        "n_stages": "n_stages", "blurb": "blurb", "extra_pages": "extra_pages",
+    }
+    for source, target in aliases.items():
+        if source in site:
+            out[target] = site[source]
+    return out
 
 
 def race_url(camp):
@@ -269,7 +290,7 @@ def month_range(races):
 
 def main():
     today = date.today()
-    races = [build_campaign(c, today) for c in CAMPAIGNS]
+    races = [build_campaign(load_campaign(c), today) for c in CAMPAIGNS]
     races.sort(key=lambda r: r["start_date"], reverse=True)
     archives = [build_archive_entry(a) for a in ARCHIVE_CAMPAIGNS]
     archives.sort(key=lambda a: a["circa"] or "", reverse=True)

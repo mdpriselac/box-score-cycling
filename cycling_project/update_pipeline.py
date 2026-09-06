@@ -105,13 +105,19 @@ def run_step(name: str, func: Callable, *args, **kwargs) -> StepResult:
 # Step 1: Determine scrape targets
 # ---------------------------------------------------------------------------
 
-def determine_scrape_targets(config: PipelineConfig) -> List[Tuple[str, List[int]]]:
+def determine_scrape_targets(
+    config: PipelineConfig, calendar_horizon_months: int = 1
+) -> List[Tuple[str, List[int]]]:
     """Figure out which (year, months) need scraping.
 
     Uses a 45-day lookback from today to ensure recent races from prior
     months are always re-checked, regardless of what's already in the DB.
     """
     today = date.today()
+    if calendar_horizon_months < 0:
+        raise ValueError("calendar_horizon_months must be non-negative")
+    end_year = today.year + (today.month - 1 + calendar_horizon_months) // 12
+    end_month = (today.month - 1 + calendar_horizon_months) % 12 + 1
 
     conn = sqlite3.connect(str(config.db_path))
     cursor = conn.execute(
@@ -121,12 +127,15 @@ def determine_scrape_targets(config: PipelineConfig) -> List[Tuple[str, List[int
     conn.close()
 
     if latest_str is None:
-        return [(str(today.year), None)]
+        targets = [(str(today.year), None)]
+        if end_year > today.year:
+            targets.append((str(end_year), list(range(1, end_month + 1))))
+        return targets
 
     # Start from 45 days ago to catch missed races from prior months
     lookback = today - timedelta(days=45)
     start = date(lookback.year, lookback.month, 1)
-    end = date(today.year, today.month, 1)
+    end = date(end_year, end_month, 1)
 
     year_months: List[Tuple[int, int]] = []
     current = start
@@ -153,8 +162,9 @@ def determine_scrape_targets(config: PipelineConfig) -> List[Tuple[str, List[int
 def scrape_race_lists(
     config: PipelineConfig, targets: List[Tuple[str, List[int]]]
 ) -> str:
-    """Scrape race lists from FirstCycling for each target year/months."""
+    """Scrape lists, commit the dated calendar, and sync the 14-day registry."""
     from cycling_project.webscrape_tools.find_races import create_race_year_db
+    from cycling_project.nightly.registry import merge_calendar_sidecars, sync
 
     for year_str, months in targets:
         logger.info(f"Scraping race lists for {year_str} months={months}")
@@ -164,7 +174,19 @@ def scrape_race_lists(
             months=months,
         )
 
-    return f"Scraped lists for {len(targets)} year(s)"
+    years = [int(year) for year, _months in targets]
+    calendar = merge_calendar_sidecars(
+        config.scraped_data_dir,
+        config.project_root / "performance_eval",
+        years,
+    )
+    registry = sync(config.project_root / "performance_eval", horizon=14)
+
+    return (
+        f"Scraped lists for {len(targets)} year(s); "
+        f"calendar races={sum(len(rows) for rows in calendar.values())}; "
+        f"campaigns={len(registry['campaigns'])}"
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -860,6 +882,10 @@ Examples:
                              "over performance_eval campaigns (opt-in, non-fatal)")
     parser.add_argument("--only", choices=STEP_NAMES,
                         help="Run ONLY the specified step")
+    parser.add_argument(
+        "--calendar-horizon-months", type=int, default=1, metavar="N",
+        help="Race-list months ahead to refresh (default: 1, current + next month)",
+    )
     rel = parser.add_argument_group("Weekly release (optional final step)")
     rel.add_argument("--release", action="store_true",
                      help="After validation, build + upload the nightly release bundle "
@@ -954,7 +980,14 @@ def run_pipeline(args: argparse.Namespace) -> bool:
     logger.info(f"  Models:       {config.model_dir}")
 
     # Step 1: Determine targets (always runs)
-    targets = determine_scrape_targets(config)
+    horizon_months = getattr(args, "calendar_horizon_months", 1)
+    # Preserve the one-argument seam used by older test and operator wrappers
+    # while allowing an explicit non-default horizon.
+    targets = (
+        determine_scrape_targets(config)
+        if horizon_months == 1
+        else determine_scrape_targets(config, horizon_months)
+    )
 
     if args.dry_run:
         print("\n=== DRY RUN ===")
@@ -1094,8 +1127,6 @@ def run_pipeline(args: argparse.Namespace) -> bool:
                      getattr(args, "release_dry_run", False))
         )
 
-    print_summary(results)
-    return all(r.success for r in results if r.name != "Weekly Release Bundle")
     # Optional weekly reconciliation (--reconcile). Non-fatal: drift lands
     # in reconciliation.jsonl + an operator task; the step itself only fails
     # on an unexpected exception, and that failure is excluded from the
@@ -1106,7 +1137,10 @@ def run_pipeline(args: argparse.Namespace) -> bool:
         results.append(reconcile_result)
 
     print_summary(results)
-    return all(r.success for r in results if r is not reconcile_result)
+    return all(
+        r.success for r in results
+        if r is not reconcile_result and r.name != "Weekly Release Bundle"
+    )
 
 
 def main():
