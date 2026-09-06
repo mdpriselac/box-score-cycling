@@ -8,8 +8,9 @@ Convention (see CLAUDE.md "Credentials"):
 * ``~/.config/cycling-project/secrets.env``  secrets (chmod 600). Never
   committed, never copied into the repo, never printed.
 
-Precedence: an already-exported environment variable wins; then the repo
-``.env`` next to the project root; then the two files above. Nothing here
+Precedence: an already-exported NON-EMPTY environment variable wins; then
+the repo ``.env`` next to the project root; then the two files above. Empty
+exported variables are treated as unset. Nothing here
 ever writes a value back to disk.
 
 In the Managed Agents cloud container the secret values are vault
@@ -22,7 +23,7 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
-from dotenv import load_dotenv
+from dotenv import dotenv_values
 
 CONFIG_DIR = Path(os.environ.get("CYCLING_CONFIG_DIR", Path.home() / ".config" / "cycling-project"))
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -49,10 +50,13 @@ def load_local_env(*, require: tuple[str, ...] = ()) -> dict[str, str]:
     """
     loaded: dict[str, str] = {}
     for path in (PROJECT_ROOT / ".env", CONFIG_DIR / "env", CONFIG_DIR / "secrets.env"):
-        if path.exists():
-            before = set(os.environ)
-            load_dotenv(path, override=False)
-            for name in set(os.environ) - before:
+        if not path.exists():
+            continue
+        # An EMPTY exported variable counts as unset: a shell that sourced the
+        # placeholder file before it was filled in must not mask real values.
+        for name, value in dotenv_values(path).items():
+            if value and not os.environ.get(name):
+                os.environ[name] = value
                 loaded[name] = str(path)
     missing = [n for n in require if not os.environ.get(n)]
     if missing:
