@@ -1,30 +1,37 @@
 # Nightly managed-agent workflow — every WT / .Pro / .1 race
 
-**Status:** decision record + build plan, 2026-09-05 (rev 3, evening).
+**Status:** decision record + build plan, 2026-09-05 (rev 4, night).
 Written after running the Vuelta daily runbook by hand for stage 14 → 15
 with the explicit goal of automating it. Supersedes the harness section (§8)
 of `AGENT_DESIGN.md`; the three agent contracts, the evidence bundle, gates K
 and E and the failure table in that document stand and are referenced, not
-repeated. Operational envelope: `CLOUDFLARE_DEPLOYMENT_PLAN.md`. The process
+repeated. `CLOUDFLARE_DEPLOYMENT_PLAN.md` remains the envelope for the
+*public site*; the control plane it assigned to D1/R2 lives in **Supabase**
+from rev 4 (dashboard, REST and row-level security exist today). The process
 being automated: `performance_eval/vuelta-2026/DAILY_RUNBOOK.md`.
 
 **Operating model (user decisions, 2026-09-05):**
 
-1. **The nightly runs in Anthropic's cloud, not on the Mac.** The Mac cannot
-   be relied on daily. Managed Agents *cloud* environment; one deployment
-   per night; one session does today's results and tomorrow's previews.
+1. **The nightly runs in Anthropic's cloud, not on the Mac.** Managed Agents
+   cloud environment; one deployment per night; one session does today's
+   results and tomorrow's previews.
 2. **Nightly acquisition is ProCyclingStats through the platform's built-in
-   web tool** (user-verified: a managed agent on the cloud platform reaches
-   PCS with `web_fetch`; no container-side HTTP needed). FirstCycling is
-   unreachable from the platform (Cloudflare JS challenge) and stays the
-   **weekly** baseline, scraped by the supervised Mac run. PCS data is
-   translated into FirstCycling ids by a crosswalk, never substituted.
-3. **The weekly supervised Mac run is the release step**: it scrapes
-   FirstCycling, migrates, rebuilds features, retrains, reconciles the
-   week's PCS-derived archive against FirstCycling, merges the nightly
-   branch, and publishes the data release the cloud session boots from.
-4. Keys human until Gate K; publishing human-gated until Gate E; calendar
-   from the pipeline's own race lists, refreshed weekly, never nightly.
+   web tool** (user-verified). FirstCycling is unreachable from the platform
+   and stays the **weekly** baseline scraped by the supervised Mac run; PCS
+   data is translated into FirstCycling ids by a crosswalk, never substituted.
+3. **The agent has no credential that can change the codebase.** No GitHub
+   resource, no repo token, no push. It runs a *release bundle* (code +
+   models + data) that the weekly Mac run built, downloads it read-only,
+   and writes only to append-only Supabase tables and insert-only storage
+   through a vaulted key it never sees (§1a).
+4. **The weekly supervised Mac run is the release step**: FirstCycling
+   scrape → migrate → features → retrain; pull the week's rows and
+   artifacts from Supabase into the repo (git stays the canonical archive,
+   committed by a human-present run); reconcile PCS↔FC; export the slim
+   inference DB; upload the next release bundle; promote approved pages.
+5. Keys human until Gate K; publishing human until Gate E (and even then
+   by a promotion step the agent does not hold a credential for); calendar
+   from the pipeline's race lists, refreshed weekly, never nightly.
 
 ---
 
@@ -35,170 +42,191 @@ already exists as a script; the glue is a human reading the runbook, and
 every error-in-waiting was glue (edit the GC note *before* the run,
 `state_through_stage` is a count, copy the event id, `--all` is mandatory,
 `post_hoc: true` on late configs). Judgment sits in exactly four places: the
-day key, the scenario reference sets, the prose (previews, reflections, GC
-note), and the route facts when an organiser redraws a stage (stage 15 was
-cut from 189.7 to 110.2 km mid-afternoon for heat). Everything else is a
-driver.
+day key, the scenario reference sets, the prose, and the route facts when an
+organiser redraws a stage (stage 15 was cut from 189.7 to 110.2 km
+mid-afternoon for heat). Everything else is a driver.
 
 | Step | Kind | Cloud-runnable? |
 |---|---|---|
 | Results / GC / startlist capture | acquisition | **PCS via web tool** (FirstCycling: Mac only) |
 | Odds capture (Kambi JSON) | deterministic | container HTTP; brand fallback for non-NL egress (§2.8) |
-| `seed_state_cache`, GC refresh, `score_day_keys`, page builds | deterministic | yes, given the data release |
-| `predict_stage_scenarios.py` | deterministic | yes: LightGBM release (in git) + slim inference DB (release asset) |
+| `seed_state_cache`, GC refresh, `score_day_keys`, page builds | deterministic | yes, given the release bundle |
+| `predict_stage_scenarios.py` | deterministic | yes: LightGBM release + slim inference DB (both in the bundle) |
 | Day key, prose, hindsight refs | judgment | agents (§2.4–2.5) + `nightly refs` |
-| Publish | deterministic, gated | git push to the site branch (§2.9) |
+| Publish | deterministic, gated | promotion step outside the agent (§2.9) |
 
 ---
 
 ## 1. The shape
 
 ```
-Anthropic cloud                                                  GitHub                      Mac (weekly, supervised)
-───────────────────────────────────────────────────────          ──────────────              ─────────────────────────────
-Scheduled deployment "nightly" 19:45 UTC ─► session ─► container  ◄─clone─  repo (code, models,   update_pipeline (FC scrape → migrate
-   coordinator (multiagent):                   │ bash/read/write            campaign archives)      → features → retrain)
-     ├─ self ×N        one thread per due race │ uv run -m cycling_project.nightly …               + reconcile PCS↔FC
-     ├─ pcs-acquirer   web_fetch only          │ downloads data release  ◄─ release  ◄─────────── + export slim inference DB
-     ├─ day-key-reader no tools                │ (slim DB + kernels)        assets                + kernels + manifest → release
-     ├─ editorial      no tools                │                                                  + merge branch `nightly`
-     └─ ops-triage     read-only               ▼                                                  + import prediction_log rows
-                                    commits → branch `nightly` ─push─►  repo  ◄─merge──────────── + deploy site
-                                                                    site branch → Cloudflare Workers Builds (gated)
+Anthropic cloud                                          Supabase (control plane + artifacts)        Mac (weekly, supervised)
+──────────────────────────────────────────────────       ─────────────────────────────────────       ────────────────────────────────
+Scheduled deployment "nightly" 19:45 UTC ─► session      bucket  releases/        (read-only)  ◄──── update_pipeline (FC scrape → migrate
+   container: bash/read/write, no git, no repo             ├─ code-<sha>.zip, models/, slice.db,         → features → retrain)
+   coordinator (multiagent):                               │  kernels.parquet, calendar, crosswalk       + pull week from Supabase → repo commit
+     ├─ self ×N        one thread per due race  ──read──►  │                                             + reconcile PCS↔FC
+     ├─ pcs-acquirer   web_fetch + write only              bucket  nightly-artifacts/ (insert-only) ◄─── + export slice, build + upload release
+     ├─ day-key-reader no tools                 ──write─►  tables  runs, run_steps, pcs_raw,             + promote approved pages → site
+     ├─ editorial      no tools                            │       predictions, prediction_log,
+     └─ ops-triage     read-only                           │       operator_tasks, day_key_decisions
+                                                           │       (INSERT only for the agent role)
+   vault: SUPABASE_NIGHTLY_KEY (placeholder in sandbox;    tables  campaigns, stages, calendar,
+          real key substituted at egress, header-only,     │       crosswalk, approvals  (SELECT only)
+          host = <project>.supabase.co only)               ▼
+                                                    human: dashboard / inbox page — approve keys, publications, crosswalk
+                                                                    │
+                                                    site-staging/ ──promote (Mac or Edge Function, own key)──► Cloudflare
 ```
 
 **Why this split.** Judgment lives in agents with sharp contracts
 (`AGENT_DESIGN.md` §3). The runbook's control flow lives in a deterministic,
 idempotent driver the coordinator *calls*. Managed Agents supplies cron,
-container, transcripts, budgets, versioned agent configs and a multiagent
-roster that gives one isolated thread per race. GitHub is the state channel
-in both directions (repo in, `nightly` branch out); a weekly data release is
-the only artifact too large for git.
+container, transcripts, budgets and a multiagent roster; Supabase supplies a
+ledger with real access control, a dashboard, storage and a REST API;
+the weekly Mac run is the only writer to git and the only builder of what
+the nightly runs.
 
 **Why one deployment, not one per race.** Races come and go weekly. One
 nightly session runs `nightly plan`, then delegates one thread per due race;
-threads share the container, and the driver's lock serialises SQLite writes.
+threads share the container; the driver's lock serialises SQLite writes.
+
+### 1a. Trust boundary — what the agent can and cannot do
+
+| Surface | Agent capability | Enforced by |
+|---|---|---|
+| Codebase | **Read a copy** (the release zip in its container). Cannot push, cannot alter what runs tomorrow. | No git remote, no repo credential in the deployment. Local edits die with the container. |
+| Models / data | Read the bundle. | Storage policy: `release_reader` may only `SELECT` objects in `releases/`. |
+| Supabase tables | `INSERT` into append-only ledger/artefact tables; `SELECT` on config tables. **No `UPDATE`/`DELETE` anywhere; no DDL.** | Postgres role `nightly_agent` + grants + RLS. The agent's key maps to that role. |
+| Storage writes | `INSERT` new objects under `nightly-artifacts/<run_id>/…` and `site-staging/<run_id>/…`. No overwrite, no delete. | Bucket policies keyed on the role; object keys include the run id. |
+| Secrets | Sees an opaque placeholder for the one key it uses. | Vault `environment_variable`, `injection_location: {header: true}`, `allowed_hosts: [<project>.supabase.co]`. |
+| Network | Supabase host, Kambi hosts, PyPI (package managers). Nothing else from the container. `web_fetch` limited per tool to PCS + organiser domains. | Environment `networking: limited`; tool `allowed_domains`. |
+| Publishing | Can stage pages. **Cannot publish.** | Promotion runs on the Mac (or later an Edge Function) with a key the agent never holds. |
+| Approvals / keys | Can *propose* (insert). Cannot approve. | `approvals` and `day_key_decisions.approved_by` are written by humans via the dashboard/inbox; RLS denies the agent role. |
+| Spend | Bounded. | Deployment budget `$12` copied onto each session. |
+
+Residual risks: garbage rows in append-only tables (caught by `ingest`
+validators, the weekly reconciliation and human gates) and wasted budget.
+Prompt injection from a PCS page reaches an agent that can only fetch
+allowed domains and write a local file, and a coordinator whose only
+outbound write path is an append-only role. That is the whole blast radius.
 
 ### Decisions
 
 | Question | Decision |
 |---|---|
-| Executor | Managed Agents **cloud** environment. Self-hosted worker on the Mac is *not* the nightly path (Mac availability); it remains an operator convenience for `--source fc`. |
-| Schedule | One deployment, `45 19 * * *` UTC, budget $12/session. European finishes settled, Kambi's next-stage market already posted. North American finishes settle a night late (`settle_late`). Jitter ≤ 9 min. |
-| Code + models into the container | `github_repository` resource on the deployment (branch `webscrape-refactor`, fine-grained PAT, contents read/write); every model file is < 100 MB and tracked. |
-| Data into the container | **Weekly data release** (GitHub Release `data-YYYY-MM-DD`, assets: `inference_slice.db`, `day_menu_kernels.parquet`, `production_release_manifest.json`); `nightly bootstrap` downloads the newest release by sha at session start. Built by the Mac run (§2.10). |
-| Results source | PCS via `web_fetch` by a dedicated acquisition thread that writes tables verbatim; deterministic `ingest` validates before anything downstream sees them (§2.8). FirstCycling only via `--source fc` on the Mac. |
-| Odds source | Kambi JSON from the container (`allowed_hosts`), brand fallback for non-NL egress; degraded mode when blocked. |
-| State out of the container | Session commits to branch `nightly` (campaign archives, ledger, built pages, exported `prediction_log` rows) and pushes through the git proxy. The Mac run merges weekly. |
-| Publishing | The validated site bundle is pushed to branch `site`; Cloudflare Workers Builds deploys that branch. Human-gated: the push to `site` requires an `APPROVED` marker (committed by the operator or set on the run) until Gate E. No Cloudflare token in the agent. |
-| Keys | Human keys via the inbox until Gate K; the agent key is recorded and scored beside it. |
-| Prose-less publishing | Allowed for previews (numbers-only template), never for retros. |
-| Route facts | PCS stage page (distance, vertical metres, profile) + organiser page when `campaign.json` lists one, via the acquisition thread; `route.override.json` on top; missing → recorded, never invented. |
+| Executor | Managed Agents **cloud** environment. |
+| Schedule | One deployment, `45 19 * * *` UTC, budget $12/session. North American finishes settle a night late (`settle_late`). Jitter ≤ 9 min. |
+| Code + models + data into the container | **Release bundle** in Supabase Storage `releases/<tag>/` built weekly by the Mac: `code-<sha>.zip` (`git archive` of the release commit), `models/production/`, `inference_slice.db`, `day_menu_kernels.parquet`, `calendar/<year>.json`, campaign dirs as of release, `rider_crosswalk.csv`, `manifest.json` (shas + model contract hashes). `nightly bootstrap` downloads by sha. No GitHub resource. |
+| Working state each night | `bootstrap` hydrates the campaign dirs: bundle snapshot + every artifact inserted since (`nightly-artifacts/`), so prior stages' results, scorecard and configs are present. |
+| Results source | PCS via `web_fetch` by the acquisition thread, verbatim → `pcs_raw` row + file; deterministic `ingest` validates before use (§2.8). FirstCycling only via `--source fc` on the Mac. |
+| Odds source | Kambi JSON from the container; brand fallback; degraded mode. |
+| State out of the container | Supabase only: rows into append-only tables, files into insert-only buckets (§2.12). Nothing to git. |
+| Publishing | Built pages → `site-staging/<run_id>/`. Promotion to the public site is a Mac step (or an Edge Function) reading `approvals`; the agent holds no key for it. Cloudflare stays the public surface. |
+| Keys | Human keys until Gate K, entered via the inbox into `day_key_decisions` (`approved_by` set); the nightly reads approved keys; the agent key is inserted beside them and scored. |
+| Prose-less publishing | Allowed for previews, never for retros. |
+| Route facts | PCS stage page + organiser page via the acquisition thread; `route_overrides` table for operator corrections; missing → recorded, never invented. |
 | News | v1 news-less. |
-| Calendar | Weekly race lists (`update_pipeline` step 2) with a dates sidecar, **committed to the repo** so the cloud can read them; registry derived once per race. |
+| Calendar + registry | Weekly race lists with a dates sidecar, committed to the repo and inserted into `calendar`; `registry sync` runs **weekly on the Mac** (creates `campaign.json` + `campaigns` rows for the 14-day horizon); the nightly only reads. |
+| Git | The Mac run is the only committer: it pulls the week's rows and artifacts from Supabase into `performance_eval/`, commits, and reconciles. |
 
 ---
 
 ## 2. Components to build
 
-### 2.1 Campaign registry — from the weekly race lists, committed to the repo
+### 2.1 Campaign registry — weekly, from the race lists, committed
 
-`update_pipeline` step 2 (`find_races.create_race_year_db`) already scrapes
-FirstCycling's per-level calendar pages into
-`scraped_data/<year>/{wt,pro,d1}/<level>.txt`. Extend the weekly step to (a)
-extract the calendar row dates into a sidecar and (b) cover the current and
-next month; then **commit the sidecar into the repo** as
-`performance_eval/calendar/<year>.json` so the cloud session can plan
-without the Mac. `nightly registry sync --horizon 14` (read-only, runs in
-the container) creates `performance_eval/<slug>-<year>/campaign.json` once
-per race entering the horizon (fc_race_id, slug, category, is_stage_race,
-dates, stages[], timezone, `kambi_match`, `pcs_slug`, `void_stages: []`,
-`organiser_stage_urls: {}`), never overwriting. Stage rows come from the
-PCS race page at registration. `CAMPAIGN_BRANDING` / `CAMPAIGNS` in the
-builders read from campaign.json; Tour and Vuelta get hand-written files.
+`update_pipeline` step 2 already scrapes FirstCycling's per-level calendar
+pages into `scraped_data/<year>/{wt,pro,d1}/<level>.txt`. Extend the weekly
+step to extract the calendar row dates into a sidecar, cover the current and
+next month, write `performance_eval/calendar/<year>.json` into the repo and
+upsert `calendar` in Supabase. `nightly registry sync --horizon 14` runs in
+the same weekly step: creates `performance_eval/<slug>-<year>/campaign.json`
+once per race entering the horizon (fc_race_id, slug, category,
+is_stage_race, dates, stages[], timezone, `kambi_match`, `pcs_slug`,
+`void_stages: []`, `organiser_stage_urls: {}`) and the matching `campaigns`
+/ `stages` rows; never overwrites. A 14-day horizon refreshed weekly keeps
+≥ 7 days of cover. `CAMPAIGN_BRANDING` / `CAMPAIGNS` in the builders read
+from campaign.json; Tour and Vuelta get hand-written files.
 
 ### 2.2 The driver — `cycling_project/nightly/driver.py`
 
 `python -m cycling_project.nightly <command>`; JSON out; exit 0 done /
 10 waiting_for_input (`operator_task`) / 20 failed (`error_class`, `step`,
-`log_path`); idempotent on `(campaign, unit, phase)`; writes
-`performance_eval/<campaign>/runs/<date>/<phase>.json` and appends to
-`performance_eval/runs/ledger.jsonl`; global file lock around SQLite writes.
+`log_path`); idempotent on `(campaign, unit, phase)`; every run and step is a
+row in `runs` / `run_steps` (plus a local `runs/<date>/<phase>.json`);
+global file lock around SQLite writes. Supabase access through
+`cycling_project/nightly/store.py` (PostgREST + Storage; key from the
+`SUPABASE_NIGHTLY_KEY` env var, which is the vault placeholder in the cloud
+and a real key on the Mac).
 
 | Command | Runs |
 |---|---|
-| `bootstrap` | Verify the repo checkout, download the newest data release assets by sha (skip if present), `uv sync`, point `DB_PATH`/serving at `inference_slice.db`, print the release id. Fails closed (exit 20) if the release manifest's model contract hashes do not match `models/production/`. |
-| `plan [--now]` | Due units from every `campaign.json` + the calendar: `settle` (date past, no `results/<unit>/results.csv`), `preview` (tomorrow race-local, no boards), flags `settle_late`, `blocked`. |
-| `night --campaign <dir>` | Every due `settle`, then every due `preview`, in order. |
-| `settle <campaign> <unit>` | `ingest` (validated PCS tables → FC-shaped `results/stage_NN/results.csv|json`, `gc.csv`, classifications) → `seed_state_cache.py` → GC config templated ("state through stage N") → GC predict → `build_gc_tracker.py` → `score_day_keys.py` (always) → `retro_facts.json` (winner group, top 15 vs each board by rider id, pool15 with/without key, oracle vs key, abandons, GC deltas, heads split) → `build_stage_page.py` → site index + frame → `export-log` (new `prediction_log` rows → `runs/<date>/prediction_log.jsonl`) → `commit`. |
-| `preview <campaign> <unit>` | Kambi capture (event id written into the config) → route facts (from the acquisition thread's `route_raw.json`) → `bundle` → **exit 10 unless** the config has `day_key` or `--agent-key` → `predict_stage_scenarios.py` → `validate` → `build_stage_page.py` → site index + frame → `export-log` → `commit`. One-day races skip the key (`target: one_day`, §2.6). |
-| `ingest <campaign> <unit>` | Reads `results/<unit>/pcs_raw.json` written by the acquisition thread; validates (§2.8); writes the FC-shaped files or exits 10 with the failing checks. |
-| `bundle` | Freezes `predictions/<unit>/bundle/` + `manifest.json` (sha256s): odds, latest `gc.csv`, startlist + withdrawals, settled-stage ledger from `results/` + `review/key_scorecard.json`, `route.json`, `day_menu_v1_reference.md`, scorecard. |
-| `refs --archetype <name>` | The signature-table query (`experiments/selection_signatures_*.csv.gz` ⋈ `competitions` ⋈ winners) for `mountain_escape_small_group`, `hilly_escape`, `bunch`, `reduced_sprint`, `shattering_summit`, `gc_group_of_two`, excluding refs already used in the campaign. |
+| `bootstrap` | Download the release named in `releases` (newest `approved`) by sha, verify model contract hashes, `uv sync`, point serving at `inference_slice.db`, **hydrate** campaign dirs from the bundle snapshot + all `nightly-artifacts/` inserted since, load approved `day_key_decisions` into the local configs. Fails closed on any mismatch. |
+| `plan [--now]` | Due units from `campaigns`/`stages` + local state: `settle` (date past, no results), `preview` (tomorrow race-local, no boards); flags `settle_late`, `blocked`. |
+| `night --campaign <slug>` | Every due `settle`, then every due `preview`, in order. |
+| `settle` | `ingest` → `seed_state_cache.py` → GC config templated → GC predict → `build_gc_tracker.py` → `score_day_keys.py` (always) → `retro_facts.json` → `build_stage_page.py` → site index + frame → `upload` (results files, facts, pages, `prediction_log` rows). |
+| `preview` | Kambi capture → route facts (from the acquisition thread's `route_raw`) → `bundle` → **exit 10 unless** an approved `day_key` exists (or `--agent-key` in shadow) → `predict_stage_scenarios.py` → `validate` → `build_stage_page.py` → site index + frame → `upload`. One-day races skip the key. |
+| `ingest` | Reads `results/<unit>/pcs_raw.json`; validates (§2.8); writes the FC-shaped files or exits 10 with the failing checks. |
+| `bundle` | Freezes `predictions/<unit>/bundle/` + `manifest.json` (odds, latest `gc.csv`, startlist + withdrawals, settled-stage ledger, `route.json`, `day_menu_v1_reference.md`, scorecard). |
+| `refs --archetype <name>` | Signature-table query for named archetypes, excluding refs already used in the campaign. |
 | `validate` | Schemas, NaNs, `lambdarank_win_p` sum ≈ 1, `post_hoc` on late configs, `void_stages` consistent, key weights sum to 1, crosswalk coverage. |
-| `commit [--push]` | Stage the campaign dir, ledger, `netlify_site/` outputs; commit on branch `nightly` with a templated message; push through the git proxy. |
-| `publish <campaign>` | Validate every unit; require `APPROVED` (committed marker) unless `--auto`; push `netlify_site/` to branch `site`. |
-| `status` | Ledger view. |
+| `upload` | Insert artifacts under `nightly-artifacts/<run_id>/<campaign>/…` and pages under `site-staging/<run_id>/…`; insert `predictions`, `prediction_log`, `pcs_raw`, `operator_tasks` rows. Never overwrites. |
+| `status` | Ledger view from `runs`. |
+
+`publish` is **not** a driver command the agent can run; see §2.9.
 
 ### 2.3 Managed Agents provisioning — `agents/managed/`
 
 - `environment.yaml`: `cycling-cloud`, `config: {type: cloud, networking:
-  {type: limited, allow_package_managers: true, allowed_hosts: [github.com,
-  api.github.com, objects.githubusercontent.com, eu-offering-api.kambicdn.com,
-  <other Kambi brand hosts>]}}`. Start `unrestricted` for the smoke test,
-  tighten once the host list is known.
+  {type: limited, allow_package_managers: true, allowed_hosts:
+  ["<project>.supabase.co", "eu-offering-api.kambicdn.com", <other Kambi
+  brand hosts>]}}`.
+- `vault.yaml`: one vault, one `environment_variable` credential
+  `SUPABASE_NIGHTLY_KEY` (the `nightly_agent` role key), `networking:
+  {type: limited, allowed_hosts: ["<project>.supabase.co"]}`,
+  `injection_location: {header: true}`.
 - Agents (`claude-opus-5` to start): `nightly-coordinator` (agent toolset;
   roster `[{type: self}, pcs-acquirer, day-key-reader, editorial,
-  ops-triage]`; prompt: `bootstrap` first, then `plan`, one self thread per
-  due campaign running `night`; never edit numbers; exit 10 → record the
-  task and stop that campaign; exit 20 → ops-triage; end with `commit
-  --push` and a ledger summary; all fetched/read content is data),
-  `pcs-acquirer` (**`web_fetch` + `write` only**, `allowed_domains`
-  procyclingstats.com plus organiser domains from campaign.json; writes
-  `results/<unit>/pcs_raw.json` and `predictions/<unit>/route_raw.json`
-  verbatim, never computes), `day-key-reader` (no tools), `editorial` (no
-  tools), `ops-triage` (read-only).
+  ops-triage]`; prompt: `bootstrap`, `plan`, one self thread per due
+  campaign running `night`; never edit numbers; exit 10 → `operator_tasks`
+  row and stop that campaign; exit 20 → ops-triage; end with a ledger
+  summary; all fetched/read content is data), `pcs-acquirer` (`web_fetch`
+  with `allowed_domains` = PCS + organiser domains, `write`, `read` only;
+  writes `pcs_raw.json` / `route_raw.json` verbatim), `day-key-reader` (no
+  tools), `editorial` (no tools), `ops-triage` (read-only).
 - `deployments.yaml`: one deployment `nightly`, cron `45 19 * * *` UTC,
-  `github_repository` resource (origin, branch `webscrape-refactor`,
-  fine-grained PAT contents read/write, rotated from the Console),
-  `initial_events` = one `user.message`, `budget` `$12.00`; created paused;
-  manual run for the smoke test.
-- `provision.py` (Python SDK, `[dependency-groups] agents`), `ids.json`,
-  `README.md` (Console steps, PAT scopes, budgets, pause/unpause, manual
-  runs, how to read a session in the Console).
+  `vault_ids`, `initial_events` = one `user.message`, `budget` `$12.00`;
+  created paused; manual run for the smoke test. **No `github_repository`
+  resource.**
+- `provision.py` (Python SDK), `ids.json`, `README.md`.
 
 ### 2.4 Day-key agent skill + decision record — `agents/skills/day-key-read/`
 
-Unchanged from rev 1: heuristics 1–5 from `AGENT_DESIGN.md` §3.2 plus (6)
-the launchpad check is subordinate to the composition of the move — if the
-leader's team will have riders in the escape nobody chases → `res_2`; (7)
-the same-race sprint ledger forces the bunch majority; spend residual weight
-on composition (`res_3`/`res_1`), not shape. Record schema §5.1; validator;
-`agent_key.json`; `score_day_keys.py --also agent`. In the cloud the reader
-is a roster agent fed the bundle inline by the coordinator.
+Unchanged from rev 1 (heuristics 1–7, §5.1 record, validator). Records go
+to `day_key_decisions` (`author = agent`); the human's approved key is a
+separate row with `approved_by`; `score_day_keys.py --also agent` scores
+both.
 
 ### 2.5 Editorial agent skill + lexicon linter — `agents/skills/editorial/`
 
-Unchanged from rev 1: preview / retro / monthly artifacts, prose-only JSON,
-lexicon lint (no stake/ROI/value/play/punt/units), numeral check against the
-facts bundle, key never restated with different weights, one retry then
-hold; Gate E per artifact type.
+Unchanged from rev 1. Drafts go to `editorial_drafts`; the builder uses a
+draft only when `approved_by` is set (until Gate E).
 
 ### 2.6 One-day race path
 
-`target: one_day` config (refs = the race's own last five editions),
-`build_oneday_page.py`, `type: one_day` hub variant, startlist from PCS via
-the acquisition thread (`cached_start_lists` is the Mac-side fallback).
+`target: one_day` config, `build_oneday_page.py`, `type: one_day` hub
+variant, startlist from PCS via the acquisition thread.
 
 ### 2.7 Operator inbox
 
-`_frame/ops.html` rendered from the ledger + `operator_tasks.jsonl` in the
-repo. Approval = committing `performance_eval/<campaign>/runs/<date>/APPROVED`
-(the page shows the exact command; a local approve endpoint is a convenience
-when the Mac is open). Notifications: the deployment-run and session
-webhooks are Console-registered; a tiny Cloudflare Worker (or the Mac when
-awake) turns `session.status_idled` with `requires_action` into a push.
-Private until Cloudflare Access exists (`.assetsignore` + Worker guard).
+Two tiers: (1) the Supabase dashboard is the inbox on day one — `runs`,
+`operator_tasks`, `day_key_decisions`, `approvals`, `crosswalk_proposals`
+are plain tables a human edits; (2) `_frame/ops.html` renders from those
+tables (Supabase JS client, anon read of a view) with approve actions that
+write `approvals` rows as the human (Supabase Auth). Notifications: a
+Supabase Database Webhook on `operator_tasks` insert → push/email; the
+deployment-run webhooks from the Console → the same.
 
 ### 2.8 Acquisition: PCS through the web tool, validated deterministically
 
@@ -210,87 +238,107 @@ the weekly FirstCycling reconciliation is the backstop.
   GC, secondary classifications and startlist pages (and the organiser stage
   page when listed) and write them *verbatim* to
   `results/<unit>/pcs_raw.json` — every row `{place|status, rider, team,
-  time_or_gap, bib?, age?}` exactly as displayed, plus `source_url`,
-  `fetched_at`, and the page's own totals — and `predictions/<unit>/route_raw.json`
-  (distance, vertical metres, profile class, climbs if listed). It never
-  computes gaps, never fills gaps in, never guesses a missing rider.
-- **`nightly ingest`** validates before writing the FC-shaped archive: row
-  count = classified finishers + DNF/DNS/OTL rows and matches the startlist
-  minus prior abandons (tolerance 0); gaps parse and are monotone
-  non-negative; winner time present; every top-15 and GC-top-20 rider
-  crosswalks at ≥ 0.97; podium agrees with a second fetch (the GC page, or
-  the race's result page on the organiser site) recorded in `pcs_raw.json`.
-  Any failure → exit 10 with the failing checks; the acquisition thread may
-  be asked once to re-fetch, then it is an operator task.
-- **Crosswalk** (`rider_crosswalk` table, shipped inside the slim DB and
-  mirrored to `performance_eval/crosswalk/rider_crosswalk.csv` in the repo
-  so confirmations survive a release): `pcs_slug ↔ fc_rider_id ↔
-  internal_rider_id`, seeded from `riders` by normalised name + team +
-  birth year; auto-accept ≥ 0.97; proposals to the inbox; confirmations are
-  human and committed. Wrong is worse than missing: an unmatched rider is
-  written with an empty id, and the unit blocks if he is in the top 15 / GC
-  top 20.
-- **Kambi**: container HTTP against `eu-offering-api.kambicdn.com`;
-  discovery by `campaign.json.kambi_match` (fuzzy proposals ≥ 0.95 auto);
-  event ids written back; **brand fallback** `ubnl → ubuk → ubse → rivers`
-  because the container's egress is not Dutch — record the brand used, keep
-  devig per brand; `degraded.json` + exit 0 (degraded) when every brand
-  blocks. `--wait-for-stage` polling for late markets.
-- **Weekly reconciliation** on the Mac (`update_pipeline --reconcile`):
-  diff each night's PCS-derived `results.csv`/`gc.csv` against the
-  FirstCycling pickle for the same stage (place, gap, rider id); log to
-  `performance_eval/runs/reconciliation.jsonl`; drift above threshold →
-  operator task. This is what keeps PCS a sub and FirstCycling the baseline.
+  time_or_gap, bib?, age?}` as displayed, plus `source_url`, `fetched_at`,
+  the page's own totals and a `podium_check` from a second page — and
+  `predictions/<unit>/route_raw.json`. Never computes, never fills in,
+  never guesses. The driver inserts the raw file as a `pcs_raw` row.
+- **`nightly ingest`** validates: row count = classified + DNF/DNS/OTL and
+  equals startlist minus prior abandons; gaps parse, monotone non-negative;
+  winner time present; every top-15 and GC-top-20 rider crosswalks at
+  ≥ 0.97; podium equals `podium_check`. Failure → exit 10 with the failing
+  checks; one re-fetch, then an operator task.
+- **Crosswalk**: table `crosswalk` in Supabase (`pcs_slug ↔ fc_rider_id ↔
+  internal_rider_id, confidence, source, confirmed_by`), mirrored into the
+  release bundle and `performance_eval/crosswalk/rider_crosswalk.csv`;
+  auto-accept ≥ 0.97; proposals to `crosswalk_proposals` (agent may insert);
+  confirmations are human updates. Wrong is worse than missing.
+- **Kambi**: container HTTP; brand fallback `ubnl → ubuk → ubse → rivers`;
+  brand recorded; `degraded` when every brand blocks; `--wait-for-stage`.
+- **Weekly reconciliation** on the Mac: diff each night's PCS-derived
+  `results.csv`/`gc.csv` (pulled from Supabase) against the FirstCycling
+  pickle for the same stage; log to `reconciliation` table + jsonl; drift
+  above threshold → operator task.
 
-### 2.9 Publishing
+### 2.9 Publishing — outside the agent
 
-`netlify_site/` is the build output. The nightly commits it to branch
-`nightly`; `publish` fast-forwards branch `site` to the approved commit.
-Cloudflare Workers Builds is connected to `site` (the `wrangler.jsonc` +
-`.assetsignore` already exist), so a push is the deploy and a revert is a
-rollback. Until Gate E the operator approves by committing the marker (or
-merging a PR the coordinator opens through the GitHub MCP if we add the
-vault credential later). Nothing partial is ever pushed to `site`.
+The nightly stages pages under `site-staging/<run_id>/`. `promote`
+(`cycling_project/nightly/promote.py`, run by the weekly Mac step or on
+demand, with a key the deployment does not hold) reads `approvals`, copies
+the approved run's pages into the repo's `netlify_site/`, commits, and
+deploys through Cloudflare (Workers Builds on the `site` branch, or
+`wrangler deploy`). Post-Gate-E the same promotion can move to a Supabase
+Edge Function triggered by an `approvals` insert — still not the agent.
 
 ### 2.10 Weekly release from the Mac — the critical path
 
-The cloud session cannot open the 3.3 GB `cycling_races.db`. The serving
-path reads only `rider_results`, `races`, `competitions`, `riders`,
-`rider_race_state`, `cached_race_results` directly, plus whatever the
-feature/live-form path reads (`rider_competition_snapshots` for the active
-field, `race_features_*` and gradients for reference competitions,
-`cached_start_lists`) — the exact set is measured, not assumed:
+The cloud session cannot open the 3.3 GB `cycling_races.db`; it needs a
+slim inference slice, and it needs *code and models it cannot alter*.
 
-1. **Instrument**: run `predict_stage_scenarios.py` in `--no-log` for a
-   stage config, the GC config and a one-day config with a
-   `sqlite3` trace callback; record every statement and table.
-2. **Export** `inference_slice.db`: `riders`, `races`, `competitions`,
-   `teams`, `rider_team_history` in full (small); `rider_results` for every
-   rider on a startlist in the next 14 days plus every reference competition
-   in any scenario config; the latest `rider_competition_snapshots` rows per
-   such rider; `rider_race_state` for in-progress races; `race_features_*`,
-   `race_feature_gradients`, `race_history_thresholds` in full if under the
-   budget, else for reference comps; `cached_start_lists`; empty
-   `prediction_log` with the same schema; `rider_crosswalk`. Target
-   **< 500 MB**; VACUUM.
-3. **Parity**: re-run the three configs against the slice; outputs must be
-   byte-identical (probabilities) to the full-DB run.
-4. **Release**: `weekly_release.py` (new `update_pipeline` step after
-   training) tags `data-YYYY-MM-DD`, uploads the slice, the kernels parquet
-   and the release manifest as assets (`gh release create`), pushes
-   `models/production/`, and writes `performance_eval/data_release.json`
-   (id, shas) into the repo so `bootstrap` knows what to fetch.
-5. **Merge back**: `git merge nightly`, import `runs/*/prediction_log.jsonl`
-   into the real `prediction_log` (idempotent), run reconciliation, then
-   the normal FirstCycling scrape → migrate → features → retrain.
+1. **Instrument**: run `predict_stage_scenarios.py --no-log` for a stage
+   config, the GC config and a one-day config with a `sqlite3` trace
+   callback; record every statement and table.
+2. **Export** `inference_slice.db` (target **< 500 MB**, VACUUM): `riders`,
+   `races`, `competitions`, `teams`, `rider_team_history` in full;
+   `rider_results` for every rider on a startlist in the horizon plus every
+   reference competition in any scenario config; latest
+   `rider_competition_snapshots` per such rider; `rider_race_state` for
+   in-progress races; `race_features_*`, gradients, thresholds (full if
+   under budget, else for reference comps); `cached_start_lists`; empty
+   `prediction_log`; `rider_crosswalk`.
+3. **Parity**: re-run the three configs against the slice; byte-identical
+   probabilities.
+4. **Bundle + upload** (`weekly_release.py`, an `update_pipeline` step after
+   training): `git archive` the release commit → `code-<sha>.zip`; collect
+   `models/production/` (+ kernels parquet), the slice, calendar, campaign
+   dirs, crosswalk CSV; write `manifest.json` (shas, model contract hashes,
+   db snapshot date); upload to `releases/<tag>/`; insert a `releases` row
+   (`approved` set by the human running the step).
+5. **Pull + merge back** (`weekly_pull.py`, before step 1 next week):
+   download the week's `nightly-artifacts/` into `performance_eval/`,
+   import `prediction_log` rows into the real DB (idempotent), import
+   `day_key_decisions`/`editorial_drafts` into the configs, run
+   reconciliation, commit on `webscrape-refactor`.
 
 ### 2.11 Tests + replay
 
 `tests/unit/test_nightly_driver.py` replays the committed Vuelta stage
-14 → 15 archive through `night --dry-run` (no fetches, `--no-log`, archived
-PCS raw fixtures) and asserts `retro_facts.json`, the ledger, and the built
-pages. `test_nightly_ingest.py` covers every validator with fixtures
-(missing rider, non-monotone gap, podium mismatch, sub-threshold crosswalk).
+14 → 15 archive through `night --dry-run` (no fetches, `--no-log`, a local
+fake store) and asserts `retro_facts.json`, the run rows and the built
+pages. `test_nightly_ingest.py` covers every validator with fixtures.
+`test_store.py` runs against a local Supabase (`supabase start`) and asserts
+the agent role **cannot** update, delete or read `approvals` secrets.
+
+### 2.12 Supabase control plane — schema and roles (`supabase/`)
+
+Migrations in `supabase/migrations/`, a `supabase/README.md`, and a Python
+client `cycling_project/nightly/store.py`.
+
+Tables (all with `created_at`, most append-only):
+
+| Table | Written by | Purpose |
+|---|---|---|
+| `calendar`, `campaigns`, `stages` | Mac (weekly) | Registry; `stages.void` for cancelled stages. |
+| `releases` | Mac | Release tags, manifest, `approved`. |
+| `runs`, `run_steps` | agent (insert) | Ledger: campaign, unit, phase, state, exit codes, session id, step timings, log object key. |
+| `pcs_raw` | agent (insert) | Verbatim transcriptions + `ingest` verdict. |
+| `predictions` | agent (insert) | Scenario configs + board JSON object keys per unit and run. |
+| `prediction_log` | agent (insert) | Same schema as the SQLite table; imported weekly. |
+| `day_key_decisions` | agent (insert, `author=agent`), human (insert with `approved_by`) | Both keys per stage; scored by `score_day_keys.py`. |
+| `editorial_drafts` | agent (insert), human (`approved_by`) | Prose records. |
+| `operator_tasks` | agent (insert), human (update `resolved`) | Inbox. |
+| `crosswalk`, `crosswalk_proposals` | Mac / human; agent proposes | Rider identity. |
+| `approvals` | human only | Publication approvals per run. |
+| `reconciliation` | Mac | PCS↔FC diffs. |
+
+Roles: `nightly_agent` (INSERT on the agent tables, SELECT on registry and
+its own rows, **no UPDATE/DELETE/DDL**, RLS on), `release_reader` (SELECT on
+`releases` bucket objects), `operator` (human, dashboard/Auth). Buckets:
+`releases` (private; read for `release_reader`, write for Mac),
+`nightly-artifacts` and `site-staging` (insert-only for `nightly_agent`,
+object keys must start with the run id), `site` (Mac/promotion only). The
+agent's key is minted for the `nightly_agent` role (Supabase's key mechanics
+are checked against current docs in the chip — do not hand the agent a
+service-role key).
 
 ---
 
@@ -298,35 +346,30 @@ pages. `test_nightly_ingest.py` covers every validator with fixtures
 
 | Phase | What runs | Human does | Exit gate |
 |---|---|---|---|
-| **0 — Vuelta shadow (now → Sep 13)** | Human runs the runbook on the Mac as tonight. Day-key agent shadow via `run_day_key.py` each morning; `pcs-acquirer` + `ingest` dry-run each evening against the FirstCycling archive to measure PCS transcription accuracy. | Everything, as today. | Ingest validators catch every seeded fault; crosswalk coverage on the Vuelta field ≥ 99 %. |
-| **1 — Slice + driver on the Mac (Sep 14 →)** | Data release built weekly; driver runs `night` on the Mac against the slice (not the full DB) so the cloud path is exercised before the cloud exists. | Keys, approvals, crosswalk confirmations. | Parity on the slice; a race week with no manual commands except keys + approvals. |
-| **2 — Cloud nightly (October: Québec/Montréal, Lombardia, Guangxi, .Pro/.1)** | Deployment live; coordinator + acquisition + ops-triage; day-key + editorial recorded. | Keys and approvals from the inbox; weekly Mac release. | ≥ 95 % sessions schema-valid, none over budget, failure table exercised, weekly reconciliation clean. |
-| **3 — Promotion (2027)** | Gate E, then Gate K, per `AGENT_DESIGN.md` §6. | Vetoes. | Per gate. |
-| **4 — Cloudflare envelope** | Ledger → D1, bundles → R2, Access-protected inbox, atomic publish pointer. | — | Plan phases 2–3. |
+| **0 — Vuelta shadow (now → Sep 13)** | Human runs the runbook on the Mac. Day-key agent shadow each morning; `pcs-acquirer` + `ingest` dry-run each evening against the FirstCycling archive to measure transcription accuracy. Supabase project + schema stood up; the Mac run starts inserting `runs`. | Everything, as today. | Validators catch every seeded fault; crosswalk coverage ≥ 99 %. |
+| **1 — Slice + driver on the Mac (Sep 14 →)** | Weekly release built and uploaded; driver runs `night` on the Mac *against the bundle* with the `nightly_agent` key, exactly as the cloud will. | Keys, approvals, crosswalk confirmations in the dashboard. | Parity on the slice; a race week with no manual commands except keys + approvals; the agent role provably cannot update/delete. |
+| **2 — Cloud nightly (October)** | Deployment live; coordinator + acquisition + ops-triage; day-key + editorial recorded. | Keys/approvals from the inbox; weekly Mac release + promote. | ≥ 95 % sessions schema-valid, none over budget, failure table exercised, reconciliation clean. |
+| **3 — Promotion (2027)** | Gate E, then Gate K, per `AGENT_DESIGN.md` §6; promotion moves to an Edge Function. | Vetoes. | Per gate. |
+| **4 — Cloudflare envelope for the public site** | Access-protected inbox, atomic publish pointer. | — | Plan phases 2–3 (public surface only). |
 
 ---
 
 ## 4. Prerequisites and risks
 
-- **Repo**: origin is `github.com/mdpriselac/Cycling_Project`, branch
-  `webscrape-refactor` (local is ahead of origin — push before provisioning).
-  Fine-grained PAT (contents read/write) for the deployment resource; the
-  token never enters the container (git proxy).
-- **Data release size** is the unknown that decides feasibility; measure it
-  first (chip 2.10). If the slice cannot get under ~500 MB, the fallback is
-  a slimmer serving path (drop `race_features_*` in favour of precomputed
-  reference profiles per config), not a bigger download.
-- **PCS transcription risk** is bounded by `ingest` + weekly reconciliation,
-  but a systematic PCS↔FC gap convention difference (bonus-inclusive GC vs
-  cumulative stage time) must be handled explicitly: the archive's `gc.csv`
-  is bonus-inclusive today (memory), so PCS's GC page is the right source.
-- **Kambi geo**: the NL brand may 403/451 from the container's egress; the
-  brand fallback is untested. If every brand blocks, previews run degraded
-  (no book columns) — acceptable, but the day-key agent must be told.
-- **Cost**: repo clone is cached; the release download is per session
-  (~slice size); 2–8 Opus threads per night. Budget cap $12 is the guard.
-- **Concurrency**: threads share one container; the driver lock serialises
-  SQLite; no Chrome anywhere in the nightly.
-- **Sensitive**: nothing secret in the repo, prompts, bundles or logs; the
-  GitHub PAT is a deployment resource; Kambi needs no credential; Cloudflare
-  deploys from the `site` branch without a token in the agent.
+- **Supabase project** (free tier is enough to start; Storage egress for
+  a ~700 MB bundle per night is the cost to watch — cache by sha, and
+  consider a 7-day-stable bundle). Two keys: `nightly_agent` (vault) and
+  the Mac's operator key (Keychain).
+- **Bundle size** decides feasibility: code ≈ small, models ≈ 200 MB,
+  kernels 103 MB, slice < 500 MB target. If the slice cannot get under
+  budget, slim the serving path (precomputed reference profiles), not the
+  download.
+- **PCS transcription risk** bounded by `ingest` + reconciliation; the
+  PCS↔FC gap convention (bonus-inclusive GC) must be handled explicitly.
+- **Kambi geo**: brand fallback untested from the container's egress;
+  previews run degraded if every brand blocks.
+- **Cost**: 2–8 Opus threads per night; budget cap $12; Storage egress.
+- **What the agent can still do wrong**: insert bad rows (validated,
+  gated, reconciled), waste budget (capped), read the code (a copy, same
+  exposure as any CI container). It cannot change the code, the models,
+  the data, the site, an approval, or a key.
