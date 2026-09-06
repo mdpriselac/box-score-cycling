@@ -64,6 +64,28 @@ FirstCycling HTML → scrape → pickle files → migrate → SQLite DB
 - Mock pattern: `tests/utils/` provides `MockWebClient` and `MockResponse` for scraper tests
 - Run from project root: `uv run pytest`
 
+
+## Credentials (for nightly tooling, chips, and the weekly run)
+
+- **Never in the repo.** `.env` (gitignored, non-secret: DB_PATH, SCRAPER_*) is
+  mirrored to `~/.config/cycling-project/env`; secrets live only in
+  `~/.config/cycling-project/secrets.env` (chmod 600). Git worktrees have no
+  `.env`, so always load via the helper.
+- **Load in Python**: `from cycling_project.nightly.secrets import load_local_env;
+  load_local_env(require=("SUPABASE_URL",))` — exported env wins, then repo
+  `.env`, then the two files. **Load in a shell**:
+  `set -a; source ~/.config/cycling-project/secrets.env; set +a`.
+  Check what is set (names only): `uv run python -m cycling_project.nightly.secrets`.
+- Variable names: `ANTHROPIC_API_KEY` (or `ant auth login` OAuth profile — preferred),
+  `SUPABASE_URL/PROJECT_REF/DB_PASSWORD/SECRET_KEY/PUBLISHABLE_KEY/JWT_SECRET/
+  NIGHTLY_KEY/RELEASE_READER_KEY`, `CLOUDFLARE_ACCOUNT_ID/API_TOKEN`, `NTFY_TOPIC`
+  or `PUSHOVER_*`. `SUPABASE_SECRET_KEY` is operator-only: it must never be
+  provisioned into an agent vault, prompt, or log. Use `secrets.redact()` on any
+  log line that might echo a value.
+- The Managed Agents cloud container gets the SAME variable names as vault
+  placeholders (substituted at egress); code must send keys in headers only,
+  never in URLs or bodies.
+
 ## Gotchas
 
 - **Rate limiting**: `scrape_client.py` enforces 3-second minimum between HTTP requests with random jitter. Do not bypass this.
