@@ -160,3 +160,6 @@ supabase/.temp/
 supabase/.branches/
 supabase/signing_keys.json
 supabase/**/signing_keys*.json
+
+# test fixtures may legitimately contain CSV archives
+!cycling_project/tests/fixtures/**/*.csv
