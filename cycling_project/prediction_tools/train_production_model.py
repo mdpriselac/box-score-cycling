@@ -79,6 +79,7 @@ from cycling_project.prediction_tools.win_calibration import (
     fit_win_corrector,
     save_corrector,
 )
+from cycling_project.db_path import default_db_path
 
 META_FEATURE_COLS = ['oof_time_gap_pred', 'oof_lambdarank_win_p']
 STACK_FEATURE_COLS = META_FEATURE_COLS + SIGNATURE_FEATURE_COLS + RATING_FEATURE_COLS
@@ -232,7 +233,7 @@ def main(enable_stack: bool = True):
     print(f"Started: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 
     # --- Load Data ---
-    db_path = Path(__file__).parent.parent / "webscrape_tools" / "database" / "database" / "cycling_races.db"
+    db_path = default_db_path()
     config = DataConfig(
         db_path=str(db_path),
         start_date='2016-01-01',

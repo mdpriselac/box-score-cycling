@@ -57,15 +57,13 @@ from cycling_project.engineering_tools.race_profile_scoring import (
     calculate_race_profile_scores,
 )
 from cycling_project.engineering_tools.place_handling import place_bucketer
+from cycling_project.db_path import default_db_path
 
 
 logger = get_logger(__name__)
 
 # Default database path
-_DEFAULT_DB = (
-    Path(__file__).parent.parent
-    / "webscrape_tools" / "database" / "database" / "cycling_races.db"
-)
+_DEFAULT_DB = default_db_path()
 
 # Columns expected by the model (mirrors CyclingDataPipeline column lists)
 RIDER_FEATURE_COLS = CyclingDataPipeline.RIDER_FEATURE_COLS

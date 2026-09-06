@@ -193,6 +193,9 @@ class CyclingDataPipeline:
 
     def _find_database(self, db_path: Optional[str] = None) -> str:
         """Find the SQLite database file."""
+        override = os.environ.get('CYCLING_DB_PATH')
+        if override:
+            return override
         if db_path and os.path.isfile(db_path):
             return db_path
 

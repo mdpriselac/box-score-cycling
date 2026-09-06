@@ -30,6 +30,7 @@ from cycling_project.prediction_tools.lambdarank_feature_contract import (
     build_lambdarank_feature_view,
 )
 from cycling_project.prediction_tools.model_registry import ModelRegistry
+from cycling_project.db_path import default_db_path
 
 
 def main():
@@ -39,7 +40,7 @@ def main():
     print(f"Started: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 
     # --- Load Data (same window as main production trainer) ---
-    db_path = Path(__file__).parent.parent / "webscrape_tools" / "database" / "database" / "cycling_races.db"
+    db_path = default_db_path()
     config = DataConfig(
         db_path=str(db_path),
         start_date='2016-01-01',

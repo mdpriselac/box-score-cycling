@@ -73,10 +73,10 @@ from cycling_project.prediction_tools.prediction_service import (
     PredictionRequest,
     PredictionService,
 )
+from cycling_project.db_path import default_db_path
 
 MODEL_DIR = PROJECT_ROOT / "models" / "production"
-DB_PATH = str(PROJECT_ROOT / "cycling_project" / "webscrape_tools" / "database"
-              / "database" / "cycling_races.db")
+DB_PATH = str(default_db_path())
 
 SCORE_KEY_MAP = {
     "sprint": "race_sprint_score", "mountain": "race_mountain_score",
@@ -207,8 +207,8 @@ def main():
     print(f"Startlist: {len(matched)} matched, {len(unmatched)} unmatched", flush=True)
 
     conn = sqlite3.connect(DB_PATH)
-    target = config.get("target", "stage")   # "stage" or "gc"
-    stage_number = None if target == "gc" else int(config["stage"])
+    target = config.get("target", "stage")   # "stage", "gc" or "one_day"
+    stage_number = int(config["stage"]) if target == "stage" else None
     comp_id = resolve_competition_id(conn, str(config["fc_race_id"]),
                                      int(config["year"]), stage_number)
 

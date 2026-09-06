@@ -206,6 +206,9 @@ class RaceProfileScorer:
 
     def _find_database(self) -> str:
         """Find the SQLite database file."""
+        override = os.environ.get('CYCLING_DB_PATH')
+        if override:
+            return override
         if HAS_DOTENV:
             load_dotenv()
             db_path = os.getenv('DB_PATH')

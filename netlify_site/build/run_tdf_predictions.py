@@ -32,13 +32,11 @@ from cycling_project.prediction_tools.future_race_loader import (
 from cycling_project.prediction_tools.model_registry import ModelRegistry
 from cycling_project.prediction_tools.pricing_layer import apply_pricing_layer
 from cycling_project.prediction_tools.win_calibration import load_corrector
+from cycling_project.db_path import default_db_path
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 MODEL_DIR = PROJECT_ROOT / "models" / "production"
-DB_PATH = str(
-    PROJECT_ROOT / "cycling_project" / "webscrape_tools" / "database"
-    / "database" / "cycling_races.db"
-)
+DB_PATH = str(default_db_path())
 OUT_PATH = Path(__file__).parent / "tdf_2026_predictions.json"
 
 # scenario -> (reference competition_ids, representative stage_number)

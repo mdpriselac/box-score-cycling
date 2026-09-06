@@ -32,11 +32,11 @@ from cycling_project.prediction_tools.future_race_loader import (
     get_cached_results,
     save_results_to_cache,
 )
+from cycling_project.db_path import default_db_path
 
 DEFAULT_RACE_ID, DEFAULT_YEAR = 17, 2026
 DEFAULT_RESULTS_ROOT = Path(__file__).resolve().parent / "results"
-DB_PATH = str(PROJECT_ROOT / "cycling_project" / "webscrape_tools" / "database"
-              / "database" / "cycling_races.db")
+DB_PATH = str(default_db_path())
 
 
 def main() -> int:

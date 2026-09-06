@@ -55,13 +55,11 @@ import pandas as pd
 
 from cycling_project.webscrape_tools.logging_config import get_logger
 from cycling_project.prediction_tools.production_release import write_release_manifest
+from cycling_project.db_path import default_db_path
 
 logger = get_logger(__name__)
 
-_DB_PATH = (
-    Path(__file__).parent.parent
-    / "webscrape_tools" / "database" / "database" / "cycling_races.db"
-)
+_DB_PATH = default_db_path()
 OUT_DIR = Path("experiments")
 _PRODUCTION_DIR = Path(__file__).parents[2] / "models" / "production"
 

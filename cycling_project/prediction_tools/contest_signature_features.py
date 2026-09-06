@@ -38,13 +38,11 @@ import numpy as np
 import pandas as pd
 
 from cycling_project.webscrape_tools.logging_config import get_logger
+from cycling_project.db_path import default_db_path
 
 logger = get_logger(__name__)
 
-DEFAULT_DB_PATH = (
-    Path(__file__).parent.parent
-    / "webscrape_tools" / "database" / "database" / "cycling_races.db"
-)
+DEFAULT_DB_PATH = default_db_path()
 
 # Signature construction constants — must match the gated experiment
 # (experiments/selection_signatures.py + contest_signature_gate_cv.py).

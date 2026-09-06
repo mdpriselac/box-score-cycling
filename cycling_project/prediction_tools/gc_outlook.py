@@ -44,6 +44,7 @@ from cycling_project.prediction_tools.probability_predictor import ProbabilityPr
 from cycling_project.prediction_tools.production_release import write_release_manifest
 from cycling_project.prediction_tools.training import ModelTrainer, TrainingConfig
 from cycling_project.webscrape_tools.logging_config import get_logger
+from cycling_project.db_path import default_db_path
 
 logger = get_logger(__name__)
 
@@ -83,10 +84,7 @@ MODEL_FILES = {
 # ---------------------------------------------------------------------------
 
 def _default_db_path() -> Path:
-    return (
-        Path(__file__).parent.parent
-        / "webscrape_tools" / "database" / "database" / "cycling_races.db"
-    )
+    return default_db_path()
 
 
 def load_gc_base(db_path: Optional[str] = None) -> pd.DataFrame:

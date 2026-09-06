@@ -149,3 +149,8 @@ models/production/day_menu_kernels.parquet
 .wrangler/
 netlify_site/.wrangler/
 netlify_site/Archive.zip
+
+# nightly release bundles and slices (built by cycling_project/nightly/weekly_release.py)
+performance_eval/runs/releases/
+*.inference_slice.db
+inference_slice.db

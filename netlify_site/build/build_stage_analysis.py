@@ -35,6 +35,7 @@ blocks are replaced by title).
 import argparse
 import csv
 import json
+import os
 import sqlite3
 from pathlib import Path
 
@@ -43,8 +44,11 @@ PREDICTIONS_ROOT = (PROJECT_ROOT / "performance_eval" / "tour-de-france-2026"
                     / "predictions")
 RESULTS_ROOT = (PROJECT_ROOT / "performance_eval" / "tour-de-france-2026"
                 / "results")
-DB_PATH = (PROJECT_ROOT / "cycling_project" / "webscrape_tools" / "database"
-           / "database" / "cycling_races.db")
+# CYCLING_DB_PATH redirects serving at a slim slice (see cycling_project/db_path.py);
+# resolved inline because this script runs without the package on sys.path.
+DB_PATH = Path(os.environ.get("CYCLING_DB_PATH")
+               or PROJECT_ROOT / "cycling_project" / "webscrape_tools" / "database"
+               / "database" / "cycling_races.db")
 
 
 def fc_to_internal_ids(fc_ids):

@@ -63,13 +63,11 @@ from cycling_project.prediction_tools.prediction_service import (
     PredictionRequest,
     PredictionService,
 )
+from cycling_project.db_path import default_db_path
 
 
 MODEL_DIR = str(Path(__file__).parent.parent.parent / "models" / "production")
-DB_PATH = str(
-    Path(__file__).parent.parent
-    / "webscrape_tools" / "database" / "database" / "cycling_races.db"
-)
+DB_PATH = str(default_db_path())
 
 # Absolute-percentage-point gap above which we flag a win-probability
 # disagreement between the multiclass and LambdaRank heads in the UI.

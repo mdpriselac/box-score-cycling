@@ -429,6 +429,9 @@ class StageRaceStateBuilder:
         self.db_path = db_path or self._find_database()
 
     def _find_database(self) -> str:
+        override = os.environ.get('CYCLING_DB_PATH')
+        if override:
+            return override
         if HAS_DOTENV:
             load_dotenv()
             env_path = os.getenv('DB_PATH')

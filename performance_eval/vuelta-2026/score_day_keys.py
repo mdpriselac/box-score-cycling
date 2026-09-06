@@ -58,9 +58,9 @@ from cycling_project.prediction_tools.experiments.front_local_race_typing import
     comp_features,
     rule_label,
 )
+from cycling_project.db_path import default_db_path
 
-DB_PATH = str(PROJECT_ROOT / "cycling_project" / "webscrape_tools" / "database"
-              / "database" / "cycling_races.db")
+DB_PATH = str(default_db_path())
 RESULTS_ROOT = CAMPAIGN / "results"
 PREDICTIONS_ROOT = CAMPAIGN / "predictions"
 SCORECARD = CAMPAIGN / "review" / "key_scorecard.json"

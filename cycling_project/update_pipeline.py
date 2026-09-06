@@ -25,6 +25,7 @@ from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Set, Tuple
 
 from cycling_project.webscrape_tools.logging_config import get_logger
+from cycling_project.db_path import default_db_path
 
 logger = get_logger("update_pipeline")
 
@@ -45,10 +46,7 @@ class PipelineConfig:
     @classmethod
     def from_defaults(cls) -> "PipelineConfig":
         project_root = Path(__file__).resolve().parent.parent
-        db_path = (
-            project_root / "cycling_project" / "webscrape_tools"
-            / "database" / "database" / "cycling_races.db"
-        )
+        db_path = default_db_path()
         model_dir = project_root / "models" / "production"
 
         # Scraped data directory: check .env, then default
@@ -781,15 +779,31 @@ def run_release_validation(config: PipelineConfig) -> str:
     )
 
 
+def run_weekly_release(config: PipelineConfig, tag: Optional[str], dry_run: bool) -> str:
+    """Optional final step (--release): build + upload the weekly release bundle.
+
+    Never fatal for the pipeline: a failed release leaves the trained models
+    and the DB exactly as they are, and the summary reports the failure.
+    """
+    from cycling_project.nightly.weekly_release import release
+
+    tag = tag or f"data-{datetime.now().strftime('%Y-%m-%d')}"
+    result = release(tag, dry_run=dry_run)
+    state = "uploaded" if result.get("uploaded") else (
+        "dry-run" if dry_run else f"built locally ({result.get('upload_skipped', 'not uploaded')})")
+    return f"{tag}: {result['total_bytes'] / 1048576:.0f} MB {state} -> {result['bundle_dir']}"
+
+
 # ---------------------------------------------------------------------------
 # CLI
 # ---------------------------------------------------------------------------
 
+RELEASE_STEP = "release"
 STEP_NAMES = [
     "scrape-lists", "scrape-data", "migrate", "place-bucket",
     "bib", "experience", "percentiles", "gradients", "features",
     "race-state", "elo-snapshots", "train", "train-lambdarank",
-    "train-gc-outlook", "train-dnf", "validate-release",
+    "train-gc-outlook", "train-dnf", "validate-release", RELEASE_STEP,
 ]
 
 
@@ -820,6 +834,14 @@ Examples:
 
     parser.add_argument("--only", choices=STEP_NAMES,
                         help="Run ONLY the specified step")
+    rel = parser.add_argument_group("Weekly release (optional final step)")
+    rel.add_argument("--release", action="store_true",
+                     help="After validation, build + upload the nightly release bundle "
+                          "(cycling_project.nightly.weekly_release); non-fatal")
+    rel.add_argument("--release-tag", default=None,
+                     help="Release tag (default data-<today>)")
+    rel.add_argument("--release-dry-run", action="store_true",
+                     help="Build the bundle without uploading")
     parser.add_argument("--dry-run", action="store_true",
                         help="Show what would be done without executing")
     parser.add_argument("--verbose", "-v", action="store_true",
@@ -832,6 +854,8 @@ def should_run(step: str, args: argparse.Namespace) -> bool:
     """Determine whether a step should run given the CLI flags."""
     if args.only:
         return step == args.only
+    if step == RELEASE_STEP:
+        return bool(getattr(args, "release", False))
 
     scrape_steps = {"scrape-lists", "scrape-data"}
     migrate_steps = {"migrate", "place-bucket", "bib", "experience"}
@@ -1030,8 +1054,17 @@ def run_pipeline(args: argparse.Namespace) -> bool:
             run_step("Validate Production Release", run_release_validation, config)
         )
 
+    # Optional, non-fatal: the bundle for the cloud nightly. A failure here
+    # never fails the pipeline — the models and DB are already updated.
+    if should_run(RELEASE_STEP, args):
+        results.append(
+            run_step("Weekly Release Bundle", run_weekly_release, config,
+                     getattr(args, "release_tag", None),
+                     getattr(args, "release_dry_run", False))
+        )
+
     print_summary(results)
-    return all(r.success for r in results)
+    return all(r.success for r in results if r.name != "Weekly Release Bundle")
 
 
 def main():

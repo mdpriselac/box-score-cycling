@@ -38,14 +38,12 @@ from cycling_project.engineering_tools.form_team_features import (
     RiderFormHistory,
 )
 from cycling_project.webscrape_tools.logging_config import get_logger
+from cycling_project.db_path import default_db_path
 
 
 logger = get_logger(__name__)
 
-_DEFAULT_DB = (
-    Path(__file__).parent.parent
-    / "webscrape_tools" / "database" / "database" / "cycling_races.db"
-)
+_DEFAULT_DB = default_db_path()
 
 HISTORY_START = '2010-01-01'
 

@@ -18,6 +18,7 @@ place.
 import csv
 import html
 import json
+import os
 import runpy
 import sqlite3
 import sys
@@ -180,8 +181,11 @@ def norm_name(s):
     return " ".join(sorted(s.lower().replace("-", " ").split()))
 
 
-DB_PATH = (PROJECT_ROOT / "cycling_project" / "webscrape_tools" / "database"
-           / "database" / "cycling_races.db")
+# CYCLING_DB_PATH redirects serving at a slim slice (see cycling_project/db_path.py);
+# resolved inline because this script runs without the package on sys.path.
+DB_PATH = Path(os.environ.get("CYCLING_DB_PATH")
+               or PROJECT_ROOT / "cycling_project" / "webscrape_tools" / "database"
+               / "database" / "cycling_races.db")
 
 
 def _fc_to_internal_ids(fc_ids):
