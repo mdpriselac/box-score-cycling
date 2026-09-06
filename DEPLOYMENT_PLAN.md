@@ -1,4 +1,10 @@
-# Deploy Cycling Predictor to Streamlit Cloud
+# Historical Streamlit deployment plan
+
+> Superseded by [`CLOUDFLARE_DEPLOYMENT_PLAN.md`](CLOUDFLARE_DEPLOYMENT_PLAN.md).
+> This file is retained as historical context for the earlier Streamlit/Turso
+> proposal; it is not the current deployment direction.
+
+## Deploy Cycling Predictor to Streamlit Cloud
 
 ## Context
 

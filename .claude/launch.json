@@ -4,20 +4,51 @@
     {
       "name": "docs",
       "runtimeExecutable": "python3",
-      "runtimeArgs": ["-m", "http.server", "8407", "--directory", "docs"],
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "8407",
+        "--directory",
+        "docs"
+      ],
       "port": 8407
     },
     {
       "name": "scratchpad",
       "runtimeExecutable": "python3",
-      "runtimeArgs": ["-m", "http.server", "8409", "--directory", "/tmp/scratchpad"],
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "8409",
+        "--directory",
+        "/tmp/scratchpad"
+      ],
       "port": 8409
     },
     {
       "name": "netlify-site",
       "runtimeExecutable": "python3",
-      "runtimeArgs": ["-m", "http.server", "8411", "--directory", "netlify_site"],
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "8411",
+        "--directory",
+        "netlify_site"
+      ],
       "port": 8411
+    },
+    {
+      "name": "site-frame",
+      "runtimeExecutable": "~/.nvm/versions/node/v23.8.0/bin/npx",
+      "runtimeArgs": [
+        "wrangler",
+        "dev",
+        "--config",
+        "~/Documents/Cycling Project/netlify_site/wrangler.jsonc",
+        "--port",
+        "8787"
+      ],
+      "port": 8787
     }
   ]
 }
