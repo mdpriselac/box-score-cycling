@@ -1,0 +1,13 @@
+# The judgment core (AGENT_DESIGN.md §3.2, §5.1). No tools: it is handed the frozen bundle in its
+# task message and returns the decision record. System prompt = agents/skills/day-key-read/SKILL.md
+# (frontmatter stripped) so the skill file stays the single versioned source.
+name: day-key-reader
+description: >-
+  Morning stage read for the day-type retrieval channel: given a frozen evidence bundle (every file
+  inlined, plus the record schema), returns ONLY the §5.1 day-key decision record as JSON. No tools;
+  it cannot fetch. Hand it one stage per task.
+model:
+  id: claude-opus-5
+  effort: high
+system_file: ../../skills/day-key-read/SKILL.md
+strip_frontmatter: true

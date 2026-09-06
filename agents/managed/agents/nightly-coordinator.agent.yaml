@@ -1,0 +1,31 @@
+# The primary thread of every nightly session. AGENT_DESIGN.md §3.1 (as the caller of the driver),
+# NIGHTLY_AGENT_WORKFLOW.md §1, §1a, §2.2, §2.3. System prompt in ../prompts/nightly-coordinator.md
+# (rendered by provision.py: {{SUPABASE_URL}}, {{SUPABASE_PUBLISHABLE_KEY}}, {{SUPABASE_HOST}},
+# {{STAGE0}} = ../stage0.sh — no secret placeholder exists).
+name: nightly-coordinator
+description: >-
+  Coordinator of the nightly cycling run: bootstraps the release bundle, plans due units, delegates
+  PCS acquisition, runs the deterministic driver per campaign, and files operator tasks. A copy can be
+  spawned to own ONE campaign's `night --campaign <slug>` run.
+model:
+  id: claude-opus-5
+  effort: high
+system_file: ../prompts/nightly-coordinator.md
+tools:
+  - type: agent_toolset_20260401
+    default_config:
+      enabled: true
+      permission_policy: {type: always_allow}
+    configs:
+      # The coordinator never fetches: acquisition is the pcs-acquirer's job (§2.8) and its
+      # outbound write path must stay the append-only Supabase role only (§1a).
+      - {name: web_search, enabled: false}
+      - {name: web_fetch, enabled: false}
+multiagent:
+  type: coordinator
+  agents:
+    - {type: self}
+    - pcs-acquirer
+    - day-key-reader
+    - editorial
+    - ops-triage

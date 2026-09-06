@@ -1,0 +1,25 @@
+# The single scheduled deployment (NIGHTLY_AGENT_WORKFLOW.md §1 "Decisions", §2.3).
+#
+# One nightly tick at 19:45 UTC (execution jitter ≤ 9 min); one session; the coordinator fans out
+# one self thread per due campaign. Budget is copied onto every fired session ($12.00 = "1200" cents).
+# The deployment is created PAUSED and is never unpaused by provision.py — unpausing is the user's
+# step (README §5). Manual runs work while paused (`ant beta:deployments run`).
+#
+# Deliberately absent: `resources` — no github_repository (the container must not hold a repo
+# credential; code arrives read-only from the release bundle) and no file resources.
+workspace_id: wrkspc_01EXAMPLEA458FB52026846A     # Console URLs + explicit anthropic-workspace-id header
+deployments:
+  - name: nightly
+    description: Nightly cycling coverage — every WT / .Pro / .1 race due tonight, via the release bundle in Supabase.
+    agent: nightly-coordinator          # name in agents/; provision.py pins the current version
+    environment: cycling-cloud          # name in environment.yaml
+    vaults: [cycling-nightly]           # display_name in vault.yaml
+    schedule:
+      type: cron
+      expression: "45 19 * * *"
+      timezone: UTC
+    budget_usd: "12.00"
+    initial_events:
+      - type: user.message
+        text: Run the nightly cycle.
+    create_paused: true

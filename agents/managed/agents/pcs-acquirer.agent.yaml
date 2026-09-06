@@ -1,0 +1,31 @@
+# Acquisition thread (NIGHTLY_AGENT_WORKFLOW.md §2.8). Derived from the user's August test agent
+# agent_01EXAMPLE466A1EFA1DEDA25 "Procycling Stats Extractor" (kept: web_fetch-only fetching rules,
+# one fetch at a time, save-to-file, the verified DOM notes; REMOVED: all parsing / JSON-schema output
+# duties — this agent transcribes pages as returned and never extracts a row). The original agent is
+# neither modified nor archived; provision.py refuses to touch its id.
+name: pcs-acquirer
+description: >-
+  Fetches ProCyclingStats / organiser pages with web_fetch (never sandbox HTTP) and saves each page's
+  content verbatim as HTML under results/<unit>/pcs/ plus a pcs_raw.json index. Give it the unit, the
+  base directory and the list of page URLs; it never parses, computes or restructures anything.
+model:
+  id: claude-opus-5
+  effort: low
+system_file: ../prompts/pcs-acquirer.md
+tools:
+  - type: agent_toolset_20260401
+    default_config:
+      enabled: false
+    configs:
+      - name: web_fetch
+        enabled: true
+        # letour.fr is NOT here: the API rejects it (2026-09-06, "domain is not accessible to our
+        # user agent" — the site blocks Anthropic's crawler), so Tour organiser stage pages must
+        # arrive via operator upload / route_overrides. PCS remains the primary source for all races.
+        allowed_domains:
+          - procyclingstats.com
+          - www.procyclingstats.com
+          - lavuelta.es
+          - giroditalia.it
+      - {name: write, enabled: true}
+      - {name: read, enabled: true}

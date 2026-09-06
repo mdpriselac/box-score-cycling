@@ -1,0 +1,12 @@
+# Editorial agent (AGENT_DESIGN.md §3.3, §5.2). No tools; facts bundle in, §5.2 JSON out.
+# System prompt = agents/skills/editorial/SKILL.md (frontmatter stripped).
+name: editorial
+description: >-
+  Writes stage-preview / stage-retro prose sections from a frozen facts bundle as the §5.2 JSON
+  record (numbers via placeholders, information-capture framing, no advice language). No tools. Hand
+  it one artifact per task: the artifact type, the facts bundle JSON and the output schema.
+model:
+  id: claude-opus-5
+  effort: high
+system_file: ../../skills/editorial/SKILL.md
+strip_frontmatter: true

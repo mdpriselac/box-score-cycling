@@ -1,0 +1,29 @@
+# Managed Agents cloud environment for the nightly run (NIGHTLY_AGENT_WORKFLOW.md §2.3).
+# Applied by provision.py (create-or-update by name). `ant beta:environments create < environment.yaml`
+# is the equivalent CLI call (drop the `x-` keys first — the CLI passes the body through verbatim).
+#
+# `networking` governs the CONTAINER only. It does not govern web_fetch / web_search, which run on
+# Anthropic's servers and are restricted per tool with `allowed_domains` in the agent YAMLs.
+#
+# Hosts (chip F, 2026-09-05): ONE Kambi host, eu-offering-api.kambicdn.com, answers for every brand
+# (ubnl / ubuk / ubse / rsiuspa / rsiusil); no na-* Kambi host resolves; `rivers` is not a usable brand
+# code (HTTP 429 "No access" everywhere). PyPI comes in through allow_package_managers.
+name: cycling-cloud
+description: >-
+  Nightly cycling coverage container: Supabase (control plane + release bundle) and the Kambi
+  offering API only; PyPI via package managers; no git remote, no repo credential.
+config:
+  type: cloud
+  networking:
+    type: limited
+    allow_package_managers: true
+    allow_mcp_servers: false
+    allowed_hosts:
+      - your-project-ref.supabase.co
+      - eu-offering-api.kambicdn.com
+  packages:
+    type: packages
+    pip:
+      - uv
+      - beautifulsoup4
+      - requests

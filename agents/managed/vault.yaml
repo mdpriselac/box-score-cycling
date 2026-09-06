@@ -1,0 +1,24 @@
+# One vault, one environment_variable credential (NIGHTLY_AGENT_WORKFLOW.md §1a, §2.3).
+#
+# The secret VALUE is never in this file: provision.py reads SUPABASE_NIGHTLY_KEY from
+# ~/.config/cycling-project/secrets.env (via cycling_project.nightly.secrets.load_local_env) at
+# provision time and sends it write-only to the Vaults API. It is the ONLY Supabase key that may be
+# vaulted — never SUPABASE_SECRET_KEY (service_role), never SUPABASE_DB_PASSWORD / JWT_SECRET.
+#
+# In the sandbox the agent sees SUPABASE_NIGHTLY_KEY as an opaque placeholder; Anthropic substitutes
+# the real value at egress, in request HEADERS only (injection_location.header), and only on requests
+# to the Supabase project host. store.py already sends the key header-only. Rotation = update the
+# credential's secret_value (provision.py --rotate-key), never a new credential.
+display_name: cycling-nightly
+credentials:
+  - display_name: SUPABASE_NIGHTLY_KEY (nightly_agent role JWT)
+    auth:
+      type: environment_variable
+      secret_name: SUPABASE_NIGHTLY_KEY
+      secret_value_from_env: SUPABASE_NIGHTLY_KEY   # resolved by provision.py, never written to disk
+      networking:
+        type: limited
+        allowed_hosts:
+          - your-project-ref.supabase.co
+      injection_location:
+        header: true

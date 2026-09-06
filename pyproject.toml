@@ -22,6 +22,11 @@ dependencies = [
 dev = [
     "pytest>=9.0.2",
 ]
+agents = [
+    # agents/managed/provision.py + smoke_test.py (Managed Agents control plane)
+    "anthropic>=1.4.0",
+    "pyyaml>=6.0",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["cycling_project/tests"]
