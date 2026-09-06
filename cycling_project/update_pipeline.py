@@ -792,6 +792,29 @@ def run_weekly_release(config: PipelineConfig, tag: Optional[str], dry_run: bool
     state = "uploaded" if result.get("uploaded") else (
         "dry-run" if dry_run else f"built locally ({result.get('upload_skipped', 'not uploaded')})")
     return f"{tag}: {result['total_bytes'] / 1048576:.0f} MB {state} -> {result['bundle_dir']}"
+def run_reconciliation(config: PipelineConfig) -> str:
+    """Optional weekly PCS ↔ FirstCycling reconciliation (--reconcile).
+
+    Non-fatal by construction: drift is recorded to
+    performance_eval/runs/reconciliation.jsonl + an operator task, never
+    raised. Only campaigns with a campaign.json and archived results run.
+    """
+    from cycling_project.nightly.reconcile import reconcile_all_campaigns
+    from cycling_project.nightly.store_local import open_store
+
+    runs_dir = config.project_root / "performance_eval" / "runs"
+    store = open_store("local", runs_dir, role="agent")
+    reports = reconcile_all_campaigns(
+        config.project_root / "performance_eval",
+        scraped_dir=config.scraped_data_dir, store=store, runs_dir=runs_dir,
+    )
+    drift = [r["campaign"] for r in reports if r.get("exit") == 10]
+    errors = [r["campaign"] for r in reports if r.get("exit") == 20]
+    return (
+        f"campaigns={len(reports)} drift={len(drift)} errors={len(errors)}"
+        + (f" drift:{','.join(drift)}" if drift else "")
+        + (f" errors:{','.join(errors)}" if errors else "")
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -803,7 +826,7 @@ STEP_NAMES = [
     "scrape-lists", "scrape-data", "migrate", "place-bucket",
     "bib", "experience", "percentiles", "gradients", "features",
     "race-state", "elo-snapshots", "train", "train-lambdarank",
-    "train-gc-outlook", "train-dnf", "validate-release", RELEASE_STEP,
+    "train-gc-outlook", "train-dnf", "validate-release", "reconcile", RELEASE_STEP,
 ]
 
 
@@ -832,6 +855,9 @@ Examples:
     skip.add_argument("--skip-lambdarank", action="store_true",
                       help="Skip LambdaRank probability head training")
 
+    parser.add_argument("--reconcile", action="store_true",
+                        help="Also run the weekly PCS <-> FirstCycling reconciliation "
+                             "over performance_eval campaigns (opt-in, non-fatal)")
     parser.add_argument("--only", choices=STEP_NAMES,
                         help="Run ONLY the specified step")
     rel = parser.add_argument_group("Weekly release (optional final step)")
@@ -856,6 +882,11 @@ def should_run(step: str, args: argparse.Namespace) -> bool:
         return step == args.only
     if step == RELEASE_STEP:
         return bool(getattr(args, "release", False))
+
+    # Opt-in only: the reconciliation needs archived campaign results and
+    # the FirstCycling pickle for the same race, so it never runs by default.
+    if step == "reconcile":
+        return bool(getattr(args, "reconcile", False))
 
     scrape_steps = {"scrape-lists", "scrape-data"}
     migrate_steps = {"migrate", "place-bucket", "bib", "experience"}
@@ -1065,6 +1096,17 @@ def run_pipeline(args: argparse.Namespace) -> bool:
 
     print_summary(results)
     return all(r.success for r in results if r.name != "Weekly Release Bundle")
+    # Optional weekly reconciliation (--reconcile). Non-fatal: drift lands
+    # in reconciliation.jsonl + an operator task; the step itself only fails
+    # on an unexpected exception, and that failure is excluded from the
+    # pipeline's exit status below.
+    reconcile_result: Optional[StepResult] = None
+    if should_run("reconcile", args):
+        reconcile_result = run_step("Reconcile PCS vs FirstCycling", run_reconciliation, config)
+        results.append(reconcile_result)
+
+    print_summary(results)
+    return all(r.success for r in results if r is not reconcile_result)
 
 
 def main():
