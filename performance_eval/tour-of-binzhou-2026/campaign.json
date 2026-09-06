@@ -1,0 +1,26 @@
+{
+  "slug": "tour-of-binzhou-2026",
+  "name": "Tour of Binzhou",
+  "fc_race_id": "16539",
+  "year": 2026,
+  "category": "d1",
+  "is_stage_race": false,
+  "start_date": "2026-09-09",
+  "end_date": "2026-09-09",
+  "stages": [
+    {
+      "number": null,
+      "date": "2026-09-09",
+      "towns": null,
+      "distance_km": null,
+      "kind": "one_day"
+    }
+  ],
+  "timezone": null,
+  "kambi_match": "tour of binzhou",
+  "kambi_localised_name": null,
+  "kambi_event_ids": {},
+  "pcs_slug": "tour-of-binzhou",
+  "organiser_stage_urls": {},
+  "void_stages": []
+}

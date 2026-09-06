@@ -1,0 +1,26 @@
+{
+  "slug": "grand-prix-de-wallonie-2026",
+  "name": "Grand Prix de Wallonie",
+  "fc_race_id": "93",
+  "year": 2026,
+  "category": "pro",
+  "is_stage_race": false,
+  "start_date": "2026-09-16",
+  "end_date": "2026-09-16",
+  "stages": [
+    {
+      "number": null,
+      "date": "2026-09-16",
+      "towns": null,
+      "distance_km": null,
+      "kind": "one_day"
+    }
+  ],
+  "timezone": null,
+  "kambi_match": "grand prix de wallonie",
+  "kambi_localised_name": null,
+  "kambi_event_ids": {},
+  "pcs_slug": "grand-prix-de-wallonie",
+  "organiser_stage_urls": {},
+  "void_stages": []
+}

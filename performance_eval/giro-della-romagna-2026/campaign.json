@@ -1,0 +1,26 @@
+{
+  "slug": "giro-della-romagna-2026",
+  "name": "Giro della Romagna",
+  "fc_race_id": "163",
+  "year": 2026,
+  "category": "d1",
+  "is_stage_race": false,
+  "start_date": "2026-09-20",
+  "end_date": "2026-09-20",
+  "stages": [
+    {
+      "number": null,
+      "date": "2026-09-20",
+      "towns": null,
+      "distance_km": null,
+      "kind": "one_day"
+    }
+  ],
+  "timezone": null,
+  "kambi_match": "giro della romagna",
+  "kambi_localised_name": null,
+  "kambi_event_ids": {},
+  "pcs_slug": "giro-della-romagna",
+  "organiser_stage_urls": {},
+  "void_stages": []
+}

@@ -1,0 +1,47 @@
+{
+  "slug": "tour-of-istanbul-2026",
+  "name": "Tour of Istanbul",
+  "fc_race_id": "20781",
+  "year": 2026,
+  "category": "d1",
+  "is_stage_race": true,
+  "start_date": "2026-09-03",
+  "end_date": "2026-09-06",
+  "stages": [
+    {
+      "number": 1,
+      "date": "2026-09-03",
+      "towns": null,
+      "distance_km": null,
+      "kind": null
+    },
+    {
+      "number": 2,
+      "date": "2026-09-04",
+      "towns": null,
+      "distance_km": null,
+      "kind": null
+    },
+    {
+      "number": 3,
+      "date": "2026-09-05",
+      "towns": null,
+      "distance_km": null,
+      "kind": null
+    },
+    {
+      "number": 4,
+      "date": "2026-09-06",
+      "towns": null,
+      "distance_km": null,
+      "kind": null
+    }
+  ],
+  "timezone": null,
+  "kambi_match": "tour of istanbul",
+  "kambi_localised_name": null,
+  "kambi_event_ids": {},
+  "pcs_slug": "tour-of-istanbul",
+  "organiser_stage_urls": {},
+  "void_stages": []
+}

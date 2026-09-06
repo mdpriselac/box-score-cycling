@@ -1,0 +1,54 @@
+{
+  "slug": "tour-of-britain-2026",
+  "name": "Tour of Britain",
+  "fc_race_id": "45",
+  "year": 2026,
+  "category": "pro",
+  "is_stage_race": true,
+  "start_date": "2026-09-02",
+  "end_date": "2026-09-06",
+  "stages": [
+    {
+      "number": 1,
+      "date": "2026-09-02",
+      "towns": null,
+      "distance_km": null,
+      "kind": null
+    },
+    {
+      "number": 2,
+      "date": "2026-09-03",
+      "towns": null,
+      "distance_km": null,
+      "kind": null
+    },
+    {
+      "number": 3,
+      "date": "2026-09-04",
+      "towns": null,
+      "distance_km": null,
+      "kind": null
+    },
+    {
+      "number": 4,
+      "date": "2026-09-05",
+      "towns": null,
+      "distance_km": null,
+      "kind": null
+    },
+    {
+      "number": 5,
+      "date": "2026-09-06",
+      "towns": null,
+      "distance_km": null,
+      "kind": null
+    }
+  ],
+  "timezone": null,
+  "kambi_match": "tour of britain",
+  "kambi_localised_name": null,
+  "kambi_event_ids": {},
+  "pcs_slug": "tour-of-britain",
+  "organiser_stage_urls": {},
+  "void_stages": []
+}

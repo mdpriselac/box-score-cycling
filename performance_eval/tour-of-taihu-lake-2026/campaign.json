@@ -1,0 +1,54 @@
+{
+  "slug": "tour-of-taihu-lake-2026",
+  "name": "Tour of Taihu Lake",
+  "fc_race_id": "242",
+  "year": 2026,
+  "category": "d1",
+  "is_stage_race": true,
+  "start_date": "2026-09-12",
+  "end_date": "2026-09-16",
+  "stages": [
+    {
+      "number": 1,
+      "date": "2026-09-12",
+      "towns": null,
+      "distance_km": null,
+      "kind": null
+    },
+    {
+      "number": 2,
+      "date": "2026-09-13",
+      "towns": null,
+      "distance_km": null,
+      "kind": null
+    },
+    {
+      "number": 3,
+      "date": "2026-09-14",
+      "towns": null,
+      "distance_km": null,
+      "kind": null
+    },
+    {
+      "number": 4,
+      "date": "2026-09-15",
+      "towns": null,
+      "distance_km": null,
+      "kind": null
+    },
+    {
+      "number": 5,
+      "date": "2026-09-16",
+      "towns": null,
+      "distance_km": null,
+      "kind": null
+    }
+  ],
+  "timezone": null,
+  "kambi_match": "tour of taihu lake",
+  "kambi_localised_name": null,
+  "kambi_event_ids": {},
+  "pcs_slug": "tour-of-taihu-lake",
+  "organiser_stage_urls": {},
+  "void_stages": []
+}
