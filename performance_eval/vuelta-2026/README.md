@@ -10,7 +10,7 @@ flag — there is one copy of each, not two.
 ```bash
 # MORNING (before the stage goes live — stage odds vanish from the feed once live):
 uv run python performance_eval/tour-de-france-2026/capture_odds.py \
-    --match "vuelta a espa" --out-root performance_eval/vuelta-2026/odds
+    --campaign performance_eval/vuelta-2026
 
 # EVENING (after the stage finishes):
 uv run python performance_eval/tour-de-france-2026/capture_results.py \
@@ -33,6 +33,27 @@ predictions/gc/scenarios.json        GC config (target: gc)
 review/key_scorecard.json            rolling tier-3 key accuracy
 score_day_keys.py                    evening oracle labeling + key scoring
 ```
+
+## campaign.json
+
+`campaign.json` holds the race identity this campaign's tooling reads: the
+FirstCycling race id, the dates, `void_stages`, the Kambi match strings and
+`kambi_event_ids`. `capture_odds.py --campaign` reads it and writes newly
+discovered event ids back into it. The Tour and the Vuelta have hand-written
+files; `nightly registry sync` will generate the rest and fill in the fields
+left empty here (`stages`, `pcs_slug`, `organiser_stage_urls`).
+
+## Kambi brands
+
+The brand chain is `ubnl,ubuk,ubse,rivers,rsiuspa`, tried in order until one
+answers. Checked live on 2026-09-05 from a US residential connection with no
+VPN: `ubnl`, `ubuk` and `ubse` all served the full Vuelta feed with identical
+prices (only the market labels differ — `Winnaar` / `Winner` / `Etapp`).
+`rivers` answered HTTP 429 "No access" for every lang/market tried and no
+`na-*` Kambi host resolves, so BetRivers is reachable only through its
+per-state codes; `rsiuspa` and `rsiusil` both served the same events from the
+same EU host. The serving brand is recorded in every `provenance_*.json` and
+in the CSV's `brand` column.
 
 ## Kambi event ids (opened 2026-08-21)
 

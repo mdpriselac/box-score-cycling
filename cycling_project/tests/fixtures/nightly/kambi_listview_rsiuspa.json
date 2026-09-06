@@ -1,0 +1,184 @@
+{
+ "events": [
+  {
+   "event": {
+    "id": 1028980441,
+    "name": "Stage 5 (Tour of Britain 2026)",
+    "englishName": "Stage 5 (Tour of Britain 2026)",
+    "start": "2026-09-06T10:15:00Z",
+    "group": "Stages",
+    "path": [
+     {
+      "id": 1000093233,
+      "name": "Cycling",
+      "englishName": "Cycling",
+      "termKey": "cycling"
+     },
+     {
+      "id": 2000089388,
+      "name": "Tour of Britain",
+      "englishName": "Tour of Britain",
+      "termKey": "tour_of_britain"
+     },
+     {
+      "id": 2000089390,
+      "name": "Stages",
+      "englishName": "Stages",
+      "termKey": "stages"
+     }
+    ],
+    "nonLiveBoCount": 1,
+    "sport": "CYCLING",
+    "tags": [
+     "COMPETITION",
+     "SHOW_START_NUMBER"
+    ],
+    "state": "NOT_STARTED"
+   }
+  },
+  {
+   "event": {
+    "id": 1028797735,
+    "name": "Stage 15 (Vuelta a España 2026)",
+    "englishName": "Stage 15 (Vuelta a España 2026)",
+    "start": "2026-09-06T10:46:00Z",
+    "group": "Stages",
+    "path": [
+     {
+      "id": 1000093233,
+      "name": "Cycling",
+      "englishName": "Cycling",
+      "termKey": "cycling"
+     },
+     {
+      "id": 1000093599,
+      "name": "Vuelta a España",
+      "englishName": "Vuelta a España",
+      "termKey": "vuelta_a_espana"
+     },
+     {
+      "id": 2000051498,
+      "name": "Stages",
+      "englishName": "Stages",
+      "termKey": "stages"
+     }
+    ],
+    "nonLiveBoCount": 1,
+    "sport": "CYCLING",
+    "tags": [
+     "COMPETITION",
+     "OFFERED_LIVE",
+     "SHOW_START_NUMBER"
+    ],
+    "state": "NOT_STARTED"
+   }
+  },
+  {
+   "event": {
+    "id": 1028635359,
+    "name": "General Classification (Vuelta a España 2026)",
+    "englishName": "General Classification (Vuelta a España 2026)",
+    "start": "2026-09-13T14:23:00Z",
+    "group": "Classification",
+    "path": [
+     {
+      "id": 1000093233,
+      "name": "Cycling",
+      "englishName": "Cycling",
+      "termKey": "cycling"
+     },
+     {
+      "id": 1000093599,
+      "name": "Vuelta a España",
+      "englishName": "Vuelta a España",
+      "termKey": "vuelta_a_espana"
+     },
+     {
+      "id": 1000187518,
+      "name": "Classification",
+      "englishName": "Classification",
+      "termKey": "classification"
+     }
+    ],
+    "nonLiveBoCount": 2,
+    "sport": "CYCLING",
+    "tags": [
+     "COMPETITION"
+    ],
+    "state": "NOT_STARTED"
+   }
+  },
+  {
+   "event": {
+    "id": 1028797615,
+    "name": "Points Classification (Vuelta a España 2026)",
+    "englishName": "Points Classification (Vuelta a España 2026)",
+    "start": "2026-09-13T14:23:00Z",
+    "group": "Classification",
+    "path": [
+     {
+      "id": 1000093233,
+      "name": "Cycling",
+      "englishName": "Cycling",
+      "termKey": "cycling"
+     },
+     {
+      "id": 1000093599,
+      "name": "Vuelta a España",
+      "englishName": "Vuelta a España",
+      "termKey": "vuelta_a_espana"
+     },
+     {
+      "id": 1000187518,
+      "name": "Classification",
+      "englishName": "Classification",
+      "termKey": "classification"
+     }
+    ],
+    "nonLiveBoCount": 1,
+    "sport": "CYCLING",
+    "tags": [
+     "COMPETITION",
+     "SHOW_START_NUMBER"
+    ],
+    "state": "NOT_STARTED"
+   }
+  },
+  {
+   "event": {
+    "id": 1028531560,
+    "name": "General Classification (Tour de France 2027)",
+    "englishName": "General Classification (Tour de France 2027)",
+    "start": "2027-07-25T13:00:00Z",
+    "group": "Classification",
+    "path": [
+     {
+      "id": 1000093233,
+      "name": "Cycling",
+      "englishName": "Cycling",
+      "termKey": "cycling"
+     },
+     {
+      "id": 1000093855,
+      "name": "Tour de France",
+      "englishName": "Tour de France",
+      "termKey": "tour_de_france"
+     },
+     {
+      "id": 2000051976,
+      "name": "Classification",
+      "englishName": "Classification",
+      "termKey": "classification"
+     }
+    ],
+    "nonLiveBoCount": 1,
+    "sport": "CYCLING",
+    "tags": [
+     "COMPETITION",
+     "SHOW_START_NUMBER"
+    ],
+    "state": "NOT_STARTED"
+   }
+  }
+ ]
+}
