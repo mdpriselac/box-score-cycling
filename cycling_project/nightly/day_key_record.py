@@ -77,13 +77,11 @@ def _obj(properties: dict, required: Optional[list] = None) -> dict:
 RECORD_SCHEMA: dict = _obj({
     "key_items": {
         "type": "array",
-        "minItems": 1,
-        "maxItems": 3,
         "items": _obj({
             "item": {"type": "string", "enum": list(MENU_ITEMS)},
             "weight": {"type": "number"},
         }),
-        "description": "1-3 menu items with weights summing to 1.",
+        "description": "1-3 menu items with weights summing to 1 (the API rejects minItems/maxItems; the validator enforces the count).",
     },
     "family": {"type": "string", "enum": list(FAMILIES)},
     "macro_routing": _obj({
@@ -113,7 +111,6 @@ RECORD_SCHEMA: dict = _obj({
     },
     "evidence": {
         "type": "array",
-        "minItems": 1,
         "items": _obj({"claim": {"type": "string"}, "ref": {"type": "string"}}),
         "description": "ref is the exact path of a bundle file listed in manifest.json.",
     },
