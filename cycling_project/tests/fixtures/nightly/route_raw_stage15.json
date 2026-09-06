@@ -1,0 +1,40 @@
+{
+  "unit": "stage_15",
+  "stage": 15,
+  "fetched_at": "2026-09-05T06:12:00Z",
+  "sources": [
+    {
+      "url": "https://www.procyclingstats.com/race/vuelta-a-espana/2026/stage-15",
+      "fetched_at": "2026-09-05T06:12:00Z",
+      "file": "pcs/stage-15.html"
+    },
+    {
+      "url": "https://www.lavuelta.es/en/stages/stage-15",
+      "fetched_at": "2026-09-05T06:12:30Z",
+      "file": "organiser/stage-15.html"
+    }
+  ],
+  "distance_km": "189.7 km",
+  "vertical_metres": "2,350 m",
+  "profile_class": "medium mountains",
+  "start": "Palma del Río",
+  "finish": "Córdoba",
+  "climbs_listed": true,
+  "climbs": [
+    {
+      "name": "Alto del Ochavillo",
+      "category": "3",
+      "km_mark": "96.4",
+      "length_km": "4.3",
+      "gradient_pct": "5.2%"
+    },
+    {
+      "name": "Puerto del Madí",
+      "category": "2",
+      "km_mark": "141.8",
+      "length_km": "8.1",
+      "gradient_pct": "4.8%"
+    }
+  ],
+  "notes": "Transcribed verbatim from the stage page; no values computed."
+}

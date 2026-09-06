@@ -1,0 +1,24 @@
+{
+  "reason": "Extreme-heat protocol: the organisers redrew the stage on the afternoon of 2026-09-05, cutting Palma del Río -> Córdoba from 189.7 km to 110.2 km. At km 52 of the original course the race leaves for the CO-3402 towards Santa María de Trassierra, which removes the western loop through Villaviciosa and with it the original climbs.",
+  "source": "Vuelta a España organiser communiqué, 2026-09-05 (as recorded in predictions/stage_15/scenarios.json day_key_note)",
+  "recorded_by": "operator",
+  "recorded_at": "2026-09-05",
+  "distance_km": 110.2,
+  "climbs_listed": true,
+  "climbs": [
+    {
+      "name": "Puerto de la Forestal",
+      "category": "3",
+      "km_mark": 34.5,
+      "length_km": 6.7,
+      "gradient_pct": 4.1
+    },
+    {
+      "name": "Puerto Artafi",
+      "category": "3",
+      "km_mark": 73.6,
+      "length_km": 5.9,
+      "gradient_pct": 5.5
+    }
+  ]
+}

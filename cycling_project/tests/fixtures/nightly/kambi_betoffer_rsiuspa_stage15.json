@@ -1,0 +1,70 @@
+{
+ "betOffers": [
+  {
+   "id": 2688715084,
+   "closed": "2026-09-06T10:46:00Z",
+   "criterion": {
+    "id": 1001159650,
+    "label": "Winner",
+    "englishLabel": "Winner",
+    "order": [
+     0
+    ]
+   },
+   "betOfferType": {
+    "id": 4,
+    "name": "Winner",
+    "englishName": "Winner"
+   },
+   "eventId": 1028797735,
+   "outcomes": [
+    {
+     "id": 4325521496,
+     "label": "Matthew Brennan",
+     "englishLabel": "Matthew Brennan",
+     "odds": 2000,
+     "participant": "Matthew Brennan",
+     "type": "OT_UNTYPED",
+     "betOfferId": 2688715084,
+     "status": "OPEN"
+    },
+    {
+     "id": 4325521497,
+     "label": "Wout Van Aert",
+     "englishLabel": "Wout Van Aert",
+     "odds": 4000,
+     "participant": "Wout Van Aert",
+     "type": "OT_UNTYPED",
+     "betOfferId": 2688715084,
+     "status": "OPEN"
+    },
+    {
+     "id": 4325521498,
+     "label": "Magnus Cort Nielsen",
+     "englishLabel": "Magnus Cort Nielsen",
+     "odds": 4000,
+     "participant": "Magnus Cort Nielsen",
+     "type": "OT_UNTYPED",
+     "betOfferId": 2688715084,
+     "status": "OPEN"
+    },
+    {
+     "id": 4325521499,
+     "label": "Bryan Coquard",
+     "englishLabel": "Bryan Coquard",
+     "odds": 4000,
+     "participant": "Bryan Coquard",
+     "type": "OT_UNTYPED",
+     "betOfferId": 2688715084,
+     "status": "OPEN"
+    }
+   ],
+   "tags": [
+    "OFFERED_PREMATCH",
+    "MAIN"
+   ]
+  }
+ ],
+ "events": [],
+ "prePacks": []
+}
