@@ -1,0 +1,25 @@
+# Primary results acquisition thread (UCI_MANAGED_AGENT_BUILD_BRIEF.md, "Managed Agent design").
+# It runs ONE deterministic command — `python -m cycling_project.nightly.uci_acquire` (or the
+# standalone uci_acquire.py in a smoke session) — for the exact campaign/unit the coordinator names,
+# reports the printed index summary, and stops. It never parses, repairs, reorders or invents rows;
+# it never guesses competition ids, event codes, stages or riders; no browser automation, no
+# cookies/stealth/CAPTCHA handling; no web_fetch (the raw HTML must come from the container, and the
+# environment's limited networking already restricts egress to the UCI + Supabase + Kambi hosts).
+name: uci-acquirer
+description: >-
+  Runs the deterministic UCI acquisition command for one campaign/unit (competition URL from the
+  registry) and reports its JSON summary — provider uci, event codes, HTTP statuses, row counts,
+  sha256s, exit code. Give it the campaign slug, absolute campaign directory, unit and the exact UCI
+  competition URL. It runs nothing else and edits nothing.
+model:
+  id: claude-opus-5
+  effort: low
+system_file: ../prompts/uci-acquirer.md
+tools:
+  - type: agent_toolset_20260401
+    default_config:
+      enabled: false
+    configs:
+      - {name: bash, enabled: true}
+      - {name: read, enabled: true}
+      - {name: glob, enabled: true}

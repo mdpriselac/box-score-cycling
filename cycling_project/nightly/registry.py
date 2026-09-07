@@ -225,6 +225,10 @@ def campaign_from_calendar(row: Dict[str, Any]) -> Dict[str, Any]:
         "slug": campaign_slug,
         "name": row["name"],
         "fc_race_id": str(row["fc_race_id"]),
+        # UCI results bridge (uci_acquire.py): set by an operator from the UCI calendar, never guessed.
+        "uci_competition_url": None,
+        "uci_competition_id": None,
+        "uci_discipline": None,
         "year": year,
         "category": row["category"],
         "is_stage_race": is_stage,

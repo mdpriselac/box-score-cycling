@@ -1,0 +1,109 @@
+{
+ "provider": "uci",
+ "acquirer": "uci_acquire 1.0.0 (fixture, Mac plain requests, one-time 2026-09-06)",
+ "campaign": "vuelta-2026",
+ "unit": "stage_14",
+ "competition": {
+  "url": "https://www.uci.org/competition-details/2026/ROA/76942",
+  "year": 2026,
+  "discipline": "ROA",
+  "id": "76942",
+  "name": "La Vuelta Ciclista a España",
+  "dates": "22 Aug - 13 Sep 2026",
+  "country": "Spain",
+  "class": "2.UWT - Stages - UCI WorldTour",
+  "discipline_code": "ROA"
+ },
+ "acquired_at": "2026-09-06T18:50:00+00:00",
+ "pages": {
+  "competition": {
+   "file": "competition.html",
+   "source_url": "https://www.uci.org/competition-details/2026/ROA/76942",
+   "fetched_at": "2026-09-06T18:50:00+00:00",
+   "http_status": 200,
+   "content_type": "text/html; charset=utf-8",
+   "bytes": 64840,
+   "sha256": "df866070347981b309666327762e608e97428ff0922bd804369ccee6486edbb4",
+   "error": null
+  },
+  "stage": {
+   "file": "stage.json",
+   "source_url": "https://www.uci.org/api/calendar/results/D2EV374857?discipline=ROA&raceType=A&raceName=Stage%20Classification",
+   "fetched_at": "2026-09-06T18:50:00+00:00",
+   "http_status": 200,
+   "content_type": "application/json; charset=utf-8",
+   "bytes": 26451,
+   "sha256": "c57ce85d6c4a8d1369a309d6985c39a518eadba2cc850b06b9ea1a7b879b4c3b",
+   "error": null,
+   "event_code": "D2EV374857",
+   "race_type": "A",
+   "race_name": "Stage Classification",
+   "row_count": 155,
+   "required": true
+  },
+  "gc": {
+   "file": "gc.json",
+   "source_url": "https://www.uci.org/api/calendar/results/D2EV375761?discipline=ROA&raceType=A&raceName=Stage%20General%20Classification",
+   "fetched_at": "2026-09-06T18:50:00+00:00",
+   "http_status": 200,
+   "content_type": "application/json; charset=utf-8",
+   "bytes": 25796,
+   "sha256": "52319e95d7aa136b8d2009ac98db98481e2bf1b8b9a1ce7b5e942d1f8a360c35",
+   "error": null,
+   "event_code": "D2EV375761",
+   "race_type": "A",
+   "race_name": "Stage General Classification",
+   "row_count": 150,
+   "required": true
+  },
+  "points": {
+   "available": false,
+   "reason": "fixture: not captured (optional classification)",
+   "required": false,
+   "title": "Overall Points Classification",
+   "event_code": "D2EV380944",
+   "race_type": "A"
+  },
+  "kom": {
+   "available": false,
+   "reason": "fixture: not captured (optional classification)",
+   "required": false,
+   "title": "Overall Mountain Classification",
+   "event_code": "D2EV381280",
+   "race_type": "A"
+  },
+  "youth": {
+   "available": false,
+   "reason": "fixture: not captured (optional classification)",
+   "required": false,
+   "title": "Overall Youth Classification",
+   "event_code": "D2EV380718",
+   "race_type": "A"
+  },
+  "teams": {
+   "available": false,
+   "reason": "not in the results accordion for this stage",
+   "required": false
+  }
+ },
+ "complete": true,
+ "superseded": [],
+ "stage": {
+  "label": "Stage 14",
+  "schedule_date": "05 Sep 2026",
+  "race_type": "Individual Road Race",
+  "race_class": "2.UWT - Stages - UCI WorldTour",
+  "category": "Men Elite",
+  "accordion_titles": [
+   "Stage Classification",
+   "Stage General Classification",
+   "Stage Points Classification",
+   "Overall Points Classification",
+   "Stage Mountain Classification",
+   "Overall Mountain Classification",
+   "Stage Youth Classification",
+   "Overall Youth Classification"
+  ]
+ },
+ "requests_made": 3
+}

@@ -16,7 +16,7 @@ captured); SQLite-writing steps take a global file lock.
 There is no ``publish`` or ``commit`` command and no git operation anywhere
 in this module (``assert_no_git`` guards every subprocess).
 
-Commands: ``bootstrap`` · ``plan`` · ``night`` · ``settle`` · ``preview`` ·
+Commands: ``bootstrap`` · ``plan`` · ``night`` · ``settle`` · ``preview`` · ``acquire`` ·
 ``ingest`` · ``bundle`` · ``refs`` · ``validate`` · ``upload`` · ``status``.
 ``--dry-run`` everywhere: no fetch, ``--no-log``, a ``FakeStore``, scripts
 recorded but not executed.
@@ -46,7 +46,7 @@ from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Tupl
 
 from cycling_project.db_path import ENV_VAR as DB_ENV_VAR, default_db_path
 from cycling_project.nightly import day_key_record as rec
-from cycling_project.nightly import pcs_ingest
+from cycling_project.nightly import pcs_ingest, uci_acquire, uci_identity, uci_ingest
 from cycling_project.nightly.crosswalk import CROSSWALK_CSV, build_operator_task, read_crosswalk_csv
 from cycling_project.nightly.secrets import load_local_env, redact
 from cycling_project.webscrape_tools.logging_config import get_logger
@@ -70,7 +70,7 @@ SCRIPTS = {
 }
 
 EXIT_DONE, EXIT_WAITING, EXIT_FAILED = 0, 10, 20
-PHASES_UNIT = ("settle", "preview", "ingest", "bundle", "validate", "upload")
+PHASES_UNIT = ("settle", "preview", "acquire", "ingest", "bundle", "validate", "upload")
 ONE_DAY_UNIT = "race"
 TEMPLATE_NAME = "TEMPLATE_scenarios.json"
 COMPLETED_INDEX = "completed.json"
@@ -171,6 +171,12 @@ class Campaign:
     @property
     def is_stage_race(self) -> bool:
         return bool(self.cfg.get("is_stage_race", True))
+
+    @property
+    def uci_competition_url(self) -> Optional[str]:
+        """Operator-confirmed UCI competition page (registry field); None → UCI cannot be used."""
+        v = self.cfg.get("uci_competition_url")
+        return str(v) if v else None
 
     @property
     def timezone(self) -> str:
@@ -303,8 +309,12 @@ class Driver:
                  today: Optional[dt.date] = None, no_log: bool = False, force: bool = False,
                  python: Optional[str] = None, crosswalk_csv: Optional[Path] = None,
                  db_path: Optional[Path] = None, agent_key: Optional[Path] = None,
-                 release_tag: Optional[str] = None):
+                 release_tag: Optional[str] = None, acquire: bool = True, provider: str = "auto",
+                 aliases_csv: Optional[Path] = None):
         self.campaign = campaign
+        self.acquire_enabled = acquire            # settle may run the deterministic UCI acquisition itself
+        self.provider_pref = provider              # auto | uci | pcs
+        self.aliases_csv = Path(aliases_csv) if aliases_csv else None
         self.store = store
         self.dry_run = dry_run
         self.today_override = today
@@ -526,26 +536,29 @@ class Driver:
                                                                                     "agent_key_response.json", "retro_facts.json")
                                                and not p.name.startswith("editorial_") for p in pred.iterdir())
             has_pcs = (c.results_dir(unit) / "pcs").is_dir()
+            has_uci = uci_acquire.capture_is_complete(uci_acquire.read_index(c.results_dir(unit) / "uci"))
+            has_capture = has_pcs or has_uci
             due: List[str] = []
             flags: List[str] = []
             if d <= today and not has_results:
                 # A stage below the latest archived one is a missed day: the runbook's
                 # "a missed day cannot be recovered" — it is a gap, not a due settle,
                 # unless the acquisition thread has actually put PCS pages there.
-                if number is not None and latest_archived is not None and number < latest_archived and not has_pcs:
+                if number is not None and latest_archived is not None and number < latest_archived and not has_capture:
                     flags.append("gap")
                 else:
                     due.append("settle")
                     if d < today:
                         flags.append("settle_late")
-                    if not has_pcs:
-                        flags.append("awaiting_pcs")
+                    if not has_capture:
+                        flags.append("awaiting_acquisition")
             if today < d <= today + dt.timedelta(days=horizon_days) and not has_boards:
                 due.append("preview")
                 if not prev_settled:
                     flags.append("blocked")
             units.append({"unit": unit, "date": date_s, "void": False, "due": due, "flags": flags,
-                          "has_results": has_results, "has_boards": has_boards, "has_pcs": has_pcs})
+                          "has_results": has_results, "has_boards": has_boards, "has_pcs": has_pcs, "has_uci": has_uci,
+                          "uci_competition_url": c.uci_competition_url})
             if d <= today and "gap" not in flags:
                 prev_settled = has_results
         return {"campaign": c.slug, "today": str(today), "timezone": c.timezone, "void_stages": sorted(void), "units": units,
@@ -582,10 +595,12 @@ class Driver:
         results_dir = c.results_dir(unit)
         out: Dict[str, Any] = {}
 
-        # 1. ingest (PCS → FC-shaped archive)
+        # 1. acquire (UCI primary, deterministic, in-process) + ingest (→ FC-shaped archive)
         if (results_dir / "results.csv").exists() and not self.force:
+            self.step("acquire", lambda: None, skip="results already archived")
             self.step("ingest", lambda: None, skip="results already archived")
         else:
+            out["acquire"] = self.step("acquire", lambda: self._acquire(unit))
             out["ingest"] = self.step("ingest", lambda: self._ingest(unit))
 
         # 2. seed the state cache BEFORE the GC refresh (the outlook head reads it)
@@ -619,39 +634,122 @@ class Driver:
         out["upload"] = self.step("upload", lambda: self._upload(unit, "settle"))
         return out
 
-    def _ingest(self, unit: str) -> Dict[str, Any]:
+    # -- acquisition: provider selection -----------------------------------------
+    def _detect_provider(self, unit: str) -> Tuple[Optional[str], Optional[str]]:
+        """(provider, fallback_reason) from what is on disk. UCI wins when its capture is complete."""
         c = self.campaign
-        if not (c.results_dir(unit) / "pcs").is_dir():
+        res = c.results_dir(unit)
+        uci_ok = uci_acquire.capture_is_complete(uci_acquire.read_index(res / "uci"))
+        pcs_ok = (res / "pcs").is_dir()
+        pref = self.provider_pref
+        if pref == "uci":
+            return ("uci", None) if uci_ok else (None, "uci capture missing or incomplete")
+        if pref == "pcs":
+            return ("pcs", "provider forced to pcs") if pcs_ok else (None, "pcs pages missing")
+        if uci_ok:
+            return "uci", None
+        if pcs_ok:
+            if c.uci_competition_url:
+                idx = uci_acquire.read_index(res / "uci") or {}
+                why = "uci capture incomplete" if idx else "no uci capture"
+                return "pcs", f"fallback: {why}"
+            return "pcs", "fallback: campaign has no uci_competition_url"
+        return None, None
+
+    def _acquire(self, unit: str) -> Dict[str, Any]:
+        """Run the deterministic UCI acquisition when the campaign is mapped and nothing is captured yet."""
+        c = self.campaign
+        provider, reason = self._detect_provider(unit)
+        info: Dict[str, Any] = {"provider": provider, "fallback_reason": reason, "ran": False}
+        if provider is None and c.uci_competition_url and self.provider_pref in ("auto", "uci"):
+            if self.dry_run or not self.acquire_enabled:
+                info["skipped"] = "dry run" if self.dry_run else "acquisition disabled (--no-acquire)"
+            else:
+                try:
+                    index = uci_acquire.acquire(competition_url=c.uci_competition_url, unit=unit,
+                                                out_dir=c.results_dir(unit) / "uci", campaign_slug=c.slug)
+                except uci_acquire.AcquireError as exc:
+                    info.update({"ran": True, "error": str(exc)})
+                else:
+                    info.update({"ran": True, "reused": bool(index.get("reused")), "complete": bool(index.get("complete")),
+                                 "requests_made": index.get("requests_made"), "summary": uci_acquire.summary(index)})
+                provider, reason = self._detect_provider(unit)
+                info.update({"provider": provider, "fallback_reason": reason})
+        self.record["provider"] = provider
+        self.record["fallback_reason"] = reason
+        if provider is None:
+            expected = {"uci": f"python -m cycling_project.nightly.uci_acquire --competition-url {c.uci_competition_url} "
+                               f"--campaign {c.dir} --unit {unit}" if c.uci_competition_url else "no uci_competition_url in campaign.json",
+                        "pcs": sorted(pcs_ingest.PAGE_FILES.values())}
+            if c.uci_competition_url:
+                raise WaitingForInput("acquisition_needed",
+                                      f"{c.slug} {unit}: no complete UCI capture (results not published, or acquisition failed: "
+                                      f"{info.get('error') or info.get('skipped') or 'not run'}) and no PCS pages for fallback",
+                                      {"expected": expected, "acquire": info})
             raise WaitingForInput("pcs_pages_needed",
-                                  f"{c.slug} {unit}: no PCS pages under results/{unit}/pcs/ (acquisition thread has not run)",
-                                  {"expected": sorted(pcs_ingest.PAGE_FILES.values())})
-        store_rows: List[Dict[str, Any]] = []
+                                  f"{c.slug} {unit}: no PCS pages under results/{unit}/pcs/ (acquisition thread has not run) "
+                                  "and the campaign has no uci_competition_url",
+                                  {"expected": expected["pcs"], "acquire": info})
+        info["_detail"] = {"provider": provider, "fallback_reason": reason, "reused": info.get("reused"), "ran": info["ran"]}
+        return info
+
+    def _crosswalk_store_rows(self) -> List[Dict[str, Any]]:
         try:
             rows = getattr(self.store, "rows", {}).get("crosswalk") if hasattr(self.store, "rows") else None
             if rows is None and hasattr(self.store, "_select"):
                 rows = self.store._select("crosswalk", {"select": "*"})
-            store_rows = list(rows or [])
+            return list(rows or [])
         except Exception as exc:  # noqa: BLE001 — the CSV is the fallback
             self._say(f"  [store] crosswalk rows unavailable: {exc}")
-        report = pcs_ingest.ingest(c.dir, unit, crosswalk_csv=self.crosswalk_csv, store_rows=store_rows,
-                                   db_path=self.db_path if self.db_path.exists() else None)
+            return []
+
+    def _ingest(self, unit: str) -> Dict[str, Any]:
+        c = self.campaign
+        provider = self.record.get("provider")
+        if provider is None:
+            provider, reason = self._detect_provider(unit)
+            self.record["provider"], self.record["fallback_reason"] = provider, reason
+        if provider is None:
+            raise WaitingForInput("acquisition_needed" if c.uci_competition_url else "pcs_pages_needed",
+                                  f"{c.slug} {unit}: nothing to ingest (no UCI capture, no PCS pages)",
+                                  {"expected": {"uci": bool(c.uci_competition_url), "pcs": sorted(pcs_ingest.PAGE_FILES.values())}})
+        store_rows = self._crosswalk_store_rows()
+        db = self.db_path if self.db_path.exists() else None
+        if provider == "uci":
+            report = uci_ingest.ingest(c.dir, unit, crosswalk_csv=self.crosswalk_csv, store_rows=store_rows, db_path=db,
+                                       aliases_csv=self.aliases_csv)
+        else:
+            report = pcs_ingest.ingest(c.dir, unit, crosswalk_csv=self.crosswalk_csv, store_rows=store_rows, db_path=db)
         for kind, meta in report.pages.items():
             try:
-                self.store.insert_pcs_raw(self.run["run_id"], c.slug, unit, kind, meta.get("source_url") or "",
-                                          object_key=None, ingest_verdict=report.verdict,
-                                          ingest_detail={"sha256": meta["sha256"], "bytes": meta["bytes"], "file": meta["file"],
-                                                         "failing": report.failing if not report.ok else []},
-                                          fetched_at=meta.get("fetched_at"))
+                self.store.insert_acquisition_raw(self.run["run_id"], c.slug, unit, provider, kind, meta.get("source_url") or "",
+                                                  object_key=None, ingest_verdict=report.verdict,
+                                                  ingest_detail={"sha256": meta["sha256"], "bytes": meta["bytes"], "file": meta["file"],
+                                                                 "event_code": meta.get("event_code"), "race_name": meta.get("race_name"),
+                                                                 "fallback_reason": self.record.get("fallback_reason"),
+                                                                 "failing": report.failing if not report.ok else []},
+                                                  fetched_at=meta.get("fetched_at"))
             except Exception as exc:  # noqa: BLE001
-                self._say(f"  [store] insert_pcs_raw failed: {exc}")
+                self._say(f"  [store] insert_acquisition_raw failed: {exc}")
+        proposals = list(getattr(report, "proposals", []) or [])
+        inserted = 0
+        for prop in proposals:                       # one row per insert: PostgREST bulk inserts need identical keys
+            try:
+                self.store.insert_crosswalk_proposals([prop])
+                inserted += 1
+            except Exception as exc:  # noqa: BLE001
+                self._say(f"  [store] insert_crosswalk_proposals failed: {exc}")
+        if inserted:
+            self._say(f"  {inserted} crosswalk proposal(s) inserted (source=uci)")
         for w in report.warnings:
             self._say(f"  note: {w}")
         if not report.ok:
-            raise WaitingForInput("ingest_failed", f"{c.slug} {unit}: PCS ingest rejected ({len(report.failing)} checks)",
-                                  {"checks": report.failing, "unresolved_riders": report.unresolved, "warnings": report.warnings})
-        return {"verdict": report.verdict, "n_classified": report.n_classified, "n_abandons": report.n_abandons,
+            raise WaitingForInput("ingest_failed", f"{c.slug} {unit}: {provider} ingest rejected ({len(report.failing)} checks)",
+                                  {"provider": provider, "checks": report.failing, "unresolved_riders": report.unresolved,
+                                   "proposals": proposals, "warnings": report.warnings})
+        return {"provider": provider, "verdict": report.verdict, "n_classified": report.n_classified, "n_abandons": report.n_abandons,
                 "winner": report.winner, "winning_time": report.winning_time, "written": report.written,
-                "warnings": report.warnings, "_detail": {"winner": report.winner, "n_classified": report.n_classified}}
+                "warnings": report.warnings, "_detail": {"provider": provider, "winner": report.winner, "n_classified": report.n_classified}}
 
     def _template_gc_config(self, gc_cfg_path: Path, stage: int) -> Dict[str, Any]:
         c = self.campaign
@@ -1150,6 +1248,7 @@ class Driver:
         if phase == "settle":
             files += [res / n for n in ("results.csv", "results.json", "gc.csv", "classifications.json")]
             files += sorted((res / "pcs").glob("*")) if (res / "pcs").is_dir() else []
+            files += sorted(p for p in (res / "uci").rglob("*") if p.is_file()) if (res / "uci").is_dir() else []
             files += [pred / "retro_facts.json", c.dir / "review" / "key_scorecard.json",
                       c.dir / "review" / "agent_replay_scorecard.json", c.pred_dir("gc") / "scenarios.json"]
             files += sorted(p for p in c.pred_dir("gc").glob("*.json") if p.name != "scenarios.json") if c.pred_dir("gc").is_dir() else []
@@ -1259,6 +1358,10 @@ def build_parser() -> argparse.ArgumentParser:
         p.add_argument("--crosswalk", type=Path, default=None, help="crosswalk CSV override (default performance_eval/crosswalk)")
         p.add_argument("--db-path", type=Path, default=None)
         p.add_argument("--release-tag", default=None)
+        p.add_argument("--provider", choices=("auto", "uci", "pcs"), default="auto",
+                       help="result provider: auto = UCI when captured, else PCS fallback")
+        p.add_argument("--no-acquire", action="store_true", help="never run the UCI acquisition in-process (settle)")
+        p.add_argument("--aliases", type=Path, default=None, help="UCI alias CSV override (default performance_eval/crosswalk/uci_aliases.csv)")
         p.add_argument("--json", action="store_true", default=True, help=argparse.SUPPRESS)
 
     sub.add_parser("bootstrap", help="hydrate the container from the newest approved release (delegates to nightly.bootstrap)",
@@ -1271,7 +1374,9 @@ def build_parser() -> argparse.ArgumentParser:
     common(p, unit=True)
     p = sub.add_parser("preview", help="odds → config → route → bundle → key gate → predict → validate → pages → upload")
     common(p, unit=True); p.add_argument("--agent-key", type=Path, default=None, help="shadow mode: key the stage from an agent record")
-    p = sub.add_parser("ingest", help="validate the PCS pages and write the FC-shaped results")
+    p = sub.add_parser("acquire", help="run the deterministic UCI acquisition for a unit (idempotent)")
+    common(p, unit=True); p.add_argument("--competition-url", default=None, help="override campaign.json uci_competition_url")
+    p = sub.add_parser("ingest", help="validate the captured results (UCI, else PCS) and write the FC-shaped archive")
     common(p, unit=True)
     p = sub.add_parser("bundle", help="freeze predictions/<unit>/bundle/")
     common(p, unit=True)
@@ -1318,7 +1423,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         return _emit(EXIT_FAILED, {"status": "failed", "error_class": exc.error_class, "message": str(exc)})
     driver = Driver(campaign, store, dry_run=args.dry_run, today=args.today, no_log=args.no_log, force=args.force,
                     crosswalk_csv=args.crosswalk, db_path=args.db_path, agent_key=getattr(args, "agent_key", None),
-                    release_tag=args.release_tag)
+                    release_tag=args.release_tag, acquire=not getattr(args, "no_acquire", False),
+                    provider=getattr(args, "provider", "auto"), aliases_csv=getattr(args, "aliases", None))
 
     if args.command == "status":
         return _emit(EXIT_DONE, {"status": "ok", **driver.status()})
@@ -1334,6 +1440,11 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         return _emit(code, out)
     if args.command == "preview":
         code, out = driver.preview(args.unit)
+        return _emit(code, out)
+    if args.command == "acquire":
+        if args.competition_url:
+            campaign.cfg["uci_competition_url"] = args.competition_url
+        code, out = driver.run_phase(args.unit, "acquire", lambda: {"acquire": driver.step("acquire", lambda: driver._acquire(args.unit))}, idempotent=False)
         return _emit(code, out)
     if args.command == "ingest":
         code, out = driver.run_phase(args.unit, "ingest", lambda: {"ingest": driver.step("ingest", lambda: driver._ingest(args.unit))}, idempotent=False)

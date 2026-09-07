@@ -407,6 +407,18 @@ class SupabaseStore:
         self._insert("pcs_raw", [row], returning=False)
         return row
 
+    def insert_acquisition_raw(self, run_id: str, campaign_slug: Optional[str], unit: Optional[str], provider: str, kind: str,
+                               source_url: str, content: Optional[str] = None, *, object_key: Optional[str] = None,
+                               ingest_verdict: Optional[str] = None, ingest_detail: Optional[Dict[str, Any]] = None,
+                               fetched_at: Optional[str] = None) -> Dict[str, Any]:
+        """Provider-neutral raw-capture provenance. Until migration 0004 adds ``provider`` /
+        ``acquisition_raw``, rows land in ``pcs_raw`` with ``kind = '<provider>:<kind>'`` for any
+        provider other than PCS and ``ingest_detail.provider`` set — UCI data is never labelled PCS."""
+        detail = {"provider": provider, **(ingest_detail or {})}
+        row_kind = kind if provider == "pcs" else f"{provider}:{kind}"
+        return self.insert_pcs_raw(run_id, campaign_slug, unit, row_kind, source_url, content, object_key=object_key,
+                                   ingest_verdict=ingest_verdict, ingest_detail=detail, fetched_at=fetched_at)
+
     def insert_prediction(self, run_id: str, campaign_slug: str, unit: str, phase: str, *,
                           config: Optional[Dict[str, Any]] = None, board_key: Optional[str] = None,
                           target: Optional[str] = None, scenario_key: Optional[str] = None,
@@ -751,6 +763,13 @@ class FakeStore(_rs.FakeStore):
             "run_id": str(run_id), "campaign_slug": campaign_slug, "unit": unit, "kind": kind, "source_url": source_url,
             "content": content, "object_key": object_key, "content_sha256": sha, "ingest_verdict": ingest_verdict,
             "ingest_detail": ingest_detail or {}, "fetched_at": fetched_at or _utcnow()}))
+
+    def insert_acquisition_raw(self, run_id, campaign_slug, unit, provider, kind, source_url, content=None, *, object_key=None,
+                               ingest_verdict=None, ingest_detail=None, fetched_at=None):
+        detail = {"provider": provider, **(ingest_detail or {})}
+        row_kind = kind if provider == "pcs" else f"{provider}:{kind}"
+        return self.insert_pcs_raw(run_id, campaign_slug, unit, row_kind, source_url, content, object_key=object_key,
+                                   ingest_verdict=ingest_verdict, ingest_detail=detail, fetched_at=fetched_at)
 
     def insert_prediction(self, run_id, campaign_slug, unit, phase, *, config=None, board_key=None, target=None,
                           scenario_key=None, day_key=None, model_version=None, summary=None):

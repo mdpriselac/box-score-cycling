@@ -10,8 +10,8 @@
 # code (HTTP 429 "No access" everywhere). PyPI comes in through allow_package_managers.
 name: cycling-cloud
 description: >-
-  Nightly cycling coverage container: Supabase (control plane + release bundle) and the Kambi
-  offering API only; PyPI via package managers; no git remote, no repo credential.
+  Nightly cycling coverage container: Supabase (control plane + release bundle), the UCI website
+  (results) and the Kambi offering API only; PyPI via package managers; no git remote, no repo credential.
 config:
   type: cloud
   networking:
@@ -21,6 +21,8 @@ config:
     allowed_hosts:
       - your-project-ref.supabase.co
       - eu-offering-api.kambicdn.com
+      - www.uci.org          # UCI results bridge: competition page (data-props) + /api/calendar/results
+      - uci.org              # redirects only
   packages:
     type: packages
     pip:

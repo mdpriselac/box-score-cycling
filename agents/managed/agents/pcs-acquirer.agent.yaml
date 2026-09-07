@@ -1,4 +1,5 @@
-# Acquisition thread (NIGHTLY_AGENT_WORKFLOW.md §2.8). Derived from the user's August test agent
+# FALLBACK acquisition thread (NIGHTLY_AGENT_WORKFLOW.md §2.8) — UCI (uci-acquirer) is primary since 2026-09-06;
+# PCS is used only when UCI has no published result, the race has no UCI mapping, or UCI validation failed. Derived from the user's August test agent
 # agent_01EXAMPLE466A1EFA1DEDA25 "Procycling Stats Extractor" (kept: web_fetch-only fetching rules,
 # one fetch at a time, save-to-file, the verified DOM notes; REMOVED: all parsing / JSON-schema output
 # duties — this agent transcribes pages as returned and never extracts a row). The original agent is

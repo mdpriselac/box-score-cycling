@@ -58,7 +58,7 @@ def test_agent_order_leaves_first_and_roster_resolves(pv, env):
     p = pv.plan(env)
     order = p["agent_order"]
     assert order[-1] == "nightly-coordinator"
-    assert set(order[:-1]) == {"pcs-acquirer", "day-key-reader", "editorial", "ops-triage"}
+    assert set(order[:-1]) == {"uci-acquirer", "pcs-acquirer", "day-key-reader", "editorial", "ops-triage"}
     ids = {n: {"id": f"agent_{i}", "version": i + 1} for i, n in enumerate(order[:-1])}
     roster = pv.resolve_roster(p["agents"]["nightly-coordinator"], ids)
     assert roster["type"] == "coordinator"
@@ -84,6 +84,7 @@ def test_tool_surfaces_match_the_trust_boundary(pv, env):
     assert enabled(a["day-key-reader"]) == set() and enabled(a["editorial"]) == set()
     assert enabled(a["ops-triage"]) == {"read", "glob", "grep"}
     assert enabled(a["pcs-acquirer"]) == {"web_fetch", "write", "read"}
+    assert enabled(a["uci-acquirer"]) == {"bash", "read", "glob"}              # deterministic CLI runner: no write, no web
     fetch_cfg = next(c for c in a["pcs-acquirer"]["tools"][0]["configs"] if c["name"] == "web_fetch")
     assert "procyclingstats.com" in fetch_cfg["allowed_domains"] and "blocked_domains" not in fetch_cfg
     coord = enabled(a["nightly-coordinator"])
@@ -116,7 +117,7 @@ def test_vault_and_deployment_specs(pv, env):
     e = p["environment"]
     net = e["config"]["networking"]
     assert net["type"] == "limited" and net["allow_package_managers"] is True
-    assert set(net["allowed_hosts"]) == {"your-project-ref.supabase.co", "eu-offering-api.kambicdn.com"}
+    assert set(net["allowed_hosts"]) == {"your-project-ref.supabase.co", "eu-offering-api.kambicdn.com", "www.uci.org", "uci.org"}
     assert "resources" not in d
 
 

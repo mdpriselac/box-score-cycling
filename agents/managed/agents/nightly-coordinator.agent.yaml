@@ -5,7 +5,7 @@
 name: nightly-coordinator
 description: >-
   Coordinator of the nightly cycling run: bootstraps the release bundle, plans due units, delegates
-  PCS acquisition, runs the deterministic driver per campaign, and files operator tasks. A copy can be
+  results acquisition (UCI first, PCS fallback), runs the deterministic driver per campaign, and files operator tasks. A copy can be
   spawned to own ONE campaign's `night --campaign <slug>` run.
 model:
   id: claude-opus-5
@@ -25,6 +25,7 @@ multiagent:
   type: coordinator
   agents:
     - {type: self}
+    - uci-acquirer
     - pcs-acquirer
     - day-key-reader
     - editorial

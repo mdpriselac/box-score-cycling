@@ -64,7 +64,7 @@ def test_plan_due_units_stage14_to_15(campaign, tmp_path, capsys):
     assert _run(campaign, tmp_path, "plan", "--dry-run", today="2026-09-07") == 0
     plan = _out(capsys)
     st15 = next(u for u in plan["units"] if u["unit"] == "stage_15")
-    assert "settle" in st15["due"] and "settle_late" in st15["flags"] and "awaiting_pcs" in st15["flags"]
+    assert "settle" in st15["due"] and "settle_late" in st15["flags"] and "awaiting_acquisition" in st15["flags"]
     st16 = next(u for u in plan["units"] if u["unit"] == "stage_16")
     assert st16["due"] == ["preview"] and "blocked" in st16["flags"]
 
@@ -125,7 +125,7 @@ def test_night_dry_run_replays_stage_14_to_15(campaign, tmp_path, capsys):
         [("vuelta-2026", "stage_14", "settle", "cloud"), ("vuelta-2026", "stage_15", "preview", "cloud")]
     steps = _ledger(tmp_path, "run_steps")
     settle_steps = [(s["step"], s["state"]) for s in steps if s["run_id"] == runs[0]["run_id"]]
-    assert settle_steps == [("ingest", "ok"), ("seed_state_cache", "skipped"), ("gc_config", "ok"), ("gc_predict", "skipped"),
+    assert settle_steps == [("acquire", "ok"), ("ingest", "ok"), ("seed_state_cache", "skipped"), ("gc_config", "ok"), ("gc_predict", "skipped"),
                             ("gc_tracker", "skipped"), ("score_day_keys", "skipped"), ("retro_facts", "ok"),
                             ("stage_page", "skipped"), ("site_index", "skipped"), ("site_frame", "skipped"),
                             ("upload", "ok"), ("finish", "ok")]
@@ -168,7 +168,8 @@ def test_settle_without_pcs_pages_exits_10_with_operator_task(campaign, tmp_path
     out = _out(capsys)
     assert code == 10 and out["status"] == "stopped" and len(out["runs"]) == 1
     run = out["runs"][0]
-    assert run["status"] == "waiting_for_input" and run["operator_task"]["kind"] == "pcs_pages_needed"
+    # the fixture campaign is UCI-mapped (uci_competition_url), so the ask names both providers
+    assert run["status"] == "waiting_for_input" and run["operator_task"]["kind"] == "acquisition_needed"
     tasks = _ledger(tmp_path, "operator_tasks")
     assert len(tasks) == 1 and tasks[0]["campaign_slug"] == "vuelta-2026" and tasks[0]["author"] == "agent"
     assert not tasks[0].get("resolved")
@@ -282,7 +283,7 @@ def test_driver_source_contains_no_git_invocation():
     assert "publish" not in {a.dest for a in drv.build_parser()._subparsers._group_actions[0].choices.values()
                              for a in [a] if hasattr(a, "dest")} or True
     assert set(drv.build_parser()._subparsers._group_actions[0].choices) == {
-        "bootstrap", "plan", "night", "settle", "preview", "ingest", "bundle", "refs", "validate", "upload", "status"}
+        "bootstrap", "plan", "night", "settle", "preview", "acquire", "ingest", "bundle", "refs", "validate", "upload", "status"}
 
 
 def test_status_lists_ledger_and_plan(campaign, tmp_path, capsys):
