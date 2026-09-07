@@ -183,8 +183,9 @@ def _is_api_key(key: str) -> bool:
 # hosted client
 # ---------------------------------------------------------------------------
 
-_UPLOAD_ATTEMPTS = 4   # transport retries per object (TLS resets on large uploads)
-PART_SIZE = 40 * 1024 * 1024   # Supabase Storage caps objects at 50 MB on the free plan; bigger
+_UPLOAD_ATTEMPTS = 6   # transport retries per object (TLS resets on large uploads)
+PART_SIZE = 8 * 1024 * 1024    # Supabase Storage caps objects at 50 MB on the free plan, and this
+                                # Mac's uplink drops TLS on ~40 MB bodies ("bad record mac"); bigger
                                 # release files are stored as <relpath>.partNNNN and reassembled.
 PART_SUFFIX = ".part"
 
@@ -309,6 +310,7 @@ class SupabaseStore:
                 last = exc
                 if attempt == _UPLOAD_ATTEMPTS:
                     raise
+                self._s.close()          # drop the pooled connection that produced the bad record
                 wait = 3 * attempt
                 logger.warning("upload %s/%s attempt %d failed (%s); retrying in %ds",
                                bucket, key, attempt, type(exc).__name__, wait)
