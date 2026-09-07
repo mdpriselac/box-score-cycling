@@ -249,7 +249,10 @@ def build_bundle(
     # 1. code
     code_name = f"code-{sha[:12]}.zip"
     subprocess.check_call(
-        ["git", "archive", "--format=zip", "-o", str(out_dir / code_name), "HEAD"],
+        # Models and campaign archives ship as separate bundle groups; keeping them
+        # out of the zip holds it well under Supabase Storage's per-object cap.
+        ["git", "archive", "--format=zip", "-o", str(out_dir / code_name), "HEAD", "--",
+         ".", ":(exclude)models", ":(exclude)performance_eval"],
         cwd=project_root,
     )
     add(code_name, out_dir / code_name)

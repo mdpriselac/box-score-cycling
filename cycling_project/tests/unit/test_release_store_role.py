@@ -53,3 +53,26 @@ def test_upload_retries_transport_errors(monkeypatch):
     s._s = Sess()
     monkeypatch.setattr(st.time, "sleep", lambda *_: None)
     assert s._upload("releases", "t/x", b"x") == "t/x" and calls["n"] == 3
+
+
+def test_release_files_over_the_cap_are_chunked_and_reassembled(monkeypatch, tmp_path):
+    from cycling_project.nightly import store as st
+    monkeypatch.setattr(st, "PART_SIZE", 10)
+    big = tmp_path / "big.bin"; big.write_bytes(bytes(range(25)))
+    small = tmp_path / "small.bin"; small.write_bytes(b"s")
+    manifest = {"files": {"big.bin": {}, "small.bin": {}}, "tag": "t"}
+    s = st.SupabaseStore.__new__(st.SupabaseStore); s.role = "operator"
+    objects = {}
+    monkeypatch.setattr(s, "_list", lambda bucket, prefix, recursive=True: [
+        {"key": k, "created_at": "", "size": len(v)} for k, v in objects.items() if k.startswith(prefix)])
+    monkeypatch.setattr(s, "_upload", lambda bucket, key, data, content_type=None: objects.__setitem__(key, data) or key)
+    def fake_download(bucket, key, dest):
+        dest = __import__("pathlib").Path(dest); dest.parent.mkdir(parents=True, exist_ok=True)
+        dest.write_bytes(objects[key]); return dest
+    monkeypatch.setattr(s, "_download", fake_download)
+    keys = s.upload_release("t", tmp_path, manifest)
+    assert sorted(k for k in objects if "big" in k) == ["t/big.bin.part0000", "t/big.bin.part0001", "t/big.bin.part0002"]
+    assert all(len(v) <= 10 for k, v in objects.items() if "big" in k) and "t/small.bin" in objects
+    out = s.download_release_file("t", "big.bin", tmp_path / "out" / "big.bin")
+    assert out.read_bytes() == bytes(range(25))
+    assert s.download_release_file("t", "small.bin", tmp_path / "out" / "small.bin").read_bytes() == b"s"

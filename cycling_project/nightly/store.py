@@ -183,6 +183,12 @@ def _is_api_key(key: str) -> bool:
 # hosted client
 # ---------------------------------------------------------------------------
 
+_UPLOAD_ATTEMPTS = 4   # transport retries per object (TLS resets on large uploads)
+PART_SIZE = 40 * 1024 * 1024   # Supabase Storage caps objects at 50 MB on the free plan; bigger
+                                # release files are stored as <relpath>.partNNNN and reassembled.
+PART_SUFFIX = ".part"
+
+
 class SupabaseStore:
     """PostgREST + Storage client for one role. See the module docstring."""
 
@@ -287,8 +293,6 @@ class SupabaseStore:
                                        f"this store runs as {self.role!r}", 403)
 
     # -- storage transport ----------------------------------------------------
-    UPLOAD_ATTEMPTS = 4
-
     def _upload(self, bucket: str, key: str, data: bytes, content_type: Optional[str] = None) -> str:
         """POST one object, never overwriting. Transport errors (TLS resets,
         connection drops — routine on a 600 MB weekly upload) are retried with
@@ -296,21 +300,21 @@ class SupabaseStore:
         headers = {"Content-Type": content_type or mimetypes.guess_type(key)[0] or "application/octet-stream",
                    "x-upsert": "false"}                       # never overwrite
         last: Optional[Exception] = None
-        for attempt in range(1, self.UPLOAD_ATTEMPTS + 1):
+        for attempt in range(1, _UPLOAD_ATTEMPTS + 1):
             try:
                 r = self._s.post(f"{self.url}/storage/v1/object/{bucket}/{key}", data=data,
                                  headers=self._headers(headers), timeout=max(self.timeout, 600))
             except (requests.exceptions.SSLError, requests.exceptions.ConnectionError,
                     requests.exceptions.ChunkedEncodingError, requests.exceptions.Timeout) as exc:
                 last = exc
-                if attempt == self.UPLOAD_ATTEMPTS:
+                if attempt == _UPLOAD_ATTEMPTS:
                     raise
                 wait = 3 * attempt
                 logger.warning("upload %s/%s attempt %d failed (%s); retrying in %ds",
                                bucket, key, attempt, type(exc).__name__, wait)
                 time.sleep(wait)
                 continue
-            if r.status_code == 400 and "already exists" in r.text.lower():
+            if attempt > 1 and r.status_code == 400 and "already exists" in r.text.lower():
                 return key                                    # a retry after a request that had landed
             if r.status_code >= 400:
                 self._raise(r, f"upload {bucket}/{key}")
@@ -623,10 +627,27 @@ class SupabaseStore:
         keys: List[str] = []
         for relpath in sorted(manifest["files"]):
             key = f"{tag}/{relpath}"
+            path = bundle_dir / relpath
+            if path.stat().st_size > PART_SIZE:
+                # chunked: <key>.part0000, .part0001, ... (each under the object cap)
+                with open(path, "rb") as fh:
+                    n = 0
+                    while True:
+                        chunk = fh.read(PART_SIZE)
+                        if not chunk:
+                            break
+                        pkey = f"{key}{PART_SUFFIX}{n:04d}"
+                        if pkey in present:
+                            logger.info("resume: %s already uploaded, skipping", pkey)
+                        else:
+                            self._upload(RELEASES_BUCKET, pkey, chunk, "application/octet-stream")
+                        keys.append(f"{RELEASES_BUCKET}/{pkey}")
+                        n += 1
+                continue
             if key in present or relpath in present:
                 logger.info("resume: %s already uploaded, skipping", key)
             else:
-                self._upload(RELEASES_BUCKET, key, (bundle_dir / relpath).read_bytes())
+                self._upload(RELEASES_BUCKET, key, path.read_bytes())
             keys.append(f"{RELEASES_BUCKET}/{key}")
         self._upload(RELEASES_BUCKET, f"{tag}/{MANIFEST_NAME}",
                      json.dumps(manifest, indent=2, sort_keys=True).encode(), "application/json")
@@ -635,7 +656,25 @@ class SupabaseStore:
         return keys
 
     def download_release_file(self, tag: str, relpath: str, dest: Path) -> Path:
-        return self._download(RELEASES_BUCKET, f"{tag}/{relpath}", Path(dest))
+        """One bundle file; transparently reassembles a chunked upload."""
+        dest = Path(dest)
+        key = f"{tag}/{relpath}"
+        parts = sorted(o["key"] for o in self._list(RELEASES_BUCKET, key + PART_SUFFIX, recursive=False)
+                       if o["key"].startswith(key + PART_SUFFIX))
+        if not parts:
+            return self._download(RELEASES_BUCKET, key, dest)
+        expected = [f"{key}{PART_SUFFIX}{i:04d}" for i in range(len(parts))]
+        if parts != expected:
+            raise StoreError(f"chunked object {key} is incomplete or misnumbered: {parts}", 409)
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        tmp = dest.with_suffix(dest.suffix + ".part")
+        with open(tmp, "wb") as out:
+            for pkey in parts:
+                piece = self._download(RELEASES_BUCKET, pkey, tmp.with_suffix(".piece"))
+                out.write(piece.read_bytes())
+                piece.unlink()
+        tmp.replace(dest)
+        return dest
 
     def download_release(self, tag: str, dest: Path) -> Path:
         """The whole bundle (manifest + every listed file) into ``dest``."""
