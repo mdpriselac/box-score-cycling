@@ -8,10 +8,10 @@ whose stored hash equals the rendered spec's hash is skipped, so re-running is a
 re-applies). Agents are never archived; the user's original agent (PROTECTED_AGENT_IDS) is never
 touched.
 
-Credentials: the ``ant auth login`` profile by default. ``ANTHROPIC_API_KEY`` from the environment
-or ``~/.config/cycling-project/secrets.env`` is deliberately IGNORED unless ``--api-key`` is passed,
-because that key is scoped to a different workspace than the profile (it cannot see the existing
-agent). The Supabase nightly key is read from ``SUPABASE_NIGHTLY_KEY`` (secrets.env) at provision
+Credentials: pass ``--api-key`` — ``ANTHROPIC_API_KEY`` (secrets.env) belongs to the
+``cycling-nightly`` workspace where the live resources have lived since 2026-09-07. Without the flag
+the key is dropped and the ``ant auth login`` profile is used (its default is the org's default
+workspace, which holds the paused first copies; the explicit workspace header is sent either way). The Supabase nightly key is read from ``SUPABASE_NIGHTLY_KEY`` (secrets.env) at provision
 time, sent write-only to the Vaults API, and never written anywhere. A leak check refuses to send any
 rendered document that contains a known secret value.
 

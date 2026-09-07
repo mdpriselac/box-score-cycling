@@ -18,7 +18,12 @@ agents/managed/
   ids.json                    ids + versions written by provision.py (no secrets)
 ```
 
-## 1. What is provisioned (workspace `wrkspc_01EXAMPLEA458FB52026846A`, org "MDP Experiments")
+## 1. What is provisioned (workspace `cycling-nightly` / `wrkspc_01EXAMPLEB3AA2FEB16D1B0B`, org "MDP Experiments")
+
+Moved here on 2026-09-07 (`--api-key`, `ids.json` rewritten). The first provisioning (2026-09-06) landed in the
+org's default workspace `wrkspc_01EXAMPLEA458FB52026846A`; those copies are left in place and PAUSED (ids kept in
+`ids.default-workspace.json`, never archived). The smoke results in §4 come from the default-workspace copies; the
+YAML is identical, so they stand.
 
 | Resource | Name | Notes |
 |---|---|---|
@@ -49,10 +54,13 @@ flipped by a human), stage 0 exits 3 and the coordinator stops with a summary.
 
 ## 2. Credentials on the Mac
 
-* **Anthropic:** `ant auth login` profile (default). `provision.py` and `smoke_test.py` deliberately
-  drop `ANTHROPIC_API_KEY` from the process environment unless `--api-key` is passed: the key in
-  `secrets.env` is scoped to a *different* workspace (`wrkspc_01NsRD…`) and cannot see the existing
-  agent. The profile token refreshes itself; if `ant` starts failing auth, `ant auth login` again.
+* **Anthropic:** pass `--api-key` to `provision.py` and `smoke_test.py`: `ANTHROPIC_API_KEY` in
+  `secrets.env` belongs to the `cycling-nightly` workspace, which is where everything now lives.
+  Without the flag both scripts drop the key and use the `ant auth login` profile, whose default is
+  the org's default workspace (`wrkspc_01QXQi…`, the paused first copies); the explicit
+  `anthropic-workspace-id` header from `deployments.yaml` is sent either way. `ant …` CLI commands
+  below run against the profile, so add `--workspace-id wrkspc_01EXAMPLEB3AA2FEB16D1B0B` (or export
+  `ANTHROPIC_API_KEY`) to address the live copies.
 * **Supabase:** `SUPABASE_NIGHTLY_KEY` (the `nightly_agent` role JWT, `supabase/README.md` §4) is
   read from `~/.config/cycling-project/secrets.env` via `cycling_project.nightly.secrets.load_local_env`
   at provision time and sent write-only to the Vaults API. It is the only Supabase key that may be
@@ -65,8 +73,8 @@ flipped by a human), stage 0 exits 3 and the coordinator stops with a summary.
 
 ```bash
 uv sync --group agents
-uv run --group agents python agents/managed/provision.py --dry-run   # render + plan, no API calls
-uv run --group agents python agents/managed/provision.py             # apply; writes ids.json
+uv run --group agents python agents/managed/provision.py --dry-run        # render + plan, no API calls
+uv run --group agents python agents/managed/provision.py --api-key        # apply; writes ids.json
 ```
 
 Order: environment → vault + credential → leaf agents → coordinator (roster pinned to the leaf
@@ -79,17 +87,17 @@ create < environment.yaml`) after stripping the provision-only keys (`system_fil
 `strip_frontmatter`, roster names, `secret_value_from_env`, `budget_usd`); provision.py exists so
 those resolutions happen in one place.
 
-**Console.** Everything is visible at https://platform.claude.com → workspace *MDP Experiments /
-wrkspc_01EXAMPLEA458FB52026846A*: Agents (five + the untouched extractor), Environments
+**Console.** Everything is visible at https://platform.claude.com → workspace *cycling-nightly /
+wrkspc_01EXAMPLEB3AA2FEB16D1B0B*: Agents (five + the untouched extractor), Environments
 (`cycling-cloud`), Vaults (`cycling-nightly`, credential metadata only — the value is write-only),
 Deployments (`nightly`, paused, next fire times listed), Sessions (one per fired or manual run, with
 the full transcript, per-thread view and list cost). Deep-link a session:
-`https://platform.claude.com/workspaces/wrkspc_01EXAMPLEA458FB52026846A/sessions/<session_id>`.
+`https://platform.claude.com/workspaces/wrkspc_01EXAMPLEB3AA2FEB16D1B0B/sessions/<session_id>`.
 
 ## 4. Smoke test (costs money — user approval first)
 
 ```bash
-uv run --group agents python agents/managed/smoke_test.py --budget-usd 5     # asks y/N, then streams
+uv run --group agents python agents/managed/smoke_test.py --api-key --budget-usd 5     # asks y/N, then streams
 ```
 
 Starts one coordinator session (agent version from `ids.json`, the environment, `vault_ids`, a $5
@@ -122,7 +130,7 @@ Container facts: `uv` and `python3` 3.11 preinstalled (the pip fallback in stage
 ### UCI acquisition smoke (`--uci`)
 
 ```bash
-uv run --group agents python agents/managed/smoke_test.py --uci --budget-usd 3
+uv run --group agents python agents/managed/smoke_test.py --api-key --uci --budget-usd 3
 ```
 
 Mounts the standalone `cycling_project/nightly/uci_acquire.py` read-only at `/workspace/uci_acquire.py`

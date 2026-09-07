@@ -7,7 +7,7 @@
 #
 # Deliberately absent: `resources` — no github_repository (the container must not hold a repo
 # credential; code arrives read-only from the release bundle) and no file resources.
-workspace_id: wrkspc_01EXAMPLEA458FB52026846A     # Console URLs + explicit anthropic-workspace-id header
+workspace_id: wrkspc_01EXAMPLEB3AA2FEB16D1B0B     # cycling-nightly (owns ANTHROPIC_API_KEY); default-workspace copies stay paused, ids in ids.default-workspace.json
 deployments:
   - name: nightly
     description: Nightly cycling coverage — every WT / .Pro / .1 race due tonight, via the release bundle in Supabase.
