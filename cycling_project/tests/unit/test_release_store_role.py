@@ -46,6 +46,7 @@ def test_upload_retries_transport_errors(monkeypatch):
     calls = {"n": 0}
     class R:  status_code = 200; text = ""
     class Sess:
+        def close(self): pass
         def post(self, *a, **k):
             calls["n"] += 1
             if calls["n"] < 3: raise requests.exceptions.SSLError("bad record mac")
