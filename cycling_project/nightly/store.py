@@ -185,9 +185,13 @@ def _is_api_key(key: str) -> bool:
 # ---------------------------------------------------------------------------
 
 _UPLOAD_ATTEMPTS = 10  # transport retries per object (TLS resets on large uploads)
-PART_SIZE = 8 * 1024 * 1024    # Supabase Storage caps objects at 50 MB on the free plan, and this
-                                # Mac's uplink drops TLS on ~40 MB bodies ("bad record mac"); bigger
-                                # release files are stored as <relpath>.partNNNN and reassembled.
+PART_SIZE = 4 * 1024 * 1024    # Supabase Storage caps objects at 50 MB on the free plan, and the
+                                # path from this Mac to the Supabase edge drops TLS on large bodies
+                                # ("bad record mac": ~40 MB on 2026-09-06, 8 MB on 2026-09-07 while
+                                # 4 MB and an 8 MB body to another host went through); bigger release
+                                # files are stored as <relpath>.partNNNN and reassembled. Changing
+                                # this after a tag was partly uploaded corrupts its resume: delete the
+                                # tag's objects first.
 PART_SUFFIX = ".part"
 
 
