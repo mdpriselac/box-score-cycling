@@ -177,8 +177,11 @@ _REQUIRED = (
 )
 
 
-def hosted_store() -> Any:
-    """The sibling Supabase client, or raise :class:`StoreUnavailable`.
+def hosted_store(role: str = "agent") -> Any:
+    """The sibling Supabase client for ``role``, or raise :class:`StoreUnavailable`.
+
+    ``role`` is ``agent`` (nightly container: read releases), ``reader`` or
+    ``operator`` (the Mac: upload/approve releases — needs SUPABASE_SECRET_KEY).
 
     Accepts either a module exposing the functions or a module with a
     ``Store``/``SupabaseStore`` class taking no arguments (credentials from
@@ -195,7 +198,7 @@ def hosted_store() -> Any:
     for cls_name in ("SupabaseStore", "Store"):
         cls = getattr(store_mod, cls_name, None)
         if cls is not None:
-            candidate = cls()
+            candidate = cls(role) if cls_name == "SupabaseStore" else cls()
             break
     missing = [name for name in _REQUIRED if not callable(getattr(candidate, name, None))]
     if missing:
@@ -206,12 +209,12 @@ def hosted_store() -> Any:
     return candidate
 
 
-def resolve_store(kind: str = "hosted", root: Optional[Path] = None) -> Any:
-    """``kind`` is ``hosted`` (Supabase via store.py) or ``fake`` (directory ``root``)."""
+def resolve_store(kind: str = "hosted", root: Optional[Path] = None, role: str = "agent") -> Any:
+    """``kind`` is ``hosted`` (Supabase via store.py, opened as ``role``) or ``fake`` (directory ``root``)."""
     if kind == "fake":
         if root is None:
             raise ValueError("--store fake needs --store-root")
-        return FakeStore(root)
+        return FakeStore(root, role=role) if "role" in FakeStore.__init__.__code__.co_varnames else FakeStore(root)
     if kind != "hosted":
         raise ValueError(f"unknown store kind {kind!r}")
-    return hosted_store()
+    return hosted_store(role)

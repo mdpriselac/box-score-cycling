@@ -407,7 +407,7 @@ def release(
         print("dry run: not uploading")
         return result
     try:
-        store = resolve_store(store_kind, store_root)
+        store = resolve_store(store_kind, store_root, role="operator")  # upload + releases row: Mac only
     except StoreUnavailable as exc:
         print(f"upload skipped: {exc}")
         result["upload_skipped"] = str(exc)
