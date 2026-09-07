@@ -551,3 +551,36 @@ def test_live_prediction_log_is_idempotent(live):
     assert sorted(s["rider_id"] for s in stored) == [1, 2, 3]
     with pytest.raises(StorePermissionError):
         live.agent._rest("DELETE", "prediction_log", params={"run_id": f"eq.{run['run_id']}"})
+
+
+# ---------------------------------------------------------------------------
+# schema vs. the states the driver actually writes
+# ---------------------------------------------------------------------------
+
+def _allowed_run_step_states() -> set[str]:
+    """The effective CHECK on run_steps.state — the last migration to define it wins."""
+    migrations = sorted((Path(__file__).resolve().parents[3] / "supabase" / "migrations").glob("*.sql"))
+    allowed: set[str] = set()
+    for path in migrations:
+        for match in re.finditer(r"state\s+in\s*\(([^)]*)\)", path.read_text(), re.I):
+            allowed = set(re.findall(r"'([^']+)'", match.group(1)))
+    return allowed
+
+
+def test_the_schema_accepts_every_state_the_driver_records():
+    """Regression for the silent ledger hole found building the inbox (chip J).
+
+    driver.Runner finishes a run 'waiting' (exit 10) or 'failed' (exit 20) and
+    records the same on the step that raised. 0001's CHECK allowed neither, and
+    the driver swallows ledger errors, so those runs reached the hosted ledger
+    with no `finish` row at all: run_status fell back to runs.state and every
+    waiting or failed night read as 'started' forever. 0005 widened the CHECK.
+    """
+    driver_src = (Path(__file__).resolve().parents[2] / "nightly" / "driver.py").read_text()
+    written = set(re.findall(r'_record_step\(\s*name,\s*"(\w+)"', driver_src))
+    written |= set(re.findall(r'\.finish\(\s*"(\w+)"', driver_src))
+    written |= {"ok"}                       # finish_run / add_step defaults
+
+    allowed = _allowed_run_step_states()
+    assert allowed, "no CHECK on run_steps.state found in supabase/migrations"
+    assert written <= allowed, f"driver writes states the schema rejects: {sorted(written - allowed)}"

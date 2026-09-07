@@ -49,6 +49,7 @@ import datetime as dt
 import hashlib
 import json
 import mimetypes
+import shutil
 import time
 import os
 import posixpath
@@ -519,6 +520,41 @@ class SupabaseStore:
             params["campaign_slug"] = f"eq.{campaign_slug}"
         return self._select("operator_tasks", params)
 
+    # -- promotion reads (operator only) --------------------------------------
+    def approvals(self, *, run_id: Optional[str] = None, campaign_slug: Optional[str] = None,
+                  decision: Optional[str] = None, kind: Optional[str] = None,
+                  limit: int = 200) -> List[Dict[str, Any]]:
+        """Full ``approvals`` rows (with the approver), newest first.
+
+        The agent-safe projection is ``approved_runs()``; this one is the
+        operator's own view and needs the secret key.
+        """
+        self._require_operator("reading approvals")
+        params = {"order": "created_at.desc", "limit": str(limit)}
+        if run_id:
+            params["run_id"] = f"eq.{run_id}"
+        if campaign_slug:
+            params["campaign_slug"] = f"eq.{campaign_slug}"
+        if decision:
+            params["decision"] = f"eq.{decision}"
+        if kind:
+            params["kind"] = f"eq.{kind}"
+        return self._select("approvals", params)
+
+    def get_run(self, run_id: str) -> Optional[Dict[str, Any]]:
+        rows = self._select("run_status", {"run_id": f"eq.{run_id}", "limit": "1"})
+        return rows[0] if rows else None
+
+    def run_steps(self, run_id: str) -> List[Dict[str, Any]]:
+        return self._select("run_steps", {"run_id": f"eq.{run_id}", "order": "id.asc"})
+
+    def list_staged(self, run_id: str) -> List[dict]:
+        """Objects the run staged under ``site-staging/<run_id>/`` (promotion input)."""
+        return self._list(STAGING_BUCKET, str(run_id))
+
+    def download_staged(self, key: str, dest: Path) -> Path:
+        return self._download(STAGING_BUCKET, key, Path(dest))
+
     # -- registry reads -------------------------------------------------------
     def campaigns(self, active_only: bool = True) -> List[Dict[str, Any]]:
         params = {"order": "start_date.asc"}
@@ -882,10 +918,12 @@ class FakeStore(_rs.FakeStore):
         return self._append("day_key_decisions", {"campaign_slug": campaign_slug, "unit": unit, "day_key": day_key,
                                                   "author": "human", "approved_by": by, "approved_at": _utcnow()})
 
-    def approve_run(self, run_id, by="test", kind="publish", note=None):
+    def approve_run(self, run_id, by="test", kind="publish", note=None, decision="approve"):
         if self.role != "operator":
             self._deny("approvals are human-only")
-        return self._append("approvals", {"run_id": str(run_id), "kind": kind, "decision": "approve",
+        run = next((r for r in self.rows.get("runs", []) if str(r["run_id"]) == str(run_id)), {})
+        return self._append("approvals", {"run_id": str(run_id), "campaign_slug": run.get("campaign_slug"),
+                                          "unit": run.get("unit"), "kind": kind, "decision": decision,
                                           "approved_by": by, "note": note})
 
     def approved_day_key(self, campaign_slug, unit):
@@ -908,6 +946,47 @@ class FakeStore(_rs.FakeStore):
     def open_tasks(self, campaign_slug=None):
         return [r for r in self.rows.get("operator_tasks", [])
                 if not r.get("resolved") and (campaign_slug is None or r.get("campaign_slug") == campaign_slug)]
+
+    def approvals(self, *, run_id=None, campaign_slug=None, decision=None, kind=None, limit=200):
+        if self.role != "operator":
+            self._deny("reading approvals needs the operator role")
+        out = [r for r in self.rows.get("approvals", [])
+               if (run_id is None or str(r.get("run_id")) == str(run_id))
+               and (campaign_slug is None or r.get("campaign_slug") == campaign_slug)
+               and (decision is None or r.get("decision", "approve") == decision)
+               and (kind is None or r.get("kind") == kind)]
+        return sorted(out, key=lambda r: r["created_at"], reverse=True)[:limit]
+
+    def get_run(self, run_id):
+        run = next((r for r in self.rows.get("runs", []) if str(r["run_id"]) == str(run_id)), None)
+        if run is None:
+            return None
+        finish = [s for s in self.rows.get("run_steps", [])
+                  if str(s["run_id"]) == str(run_id) and s["step"] == "finish"]
+        last = finish[-1] if finish else None
+        return {**run, "state": (last or run).get("state", run.get("state")),
+                "exit_code": (last or {}).get("exit_code"),
+                "finished_at": (last or {}).get("finished_at")}
+
+    def run_steps(self, run_id):
+        return [s for s in self.rows.get("run_steps", []) if str(s["run_id"]) == str(run_id)]
+
+    def list_staged(self, run_id):
+        root = self.staging_dir / str(run_id)
+        if not root.is_dir():
+            return []
+        return [{"key": f"{run_id}/{p.relative_to(root).as_posix()}",
+                 "created_at": _utcnow(), "size": p.stat().st_size}
+                for p in sorted(root.rglob("*")) if p.is_file()]
+
+    def download_staged(self, key, dest):
+        src = self.staging_dir / key
+        if not src.is_file():
+            raise StoreError(f"no object {STAGING_BUCKET}/{key}", 404)
+        dest = Path(dest)
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(src, dest)
+        return dest
 
     def campaigns(self, active_only=True):
         return [r for r in self.rows.get("campaigns", []) if not active_only or r.get("active", True)]
