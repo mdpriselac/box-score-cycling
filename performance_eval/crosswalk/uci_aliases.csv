@@ -1,0 +1,6 @@
+uci_key,uci_name,fc_rider_id,fc_name,birth_year,confidence,source,confirmed_by,created_at
+jensen|jennow mattias skjelmose,JENSEN Mattias Skjelmose Jennow,77103,Skjelmose Mattias,2000,1.00,human,Matt,2026-09-07T04:33:16+00:00
+mulueberhan|henok,MULUEBERHAN Henok,71607,Mulubrhan Henok,1999,1.00,human,Matt,2026-09-07T04:33:16+00:00
+hamilton|christopher,HAMILTON Christopher,42185,Hamilton Chris,1995,1.00,human,Matt,2026-09-07T04:33:16+00:00
+schultz|nicholas,SCHULTZ Nicholas,16576,Schultz Nick,1994,1.00,human,Matt,2026-09-07T04:33:16+00:00
+nielsen|magnus,NIELSEN Magnus,7695,Cort Magnus,1993,1.00,human,Matt,2026-09-07T04:33:16+00:00
