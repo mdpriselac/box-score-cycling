@@ -423,6 +423,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--tag", required=True, help="release tag, e.g. data-2026-09-05")
     ap.add_argument("--dry-run", action="store_true", help="build the bundle, skip the upload")
+    ap.add_argument("--upload-only", action="store_true",
+                    help="skip the build; upload the bundle already at --out-dir (resumes a partial upload)")
     ap.add_argument("--out-dir", type=Path, default=None,
                     help=f"bundle directory (default {RELEASES_OUT}/<tag>)")
     ap.add_argument("--slice", type=Path, default=None,
@@ -434,6 +436,13 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     args = ap.parse_args(argv)
     if not args.tag.startswith("data-"):
         ap.error("--tag must look like data-YYYY-MM-DD")
+    if args.upload_only:
+        out_dir = args.out_dir or (RELEASES_OUT / args.tag)
+        manifest = json.loads((Path(out_dir) / "manifest.json").read_text())
+        store = resolve_store(args.store, args.store_root, role="operator")
+        print(json.dumps(upload_bundle(store, Path(out_dir), manifest), indent=1, default=str))
+        return
+
     release(args.tag, out_dir=args.out_dir, dry_run=args.dry_run, slice_path=args.slice,
             horizon_days=args.horizon_days, store_kind=args.store, store_root=args.store_root,
             skip_slice=args.skip_slice)

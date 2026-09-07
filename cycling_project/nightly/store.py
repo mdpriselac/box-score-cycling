@@ -49,6 +49,7 @@ import datetime as dt
 import hashlib
 import json
 import mimetypes
+import time
 import os
 import posixpath
 import uuid
@@ -286,14 +287,35 @@ class SupabaseStore:
                                        f"this store runs as {self.role!r}", 403)
 
     # -- storage transport ----------------------------------------------------
+    UPLOAD_ATTEMPTS = 4
+
     def _upload(self, bucket: str, key: str, data: bytes, content_type: Optional[str] = None) -> str:
+        """POST one object, never overwriting. Transport errors (TLS resets,
+        connection drops — routine on a 600 MB weekly upload) are retried with
+        backoff; HTTP errors are not."""
         headers = {"Content-Type": content_type or mimetypes.guess_type(key)[0] or "application/octet-stream",
                    "x-upsert": "false"}                       # never overwrite
-        r = self._s.post(f"{self.url}/storage/v1/object/{bucket}/{key}", data=data,
-                         headers=self._headers(headers), timeout=max(self.timeout, 600))
-        if r.status_code >= 400:
-            self._raise(r, f"upload {bucket}/{key}")
-        return key
+        last: Optional[Exception] = None
+        for attempt in range(1, self.UPLOAD_ATTEMPTS + 1):
+            try:
+                r = self._s.post(f"{self.url}/storage/v1/object/{bucket}/{key}", data=data,
+                                 headers=self._headers(headers), timeout=max(self.timeout, 600))
+            except (requests.exceptions.SSLError, requests.exceptions.ConnectionError,
+                    requests.exceptions.ChunkedEncodingError, requests.exceptions.Timeout) as exc:
+                last = exc
+                if attempt == self.UPLOAD_ATTEMPTS:
+                    raise
+                wait = 3 * attempt
+                logger.warning("upload %s/%s attempt %d failed (%s); retrying in %ds",
+                               bucket, key, attempt, type(exc).__name__, wait)
+                time.sleep(wait)
+                continue
+            if r.status_code == 400 and "already exists" in r.text.lower():
+                return key                                    # a retry after a request that had landed
+            if r.status_code >= 400:
+                self._raise(r, f"upload {bucket}/{key}")
+            return key
+        raise last  # pragma: no cover
 
     def _download(self, bucket: str, key: str, dest: Path) -> Path:
         dest = Path(dest)
@@ -594,13 +616,18 @@ class SupabaseStore:
         """Mac only. Objects are never overwritten: a tag is immutable once uploaded."""
         self._require_operator("upload_release")
         bundle_dir = Path(bundle_dir)
-        if self._list(RELEASES_BUCKET, tag, recursive=False):
-            raise StoreConflictError(f"release objects already exist under {RELEASES_BUCKET}/{tag}/", 409)
+        present = {o["key"] for o in self._list(RELEASES_BUCKET, tag, recursive=True)}
+        if f"{tag}/{MANIFEST_NAME}" in present or MANIFEST_NAME in present:
+            raise StoreConflictError(f"release {tag} is complete under {RELEASES_BUCKET}/{tag}/ "
+                                     "(manifest present); a tag is immutable once uploaded", 409)
         keys: List[str] = []
         for relpath in sorted(manifest["files"]):
-            data = (bundle_dir / relpath).read_bytes()
-            self._upload(RELEASES_BUCKET, f"{tag}/{relpath}", data)
-            keys.append(f"{RELEASES_BUCKET}/{tag}/{relpath}")
+            key = f"{tag}/{relpath}"
+            if key in present or relpath in present:
+                logger.info("resume: %s already uploaded, skipping", key)
+            else:
+                self._upload(RELEASES_BUCKET, key, (bundle_dir / relpath).read_bytes())
+            keys.append(f"{RELEASES_BUCKET}/{key}")
         self._upload(RELEASES_BUCKET, f"{tag}/{MANIFEST_NAME}",
                      json.dumps(manifest, indent=2, sort_keys=True).encode(), "application/json")
         keys.append(f"{RELEASES_BUCKET}/{tag}/{MANIFEST_NAME}")
