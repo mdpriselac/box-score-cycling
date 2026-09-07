@@ -331,6 +331,56 @@ def test_resolve_writes_clear_matches_asks_about_the_rest_and_does_not_repeat_it
     assert len((runs / "operator_tasks.jsonl").read_text().splitlines()) == 1
 
 
+def _operator_evidence(decision, competition_id, name, reason=None):
+    ev = {"matcher": "uci_calendar 1.0.0", "decision": decision, "decided_at": "2026-09-07T17:00:00+00:00",
+          "decided_by": "operator", "candidate": {"competition_id": competition_id, "discipline": "ROA",
+          "url": f"https://www.uci.org/competition-details/2026/ROA/{competition_id}", "name": name}}
+    if reason:
+        ev["reason"] = reason
+    return ev
+
+
+def test_an_operator_confirmed_url_and_its_record_survive_the_matcher(entries, provenance):
+    # gooikse-pijl: the calendar alone scores it below the bar (an operator_confirm case)
+    campaign = _campaign(slug="gooikse-pijl-2026", name="Gooikse Pijl", start_date="2026-09-20",
+                         end_date="2026-09-20", uci_competition_url="https://www.uci.org/competition-details/2026/ROA/78434",
+                         uci_competition_id="78434", uci_discipline="ROA",
+                         uci_match_evidence=_operator_evidence("operator_confirmed", "78434", "Gooikse pijl p/b Lotto"))
+    match = uc.match_campaign(campaign, entries)
+    assert not match.needs_operator
+    updated = uc.apply_match(campaign, match, provenance)
+    assert updated["uci_match_evidence"] == campaign["uci_match_evidence"]     # verbatim, not the matcher's block
+    assert updated["uci_competition_url"].endswith("/78434")
+
+
+def test_a_rejected_candidate_is_not_asked_again_and_the_rejection_stays_on_file(tmp_path):
+    # giro-della-romagna: no 2026 listing; the best candidate (Giro di Campania) is a different race
+    romagna = _campaign(slug="giro-della-romagna-2026", name="Giro della Romagna", start_date="2026-09-20",
+                        end_date="2026-09-20",
+                        uci_match_evidence=_operator_evidence("operator_rejected", "78436", "Giro di Campania",
+                                                              reason="different race on the same date"))
+    perf = _perf_dir(tmp_path, romagna)
+    runs = tmp_path / "runs"
+    result = uc.resolve(perf, snapshot_dir=CALENDAR, now=date(2026, 9, 7), runs_dir=runs)
+    assert result["tasks_written"] == 0 and result["operator_confirm"] == 0
+    assert not (runs / "operator_tasks.jsonl").exists()
+    after = json.loads((perf / "giro-della-romagna-2026" / "campaign.json").read_text())
+    assert after["uci_competition_url"] is None
+    assert after["uci_match_evidence"] == romagna["uci_match_evidence"]
+
+
+def test_a_rejection_of_a_different_candidate_reopens_the_question(entries, provenance):
+    campaign = _campaign(slug="gooikse-pijl-2026", name="Gooikse Pijl", start_date="2026-09-20",
+                         end_date="2026-09-20",
+                         uci_match_evidence=_operator_evidence("operator_rejected", "11111", "Some Other Race"))
+    match = uc.match_campaign(campaign, entries)
+    assert match.decision == "operator_confirm" and match.needs_operator
+    assert match.best.entry.competition_id == "78434"
+    updated = uc.apply_match(campaign, match, provenance)
+    assert updated["uci_match_evidence"]["decision"] == "operator_confirm"   # fresh matcher evidence replaces it
+    assert any("asking again" in r for r in match.reasons)
+
+
 def test_resolve_dry_run_writes_nothing(tmp_path):
     perf = _perf_dir(tmp_path, _campaign(slug="trofeo-matteotti-2026", name="Trofeo Matteotti"))
     runs = tmp_path / "runs"

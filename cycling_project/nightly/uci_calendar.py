@@ -85,6 +85,11 @@ LIVE_SNAPSHOT_DIR = REPO_ROOT / "performance_eval" / "calendar" / "uci"
 RUNS_DIR = REPO_ROOT / "performance_eval" / "runs"
 PERFORMANCE_EVAL = REPO_ROOT / "performance_eval"
 TASK_KIND = "uci_competition_confirm"
+# Decisions a human wrote into ``uci_match_evidence`` (the inbox / an operator
+# session).  They are sticky: the matcher never overwrites them, and a
+# rejection of candidate X is not re-asked until the calendar proposes a
+# different competition.
+OPERATOR_DECISIONS = frozenset({"operator_confirmed", "operator_rejected"})
 AUTO_ACCEPT_SIMILARITY = 0.90
 COUNTRY_NOTE = ("the FirstCycling calendar rows and campaign files carry no country, "
                 "so the listing's country is recorded but not used as a discriminator")
@@ -373,7 +378,8 @@ class CampaignMatch:
     existing_url: Optional[str]
     best: Optional[Candidate] = None
     alternates: List[Candidate] = field(default_factory=list)
-    decision: str = "no_candidate"          # auto_accepted | operator_confirm | no_candidate
+    decision: str = "no_candidate"          # auto_accepted | operator_confirm | no_candidate | operator_rejected
+    operator_evidence: Optional[Dict[str, Any]] = None   # sticky human decision already on file
     existing_agrees: Optional[bool] = None
     reasons: List[str] = field(default_factory=list)
 
@@ -389,7 +395,7 @@ class CampaignMatch:
 
     @property
     def needs_operator(self) -> bool:
-        return self.decision != "auto_accepted" and not self.existing_url
+        return self.decision not in ("auto_accepted", "operator_rejected") and not self.existing_url
 
     def evidence(self, provenance: Dict[str, Any]) -> Dict[str, Any]:
         best = self.best
@@ -461,6 +467,9 @@ def match_campaign(campaign: Dict[str, Any], entries: Iterable[CalendarEntry]) -
     year = campaign.get("year")
     match = CampaignMatch(slug=slug, campaign_name=name, start_date=start, end_date=end,
                           existing_url=campaign.get("uci_competition_url") or None)
+    prior = campaign.get("uci_match_evidence") or {}
+    if prior.get("decision") in OPERATOR_DECISIONS:
+        match.operator_evidence = prior
 
     candidates: List[Candidate] = []
     for entry in entries:
@@ -508,7 +517,23 @@ def match_campaign(campaign: Dict[str, Any], entries: Iterable[CalendarEntry]) -
                              f"(variant {best.variant}) — unique at the bar")
     else:
         match.decision = "operator_confirm"
+    rejected = _rejected_candidate_id(match.operator_evidence)
+    if rejected is not None and not match.existing_url:
+        if rejected == best.entry.competition_id:
+            match.decision = "operator_rejected"
+            match.reasons.append(f"the operator already rejected candidate {rejected} "
+                                 f"({match.operator_evidence.get('reason') or 'no reason recorded'}) — not asked again")
+        else:
+            match.reasons.append(f"the operator rejected candidate {rejected} earlier, but the calendar now "
+                                 f"proposes {best.entry.competition_id} {best.entry.name!r} — asking again")
     return match
+
+
+def _rejected_candidate_id(evidence: Optional[Dict[str, Any]]) -> Optional[str]:
+    if not evidence or evidence.get("decision") != "operator_rejected":
+        return None
+    cid = ((evidence.get("candidate") or {}).get("competition_id"))
+    return str(cid) if cid is not None else None
 
 
 # ---------------------------------------------------------------------------
@@ -557,6 +582,15 @@ def apply_match(campaign: Dict[str, Any], match: CampaignMatch, provenance: Dict
         updated["uci_competition_url"] = entry.full_url
         updated["uci_competition_id"] = entry.competition_id
         updated["uci_discipline"] = entry.discipline
+    if match.operator_evidence is not None:
+        # A human decided (confirmed the URL, or rejected this very candidate):
+        # the file keeps that record verbatim.  Only a rejection that the
+        # calendar has since moved past (a different candidate) is re-asked,
+        # and then the fresh matcher evidence replaces it.
+        reopened = (match.operator_evidence.get("decision") == "operator_rejected"
+                    and match.decision != "operator_rejected" and not match.existing_url)
+        if not reopened:
+            return updated
     evidence = match.evidence(provenance)
     if _same_verdict(campaign.get("uci_match_evidence"), evidence):
         evidence = campaign["uci_match_evidence"]

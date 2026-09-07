@@ -24,108 +24,62 @@
   "organiser_stage_urls": {},
   "void_stages": [],
   "uci_match_evidence": {
-    "matcher": "uci_calendar 1.0.0",
-    "matched_at": "2026-09-07T16:16:07+00:00",
-    "decision": "operator_confirm",
-    "existing_url_conflict": false,
-    "auto_accept_rule": "exact date range AND name similarity >= 0.90 AND no other exact-date candidate at that bar",
+    "matcher": "uci_calendar",
+    "decision": "operator_confirmed",
+    "decided_at": "2026-09-07T16:57:21+00:00",
+    "decided_by": "operator",
     "score": 0.88,
-    "fields_compared": {
-      "dates": {
-        "campaign": "2026-09-16..2026-09-16",
-        "uci": "2026-09-16..2026-09-16",
-        "uci_text": "16 Sep 2026",
-        "verdict": "exact"
-      },
-      "name": {
-        "campaign": "Grand Prix de Wallonie",
-        "uci": "Lotto Grand Prix de Wallonie",
-        "campaign_normalised": "grand prix de wallonie",
-        "uci_normalised": "lotto grand prix de wallonie",
-        "variant": "full~full",
-        "similarity": 0.88,
-        "token_containment": 1.0
-      },
-      "country": {
-        "campaign": null,
-        "uci": "BEL",
-        "verdict": "not_compared",
-        "note": "the FirstCycling calendar rows and campaign files carry no country, so the listing's country is recorded but not used as a discriminator"
-      }
-    },
     "candidate": {
       "competition_id": "78418",
-      "discipline": "ROA",
-      "url": "https://www.uci.org/competition-details/2026/ROA/78418",
-      "name": "Lotto Grand Prix de Wallonie",
       "country": "BEL",
       "dates_text": "16 Sep 2026",
-      "start_date": "2026-09-16",
+      "discipline": "ROA",
       "end_date": "2026-09-16",
-      "listing": "upcoming"
+      "listing": "upcoming",
+      "name": "Lotto Grand Prix de Wallonie",
+      "start_date": "2026-09-16",
+      "url": "https://www.uci.org/competition-details/2026/ROA/78418"
     },
     "alternates": [
       {
         "competition_id": "78419",
-        "discipline": "ROA",
-        "url": "https://www.uci.org/competition-details/2026/ROA/78419",
-        "name": "Lotto Grand Prix de Wallonie Dames",
         "country": "BEL",
         "dates_text": "16 Sep 2026",
-        "start_date": "2026-09-16",
+        "discipline": "ROA",
         "end_date": "2026-09-16",
         "listing": "upcoming",
+        "name": "Lotto Grand Prix de Wallonie Dames",
         "similarity": 0.7857,
-        "dates_verdict": "exact"
+        "start_date": "2026-09-16",
+        "url": "https://www.uci.org/competition-details/2026/ROA/78419"
       },
       {
         "competition_id": "78417",
-        "discipline": "ROA",
-        "url": "https://www.uci.org/competition-details/2026/ROA/78417",
-        "name": "Chrono Féminin de Gatineau",
         "country": "CAN",
         "dates_text": "16 Sep 2026",
-        "start_date": "2026-09-16",
+        "discipline": "ROA",
         "end_date": "2026-09-16",
         "listing": "upcoming",
+        "name": "Chrono Féminin de Gatineau",
         "similarity": 0.4583,
-        "dates_verdict": "exact"
+        "start_date": "2026-09-16",
+        "url": "https://www.uci.org/competition-details/2026/ROA/78417"
       },
       {
         "competition_id": "78420",
-        "discipline": "ROA",
-        "url": "https://www.uci.org/competition-details/2026/ROA/78420",
-        "name": "Okolo Slovenska / Tour de Slovaquie",
         "country": "SVK",
         "dates_text": "16 Sep - 20 Sep 2026",
-        "start_date": "2026-09-16",
+        "discipline": "ROA",
         "end_date": "2026-09-20",
         "listing": "upcoming",
+        "name": "Okolo Slovenska / Tour de Slovaquie",
         "similarity": 0.3273,
-        "dates_verdict": "overlap"
+        "start_date": "2026-09-16",
+        "url": "https://www.uci.org/competition-details/2026/ROA/78420"
       }
-    ],
-    "reasons": [
-      "name similarity 0.880 below 0.90 ('Grand Prix de Wallonie' vs 'Lotto Grand Prix de Wallonie')"
-    ],
-    "snapshot": {
-      "captured_at": "2026-09-07T16:05:23+00:00",
-      "capturer": "uci_calendar 1.0.0",
-      "listings": {
-        "upcoming": {
-          "source_url": "https://www.uci.org/api/calendar/upcoming?discipline=ROA",
-          "sha256": "05074b45fbc5336e3c60b05c69b1e4677e77c3fd850ffe95c334a10b7b4c5556",
-          "competitions": 176
-        },
-        "past": {
-          "source_url": "https://www.uci.org/api/calendar/past?discipline=ROA",
-          "sha256": "5e0732365cb4c347099d3cf6acb259cfaf2c60281ae20b2ab5fbd14a33417bcd",
-          "competitions": 845
-        }
-      }
-    }
+    ]
   },
-  "uci_competition_url": null,
-  "uci_competition_id": null,
-  "uci_discipline": null
+  "uci_competition_url": "https://www.uci.org/competition-details/2026/ROA/78418",
+  "uci_competition_id": "78418",
+  "uci_discipline": "ROA"
 }

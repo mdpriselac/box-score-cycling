@@ -24,108 +24,62 @@
   "organiser_stage_urls": {},
   "void_stages": [],
   "uci_match_evidence": {
-    "matcher": "uci_calendar 1.0.0",
-    "matched_at": "2026-09-07T16:16:07+00:00",
-    "decision": "operator_confirm",
-    "existing_url_conflict": false,
-    "auto_accept_rule": "exact date range AND name similarity >= 0.90 AND no other exact-date candidate at that bar",
+    "matcher": "uci_calendar",
+    "decision": "operator_confirmed",
+    "decided_at": "2026-09-07T16:57:21+00:00",
+    "decided_by": "operator",
     "score": 0.7391,
-    "fields_compared": {
-      "dates": {
-        "campaign": "2026-09-11..2026-09-11",
-        "uci": "2026-09-11..2026-09-11",
-        "uci_text": "11 Sep 2026",
-        "verdict": "exact"
-      },
-      "name": {
-        "campaign": "GP Québec",
-        "uci": "Grand Prix Cycliste de Québec",
-        "campaign_normalised": "grand prix quebec",
-        "uci_normalised": "grand prix cycliste de quebec",
-        "variant": "full~full",
-        "similarity": 0.7391,
-        "token_containment": 1.0
-      },
-      "country": {
-        "campaign": null,
-        "uci": "CAN",
-        "verdict": "not_compared",
-        "note": "the FirstCycling calendar rows and campaign files carry no country, so the listing's country is recorded but not used as a discriminator"
-      }
-    },
     "candidate": {
       "competition_id": "76947",
-      "discipline": "ROA",
-      "url": "https://www.uci.org/competition-details/2026/ROA/76947",
-      "name": "Grand Prix Cycliste de Québec",
       "country": "CAN",
       "dates_text": "11 Sep 2026",
-      "start_date": "2026-09-11",
+      "discipline": "ROA",
       "end_date": "2026-09-11",
-      "listing": "upcoming"
+      "listing": "upcoming",
+      "name": "Grand Prix Cycliste de Québec",
+      "start_date": "2026-09-11",
+      "url": "https://www.uci.org/competition-details/2026/ROA/76947"
     },
     "alternates": [
       {
         "competition_id": "78404",
-        "discipline": "ROA",
-        "url": "https://www.uci.org/competition-details/2026/ROA/78404",
-        "name": "Tour d'Arménie",
         "country": "ARM",
         "dates_text": "10 Sep - 13 Sep 2026",
-        "start_date": "2026-09-10",
+        "discipline": "ROA",
         "end_date": "2026-09-13",
         "listing": "upcoming",
+        "name": "Tour d'Arménie",
         "similarity": 0.3871,
-        "dates_verdict": "overlap"
+        "start_date": "2026-09-10",
+        "url": "https://www.uci.org/competition-details/2026/ROA/78404"
       },
       {
         "competition_id": "78957",
-        "discipline": "ROA",
-        "url": "https://www.uci.org/competition-details/2026/ROA/78957",
-        "name": "National Road Championships - Malaysia",
         "country": "MAS",
         "dates_text": "11 Sep - 13 Sep 2026",
-        "start_date": "2026-09-11",
+        "discipline": "ROA",
         "end_date": "2026-09-13",
         "listing": "upcoming",
+        "name": "National Road Championships - Malaysia",
         "similarity": 0.2727,
-        "dates_verdict": "overlap"
+        "start_date": "2026-09-11",
+        "url": "https://www.uci.org/competition-details/2026/ROA/78957"
       },
       {
         "competition_id": "78402",
-        "discipline": "ROA",
-        "url": "https://www.uci.org/competition-details/2026/ROA/78402",
-        "name": "Tour of Romania",
         "country": "ROU",
         "dates_text": "09 Sep - 13 Sep 2026",
-        "start_date": "2026-09-09",
+        "discipline": "ROA",
         "end_date": "2026-09-13",
         "listing": "upcoming",
+        "name": "Tour of Romania",
         "similarity": 0.25,
-        "dates_verdict": "overlap"
+        "start_date": "2026-09-09",
+        "url": "https://www.uci.org/competition-details/2026/ROA/78402"
       }
-    ],
-    "reasons": [
-      "name similarity 0.739 below 0.90 ('GP Québec' vs 'Grand Prix Cycliste de Québec')"
-    ],
-    "snapshot": {
-      "captured_at": "2026-09-07T16:05:23+00:00",
-      "capturer": "uci_calendar 1.0.0",
-      "listings": {
-        "upcoming": {
-          "source_url": "https://www.uci.org/api/calendar/upcoming?discipline=ROA",
-          "sha256": "05074b45fbc5336e3c60b05c69b1e4677e77c3fd850ffe95c334a10b7b4c5556",
-          "competitions": 176
-        },
-        "past": {
-          "source_url": "https://www.uci.org/api/calendar/past?discipline=ROA",
-          "sha256": "5e0732365cb4c347099d3cf6acb259cfaf2c60281ae20b2ab5fbd14a33417bcd",
-          "competitions": 845
-        }
-      }
-    }
+    ]
   },
-  "uci_competition_url": null,
-  "uci_competition_id": null,
-  "uci_discipline": null
+  "uci_competition_url": "https://www.uci.org/competition-details/2026/ROA/76947",
+  "uci_competition_id": "76947",
+  "uci_discipline": "ROA"
 }

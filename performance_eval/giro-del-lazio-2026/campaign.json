@@ -24,108 +24,62 @@
   "organiser_stage_urls": {},
   "void_stages": [],
   "uci_match_evidence": {
-    "matcher": "uci_calendar 1.0.0",
-    "matched_at": "2026-09-07T16:16:07+00:00",
-    "decision": "operator_confirm",
-    "existing_url_conflict": false,
-    "auto_accept_rule": "exact date range AND name similarity >= 0.90 AND no other exact-date candidate at that bar",
+    "matcher": "uci_calendar",
+    "decision": "operator_confirmed",
+    "decided_at": "2026-09-07T16:57:21+00:00",
+    "decided_by": "operator",
     "score": 0.7429,
-    "fields_compared": {
-      "dates": {
-        "campaign": "2026-09-19..2026-09-19",
-        "uci": "2026-09-19..2026-09-19",
-        "uci_text": "19 Sep 2026",
-        "verdict": "exact"
-      },
-      "name": {
-        "campaign": "Giro del Lazio",
-        "uci": "Gran Premio del Lazio",
-        "campaign_normalised": "giro del lazio",
-        "uci_normalised": "gran premio del lazio",
-        "variant": "full~full",
-        "similarity": 0.7429,
-        "token_containment": 0.6667
-      },
-      "country": {
-        "campaign": null,
-        "uci": "ITA",
-        "verdict": "not_compared",
-        "note": "the FirstCycling calendar rows and campaign files carry no country, so the listing's country is recorded but not used as a discriminator"
-      }
-    },
     "candidate": {
       "competition_id": "78429",
-      "discipline": "ROA",
-      "url": "https://www.uci.org/competition-details/2026/ROA/78429",
-      "name": "Gran Premio del Lazio",
       "country": "ITA",
       "dates_text": "19 Sep 2026",
-      "start_date": "2026-09-19",
+      "discipline": "ROA",
       "end_date": "2026-09-19",
-      "listing": "upcoming"
+      "listing": "upcoming",
+      "name": "Gran Premio del Lazio",
+      "start_date": "2026-09-19",
+      "url": "https://www.uci.org/competition-details/2026/ROA/78429"
     },
     "alternates": [
       {
         "competition_id": "78430",
-        "discipline": "ROA",
-        "url": "https://www.uci.org/competition-details/2026/ROA/78430",
-        "name": "Flandrien 0.0 Classic",
         "country": "BEL",
         "dates_text": "19 Sep 2026",
-        "start_date": "2026-09-19",
+        "discipline": "ROA",
         "end_date": "2026-09-19",
         "listing": "upcoming",
+        "name": "Flandrien 0.0 Classic",
         "similarity": 0.1714,
-        "dates_verdict": "exact"
+        "start_date": "2026-09-19",
+        "url": "https://www.uci.org/competition-details/2026/ROA/78430"
       },
       {
         "competition_id": "78432",
-        "discipline": "ROA",
-        "url": "https://www.uci.org/competition-details/2026/ROA/78432",
-        "name": "Keizer der Juniores",
         "country": "BEL",
         "dates_text": "19 Sep - 20 Sep 2026",
-        "start_date": "2026-09-19",
+        "discipline": "ROA",
         "end_date": "2026-09-20",
         "listing": "upcoming",
+        "name": "Keizer der Juniores",
         "similarity": 0.4848,
-        "dates_verdict": "overlap"
+        "start_date": "2026-09-19",
+        "url": "https://www.uci.org/competition-details/2026/ROA/78432"
       },
       {
         "competition_id": "78421",
-        "discipline": "ROA",
-        "url": "https://www.uci.org/competition-details/2026/ROA/78421",
-        "name": "Skoda Tour de Luxembourg",
         "country": "LUX",
         "dates_text": "16 Sep - 20 Sep 2026",
-        "start_date": "2026-09-16",
+        "discipline": "ROA",
         "end_date": "2026-09-20",
         "listing": "upcoming",
+        "name": "Skoda Tour de Luxembourg",
         "similarity": 0.3684,
-        "dates_verdict": "overlap"
+        "start_date": "2026-09-16",
+        "url": "https://www.uci.org/competition-details/2026/ROA/78421"
       }
-    ],
-    "reasons": [
-      "name similarity 0.743 below 0.90 ('Giro del Lazio' vs 'Gran Premio del Lazio')"
-    ],
-    "snapshot": {
-      "captured_at": "2026-09-07T16:05:23+00:00",
-      "capturer": "uci_calendar 1.0.0",
-      "listings": {
-        "upcoming": {
-          "source_url": "https://www.uci.org/api/calendar/upcoming?discipline=ROA",
-          "sha256": "05074b45fbc5336e3c60b05c69b1e4677e77c3fd850ffe95c334a10b7b4c5556",
-          "competitions": 176
-        },
-        "past": {
-          "source_url": "https://www.uci.org/api/calendar/past?discipline=ROA",
-          "sha256": "5e0732365cb4c347099d3cf6acb259cfaf2c60281ae20b2ab5fbd14a33417bcd",
-          "competitions": 845
-        }
-      }
-    }
+    ]
   },
-  "uci_competition_url": null,
-  "uci_competition_id": null,
-  "uci_discipline": null
+  "uci_competition_url": "https://www.uci.org/competition-details/2026/ROA/78429",
+  "uci_competition_id": "78429",
+  "uci_discipline": "ROA"
 }
