@@ -22,9 +22,10 @@ agents/managed/
 
 | Resource | Name | Notes |
 |---|---|---|
-| Environment | `cycling-cloud` | `type: cloud`; `networking.limited` with `allowed_hosts` = `your-project-ref.supabase.co`, `eu-offering-api.kambicdn.com` (chip F: one Kambi host covers ubnl/ubuk/ubse/rsiuspa/rsiusil; `rivers` is dead); `allow_package_managers: true`; pip packages `uv`, `beautifulsoup4`, `requests` preinstalled. `networking` does **not** govern `web_fetch`. |
+| Environment | `cycling-cloud` | `type: cloud`; `networking.limited` with `allowed_hosts` = `your-project-ref.supabase.co`, `eu-offering-api.kambicdn.com`, `www.uci.org`, `uci.org` (chip F: one Kambi host covers ubnl/ubuk/ubse/rsiuspa/rsiusil; `rivers` is dead); `allow_package_managers: true`; pip packages `uv`, `beautifulsoup4`, `requests` preinstalled. `networking` does **not** govern `web_fetch`. |
 | Vault | `cycling-nightly` | one credential: `environment_variable` `SUPABASE_NIGHTLY_KEY`, `networking.limited` to the Supabase host, `injection_location: {header: true}`. The sandbox sees an opaque placeholder; the real key is substituted at egress, in headers only. |
-| Agent | `nightly-coordinator` | `claude-opus-5` effort high; agent toolset minus `web_fetch`/`web_search`; `multiagent` roster `[self, pcs-acquirer, day-key-reader, editorial, ops-triage]`; prompt = `prompts/nightly-coordinator.md` with `stage0.sh` inlined. |
+| Agent | `nightly-coordinator` | `claude-opus-5` effort high; agent toolset minus `web_fetch`/`web_search`; `multiagent` roster `[self, uci-acquirer, pcs-acquirer, day-key-reader, editorial, ops-triage]`; prompt = `prompts/nightly-coordinator.md` with `stage0.sh` inlined. |
+| Agent | `uci-acquirer` | effort low; `bash` + `read` + `glob` only (no write, no web tools). Runs the deterministic `python -m cycling_project.nightly.uci_acquire` for one campaign/unit and reports its JSON (`UCI_MANAGED_AGENT_BUILD_BRIEF.md`). Primary results provider since 2026-09-06. |
 | Agent | `pcs-acquirer` | effort low; `web_fetch` (`allowed_domains`: procyclingstats.com, www.procyclingstats.com, lavuelta.es, giroditalia.it — `letour.fr` is rejected by the API because the site blocks Anthropic's crawler, so Tour organiser pages need operator upload) + `write` + `read` only. Derived from the user's `agent_01EXAMPLE466A1EFA1DEDA25` "Procycling Stats Extractor" — fetching rules and DOM notes kept, parsing/JSON duties removed. The original agent is untouched (`PROTECTED_AGENT_IDS`). |
 | Agent | `day-key-reader` | no tools; system = `agents/skills/day-key-read/SKILL.md`. |
 | Agent | `editorial` | no tools; system = `agents/skills/editorial/SKILL.md`. |
@@ -117,6 +118,22 @@ first, then the smoke message — more expensive, exercises the deployment objec
 | (d) git | **PASS** — binary present, no repository under `/workspace`, no remote |
 
 Container facts: `uv` and `python3` 3.11 preinstalled (the pip fallback in stage 0 was not exercised); the sandbox user writing `/mnt/session/outputs` is `claude`. Artifacts: `performance_eval/runs/smoke_20260906T212323Z/` (transcript, session, threads, outputs).
+
+### UCI acquisition smoke (`--uci`)
+
+```bash
+uv run --group agents python agents/managed/smoke_test.py --uci --budget-usd 3
+```
+
+Mounts the standalone `cycling_project/nightly/uci_acquire.py` read-only at `/workspace/uci_acquire.py`
+(a `file` resource on the smoke session only — the scheduled deployment still mounts nothing), asks
+the coordinator to delegate one run to `uci-acquirer` for Vuelta 2026 stage 14 into
+`/mnt/session/outputs/uci/`, downloads the capture, and ingests it on the Mac against a temp copy
+of the live campaign: every validator runs and `results.csv` / `gc.csv` are diffed byte-wise against
+the committed archive (`analysis.uci` in `smoke_summary.json`). This proves container egress to
+`www.uci.org` under limited networking, event-code discovery from the raw HTML, verbatim JSON
+capture, and canonical parity — the ingest itself runs on the Mac because the release bundle is not
+uploaded yet.
 
 ## 5. Operations
 

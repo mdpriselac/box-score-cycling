@@ -20,7 +20,7 @@ cd /workspace/cycling && PYTHONUNBUFFERED=1 uv run python -m cycling_project.nig
 In a smoke session the task names a standalone script and an output directory instead:
 
 ```
-python3 /workspace/uci_acquire.py --competition-url <url> --unit <unit> --out <dir> --campaign-slug <slug>
+python3 /mnt/session/uploads/workspace/uci_acquire.py --competition-url <url> --unit <unit> --out <dir> --campaign-slug <slug>
 ```
 
 Run it exactly once (it is idempotent: a complete capture is reused without a request, and it

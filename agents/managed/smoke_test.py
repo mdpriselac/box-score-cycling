@@ -84,10 +84,10 @@ UCI_COMP_URL = "https://www.uci.org/competition-details/2026/ROA/76942"
 UCI_MODULE = PROJECT_ROOT / "cycling_project" / "nightly" / "uci_acquire.py"
 UCI_SMOKE_MESSAGE = f"""This is a SMOKE TEST of the UCI acquisition path, not a nightly run. Do NOT run the nightly procedure and do NOT run stage 0. Do exactly this, then write {OUTPUTS_DIR}/smoke_report.json and stop.
 
-The standalone acquisition script is mounted read-only at /workspace/uci_acquire.py (it needs only python3 and the `requests` package, which is preinstalled). Delegate ONE task to uci-acquirer with exactly this message:
+The standalone acquisition script is mounted read-only at /mnt/session/uploads/workspace/uci_acquire.py (file resources land under /mnt/session/uploads/<mount_path>; it needs only python3 and the `requests` package, which is preinstalled). Delegate ONE task to uci-acquirer with exactly this message:
 
   "Smoke test. Run exactly this command once and report its exit code and printed JSON verbatim:
-   python3 /workspace/uci_acquire.py --competition-url {UCI_COMP_URL} --unit stage_14 --out {OUTPUTS_DIR}/uci --campaign-slug vuelta-2026
+   python3 /mnt/session/uploads/workspace/uci_acquire.py --competition-url {UCI_COMP_URL} --unit stage_14 --out {OUTPUTS_DIR}/uci --campaign-slug vuelta-2026
    Then read {OUTPUTS_DIR}/uci/uci_raw.json and list the files it names. Do nothing else."
 
 Wait for its report. Then, yourself, with bash: `ls -la {OUTPUTS_DIR}/uci` and `python3 -c "import json; d=json.load(open('{OUTPUTS_DIR}/uci/uci_raw.json')); print(json.dumps({{k: (v.get('http_status'), v.get('row_count'), v.get('sha256')) for k, v in d['pages'].items()}}))"`. Also record `command -v git; git -C /workspace remote -v` and whether `uv` is on PATH.
@@ -250,7 +250,7 @@ def run_session(client, ids: dict, *, budget_usd: str, via_deployment: bool, tit
         with open(UCI_MODULE, "rb") as fh:
             uploaded = client.beta.files.upload(file=fh)
         resources = [{"type": "file", "file_id": uploaded.id, "mount_path": "/workspace/uci_acquire.py"}]
-        print(f"mounted {UCI_MODULE.name} as {uploaded.id} at /workspace/uci_acquire.py")
+        print(f"mounted {UCI_MODULE.name} as {uploaded.id} (mount_path /workspace/uci_acquire.py → lands at /mnt/session/uploads/workspace/uci_acquire.py)")
     if via_deployment:
         run = client.beta.deployments.run(ids["deployments"]["nightly"]["id"])
         if not run.session_id:
@@ -327,6 +327,8 @@ def analyse_uci_outputs(out_dir: Path) -> Dict[str, Any]:
     from cycling_project.nightly import uci_ingest as ui
     cap = out_dir / "outputs" / "uci"
     if not (cap / ua.INDEX_NAME).is_file():
+        cap = out_dir / "outputs"                      # files.list returns bare names: the capture lands flat
+    if not (cap / ua.INDEX_NAME).is_file():
         return {"error": f"no {ua.INDEX_NAME} among session outputs"}
     index = ua.read_index(cap)
     src = PROJECT_ROOT / "performance_eval" / "vuelta-2026"
@@ -360,7 +362,7 @@ def analyse_outputs(out_dir: Path) -> Dict[str, Any]:
     report: Dict[str, Any] = {}
     smoke = outputs / "smoke_report.json"
     report["smoke_report"] = json.loads(smoke.read_text()) if smoke.is_file() else None
-    if (outputs / "uci").is_dir():
+    if (outputs / "uci").is_dir() or (outputs / "uci_raw.json").is_file():
         report["uci"] = analyse_uci_outputs(out_dir)
         return report
     idx = outputs / "pcs_raw.json"
