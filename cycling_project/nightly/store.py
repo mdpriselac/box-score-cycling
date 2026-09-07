@@ -661,7 +661,10 @@ class SupabaseStore:
         """One bundle file; transparently reassembles a chunked upload."""
         dest = Path(dest)
         key = f"{tag}/{relpath}"
-        parts = sorted(o["key"] for o in self._list(RELEASES_BUCKET, key + PART_SUFFIX, recursive=False)
+        # The Storage list API takes a FOLDER prefix, not a filename prefix:
+        # list the parent folder and pick the <name>.partNNNN siblings.
+        folder = key.rsplit("/", 1)[0] if "/" in key else ""
+        parts = sorted(o["key"] for o in self._list(RELEASES_BUCKET, folder, recursive=False)
                        if o["key"].startswith(key + PART_SUFFIX))
         if not parts:
             return self._download(RELEASES_BUCKET, key, dest)

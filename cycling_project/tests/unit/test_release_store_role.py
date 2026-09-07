@@ -63,8 +63,14 @@ def test_release_files_over_the_cap_are_chunked_and_reassembled(monkeypatch, tmp
     manifest = {"files": {"big.bin": {}, "small.bin": {}}, "tag": "t"}
     s = st.SupabaseStore.__new__(st.SupabaseStore); s.role = "operator"
     objects = {}
-    monkeypatch.setattr(s, "_list", lambda bucket, prefix, recursive=True: [
-        {"key": k, "created_at": "", "size": len(v)} for k, v in objects.items() if k.startswith(prefix)])
+    def fake_list(bucket, prefix, recursive=True):      # the real API lists a FOLDER, never a name prefix
+        out = []
+        for k, v in objects.items():
+            folder = k.rsplit("/", 1)[0] if "/" in k else ""
+            if folder == prefix.rstrip("/") or (recursive and folder.startswith(prefix.rstrip("/"))):
+                out.append({"key": k, "created_at": "", "size": len(v)})
+        return out
+    monkeypatch.setattr(s, "_list", fake_list)
     monkeypatch.setattr(s, "_upload", lambda bucket, key, data, content_type=None: objects.__setitem__(key, data) or key)
     def fake_download(bucket, key, dest):
         dest = __import__("pathlib").Path(dest); dest.parent.mkdir(parents=True, exist_ok=True)
