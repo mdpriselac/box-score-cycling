@@ -180,10 +180,54 @@ Table editor → these tables are the queue; filters are saved per browser:
 | `editorial_drafts` | set `approved_by` on prose you accept | retros need an approved draft; previews may ship prose-less |
 
 Views: `run_status` (latest `finish` step per run) and `approvals_view`.
-Notifications: Database → Webhooks on `operator_tasks` INSERT → ntfy /
-Pushover (chip J). Later the `_frame/ops.html` page renders the same tables
-through the Supabase JS client with the publishable key and an operator
-login.
+
+## 6a. The inbox page (`_frame/ops.html`)
+
+The same six decisions, on one page, with the validation the dashboard cannot
+do — a day-key form that enforces the menu rules before it writes, and a
+confirm button that writes the `crosswalk` row and flips the proposal in one
+go.
+
+```bash
+uv run python netlify_site/build/build_ops_page.py     # --local for the local stack
+uv run python -m http.server 8411 --directory netlify_site
+open http://localhost:8411/_frame/ops.html
+```
+
+* **Local only.** The generated file is gitignored, listed in
+  `netlify_site/.assetsignore`, and the Worker 404s `/ops` and
+  `/_frame/ops.html`. `promote` also refuses to copy a file by that name back
+  into the site. It carries the project URL and the **publishable** key, and
+  the builder exits rather than embed a secret one.
+* **Two ways in.** Supabase Auth (email + password, or a magic link once the
+  project's Auth Site URL points at the page — while it is the localhost
+  placeholder, links bounce), or a role token from
+  `mint_keys.py operator`, kept in `sessionStorage` for that tab only.
+  Either way RLS decides what the page can do: `is_operator()` accepts both
+  the `operator` role claim and an Auth user in `public.operators`.
+* **Writes.** Exactly four: `operator_tasks` resolved, a human
+  `day_key_decisions` row (`evidence.key` holds the full item→weight mapping —
+  that is what the driver prices with; `day_key` is the argmax), a `crosswalk`
+  upsert plus the proposal's status, and an `approvals` row. Everything else
+  is read-only.
+* **Storage links go through the dashboard.** The `operator` Postgres role has
+  no grants on `storage.objects` (0003 grants those to `nightly_agent` and
+  `release_reader` only), so the page links a run's logs to the dashboard's
+  Storage browser rather than signing a URL. Reading the object itself needs
+  the secret key — `store.download_artifact` on the Mac.
+* **Fixtures.** `uv run python supabase/ops_fixtures.py` seeds the local stack
+  with one of everything (`--clear` removes it). It refuses any URL that is not
+  loopback.
+
+**Notifications: deliberately none** (user decision, 2026-09-07). The operator
+polls this page; its waiting count is the browser tab title and a header badge,
+so an open tab is the whole notification system. If that ever stops being
+enough, the hook is Database → Webhooks: a webhook on `operator_tasks` INSERT
+(and on `run_steps` INSERT filtered to `step = 'finish'` and
+`state in ('failed','waiting')`, since runs are append-only and never change
+state in place) POSTing to ntfy or Pushover would push the same events without
+any change to the schema or the page. Nothing in the current design depends on
+it.
 
 ## 7. Backups
 
@@ -196,4 +240,11 @@ login.
   committed. Nothing in Supabase is the only copy of anything after the
   weekly reconcile.
 * Schema is code: `supabase/migrations/`. Never edit tables in the dashboard;
-  add `0004_….sql` and `supabase db push`.
+  add the next numbered file and `supabase db push`.
+* **`0005_run_step_states.sql` is written but NOT pushed** (2026-09-07). It
+  widens the CHECK on `run_steps.state` to accept `waiting` and `failed` —
+  the two states `driver.py` actually finishes a run with. Until it is
+  pushed, those inserts are rejected (23514), the driver swallows the error
+  by design, and the run has no `finish` row at all, so `run_status` falls
+  back to `runs.state` and every waiting or failed night reads as `started`
+  forever — the runs the inbox exists to surface.

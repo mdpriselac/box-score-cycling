@@ -8,6 +8,7 @@
  *   /calendar[/YYYY/MM]          -> _frame/calendar/YYYY-MM.html
  *   /race/:slug/:year[/:page]    -> frame hub or the existing flat page
  *   /model                       -> index.html (the architecture article)
+ *   /ops, /_frame/ops.html       -> 404 (operator inbox, never public)
  * Legacy flat filenames (stage07.html, vuelta-gc.html, ...) 301-redirect to
  * their clean URLs, so old links keep working.
  *
@@ -20,6 +21,9 @@
 import siteIndex from "../site-index.json";
 
 const BASE_TAG = '<base href="/">';
+
+// Never served, under any URL that could reach it.
+const OPS_PATHS = new Set(["/ops", "/ops.html", "/_frame/ops", "/_frame/ops.html"]);
 
 const withBase = (res) =>
   new HTMLRewriter()
@@ -35,6 +39,13 @@ export default {
     const url = new URL(request.url);
     let path = url.pathname;
     if (path.length > 1 && path.endsWith("/")) path = path.slice(0, -1);
+
+    // The operator inbox (_frame/ops.html) is a local page against the Supabase
+    // control plane and is not public. .assetsignore already keeps it out of the
+    // deployed asset set; this is the second lock, so a stray copy still 404s.
+    if (OPS_PATHS.has(path.toLowerCase())) {
+      return new Response("Not found", { status: 404 });
+    }
 
     // Legacy flat filename -> clean URL.
     const alias = siteIndex.aliases[path];
