@@ -1,0 +1,83 @@
+{
+ "provider": "uci",
+ "acquirer": "uci_acquire 1.0.0",
+ "campaign": "gp-industria-artigianato-2026",
+ "unit": "race",
+ "competition": {
+  "url": "https://www.uci.org/competition-details/2026/ROA/78396",
+  "year": 2026,
+  "discipline": "ROA",
+  "id": "78396",
+  "name": "GP Industria & Artigianato",
+  "dates": "06 Sep 2026",
+  "country": "Italy",
+  "class": "1.Pro - 1 day - UCI ProSeries",
+  "discipline_code": "ROA"
+ },
+ "acquired_at": "2026-09-07T16:10:09+00:00",
+ "pages": {
+  "competition": {
+   "file": "competition.html",
+   "source_url": "https://www.uci.org/competition-details/2026/ROA/78396",
+   "fetched_at": "2026-09-07T16:10:09+00:00",
+   "http_status": 200,
+   "content_type": "text/html; charset=utf-8",
+   "bytes": 41493,
+   "sha256": "2f10dfa31c960efb343acba890786bcacabe70032fec43d18b82ec5c9997c55a",
+   "error": null
+  },
+  "stage": {
+   "available": false,
+   "reason": "not in the results accordion for this stage",
+   "required": true
+  },
+  "points": {
+   "available": false,
+   "reason": "not in the results accordion for this stage",
+   "required": false
+  },
+  "kom": {
+   "available": false,
+   "reason": "not in the results accordion for this stage",
+   "required": false
+  },
+  "youth": {
+   "available": false,
+   "reason": "not in the results accordion for this stage",
+   "required": false
+  },
+  "teams": {
+   "available": false,
+   "reason": "not in the results accordion for this stage",
+   "required": false
+  },
+  "gc": {
+   "file": "gc.json",
+   "source_url": "https://www.uci.org/api/calendar/results/D2EV376643?discipline=ROA&raceType=A&raceName=General%20Classification",
+   "fetched_at": "2026-09-07T16:10:09+00:00",
+   "http_status": 200,
+   "content_type": "application/json; charset=utf-8",
+   "bytes": 27238,
+   "sha256": "91a571fec38e4a0ba89042902b6de913fdd6508e5c5ec83c35c6f76e8320c02a",
+   "error": null,
+   "event_code": "D2EV376643",
+   "race_type": "A",
+   "race_name": "General Classification",
+   "row_count": 161,
+   "required": true
+  }
+ },
+ "complete": true,
+ "superseded": [],
+ "stage": {
+  "label": "Final Classification",
+  "schedule_date": "06 Sep 2026",
+  "race_type": "Individual Road Race",
+  "race_class": "1.Pro - 1 day - UCI ProSeries",
+  "category": "Men Elite",
+  "accordion_titles": [
+   "General Classification"
+  ]
+ },
+ "requests_made": 2
+}

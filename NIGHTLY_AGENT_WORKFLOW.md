@@ -320,10 +320,29 @@ identity layer does the bridging (below).
   Two providers are never blended into one classification; a UCI
   rejection stops the unit (exit 10), it does not fall through to PCS.
 - **Registry**: `campaign.json` carries `uci_competition_url`,
-  `uci_competition_id`, `uci_discipline`, set by an operator from the UCI
-  calendar (never guessed from race names). Start lists and route facts
-  keep their current paths — UCI is a results source only until tested for
-  more.
+  `uci_competition_id`, `uci_discipline`. `uci_calendar.py` (2026-09-07)
+  resolves them from the UCI road calendar — two requests
+  (`/api/calendar/upcoming` and `/api/calendar/past`, `?discipline=ROA`, no
+  token, no cookies) archive the whole season under
+  `cycling_project/tests/fixtures/uci/calendar/`, and the matcher compares
+  dates and normalised names (country is recorded but not compared: our
+  calendar rows carry none). A URL is written only on an **exact** date range
+  with name similarity ≥ 0.90 and no rival exact-date candidate at that bar;
+  anything else stays `null` and becomes a `uci_competition_confirm` operator
+  task with the candidate, the score and the reason. A set URL is never
+  overwritten. `registry sync` applies the same matcher at creation
+  (`--no-uci-match` opts out); `uci_calendar resolve` fills existing
+  campaigns; every campaign keeps a `uci_match_evidence` block. Start lists
+  and route facts keep their current paths — UCI is a results source only
+  until tested for more.
+- **One-day races** (verified 2026-09-07 on GP Industria & Artigianato,
+  competition 78396): the accordion holds one entry labelled `Final
+  Classification` whose single classification is titled `General
+  Classification` — no `Stage Classification` exists, so `required_kinds()`
+  asks only for `gc` on a one-day unit, and `one_day` (the registry's unit
+  name) is a synonym for `race`. `uci_ingest` is still stage-race shaped: a
+  one-day capture is acquired but refuses ingest with
+  `missing_required: ["stage"]` until that path is built.
 - **PCS fallback thread** (`pcs-acquirer`, `web_fetch` + `write`): saves
   each fetched page verbatim under `results/<unit>/pcs/` with
   `pcs_raw.json`; `pcs_ingest.py` parses it with the verified DOM map

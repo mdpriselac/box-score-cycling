@@ -76,16 +76,27 @@ INDEX_NAME = "uci_raw.json"
 COMPETITION_FILE = "competition.html"
 EXIT_OK, EXIT_INCOMPLETE, EXIT_FAILED = 0, 10, 20
 
-# kind -> (exact titles accepted in the results accordion, required for settling a stage)
+# kind -> (exact titles accepted in the results accordion, required for settling a STAGE)
+# One-day races publish a single classification; see ONE_DAY_UNITS below.
 CLASSIFICATIONS: Dict[str, Tuple[Tuple[str, ...], bool]] = {
     "stage": (("Stage Classification",), True),
-    "gc": (("Stage General Classification", "General Classification"), True),
+    "gc": (("Stage General Classification", "General Classification", "Final Classification"), True),
     "points": (("Overall Points Classification",), False),
     "kom": (("Overall Mountain Classification", "Overall Mountains Classification"), False),
     "youth": (("Overall Youth Classification",), False),
     "teams": (("Overall Team Classification", "Overall Teams Classification", "Team Classification"), False),
 }
 SUPPORTED_RACE_TYPES = ("A",)          # observed on every road classification; anything else is rejected
+
+# A one-day race has exactly one accordion entry and one classification inside
+# it — verified 2026-09-07 on GP Industria & Artigianato (1.Pro, competition
+# 78396): accordion label "Final Classification", the single result titled
+# "General Classification", raceType "A", 161 rows, winner PIDCOCK Thomas
+# 04:33:08.  So a one-day capture is complete with that one document; demanding
+# a separate "Stage Classification" (the stage-race rule) would fail every
+# one-day race.  ``one_day`` is the unit name the registry gives them and
+# ``race`` the name uci_acquire's CLI has always used; both mean the same thing.
+ONE_DAY_UNITS = ("race", "one_day")
 
 
 class AcquireError(RuntimeError):
@@ -127,13 +138,24 @@ def extract_data_props(page_html: str, component: str = MODULE_NAME) -> Dict[str
 
 
 def stage_label_for(unit: str) -> str:
-    """``stage_14`` → ``Stage 14``; ``race`` → ``race`` (one-day: the single accordion entry)."""
+    """``stage_14`` → ``Stage 14``; ``race``/``one_day`` → ``race`` (the single accordion entry)."""
     m = re.fullmatch(r"stage_(\d+)", unit or "")
     if m:
         return f"Stage {int(m.group(1))}"
-    if unit == "race":
+    if unit in ONE_DAY_UNITS:
         return "race"
-    raise AcquireError(f"unit must be stage_NN or race, not {unit!r}")
+    raise AcquireError(f"unit must be stage_NN, race or one_day, not {unit!r}")
+
+
+def is_one_day_unit(unit: Optional[str]) -> bool:
+    return (unit or "") in ONE_DAY_UNITS
+
+
+def required_kinds(unit: Optional[str]) -> Tuple[str, ...]:
+    """Which classifications must be present for the capture to count as complete."""
+    if is_one_day_unit(unit):
+        return ("gc",)
+    return tuple(k for k, (_titles, req) in CLASSIFICATIONS.items() if req)
 
 
 def _norm_label(s: str) -> str:
@@ -294,9 +316,10 @@ def read_index(uci_dir: Path) -> Optional[Dict[str, Any]]:
         return None
 
 
-def capture_is_complete(index: Optional[Dict[str, Any]], required: Tuple[str, ...] = ("stage", "gc")) -> bool:
+def capture_is_complete(index: Optional[Dict[str, Any]], required: Optional[Tuple[str, ...]] = None) -> bool:
     if not index or index.get("provider") != PROVIDER:
         return False
+    required = required if required is not None else required_kinds(index.get("unit"))
     pages = index.get("pages") or {}
     if "competition" not in pages:
         return False
@@ -418,7 +441,7 @@ def acquire(*, competition_url: str, unit: str, out_dir: Path, campaign_slug: Op
         _write_index(out_dir, index)
 
     required_ok = all((pages.get(k) or {}).get("http_status") == 200 and not (pages.get(k) or {}).get("error")
-                      for k, (_t, req) in CLASSIFICATIONS.items() if req and (kinds is None or k in kinds))
+                      for k in required_kinds(unit) if kinds is None or k in kinds)
     index["complete"] = required_ok
     index["requests_made"] = f.requests_made
     _write_index(out_dir, index)
@@ -445,7 +468,7 @@ def summary(index: Dict[str, Any]) -> Dict[str, Any]:
 def main(argv: Optional[List[str]] = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--competition-url", required=True)
-    ap.add_argument("--unit", required=True, help="stage_NN or race")
+    ap.add_argument("--unit", required=True, help="stage_NN, race or one_day")
     ap.add_argument("--campaign", type=Path, default=None, help="campaign dir; capture goes to results/<unit>/uci/")
     ap.add_argument("--campaign-slug", default=None)
     ap.add_argument("--out", type=Path, default=None, help="explicit capture directory (overrides --campaign)")

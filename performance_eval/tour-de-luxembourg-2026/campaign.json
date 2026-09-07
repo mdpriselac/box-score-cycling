@@ -51,5 +51,110 @@
   "pcs_slug": "tour-de-luxembourg",
   "organiser_stage_urls": {},
   "void_stages": [],
-  "stages_provisional": true
+  "stages_provisional": true,
+  "uci_match_evidence": {
+    "matcher": "uci_calendar 1.0.0",
+    "matched_at": "2026-09-07T16:16:07+00:00",
+    "decision": "operator_confirm",
+    "existing_url_conflict": false,
+    "auto_accept_rule": "exact date range AND name similarity >= 0.90 AND no other exact-date candidate at that bar",
+    "score": 0.8571,
+    "fields_compared": {
+      "dates": {
+        "campaign": "2026-09-16..2026-09-20",
+        "uci": "2026-09-16..2026-09-20",
+        "uci_text": "16 Sep - 20 Sep 2026",
+        "verdict": "exact"
+      },
+      "name": {
+        "campaign": "Tour de Luxembourg",
+        "uci": "Skoda Tour de Luxembourg",
+        "campaign_normalised": "tour de luxembourg",
+        "uci_normalised": "skoda tour de luxembourg",
+        "variant": "full~full",
+        "similarity": 0.8571,
+        "token_containment": 1.0
+      },
+      "country": {
+        "campaign": null,
+        "uci": "LUX",
+        "verdict": "not_compared",
+        "note": "the FirstCycling calendar rows and campaign files carry no country, so the listing's country is recorded but not used as a discriminator"
+      }
+    },
+    "candidate": {
+      "competition_id": "78421",
+      "discipline": "ROA",
+      "url": "https://www.uci.org/competition-details/2026/ROA/78421",
+      "name": "Skoda Tour de Luxembourg",
+      "country": "LUX",
+      "dates_text": "16 Sep - 20 Sep 2026",
+      "start_date": "2026-09-16",
+      "end_date": "2026-09-20",
+      "listing": "upcoming"
+    },
+    "alternates": [
+      {
+        "competition_id": "78420",
+        "discipline": "ROA",
+        "url": "https://www.uci.org/competition-details/2026/ROA/78420",
+        "name": "Okolo Slovenska / Tour de Slovaquie",
+        "country": "SVK",
+        "dates_text": "16 Sep - 20 Sep 2026",
+        "start_date": "2026-09-16",
+        "end_date": "2026-09-20",
+        "listing": "upcoming",
+        "similarity": 0.4314,
+        "dates_verdict": "exact"
+      },
+      {
+        "competition_id": "78422",
+        "discipline": "ROA",
+        "url": "https://www.uci.org/competition-details/2026/ROA/78422",
+        "name": "Tour de Gatineau",
+        "country": "CAN",
+        "dates_text": "17 Sep 2026",
+        "start_date": "2026-09-17",
+        "end_date": "2026-09-17",
+        "listing": "upcoming",
+        "similarity": 0.5294,
+        "dates_verdict": "overlap"
+      },
+      {
+        "competition_id": "78428",
+        "discipline": "ROA",
+        "url": "https://www.uci.org/competition-details/2026/ROA/78428",
+        "name": "Tour of Huangshan",
+        "country": "CHN",
+        "dates_text": "18 Sep - 20 Sep 2026",
+        "start_date": "2026-09-18",
+        "end_date": "2026-09-20",
+        "listing": "upcoming",
+        "similarity": 0.4571,
+        "dates_verdict": "overlap"
+      }
+    ],
+    "reasons": [
+      "name similarity 0.857 below 0.90 ('Tour de Luxembourg' vs 'Skoda Tour de Luxembourg')"
+    ],
+    "snapshot": {
+      "captured_at": "2026-09-07T16:05:23+00:00",
+      "capturer": "uci_calendar 1.0.0",
+      "listings": {
+        "upcoming": {
+          "source_url": "https://www.uci.org/api/calendar/upcoming?discipline=ROA",
+          "sha256": "05074b45fbc5336e3c60b05c69b1e4677e77c3fd850ffe95c334a10b7b4c5556",
+          "competitions": 176
+        },
+        "past": {
+          "source_url": "https://www.uci.org/api/calendar/past?discipline=ROA",
+          "sha256": "5e0732365cb4c347099d3cf6acb259cfaf2c60281ae20b2ab5fbd14a33417bcd",
+          "competitions": 845
+        }
+      }
+    }
+  },
+  "uci_competition_url": null,
+  "uci_competition_id": null,
+  "uci_discipline": null
 }

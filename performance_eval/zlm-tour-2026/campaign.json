@@ -51,5 +51,110 @@
   "pcs_slug": "zlm-tour",
   "organiser_stage_urls": {},
   "void_stages": [],
-  "stages_provisional": true
+  "stages_provisional": true,
+  "uci_competition_url": "https://www.uci.org/competition-details/2026/ROA/78380",
+  "uci_competition_id": "78380",
+  "uci_discipline": "ROA",
+  "uci_match_evidence": {
+    "matcher": "uci_calendar 1.0.0",
+    "matched_at": "2026-09-07T16:16:07+00:00",
+    "decision": "auto_accepted",
+    "existing_url_conflict": false,
+    "auto_accept_rule": "exact date range AND name similarity >= 0.90 AND no other exact-date candidate at that bar",
+    "score": 1.0,
+    "fields_compared": {
+      "dates": {
+        "campaign": "2026-09-02..2026-09-06",
+        "uci": "2026-09-02..2026-09-06",
+        "uci_text": "02 Sep - 06 Sep 2026",
+        "verdict": "exact"
+      },
+      "name": {
+        "campaign": "ZLM Tour",
+        "uci": "ZLM Tour",
+        "campaign_normalised": "zlm tour",
+        "uci_normalised": "zlm tour",
+        "variant": "full~full",
+        "similarity": 1.0,
+        "token_containment": 1.0
+      },
+      "country": {
+        "campaign": null,
+        "uci": "NED",
+        "verdict": "not_compared",
+        "note": "the FirstCycling calendar rows and campaign files carry no country, so the listing's country is recorded but not used as a discriminator"
+      }
+    },
+    "candidate": {
+      "competition_id": "78380",
+      "discipline": "ROA",
+      "url": "https://www.uci.org/competition-details/2026/ROA/78380",
+      "name": "ZLM Tour",
+      "country": "NED",
+      "dates_text": "02 Sep - 06 Sep 2026",
+      "start_date": "2026-09-02",
+      "end_date": "2026-09-06",
+      "listing": "past"
+    },
+    "alternates": [
+      {
+        "competition_id": "78379",
+        "discipline": "ROA",
+        "url": "https://www.uci.org/competition-details/2026/ROA/78379",
+        "name": "Lloyds Tour of Britain Men",
+        "country": "GBR",
+        "dates_text": "02 Sep - 06 Sep 2026",
+        "start_date": "2026-09-02",
+        "end_date": "2026-09-06",
+        "listing": "past",
+        "similarity": 0.3529,
+        "dates_verdict": "exact"
+      },
+      {
+        "competition_id": "78459",
+        "discipline": "ROA",
+        "url": "https://www.uci.org/competition-details/2026/ROA/78459",
+        "name": "Volta Ciclística de Santa Catarina",
+        "country": "BRA",
+        "dates_text": "02 Sep - 06 Sep 2026",
+        "start_date": "2026-09-02",
+        "end_date": "2026-09-06",
+        "listing": "past",
+        "similarity": 0.1905,
+        "dates_verdict": "exact"
+      },
+      {
+        "competition_id": "78334",
+        "discipline": "ROA",
+        "url": "https://www.uci.org/competition-details/2026/ROA/78334",
+        "name": "Grand Prix Chantal Biya",
+        "country": "CMR",
+        "dates_text": "02 Sep - 06 Sep 2026",
+        "start_date": "2026-09-02",
+        "end_date": "2026-09-06",
+        "listing": "past",
+        "similarity": 0.129,
+        "dates_verdict": "exact"
+      }
+    ],
+    "reasons": [
+      "exact date range and name similarity 1.000 (variant full~full) — unique at the bar"
+    ],
+    "snapshot": {
+      "captured_at": "2026-09-07T16:05:23+00:00",
+      "capturer": "uci_calendar 1.0.0",
+      "listings": {
+        "upcoming": {
+          "source_url": "https://www.uci.org/api/calendar/upcoming?discipline=ROA",
+          "sha256": "05074b45fbc5336e3c60b05c69b1e4677e77c3fd850ffe95c334a10b7b4c5556",
+          "competitions": 176
+        },
+        "past": {
+          "source_url": "https://www.uci.org/api/calendar/past?discipline=ROA",
+          "sha256": "5e0732365cb4c347099d3cf6acb259cfaf2c60281ae20b2ab5fbd14a33417bcd",
+          "competitions": 845
+        }
+      }
+    }
+  }
 }

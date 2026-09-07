@@ -22,5 +22,110 @@
   "kambi_event_ids": {},
   "pcs_slug": "coppa-sabatini",
   "organiser_stage_urls": {},
-  "void_stages": []
+  "void_stages": [],
+  "uci_competition_url": "https://www.uci.org/competition-details/2026/ROA/78403",
+  "uci_competition_id": "78403",
+  "uci_discipline": "ROA",
+  "uci_match_evidence": {
+    "matcher": "uci_calendar 1.0.0",
+    "matched_at": "2026-09-07T16:16:07+00:00",
+    "decision": "auto_accepted",
+    "existing_url_conflict": false,
+    "auto_accept_rule": "exact date range AND name similarity >= 0.90 AND no other exact-date candidate at that bar",
+    "score": 1.0,
+    "fields_compared": {
+      "dates": {
+        "campaign": "2026-09-10..2026-09-10",
+        "uci": "2026-09-10..2026-09-10",
+        "uci_text": "10 Sep 2026",
+        "verdict": "exact"
+      },
+      "name": {
+        "campaign": "Coppa Sabatini",
+        "uci": "Gran Premio città di Peccioli - Coppa Sabatini",
+        "campaign_normalised": "coppa sabatini",
+        "uci_normalised": "gran premio citta di peccioli coppa sabatini",
+        "variant": "full~tail",
+        "similarity": 1.0,
+        "token_containment": 1.0
+      },
+      "country": {
+        "campaign": null,
+        "uci": "ITA",
+        "verdict": "not_compared",
+        "note": "the FirstCycling calendar rows and campaign files carry no country, so the listing's country is recorded but not used as a discriminator"
+      }
+    },
+    "candidate": {
+      "competition_id": "78403",
+      "discipline": "ROA",
+      "url": "https://www.uci.org/competition-details/2026/ROA/78403",
+      "name": "Gran Premio città di Peccioli - Coppa Sabatini",
+      "country": "ITA",
+      "dates_text": "10 Sep 2026",
+      "start_date": "2026-09-10",
+      "end_date": "2026-09-10",
+      "listing": "upcoming"
+    },
+    "alternates": [
+      {
+        "competition_id": "78384",
+        "discipline": "ROA",
+        "url": "https://www.uci.org/competition-details/2026/ROA/78384",
+        "name": "Giro Della Lunigiana",
+        "country": "ITA",
+        "dates_text": "09 Sep - 12 Sep 2026",
+        "start_date": "2026-09-09",
+        "end_date": "2026-09-12",
+        "listing": "upcoming",
+        "similarity": 0.2941,
+        "dates_verdict": "overlap"
+      },
+      {
+        "competition_id": "78404",
+        "discipline": "ROA",
+        "url": "https://www.uci.org/competition-details/2026/ROA/78404",
+        "name": "Tour d'Arménie",
+        "country": "ARM",
+        "dates_text": "10 Sep - 13 Sep 2026",
+        "start_date": "2026-09-10",
+        "end_date": "2026-09-13",
+        "listing": "upcoming",
+        "similarity": 0.2857,
+        "dates_verdict": "overlap"
+      },
+      {
+        "competition_id": "78402",
+        "discipline": "ROA",
+        "url": "https://www.uci.org/competition-details/2026/ROA/78402",
+        "name": "Tour of Romania",
+        "country": "ROU",
+        "dates_text": "09 Sep - 13 Sep 2026",
+        "start_date": "2026-09-09",
+        "end_date": "2026-09-13",
+        "listing": "upcoming",
+        "similarity": 0.2759,
+        "dates_verdict": "overlap"
+      }
+    ],
+    "reasons": [
+      "exact date range and name similarity 1.000 (variant full~tail) — unique at the bar"
+    ],
+    "snapshot": {
+      "captured_at": "2026-09-07T16:05:23+00:00",
+      "capturer": "uci_calendar 1.0.0",
+      "listings": {
+        "upcoming": {
+          "source_url": "https://www.uci.org/api/calendar/upcoming?discipline=ROA",
+          "sha256": "05074b45fbc5336e3c60b05c69b1e4677e77c3fd850ffe95c334a10b7b4c5556",
+          "competitions": 176
+        },
+        "past": {
+          "source_url": "https://www.uci.org/api/calendar/past?discipline=ROA",
+          "sha256": "5e0732365cb4c347099d3cf6acb259cfaf2c60281ae20b2ab5fbd14a33417bcd",
+          "competitions": 845
+        }
+      }
+    }
+  }
 }

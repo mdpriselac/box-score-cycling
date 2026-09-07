@@ -280,6 +280,58 @@ def _stage_rows(config: Dict[str, Any]) -> List[Dict[str, Any]]:
     return rows
 
 
+def _write_campaign_json(path: Path, config: Dict[str, Any], existing: Optional[Dict[str, Any]]) -> None:
+    """Write a campaign file, keeping a hand-formatted one byte-for-byte.
+
+    The Tour and Vuelta files are written by hand (compact stage rows); a plain
+    re-dump would reformat hundreds of lines nobody touched.
+    """
+    try:
+        from cycling_project.nightly.uci_calendar import render_campaign
+    except ImportError:  # pragma: no cover
+        _write_json(path, config)
+        return
+    original_text = path.read_text() if path.exists() else None
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_suffix(path.suffix + ".tmp")
+    tmp.write_text(render_campaign(original_text, existing or {}, config))
+    tmp.replace(path)
+
+
+def _uci_matcher(snapshot_dir: Optional[Path]) -> Optional[Any]:
+    """``(entries, provenance)`` from the archived UCI calendar, or None.
+
+    Kept optional on purpose: a missing or unreadable snapshot must never stop
+    a registry sync — the campaign is simply created with a null
+    ``uci_competition_url``, exactly as before, and
+    ``uci_calendar resolve`` can fill it in later.
+    """
+    try:
+        from cycling_project.nightly import uci_calendar
+    except ImportError:  # pragma: no cover - the module ships with the package
+        return None
+    try:
+        entries, index = uci_calendar.load_snapshot(snapshot_dir or uci_calendar.SNAPSHOT_DIR)
+    except Exception as exc:  # noqa: BLE001 - any snapshot problem is non-fatal here
+        logger.info("no usable UCI calendar snapshot (%s); campaigns keep uci_competition_url = null", exc)
+        return None
+    return uci_calendar, entries, uci_calendar.snapshot_provenance(index)
+
+
+def _apply_uci_match(config: Dict[str, Any], matcher: Optional[Any]) -> Dict[str, Any]:
+    """Fill the UCI fields at creation when the calendar match is exact.
+
+    Same matcher, same evidence and the same refusal to guess as
+    ``uci_calendar resolve``: only an exact date range with name similarity at
+    or above the bar writes a URL; anything else leaves it null and records why.
+    """
+    if not matcher:
+        return config
+    uci_calendar, entries, provenance = matcher
+    match = uci_calendar.match_campaign(config, entries)
+    return uci_calendar.apply_match(config, match, provenance)
+
+
 def _resolve_store(store: Any, mode: str) -> Any:
     if store is not None or mode == "none":
         return store
@@ -299,6 +351,8 @@ def sync(
     dry_run: bool = False,
     store: Any = None,
     store_mode: str = "auto",
+    uci_snapshot: Optional[Path] = None,
+    match_uci: bool = True,
 ) -> Dict[str, Any]:
     """Create/complete campaign files for races intersecting the horizon."""
     performance_eval_dir = Path(performance_eval_dir)
@@ -320,9 +374,11 @@ def sync(
                 campaign_file, campaign
             )
 
+    matcher = _uci_matcher(uci_snapshot) if match_uci else None
     synced = []
     campaign_rows = []
     stage_rows = []
+    uci_resolved = 0
     for row in sorted(eligible, key=lambda value: (value["start_date"], value["name"])):
         proposed = campaign_from_calendar(row)
         known = existing_campaigns.get((str(row["fc_race_id"]), int(row["year"])))
@@ -335,9 +391,14 @@ def sync(
         config = merge_new_information(existing, proposed)
         if not existing and config.get("is_stage_race"):
             config["stages_provisional"] = True   # one stage per calendar day until PCS supplies the schedule
+        config = _apply_uci_match(config, matcher)
+        if config.get("uci_competition_url") and not (existing.get("uci_competition_url") if existing else None):
+            uci_resolved += 1
         if not dry_run and config != existing:
-            _write_json(path, config)
-        synced.append({"slug": config["slug"], "path": str(path), "changed": config != existing})
+            _write_campaign_json(path, config, existing)
+        synced.append({"slug": config["slug"], "path": str(path), "changed": config != existing,
+                       "uci_competition_url": config.get("uci_competition_url"),
+                       "uci_decision": (config.get("uci_match_evidence") or {}).get("decision")})
         campaign_rows.append(_campaign_row(config))
         stage_rows.extend(_stage_rows(config))
 
@@ -353,6 +414,8 @@ def sync(
         "horizon_end": horizon_end.isoformat(),
         "calendar_rows": len(calendar_rows),
         "campaigns": synced,
+        "uci_matched": matcher is not None,
+        "uci_urls_resolved": uci_resolved,
         "store_synced": resolved_store is not None,
         "dry_run": dry_run,
     }
@@ -366,6 +429,10 @@ def build_parser() -> argparse.ArgumentParser:
     sync_parser.add_argument("--dry-run", action="store_true")
     sync_parser.add_argument("--now", type=date.fromisoformat, default=None)
     sync_parser.add_argument("--store", choices=("auto", "hosted", "none"), default="auto")
+    sync_parser.add_argument("--uci-snapshot", type=Path, default=None,
+                             help="UCI calendar capture directory (default: the archived snapshot)")
+    sync_parser.add_argument("--no-uci-match", action="store_true",
+                             help="do not consult the UCI calendar; campaigns keep uci_competition_url = null")
     sync_parser.add_argument(
         "--performance-eval", type=Path,
         default=Path(__file__).resolve().parents[2] / "performance_eval",
@@ -379,6 +446,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         result = sync(
             args.performance_eval, horizon=args.horizon, now=args.now,
             dry_run=args.dry_run, store_mode=args.store,
+            uci_snapshot=args.uci_snapshot, match_uci=not args.no_uci_match,
         )
         print(json.dumps(result, indent=2, ensure_ascii=False))
     return 0
