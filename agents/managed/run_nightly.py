@@ -20,6 +20,7 @@ HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 import provision as pv          # noqa: E402
 import smoke_test as st         # noqa: E402
+from cycling_project.nightly.secrets import load_local_env  # noqa: E402
 
 RUNS_DIR = HERE.parent.parent / "performance_eval" / "runs"
 
@@ -32,6 +33,10 @@ def main(argv=None) -> int:
     ap.add_argument("--yes", action="store_true", help="skip the paid-run confirmation")
     args = ap.parse_args(argv)
 
+    # Match provision.py: load the cycling-nightly credential before creating
+    # the client.  Otherwise --api-key may inherit an unrelated ambient key
+    # and make the correct workspace's resources appear to be missing.
+    load_local_env(require=("ANTHROPIC_API_KEY",) if args.api_key else ())
     ids = json.loads(pv.IDS_PATH.read_text())
     client = pv.make_client(use_api_key=args.api_key, workspace_id=ids.get("workspace_id"))
     depl = ids["deployments"]["nightly"]
@@ -40,7 +45,13 @@ def main(argv=None) -> int:
     if args.session_id:
         sid = args.session_id
     else:
-        d = client.beta.deployments.retrieve(depl["id"])
+        # The managed-agents API can return 404 from the direct retrieve
+        # endpoint even when the deployment is visible in the workspace-scoped
+        # collection.  Resolve it from that collection, which is also what the
+        # provisioner uses for idempotent updates.
+        d = pv._find(client.beta.deployments.list(limit=100), "id", depl["id"])
+        if d is None:
+            raise SystemExit(f"deployment not found in workspace {ws}: {depl['id']}")
         print(f"deployment {d.name} ({depl['id']}) status={getattr(d, 'status', '?')} "
               f"agent={d.agent.id} v{d.agent.version} env={d.environment_id}")
         if not args.yes:
