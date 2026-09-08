@@ -434,8 +434,11 @@ def test_driver_settle_dry_run_prefers_uci_and_uploads_capture(campaign, tmp_pat
     assert out["acquire"]["provider"] == "uci" and out["acquire"]["fallback_reason"] is None and out["acquire"]["ran"] is False
     assert out["ingest"]["provider"] == "uci"
     assert any(k.endswith("results/stage_14/uci/stage.json") for k in out["upload"]["artifacts"])
-    record = json.loads(Path(out["record"]).read_text())
-    assert record["provider"] == "uci"
+    acquire = next(s for s in _ledger(tmp_path, "run_steps") if s["step"] == "acquire")
+    assert acquire["detail"]["provider"] == "uci" and acquire["detail"]["fallback_reason"] is None
+    assert {r["kind"] for r in _ledger(tmp_path, "pcs_raw")} == {"uci:competition", "uci:stage", "uci:gc"}
+    assert out["record"] is None
+    assert not (campaign / "runs" / "2026-09-05").exists()
 
 
 def test_driver_falls_back_to_pcs_with_a_recorded_reason(campaign, tmp_path, capsys):

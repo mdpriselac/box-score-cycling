@@ -1,7 +1,7 @@
 # The single scheduled deployment (NIGHTLY_AGENT_WORKFLOW.md §1 "Decisions", §2.3).
 #
 # One nightly tick at 19:45 UTC (execution jitter ≤ 9 min); one session; the coordinator fans out
-# one self thread per due campaign. Budget is copied onto every fired session ($12.00 = "1200" cents).
+# one self thread per due campaign. Budget is copied onto every fired session ($25.00 = "2500" cents).
 # The deployment is created PAUSED and is never unpaused by provision.py — unpausing is the user's
 # step (README §5). Manual runs work while paused (`ant beta:deployments run`).
 #

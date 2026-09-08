@@ -343,7 +343,7 @@ def test_live_agent_appends_runs_steps_and_ledger(live):
     assert run["state"] == "started" and run["host"] == "cloud"
     live.agent.add_step(rid, "acquire", "ok", duration_ms=12, detail={"rows": 3})
     live.agent.insert_pcs_raw(rid, live.campaign, "stage_01", "results", "https://www.procyclingstats.com/x",
-                              "<html>verbatim</html>", ingest_verdict="ok")
+                              "<html>verbatim</html>", ingest_verdict="accepted")
     pred = live.agent.insert_prediction(rid, live.campaign, "stage_01", "preview", day_key="res_2",
                                         config={"scenario": "test"}, board_key=None)
     assert pred["day_key"] == "res_2"
@@ -565,6 +565,23 @@ def _allowed_run_step_states() -> set[str]:
         for match in re.finditer(r"state\s+in\s*\(([^)]*)\)", path.read_text(), re.I):
             allowed = set(re.findall(r"'([^']+)'", match.group(1)))
     return allowed
+
+
+def _allowed_ingest_verdicts() -> set[str]:
+    """The effective CHECK on pcs_raw.ingest_verdict; the last definition wins."""
+    migrations = sorted((Path(__file__).resolve().parents[3] / "supabase" / "migrations").glob("*.sql"))
+    allowed: set[str] = set()
+    for path in migrations:
+        for match in re.finditer(r"ingest_verdict\s+in\s*\(([^)]*)\)", path.read_text(), re.I):
+            allowed = set(re.findall(r"'([^']+)'", match.group(1)))
+    return allowed
+
+
+def test_the_schema_accepts_ingest_report_verdicts_and_legacy_ok():
+    """Successful PCS/UCI provenance must not disappear on a CHECK violation."""
+    allowed = _allowed_ingest_verdicts()
+    assert {"accepted", "rejected"} <= allowed
+    assert {"pending", "partial", "ok"} <= allowed
 
 
 def test_the_schema_accepts_every_state_the_driver_records():

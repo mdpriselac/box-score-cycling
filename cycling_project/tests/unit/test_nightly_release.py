@@ -385,6 +385,19 @@ def test_bootstrap_hydrates_from_fake_store_and_fails_closed(fake_project, tmp_p
         bootstrap(tmp_path / "dest3", store, skip_uv_sync=True)
 
 
+def test_bootstrap_refuses_concurrent_owner_and_recovers_after_release(tmp_path):
+    dest = tmp_path / "dest"
+    dest.mkdir()
+    with bootstrap_mod.bootstrap_lock(dest):
+        with pytest.raises(BootstrapError, match="already running.*poll"):
+            with bootstrap_mod.bootstrap_lock(dest):
+                pass
+    # Kernel lock release makes the path immediately reusable; the lock file
+    # itself is deliberately persistent and is not a stale-lock sentinel.
+    with bootstrap_mod.bootstrap_lock(dest):
+        assert (dest / bootstrap_mod.RELEASE_DIR / bootstrap_mod.LOCK_NAME).is_file()
+
+
 def test_fake_store_release_rows_and_artifact_listing(tmp_path):
     store = FakeStore(tmp_path / "store")
     store.insert_release({"tag": "data-2026-08-29", "manifest": {}})

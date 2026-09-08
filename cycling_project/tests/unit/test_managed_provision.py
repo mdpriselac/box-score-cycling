@@ -52,6 +52,16 @@ def test_stage0_is_inlined_and_hands_over_to_bootstrap(pv, env):
     assert "storage/v1/object/authenticated/releases/" in coord
     assert "Authorization: Bearer ${SUPABASE_NIGHTLY_KEY}" in coord      # header-only use
     assert "git" in coord and "never run `git`" in coord
+    assert "fcntl.LOCK_EX | fcntl.LOCK_NB" in coord
+    assert "poll that original process" in coord
+
+
+def test_coordinator_plans_per_campaign_without_fixed_sleeps(pv, env):
+    coord = pv.plan(env)["agents"]["nightly-coordinator"]["system"]
+    assert "there is no global planning command" in coord
+    assert "plan --campaign <slug> --now" in coord
+    assert "plan --now <current UTC ISO timestamp>" not in coord
+    assert "never use a fixed `sleep`" in coord
 
 
 def test_agent_order_leaves_first_and_roster_resolves(pv, env):

@@ -10,6 +10,26 @@ DEST="${NIGHTLY_DEST:-/workspace/cycling}"
 : "${SUPABASE_URL:?}" "${SUPABASE_PUBLISHABLE_KEY:?}" "${SUPABASE_NIGHTLY_KEY:?}"
 auth=(-H "apikey: ${SUPABASE_PUBLISHABLE_KEY}" -H "Authorization: Bearer ${SUPABASE_NIGHTLY_KEY}")
 mkdir -p "$DEST/.release"
+# The coordinator may lose its tool connection while this long operation is
+# still healthy.  Refuse a concurrent retry against the same destination;
+# POSIX locks are released automatically even if the owning process is killed.
+if [ "${NIGHTLY_STAGE0_LOCKED:-}" != "1" ]; then
+  exec python3 - "$DEST/.release/stage0.lock" "$0" "$@" <<'PY'
+import fcntl, os, subprocess, sys
+
+with open(sys.argv[1], "a+b") as lock_file:
+    try:
+        fcntl.flock(lock_file.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except BlockingIOError:
+        print(
+            "stage0: another bootstrap is already running — poll it; do not relaunch (exit 11)",
+            file=sys.stderr,
+        )
+        raise SystemExit(11)
+    env = dict(os.environ, NIGHTLY_STAGE0_LOCKED="1")
+    raise SystemExit(subprocess.call([sys.argv[2], *sys.argv[3:]], env=env))
+PY
+fi
 row=$(curl -fsS "${auth[@]}" \
   "$SUPABASE_URL/rest/v1/releases?approved=eq.true&order=created_at.desc,tag.desc&limit=1&select=tag,git_sha,manifest")
 tag=$(printf '%s' "$row" | python3 -c 'import json,sys; r=json.load(sys.stdin); print(r[0]["tag"] if r else "")')

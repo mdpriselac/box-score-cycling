@@ -33,7 +33,7 @@ inserts into Supabase (`nightly upload`) and files you write under `/mnt/session
 # Stage 0 — get the code
 
 The container starts empty. Save the script below as `/workspace/stage0.sh` (write it verbatim),
-`chmod +x` it and run it once. It downloads the newest approved release's code zip from Supabase
+`chmod +x` it and run it exactly once, in the foreground. It downloads the newest approved release's code zip from Supabase
 Storage, unpacks it into `/workspace/cycling`, installs `uv` if needed and hands over to
 `cycling_project.nightly.bootstrap`, which verifies every bundle file by sha256, checks the model
 contract, hydrates the campaign directories and writes `/workspace/cycling/nightly_env.sh`.
@@ -42,7 +42,10 @@ contract, hydrates the campaign directories and writes `/workspace/cycling/night
 {{STAGE0}}
 ```
 
-After it succeeds: `cd /workspace/cycling && source nightly_env.sh` in every shell (it exports
+This can take several minutes. If a tool call yields or times out while the process is still running,
+keep the existing process/tool handle and poll it for new output. Never launch a second stage 0 or
+bootstrap process, and never use a fixed `sleep` before checking it. Exit 11 means another stage 0
+owns the destination: poll that original process. After it succeeds: `cd /workspace/cycling && source nightly_env.sh` in every shell (it exports
 `CYCLING_DB_PATH`, pointing serving at the inference slice). If stage 0 exits 3 there is no approved
 release: stop, and finish with a summary saying so — do not try to obtain code any other way.
 
@@ -55,7 +58,11 @@ Every driver command is `uv run python -m cycling_project.nightly <command>` run
 step and report it in your summary — never re-implement a driver step by hand.
 
 1. **Bootstrap** — stage 0 above (it ends by running `bootstrap --dest /workspace/cycling`).
-2. **Plan** — `plan --now <current UTC ISO timestamp>`. The output lists due units per campaign:
+2. **Plan** — there is no global planning command. Read the campaign slugs from the hydrated release
+   manifest, then run exactly one command per slug (commands for independent slugs may run in
+   parallel): `plan --campaign <slug> --now`. Do not pass a timestamp to `--now`; it is a flag.
+   Wait on the running command handles and consume their output as they finish; do not use fixed
+   sleeps. Each output lists due units for that campaign:
    `settle` units (a stage whose date has passed and has no results yet) and `preview` units (the
    next stage, race-local tomorrow, without boards), plus `settle_late` / `blocked` flags.
 3. **Acquire** — for every due `settle` unit, delegate ONE task to **uci-acquirer** (UCI is the

@@ -402,7 +402,11 @@ class Driver:
         self.record = {"run_id": self.run["run_id"], "campaign": slug, "unit": unit, "phase": phase,
                        "started_at": _utcnow(), "dry_run": self.dry_run, "today": str(self.today),
                        "state": "running", "steps": []}
-        if self.campaign:
+        # Dry runs keep the in-memory record (and FakeStore ledger) for useful
+        # JSON/contract validation, but ``--no-log`` means they must not create
+        # the campaign's mirrored run record on disk.
+        self.record_path = None
+        if self.campaign and not self.dry_run:
             day_dir = self.campaign.runs_dir() / str(self.today)
             name = f"{phase}_{unit}.json" if unit else f"{phase}.json"
             self.record_path = day_dir / name
@@ -471,15 +475,17 @@ class Driver:
         assert_no_git(argv)
         started = time.time()
         log_path = None
+        # Decide the dry-run outcome before creating the log directory.  The
+        # argv still lands in the in-memory/Store step detail below.
+        if self.dry_run:
+            self._say(f"- {name}: skipped (dry-run) :: {' '.join(argv)}")
+            self._record_step(name, "skipped", started=started, detail={"reason": "dry-run", "argv": argv})
+            return {"skipped": True, "argv": argv, "returncode": None}
         if self.campaign:
             log_dir = self.campaign.runs_dir() / str(self.today) / "logs"
             log_dir.mkdir(parents=True, exist_ok=True)
             unit = self.record.get("unit") or "-"
             log_path = log_dir / f"{self.record.get('phase', 'run')}_{unit}_{name}.log"
-        if self.dry_run:
-            self._say(f"- {name}: skipped (dry-run) :: {' '.join(argv)}")
-            self._record_step(name, "skipped", started=started, detail={"reason": "dry-run", "argv": argv})
-            return {"skipped": True, "argv": argv, "returncode": None}
         env = {**os.environ, "PYTHONUNBUFFERED": "1", "SCRAPER_USE_BROWSER": os.environ.get("SCRAPER_USE_BROWSER", "0")}
         env[DB_ENV_VAR] = str(self.db_path)
         self._say(f"- {name}: {' '.join(argv)}")

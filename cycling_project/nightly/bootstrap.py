@@ -29,10 +29,13 @@ Usage::
 from __future__ import annotations
 
 import argparse
+import contextlib
+import fcntl
 import json
 import os
 import subprocess
 import sys
+import tempfile
 import zipfile
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence
@@ -48,6 +51,7 @@ logger = get_logger(__name__)
 RELEASE_DIR = ".release"          # <dest>/.release/{manifest.json, code-*.zip}
 SLICE_NAME = "inference_slice.db"
 ENV_SCRIPT = "nightly_env.sh"
+LOCK_NAME = "bootstrap.lock"
 
 
 class BootstrapError(RuntimeError):
@@ -56,6 +60,32 @@ class BootstrapError(RuntimeError):
 
 def _say(msg: str) -> None:
     print(msg, flush=True)
+
+
+@contextlib.contextmanager
+def bootstrap_lock(dest: Path):
+    """Fail fast when another bootstrap owns ``dest``.
+
+    ``flock`` is released by the kernel if the process exits or is killed, so a
+    timed-out coordinator cannot leave a stale lock behind.  Failing fast is
+    intentional: callers should keep polling the original process, not queue a
+    second expensive hydration of the same directory.
+    """
+    lock_dir = dest / RELEASE_DIR
+    lock_dir.mkdir(parents=True, exist_ok=True)
+    lock_path = lock_dir / LOCK_NAME
+    with open(lock_path, "a+b") as lock_file:
+        try:
+            fcntl.flock(lock_file.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError as exc:
+            raise BootstrapError(
+                f"another bootstrap is already running for {dest}; "
+                "poll that process instead of relaunching"
+            ) from exc
+        try:
+            yield
+        finally:
+            fcntl.flock(lock_file.fileno(), fcntl.LOCK_UN)
 
 
 # ---------------------------------------------------------------------------
@@ -74,7 +104,16 @@ def pick_release(store: Any, tag: Optional[str], allow_unapproved: bool = False)
 
 def fetch_manifest(store: Any, tag: str, dest: Path) -> dict:
     target = dest / RELEASE_DIR / MANIFEST_NAME
-    store.download_release_file(tag, MANIFEST_NAME, target)
+    target.parent.mkdir(parents=True, exist_ok=True)
+    with tempfile.NamedTemporaryFile(
+        prefix=f"{MANIFEST_NAME}.part.", dir=target.parent, delete=False
+    ) as fh:
+        tmp = Path(fh.name)
+    try:
+        store.download_release_file(tag, MANIFEST_NAME, tmp)
+        tmp.replace(target)
+    finally:
+        tmp.unlink(missing_ok=True)
     manifest = json.loads(target.read_text())
     if manifest.get("tag") != tag:
         raise BootstrapError(f"manifest tag {manifest.get('tag')!r} != {tag!r}")
@@ -98,12 +137,18 @@ def download_files(store: Any, tag: str, manifest: dict, dest: Path) -> Dict[str
         if target.is_file() and target.stat().st_size == meta["size"] and sha256_file(target) == meta["sha256"]:
             status[relpath] = "present"
             continue
-        tmp = target.with_name(target.name + ".part")
-        store.download_release_file(tag, relpath, tmp)
-        if sha256_file(tmp) != meta["sha256"]:
+        target.parent.mkdir(parents=True, exist_ok=True)
+        with tempfile.NamedTemporaryFile(
+            prefix=f"{target.name}.part.", dir=target.parent, delete=False
+        ) as fh:
+            tmp = Path(fh.name)
+        try:
+            store.download_release_file(tag, relpath, tmp)
+            if sha256_file(tmp) != meta["sha256"]:
+                raise BootstrapError(f"sha256 mismatch after download: {relpath}")
+            tmp.replace(target)
+        finally:
             tmp.unlink(missing_ok=True)
-            raise BootstrapError(f"sha256 mismatch after download: {relpath}")
-        tmp.replace(target)
         status[relpath] = "downloaded"
     return status
 
@@ -192,6 +237,22 @@ def bootstrap(
 ) -> dict:
     dest = Path(dest).resolve()
     dest.mkdir(parents=True, exist_ok=True)
+    with bootstrap_lock(dest):
+        return _bootstrap_locked(
+            dest, store, tag=tag, skip_uv_sync=skip_uv_sync,
+            skip_artifacts=skip_artifacts, allow_unapproved=allow_unapproved,
+        )
+
+
+def _bootstrap_locked(
+    dest: Path,
+    store: Any,
+    *,
+    tag: Optional[str] = None,
+    skip_uv_sync: bool = False,
+    skip_artifacts: bool = False,
+    allow_unapproved: bool = False,
+) -> dict:
     row = pick_release(store, tag, allow_unapproved)
     tag = row["tag"]
     _say(f"release {tag} (approved={bool(row.get('approved'))})")
@@ -258,12 +319,14 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     store = resolve_store(args.store, args.store_root)
     try:
         if args.manifest_only:
-            row = pick_release(store, args.tag, args.allow_unapproved)
-            manifest = fetch_manifest(store, row["tag"], Path(args.dest))
-            print(json.dumps({k: v for k, v in manifest.items() if k != "files"}, indent=2))
-            print(f"files: {len(manifest['files'])}  total_bytes: {manifest['total_bytes']}")
-            print(f"release tag: {row['tag']}")
-            return 0
+            dest = Path(args.dest).resolve()
+            with bootstrap_lock(dest):
+                row = pick_release(store, args.tag, args.allow_unapproved)
+                manifest = fetch_manifest(store, row["tag"], dest)
+                print(json.dumps({k: v for k, v in manifest.items() if k != "files"}, indent=2))
+                print(f"files: {len(manifest['files'])}  total_bytes: {manifest['total_bytes']}")
+                print(f"release tag: {row['tag']}")
+                return 0
         bootstrap(args.dest, store, tag=args.tag, skip_uv_sync=args.skip_uv_sync,
                   skip_artifacts=args.skip_artifacts, allow_unapproved=args.allow_unapproved)
     except BootstrapError as exc:

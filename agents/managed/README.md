@@ -8,7 +8,7 @@ version-controlled YAML applied by `provision.py`; `ids.json` records what was c
 agents/managed/
   environment.yaml            cycling-cloud: limited networking (Supabase host + Kambi host), PyPI allowed
   vault.yaml                  vault cycling-nightly + ONE environment_variable credential SUPABASE_NIGHTLY_KEY
-  deployments.yaml            deployment "nightly": 45 19 * * * UTC, $12.00 budget, created PAUSED
+  deployments.yaml            deployment "nightly": 45 19 * * * UTC, $25.00 budget, created PAUSED
   agents/*.agent.yaml         nightly-coordinator, pcs-acquirer, day-key-reader, editorial, ops-triage
   prompts/*.md                system prompts (coordinator, acquirer, ops-triage); the two no-tool agents
                               use agents/skills/*/SKILL.md directly
@@ -35,7 +35,7 @@ YAML is identical, so they stand.
 | Agent | `day-key-reader` | no tools; system = `agents/skills/day-key-read/SKILL.md`. |
 | Agent | `editorial` | no tools; system = `agents/skills/editorial/SKILL.md`. |
 | Agent | `ops-triage` | `read`/`glob`/`grep` only; prompt = `prompts/ops-triage.md`. |
-| Deployment | `nightly` | agent pinned to the coordinator version, `environment_id`, `vault_ids`, cron `45 19 * * *` UTC, `budget` `$12.00` (`"1200"` cents), `initial_events` = one `user.message` "Run the nightly cycle.", **paused**. No `github_repository`, no `file` resources. |
+| Deployment | `nightly` | agent pinned to the coordinator version, `environment_id`, `vault_ids`, cron `45 19 * * *` UTC, `budget` `$25.00` (`"2500"` cents), `initial_events` = one `user.message` "Run the nightly cycle.", **paused**. No `github_repository`, no `file` resources. |
 
 Every resource carries `metadata.spec_sha256`; provision.py skips a resource whose stored hash matches
 the rendered spec, so re-running it is a no-op. Agents are updated by version (`--version` optimistic

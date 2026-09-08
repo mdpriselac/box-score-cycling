@@ -12,6 +12,9 @@ supabase/
   migrations/0001_control_plane.sql   tables + views + triggers
   migrations/0002_roles.sql           roles, grants, row-level security
   migrations/0003_storage.sql         buckets + storage policies
+  migrations/0004_acquisition_provider.sql   provider-neutral acquisition provenance
+  migrations/0005_run_step_states.sql        terminal ledger states
+  migrations/0006_acquisition_verdicts.sql   accepted/rejected ingest contract
   mint_keys.py                 prints a role JWT once (nightly_agent / release_reader / operator)
 cycling_project/nightly/store.py     the client (SupabaseStore + FakeStore)
 cycling_project/nightly/keys.py      minting primitives used by mint_keys.py and the tests
@@ -72,7 +75,7 @@ order, from the repo root:
 ```bash
 set -a; source ~/.config/cycling-project/secrets.env; set +a
 supabase link --project-ref "$SUPABASE_PROJECT_REF"      # prompts for SUPABASE_DB_PASSWORD once
-supabase db push                                         # applies 0001..0003 (idempotent list in supabase_migrations)
+supabase db push                                         # applies pending migrations (tracked in supabase_migrations)
 supabase migration list                                  # local == remote
 ```
 
@@ -143,7 +146,7 @@ from cycling_project.nightly.store import SupabaseStore, FakeStore
 store = SupabaseStore(role="agent")                  # SUPABASE_URL + SUPABASE_NIGHTLY_KEY (+ PUBLISHABLE) from env
 run = store.start_run("vuelta-2026", "stage_16", "preview", release_tag="2026-09-05")
 store.add_step(run["run_id"], "acquire", "ok", duration_ms=1234)
-store.insert_pcs_raw(run["run_id"], "vuelta-2026", "stage_16", "results", url, html, ingest_verdict="ok")
+store.insert_pcs_raw(run["run_id"], "vuelta-2026", "stage_16", "results", url, html, ingest_verdict="accepted")
 key = store.upload_artifact(run["run_id"], "vuelta-2026/results/stage_16.json", data)   # nightly-artifacts/<run_id>/…
 store.insert_prediction(run["run_id"], "vuelta-2026", "stage_16", "preview", board_key=key, day_key="res_2")
 store.insert_prediction_log_rows(rows, run_id=run["run_id"])      # idempotent on (run_key, rider_id)

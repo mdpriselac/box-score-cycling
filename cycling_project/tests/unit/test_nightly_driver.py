@@ -119,7 +119,7 @@ def test_night_dry_run_replays_stage_14_to_15(campaign, tmp_path, capsys):
     assert preview["key"]["source"] == "config" and preview["key"]["day_key"] == {"bunch": 0.55, "res_3": 0.3, "res_1": 0.15}
     assert preview["validate"]["ok"] and any("board" in w for w in preview["validate"]["warnings"])
 
-    # run / step records in the FakeStore (agent role) and the local mirror
+    # run / step records remain available in the FakeStore (agent role)
     runs = _ledger(tmp_path, "runs")
     assert [(r["campaign_slug"], r["unit"], r["phase"], r["host"]) for r in runs] == \
         [("vuelta-2026", "stage_14", "settle", "cloud"), ("vuelta-2026", "stage_15", "preview", "cloud")]
@@ -138,10 +138,9 @@ def test_night_dry_run_replays_stage_14_to_15(campaign, tmp_path, capsys):
     assert next(s for s in steps if s["step"] == "score_day_keys")["detail"]["argv"][2:6] == ["--campaign", str(campaign), "--stage", "14"]
     fin = [s for s in steps if s["step"] == "finish"]
     assert [(s["state"], s["exit_code"]) for s in fin] == [("ok", 0), ("ok", 0)]
-    day = campaign / "runs" / "2026-09-05"
-    assert (day / "settle_stage_14.json").exists() and (day / "preview_stage_15.json").exists()
-    local = json.loads((day / "settle_stage_14.json").read_text())
-    assert local["run_id"] == runs[0]["run_id"] and local["state"] == "ok" and local["dry_run"]
+    # but --dry-run/--no-log makes no mirrored campaign run records or logs.
+    assert all(run["record"] is None for run in out["runs"])
+    assert not (campaign / "runs" / "2026-09-05").exists()
 
     # pcs_raw rows, uploaded artifacts (insert-only, under the run id) and prediction rows
     pcs_rows = _ledger(tmp_path, "pcs_raw")
@@ -175,6 +174,8 @@ def test_settle_without_pcs_pages_exits_10_with_operator_task(campaign, tmp_path
     assert not tasks[0].get("resolved")
     fin = [s for s in _ledger(tmp_path, "run_steps") if s["step"] == "finish"]
     assert fin[-1]["state"] == "waiting" and fin[-1]["exit_code"] == 10
+    assert run["record"] is None
+    assert not (campaign / "runs" / "2026-09-05").exists()
 
 
 def test_preview_without_a_key_exits_10_day_key_needed(campaign, tmp_path, capsys):
