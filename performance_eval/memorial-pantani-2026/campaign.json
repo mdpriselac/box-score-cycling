@@ -16,7 +16,7 @@
       "kind": "one_day"
     }
   ],
-  "timezone": null,
+  "timezone": "Europe/Rome",
   "kambi_match": "memorial pantani",
   "kambi_localised_name": null,
   "kambi_event_ids": {},

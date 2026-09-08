@@ -16,7 +16,7 @@
       "kind": "one_day"
     }
   ],
-  "timezone": null,
+  "timezone": "Europe/Brussels",
   "kambi_match": "flandrien 0.0 classic",
   "kambi_localised_name": null,
   "kambi_event_ids": {},

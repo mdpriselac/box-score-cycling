@@ -30,7 +30,7 @@
       "kind": null
     }
   ],
-  "timezone": null,
+  "timezone": "Asia/Shanghai",
   "kambi_match": "tour of huangshan",
   "kambi_localised_name": null,
   "kambi_event_ids": {},

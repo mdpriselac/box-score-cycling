@@ -16,7 +16,7 @@
       "kind": "one_day"
     }
   ],
-  "timezone": null,
+  "timezone": "Europe/Paris",
   "kambi_match": "gp de fourmies",
   "kambi_localised_name": null,
   "kambi_event_ids": {},

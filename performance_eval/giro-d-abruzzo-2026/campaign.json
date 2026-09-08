@@ -37,7 +37,7 @@
       "kind": null
     }
   ],
-  "timezone": null,
+  "timezone": "Europe/Rome",
   "kambi_match": "giro d'abruzzo",
   "kambi_localised_name": null,
   "kambi_event_ids": {},

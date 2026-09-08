@@ -16,7 +16,7 @@
       "kind": "one_day"
     }
   ],
-  "timezone": null,
+  "timezone": "Europe/Rome",
   "kambi_match": "giro del lazio",
   "kambi_localised_name": null,
   "kambi_event_ids": {},

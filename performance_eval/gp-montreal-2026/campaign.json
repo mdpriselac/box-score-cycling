@@ -16,7 +16,7 @@
       "kind": "one_day"
     }
   ],
-  "timezone": null,
+  "timezone": "America/Toronto",
   "kambi_match": "gp montreal",
   "kambi_localised_name": null,
   "kambi_event_ids": {},

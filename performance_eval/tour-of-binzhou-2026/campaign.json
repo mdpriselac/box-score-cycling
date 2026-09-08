@@ -16,7 +16,7 @@
       "kind": "one_day"
     }
   ],
-  "timezone": null,
+  "timezone": "Asia/Shanghai",
   "kambi_match": "tour of binzhou",
   "kambi_localised_name": null,
   "kambi_event_ids": {},

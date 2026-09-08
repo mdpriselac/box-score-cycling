@@ -16,7 +16,7 @@
       "kind": "one_day"
     }
   ],
-  "timezone": null,
+  "timezone": "Europe/Brussels",
   "kambi_match": "gooikse pijl",
   "kambi_localised_name": null,
   "kambi_event_ids": {},

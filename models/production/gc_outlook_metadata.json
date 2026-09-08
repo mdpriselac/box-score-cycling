@@ -1,9 +1,9 @@
 {
-  "bucket_best_iteration": 148,
-  "contender_best_iteration": 360,
-  "n_train_rows": 355998,
-  "n_checkpoint_groups": 3265,
-  "saved_at": "2026-08-09T16:33:43.204257",
+  "bucket_best_iteration": 120,
+  "contender_best_iteration": 553,
+  "n_train_rows": 359711,
+  "n_checkpoint_groups": 3303,
+  "saved_at": "2026-09-07T20:22:43.257005",
   "train_config": {
     "n_estimators": 2000,
     "early_stopping": 100,

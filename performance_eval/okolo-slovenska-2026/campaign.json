@@ -44,7 +44,7 @@
       "kind": null
     }
   ],
-  "timezone": null,
+  "timezone": "Europe/Bratislava",
   "kambi_match": "okolo slovenska",
   "kambi_localised_name": null,
   "kambi_event_ids": {},

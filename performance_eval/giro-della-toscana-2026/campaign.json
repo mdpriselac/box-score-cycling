@@ -16,7 +16,7 @@
       "kind": "one_day"
     }
   ],
-  "timezone": null,
+  "timezone": "Europe/Rome",
   "kambi_match": "giro della toscana",
   "kambi_localised_name": null,
   "kambi_event_ids": {},

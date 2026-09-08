@@ -44,7 +44,7 @@
       "kind": null
     }
   ],
-  "timezone": null,
+  "timezone": "Europe/Luxembourg",
   "kambi_match": "tour de luxembourg",
   "kambi_localised_name": null,
   "kambi_event_ids": {},

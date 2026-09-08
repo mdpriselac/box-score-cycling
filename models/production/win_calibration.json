@@ -1,27 +1,27 @@
 {
   "method": "logit_shift",
-  "param": 0.04365052420063034,
-  "fitted_at": "2026-08-29T17:48:16",
-  "n_val_rows": 4440,
-  "n_val_winners": 243,
+  "param": 0.028992941060310265,
+  "fitted_at": "2026-09-07T20:16:58",
+  "n_val_rows": 4515,
+  "n_val_winners": 249,
   "val_before": {
-    "win_log_loss": 0.1653201596643273,
-    "win_cal_ratio": 0.9649011514173788
+    "win_log_loss": 0.16859719704407541,
+    "win_cal_ratio": 0.9765348226964177
   },
   "val_after": {
-    "win_log_loss": 0.16527801586851598,
-    "win_cal_ratio": 0.9999999685435725
+    "win_log_loss": 0.16857837257677485,
+    "win_cal_ratio": 0.9999999724291823
   },
   "candidates": {
     "power": {
-      "param": 1.00123238770707,
-      "win_log_loss": 0.16531987530115205,
-      "win_cal_ratio": 0.9676347336778471
+      "param": 1.0017561982113976,
+      "win_log_loss": 0.16859661493443545,
+      "win_cal_ratio": 0.980449304545906
     },
     "logit_shift": {
-      "param": 0.04365052420063034,
-      "win_log_loss": 0.16527801586851598,
-      "win_cal_ratio": 0.9999999685435725
+      "param": 0.028992941060310265,
+      "win_log_loss": 0.16857837257677485,
+      "win_cal_ratio": 0.9999999724291823
     }
   },
   "notes": "Fit on the early-stop contender pool as an independent binary win market (no per-race renormalization \u2014 renormalizing pins the book sum, the bug in the integration experiment's refit). Selection: must move val win_cal_ratio toward 1.0 without worsening val win log loss; identity when neither candidate qualifies."
