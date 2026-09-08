@@ -8,7 +8,9 @@ and E and the failure table in that document stand and are referenced, not
 repeated. `CLOUDFLARE_DEPLOYMENT_PLAN.md` remains the envelope for the
 *public site*; the control plane it assigned to D1/R2 lives in **Supabase**
 from rev 4 (dashboard, REST and row-level security exist today). The process
-being automated: `performance_eval/vuelta-2026/DAILY_RUNBOOK.md`.
+being automated: `performance_eval/DAILY_RUNBOOK.md` (campaign-agnostic since
+2026-09-08; the two campaign runbooks now hold only their own race facts, and
+`performance_eval/LESSONS.md` holds their dated lessons).
 
 **Operating model (user decisions, 2026-09-05):**
 

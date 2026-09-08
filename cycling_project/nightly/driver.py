@@ -1,7 +1,8 @@
 """``python -m cycling_project.nightly <command>`` — the daily runbook as code.
 
 Spec: NIGHTLY_AGENT_WORKFLOW.md §2.2 (commands), §2.8 (ingest) and
-``performance_eval/vuelta-2026/DAILY_RUNBOOK.md`` (the process). The driver
+``performance_eval/DAILY_RUNBOOK.md`` (the process; its §4 and §5 name each
+command beside the manual step it replaces). The driver
 is deterministic and idempotent on ``(campaign, unit, phase)``; judgment
 (day keys, scenario references, prose, route overrides) is never produced
 here — when it is missing the driver stops with exit 10 and an operator task.

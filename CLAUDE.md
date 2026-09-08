@@ -45,6 +45,8 @@ FirstCycling HTML → scrape → pickle files → migrate → SQLite DB
 | `~/cycling_data/scraped_data/` | Scraped pickle files (default; override with `SCRAPED_DATA_DIR` in `.env`) |
 | `cycling_project/tests/fixtures/` | Test fixtures (HTML pages, mock data) |
 | `experiments/` | JSON results from CV / experiment runs (see `experiment_log.md` for the narrative) |
+| `performance_eval/DAILY_RUNBOOK.md` | The daily settle/preview cycle for **any** campaign, manual command and driver command side by side; a campaign dir keeps only its own ids, dates and void stages |
+| `performance_eval/LESSONS.md` | Dated ledger of every campaign lesson, tagged `keying` / `tooling` / `acquisition` / `scoring` / `publishing` — cite an entry by its date |
 
 ## Conventions
 

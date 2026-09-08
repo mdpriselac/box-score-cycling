@@ -20,7 +20,9 @@ uv run python performance_eval/tour-de-france-2026/seed_state_cache.py \
 uv run python performance_eval/vuelta-2026/score_day_keys.py
 ```
 
-See `DAILY_RUNBOOK.md` for the full cycle including the day key.
+The full cycle, including the day key, is `../DAILY_RUNBOOK.md` (one runbook
+for every campaign); `DAILY_RUNBOOK.md` here keeps this race's own facts and
+`../LESSONS.md` the dated lessons it produced.
 
 ## Layout
 

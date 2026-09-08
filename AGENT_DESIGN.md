@@ -1,8 +1,10 @@
 # Agent architecture — autonomous nightly race coverage
 
 **Status:** design proposal, 2026-08-31. Companion to `CLOUDFLARE_DEPLOYMENT_PLAN.md`
-(the operational envelope) and `performance_eval/vuelta-2026/DAILY_RUNBOOK.md`
-(the canonical daily process this design automates). Day-key vocabulary:
+(the operational envelope) and `performance_eval/DAILY_RUNBOOK.md`
+(the canonical daily process this design automates, merged from the two
+campaign runbooks 2026-09-08; its lessons ledger is
+`performance_eval/LESSONS.md`). Day-key vocabulary:
 `day_menu_v1_reference.md`.
 
 ---
