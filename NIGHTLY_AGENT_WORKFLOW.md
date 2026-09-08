@@ -215,10 +215,47 @@ both.
 Unchanged from rev 1. Drafts go to `editorial_drafts`; the builder uses a
 draft only when `approved_by` is set (until Gate E).
 
-### 2.6 One-day race path
+### 2.6 One-day race path — built 2026-09-08 (build-queue chip K)
 
-`target: one_day` config, `build_oneday_page.py`, `type: one_day` hub
-variant, startlist from PCS via the acquisition thread.
+A one-day race is one unit, `race`. `cycling_project/nightly/oneday.py` owns
+the shape: `predictions/race/scenarios.json` (`target: one_day`, no `stage`,
+no `void_stages`, **no `day_key`** — the menu's items are stage-day shapes),
+whose default `own_history` scenario prices the race on its **own last five
+editions** (competition ids looked up from the database by `fc_race_id`,
+restricted to editions with a `competition_field_features` row) and whose
+optional alternates use archetype references (`nightly refs --archetype …`).
+`validate_config` is the loader both the runner and the driver's `validate`
+call, so a malformed config fails in a second rather than after the model
+registry has loaded.
+
+- **Serving**: `predict_stage_scenarios.py` takes `target: one_day` — no race
+  state, no day key, and the service builds the one-day contest-signature
+  context from the scenario's references. The field comes from a
+  `startlist.json` beside the config (what the acquisition thread hands over,
+  since the container cannot reach FirstCycling), else `cached_start_lists`,
+  else a rate-limited scrape (`--no-scrape` refuses it).
+- **Results**: `results/race/results.{csv,json}` + `classifications.json`, the
+  same FC-shaped archive a stage settles to. `uci_ingest` reads a one-day
+  capture's single "General Classification" as the race result, keeps the
+  top-15 identity gate, and writes **no `gc.csv`** — a one-day race has no
+  standing to track. `oneday.export_results_from_db` backfills the archive for
+  a race the database already holds. The PCS fallback is still stage-shaped: a
+  one-day PCS capture is refused at `pages_present` (`missing: ["gc"]`), never
+  half-written.
+- **Page + frame**: `build_oneday_page.py` writes `netlify_site/<slug>-<year>.html`
+  (scenario fork, one board with blend / cascade / LambdaRank / market columns,
+  and after settlement the result scored and joined on the FirstCycling rider
+  id). The frame gives `type: one_day` a compact hub at `/race/<slug>/<year>`
+  with the board at `/race/<slug>/<year>/prediction`, and the calendar and
+  races views show the race as a single row.
+- **Driver**: `preview` writes the config itself when absent, asks for no day
+  key and freezes no bundle; `settle` skips the state seeding, the GC config
+  and the key scoring; `_build_pages` runs the one-day builder.
+- **Known gap**: the serving path re-ages form to the day the board is built,
+  not to the config's race date (`asof_date` reaches the contested-rating
+  snapshot but not `assemble_prediction_df`). That is correct for a board cut
+  on race morning and wrong for a reconstruction, so a `post_hoc` config makes
+  the page print a banner naming the leak.
 
 ### 2.7 Operator inbox
 
@@ -340,9 +377,12 @@ identity layer does the bridging (below).
   Classification` whose single classification is titled `General
   Classification` — no `Stage Classification` exists, so `required_kinds()`
   asks only for `gc` on a one-day unit, and `one_day` (the registry's unit
-  name) is a synonym for `race`. `uci_ingest` is still stage-race shaped: a
-  one-day capture is acquired but refuses ingest with
-  `missing_required: ["stage"]` until that path is built.
+  name) is a synonym for `race`. `uci_ingest` reads that one document as the
+  race result (2026-09-08, chip K): the same winner / rank / gap / status /
+  podium / identity checks run on it, `gc_winner_and_gaps` and
+  `row_counts_plausible` are replaced by `one_day_single_classification`, the
+  top-20 GC identity gate collapses into the top-15 result gate, and no
+  `gc.csv` is written.
 - **PCS fallback thread** (`pcs-acquirer`, `web_fetch` + `write`): saves
   each fetched page verbatim under `results/<unit>/pcs/` with
   `pcs_raw.json`; `pcs_ingest.py` parses it with the verified DOM map

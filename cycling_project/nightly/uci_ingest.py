@@ -19,6 +19,15 @@ whose status is in ``result``; ``result`` is the winner's absolute time, then
 previous rider). Original strings are preserved in ``results.json`` under
 ``uci``; only the canonical files carry converted seconds.
 
+One-day races (unit ``race`` / ``one_day``) publish ONE classification: the
+accordion entry "Final Classification" holds a single result titled "General
+Classification" (verified 2026-09-07 on GP Industria & Artigianato, competition
+78396). ``uci_acquire.required_kinds`` therefore asks only for ``gc`` there,
+and this module reads that one document as the race result: the stage rows and
+the classification rows are the same rows, no ``gc.csv`` is written (a one-day
+race has no general classification to track), and the top-20 GC identity gate
+collapses into the top-15 result gate.
+
 Identity: ``uci_identity.py`` (roster / crosswalk / DB scope, aliases,
 proposals). Names are never used as ids.
 """
@@ -51,12 +60,20 @@ from cycling_project.nightly.pcs_ingest import (
     parse_time_to_seconds,
     sha256_bytes,
 )
-from cycling_project.nightly.uci_acquire import CLASSIFICATIONS, INDEX_NAME, PROVIDER, capture_is_complete
+from cycling_project.nightly.uci_acquire import (
+    CLASSIFICATIONS,
+    INDEX_NAME,
+    PROVIDER,
+    capture_is_complete,
+    is_one_day_unit,
+    required_kinds,
+)
 from cycling_project.webscrape_tools.logging_config import get_logger
 
 logger = get_logger(__name__)
 
 REQUIRED_KINDS = tuple(k for k, (_t, req) in CLASSIFICATIONS.items() if req)
+ONE_DAY_STAGE_KEY = "race"      # what a one-day results.json puts in its ``stage`` field
 ABSOLUTE_TIME_RE = re.compile(r"^\d{1,2}:\d{2}:\d{2}$|^\d{1,3}:\d{2}$")
 GAP_RE = re.compile(r"^\+\s*(\d+(?::\d{2}){0,2})$")
 DISCIPLINE_FOR_ROAD = "ROA"
@@ -281,6 +298,9 @@ def ingest(campaign_dir: Path, unit: str, *, crosswalk_csv: Optional[Path] = Non
     m = re.fullmatch(r"stage_(\d+)", unit)
     if m:
         stage = int(m.group(1))
+    one_day = is_one_day_unit(unit)
+    required = required_kinds(unit)
+    report.one_day = one_day        # type: ignore[attr-defined]
     campaign: Dict[str, Any] = {}
     cpath = campaign_dir / "campaign.json"
     if cpath.exists():
@@ -293,9 +313,10 @@ def ingest(campaign_dir: Path, unit: str, *, crosswalk_csv: Optional[Path] = Non
         checks.append(Check("capture_present", False, str(exc)))
         return report
     pages = index.get("pages") or {}
-    missing = [k for k in REQUIRED_KINDS if k not in docs]
-    checks.append(Check("capture_present", not missing and capture_is_complete(index),
-                        {"missing_required": missing, "present": sorted(docs), "complete": bool(index.get("complete"))}))
+    missing = [k for k in required if k not in docs]
+    checks.append(Check("capture_present", not missing and capture_is_complete(index, required=required),
+                        {"unit_kind": "one_day" if one_day else "stage", "required": list(required),
+                         "missing_required": missing, "present": sorted(docs), "complete": bool(index.get("complete"))}))
     for kind, entry in pages.items():
         if entry.get("file"):
             data = raw.get(kind) if kind != "competition" else None
@@ -327,11 +348,14 @@ def ingest(campaign_dir: Path, unit: str, *, crosswalk_csv: Optional[Path] = Non
     def _bad_code(k: str) -> bool:
         return not (pages.get(k) or {}).get("event_code") or (pages.get(k) or {}).get("race_type") not in ("A",)
 
+    def _is_required(k: str) -> bool:
+        return k in required
+
     def _bad_resp(k: str, d: dict) -> bool:
         return ((pages.get(k) or {}).get("http_status") != 200 or "__malformed__" in d
                 or not isinstance(d.get("results"), list) or "headers" not in d or "podium" not in d)
 
-    optional_bad = sorted(k for k, d in docs.items() if k not in REQUIRED_KINDS and (_bad_code(k) or _bad_resp(k, d)))
+    optional_bad = sorted(k for k, d in docs.items() if not _is_required(k) and (_bad_code(k) or _bad_resp(k, d)))
     for k in optional_bad:
         report.warnings.append(f"{k}: optional classification page unusable "
                                f"(http {(pages.get(k) or {}).get('http_status')}, event_code {(pages.get(k) or {}).get('event_code')}) — dropped")
@@ -345,9 +369,12 @@ def ingest(campaign_dir: Path, unit: str, *, crosswalk_csv: Optional[Path] = Non
         return report
 
     # ---- parse ---------------------------------------------------------------------------------
+    # A one-day race publishes ONE classification: its "General Classification" IS the
+    # result, so the same rows serve as both the finishing order and the classification.
+    result_kind = "gc" if one_day else "stage"
     try:
-        stage_rows = parse_rider_results(docs["stage"], "stage")
-        gc_rows_all = parse_rider_results(docs["gc"], "gc")
+        stage_rows = parse_rider_results(docs[result_kind], result_kind)
+        gc_rows_all = stage_rows if one_day else parse_rider_results(docs["gc"], "gc")
     except UciIngestError as exc:
         checks.append(Check("parse", False, str(exc)))
         return report
@@ -395,7 +422,7 @@ def ingest(campaign_dir: Path, unit: str, *, crosswalk_csv: Optional[Path] = Non
                                                    "abandons": sorted({r.status for r in abandons})}))
 
     # ---- podium block vs first three ----------------------------------------------------------
-    pod = podium_of(docs["stage"])
+    pod = podium_of(docs[result_kind])
     top3 = classified[:3]
     pod_ok = len(pod) == 3 and len(top3) == 3 and all(
         ident.name_key(f"{p.get('firstname', '')} {p.get('lastname', '')}") == ident.name_key(r.rider.full_name)
@@ -404,25 +431,33 @@ def ingest(campaign_dir: Path, unit: str, *, crosswalk_csv: Optional[Path] = Non
                                           "first_three": [f"{r.display} {r.result_raw}" for r in top3]}))
 
     # ---- GC winner / gaps / field consistency ------------------------------------------------------
-    gc_winner = gc_rows[0] if gc_rows else None
-    gc_problems: List[str] = []
-    prev = -1.0
-    for r in gc_rows:
-        if r.gap_seconds is None:
-            gc_problems.append(f"gc {r.place}: gap unparsed ({r.result_raw!r})")
-            continue
-        if r.gap_seconds + GAP_TOLERANCE_S < prev:
-            gc_problems.append(f"gc {r.place}: gap {r.gap_seconds} < previous {prev}")
-        prev = max(prev, r.gap_seconds)
-    checks.append(Check("gc_winner_and_gaps", gc_winner is not None and gc_winner.place == 1 and gc_winner.absolute_seconds is not None
-                        and not gc_problems, {"gc_winner": gc_winner.display if gc_winner else None,
-                                              "gc_time": gc_winner.absolute_seconds if gc_winner else None, "problems": gc_problems[:20]}))
-    gc_keys = {r.rider.key for r in gc_rows}
-    st_keys = {r.rider.key for r in classified}
-    checks.append(Check("row_counts_plausible", len(classified) > 0 and len(gc_rows) == len(classified) and gc_keys == st_keys,
-                        {"classified": len(classified), "abandons": len(abandons), "gc_rows": len(gc_rows),
-                         "only_in_gc": sorted(gc_keys - st_keys)[:10], "only_in_stage": sorted(st_keys - gc_keys)[:10],
-                         "index_row_counts": {k: (pages.get(k) or {}).get("row_count") for k in docs}}))
+    if one_day:
+        # There is no general classification to cross-check: the one document is the race.
+        checks.append(Check("one_day_single_classification",
+                            len(classified) > 0 and "stage" not in docs and set(docs) == {"gc"},
+                            {"classified": len(classified), "abandons": len(abandons), "present": sorted(docs),
+                             "accordion_titles": st.get("accordion_titles"),
+                             "note": "a one-day capture holds only the General Classification; no gc.csv is written"}))
+    else:
+        gc_winner = gc_rows[0] if gc_rows else None
+        gc_problems: List[str] = []
+        prev = -1.0
+        for r in gc_rows:
+            if r.gap_seconds is None:
+                gc_problems.append(f"gc {r.place}: gap unparsed ({r.result_raw!r})")
+                continue
+            if r.gap_seconds + GAP_TOLERANCE_S < prev:
+                gc_problems.append(f"gc {r.place}: gap {r.gap_seconds} < previous {prev}")
+            prev = max(prev, r.gap_seconds)
+        checks.append(Check("gc_winner_and_gaps", gc_winner is not None and gc_winner.place == 1 and gc_winner.absolute_seconds is not None
+                            and not gc_problems, {"gc_winner": gc_winner.display if gc_winner else None,
+                                                  "gc_time": gc_winner.absolute_seconds if gc_winner else None, "problems": gc_problems[:20]}))
+        gc_keys = {r.rider.key for r in gc_rows}
+        st_keys = {r.rider.key for r in classified}
+        checks.append(Check("row_counts_plausible", len(classified) > 0 and len(gc_rows) == len(classified) and gc_keys == st_keys,
+                            {"classified": len(classified), "abandons": len(abandons), "gc_rows": len(gc_rows),
+                             "only_in_gc": sorted(gc_keys - st_keys)[:10], "only_in_stage": sorted(st_keys - gc_keys)[:10],
+                             "index_row_counts": {k: (pages.get(k) or {}).get("row_count") for k in docs}}))
 
     # ---- identity -------------------------------------------------------------------------------------
     roster = campaign_roster(campaign_dir, stage)
@@ -462,7 +497,7 @@ def ingest(campaign_dir: Path, unit: str, *, crosswalk_csv: Optional[Path] = Non
         return out
 
     top_stage_unres = unresolved_of(classified[:TOP_STAGE])
-    top_gc_unres = unresolved_of(gc_rows[:TOP_GC])
+    top_gc_unres = [] if one_day else unresolved_of(gc_rows[:TOP_GC])
     checks.append(Check("crosswalk_top", not top_stage_unres and not top_gc_unres,
                         {"threshold": ident.AUTO_ACCEPT, "stage_top15_unresolved": top_stage_unres, "gc_top20_unresolved": top_gc_unres,
                          "scope": getattr(index_, "scope", None)}))
@@ -516,15 +551,20 @@ def ingest(campaign_dir: Path, unit: str, *, crosswalk_csv: Optional[Path] = Non
     fc_classified = [fc_row(r, i == 0) for i, r in enumerate(sorted(classified, key=lambda r: r.place or 0))]
     fc_abandons = sorted((fc_row(r, False) for r in abandons), key=_abandon_sort_key)
     results = [r for r in fc_classified + fc_abandons if r is not None]
-    fc_gc = [r for r in (fc_row(x, i == 0) for i, x in enumerate(gc_rows)) if r is not None]
+    fc_gc = [] if one_day else [r for r in (fc_row(x, i == 0) for i, x in enumerate(gc_rows)) if r is not None]
     stage_date = None
     for s in campaign.get("stages") or []:
-        if stage is not None and int(s.get("number", -1)) == stage:
+        if stage is not None and int(s.get("number", -1) if s.get("number") is not None else -1) == stage:
             stage_date = s.get("date")
+        elif one_day and s.get("number") is None:
+            stage_date = s.get("date")
+    if one_day and not stage_date:
+        stage_date = campaign.get("start_date")
     payload = {
-        "stage": str(stage) if stage is not None else unit,
-        "stage_name": f"Stage: {stage}" if stage is not None else unit,
-        "url": (pages.get("stage") or {}).get("source_url") or "",
+        "stage": str(stage) if stage is not None else ONE_DAY_STAGE_KEY,
+        "stage_name": (campaign.get("name") or comp.get("name") or unit) if one_day
+                      else f"Stage: {stage}",
+        "url": (pages.get(result_kind) or {}).get("source_url") or "",
         "date": stage_date,
         "race_time": report.winning_time,
         "fetched_at": fetched_at,
@@ -541,15 +581,21 @@ def ingest(campaign_dir: Path, unit: str, *, crosswalk_csv: Optional[Path] = Non
     unit_dir.mkdir(parents=True, exist_ok=True)
     (unit_dir / "results.json").write_text(json.dumps(payload, indent=1), encoding="utf-8")
     _write_csv(unit_dir / "results.csv", results)
-    _write_csv(unit_dir / "gc.csv", fc_gc)
-    tables: Dict[str, Any] = {FC_TABLE_KEYS["stage"]: results, FC_TABLE_KEYS["gc"]: fc_gc}
+    tables: Dict[str, Any] = {FC_TABLE_KEYS["stage"]: results}
+    if not one_day:
+        # A one-day race has no general classification: writing a gc.csv that
+        # merely repeats results.csv would make the archive claim a standing
+        # that does not exist, and the GC tracker would try to read it.
+        _write_csv(unit_dir / "gc.csv", fc_gc)
+        tables[FC_TABLE_KEYS["gc"]] = fc_gc
     for kind, rows in secondary.items():
         tables[FC_TABLE_KEYS[kind]] = [r for r in (fc_row(x, False) for x in rows) if r is not None]
     if team_rows:
         tables[FC_TABLE_KEYS["teams"]] = [[t.rank_text, "", "", t.team, t.result_raw] for t in team_rows]
     (unit_dir / "classifications.json").write_text(json.dumps(
         {"stage": payload["stage"], "fetched_at": fetched_at, "source": PROVIDER, "tables": tables}, indent=1), encoding="utf-8")
-    report.written = ["results.json", "results.csv", "gc.csv", "classifications.json"]
+    report.written = (["results.json", "results.csv", "classifications.json"] if one_day
+                      else ["results.json", "results.csv", "gc.csv", "classifications.json"])
     return report
 
 

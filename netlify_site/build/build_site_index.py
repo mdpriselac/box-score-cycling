@@ -17,6 +17,12 @@ Sources of truth:
   - netlify_site/<prefix>stageNN.html etc.
         presence == a public page exists for the entry
 
+A one-day race (``type: one_day``) has the same shape with one unit: its
+config is predictions/race/scenarios.json, its result results/race/results.csv
+and its page netlify_site/<slug>-<year>.html. Every entry carries ``kind``
+("stage" or "race") and ``unit`` so the frame can render either without
+guessing from the stage number.
+
 Published campaign identity is read from each campaign.json.  CAMPAIGNS below
 is a compatibility fallback for an old archive without that file.
 ARCHIVE_CAMPAIGNS lists earlier model-vs-market evaluation campaigns that
@@ -122,9 +128,50 @@ def race_url(camp):
     return f"/race/{camp['slug']}/{camp['year']}"
 
 
+def is_one_day(camp):
+    return camp.get("type") == "one_day"
+
+
 def stage_asset(camp, n):
     name = f"{camp['prefix']}stage{n:02d}.html"
     return f"/{name}" if (SITE_DIR / name).exists() else None
+
+
+def race_asset(camp):
+    """The one-day race's own page, netlify_site/<slug>-<year>.html."""
+    name = f"{camp['slug']}-{camp['year']}.html"
+    return f"/{name}" if (SITE_DIR / name).exists() else None
+
+
+def build_race_entry(camp):
+    """The single unit of a one-day race, in the same shape as a stage entry."""
+    pred_dir = PERF_ROOT / camp["dir"] / "predictions" / "race"
+    cfg = load_json(pred_dir / "scenarios.json") or {}
+    has_predictions = pred_dir.is_dir() and any(
+        f.name != "scenarios.json" for f in pred_dir.glob("*.json"))
+    settled = (PERF_ROOT / camp["dir"] / "results" / "race" / "results.csv").exists()
+    asset = race_asset(camp)
+    if settled:
+        status = "settled"
+    elif has_predictions or asset:
+        status = "predicted"
+    else:
+        status = "upcoming"
+    scenarios = cfg.get("scenarios") or {}
+    post_hoc = bool(cfg.get("post_hoc")) or (
+        bool(scenarios) and all(s.get("post_hoc") for s in scenarios.values()))
+    return {
+        "stage": None,
+        "unit": "race",
+        "kind": "race",
+        "date": cfg.get("date") or camp["start_date"],
+        "label": cfg.get("label") or camp["name"],
+        "status": status,
+        "predicted": bool(has_predictions or asset),
+        "post_hoc": post_hoc,
+        "url": f"{race_url(camp)}/prediction" if asset else None,
+        "asset": asset,
+    }
 
 
 def named_asset(camp, base):
@@ -168,6 +215,8 @@ def build_stage_entries(camp, today):
         label = cfg.get("label") or f"Stage {n}"
         entry = {
             "stage": n,
+            "unit": f"stage_{n:02d}",
+            "kind": "stage",
             "date": stage_date,
             "label": label,
             "status": status,
@@ -182,7 +231,7 @@ def build_stage_entries(camp, today):
 
 
 def build_campaign(camp, today):
-    stages = build_stage_entries(camp, today)
+    stages = [build_race_entry(camp)] if is_one_day(camp) else build_stage_entries(camp, today)
 
     start = date.fromisoformat(camp["start_date"])
     end = date.fromisoformat(camp["end_date"])
@@ -194,15 +243,18 @@ def build_campaign(camp, today):
         status = "upcoming"
 
     pages = {}
-    gc_asset = named_asset(camp, "gc")
-    if gc_asset:
-        pages["gc"] = {"url": f"{race_url(camp)}/gc", "asset": gc_asset,
-                       "title": "GC tracker"}
-    stages_asset = named_asset(camp, "stages")
-    if stages_asset:
-        pages["stages"] = {"url": f"{race_url(camp)}/stages",
-                           "asset": stages_asset,
-                           "title": "Stage-by-stage diary"}
+    # A one-day race has neither: an empty `prefix` would otherwise match the
+    # Tour's own gc.html / stages.html and steal their aliases.
+    if not is_one_day(camp):
+        gc_asset = named_asset(camp, "gc")
+        if gc_asset:
+            pages["gc"] = {"url": f"{race_url(camp)}/gc", "asset": gc_asset,
+                           "title": "GC tracker"}
+        stages_asset = named_asset(camp, "stages")
+        if stages_asset:
+            pages["stages"] = {"url": f"{race_url(camp)}/stages",
+                               "asset": stages_asset,
+                               "title": "Stage-by-stage diary"}
     for key, spec in camp.get("extra_pages", {}).items():
         if (SITE_DIR / spec["asset"].lstrip("/")).exists():
             pages[key] = {"url": f"{race_url(camp)}/{key}",
@@ -210,6 +262,9 @@ def build_campaign(camp, today):
 
     n_settled = sum(1 for s in stages if s["status"] == "settled")
     n_predicted = sum(1 for s in stages if s["predicted"])
+    # A board built after the race is a reconstruction; the frame says so rather
+    # than letting it read as a prediction published before the start.
+    post_hoc = bool(stages) and all(s.get("post_hoc") for s in stages)
     return {
         "slug": camp["slug"],
         "year": camp["year"],
@@ -224,9 +279,10 @@ def build_campaign(camp, today):
         "url": race_url(camp),
         "pages": pages,
         "stages": stages,
-        "n_stages": camp["n_stages"],
+        "n_stages": 1 if is_one_day(camp) else camp["n_stages"],
         "n_settled": n_settled,
         "n_predicted": n_predicted,
+        "post_hoc": post_hoc,
     }
 
 

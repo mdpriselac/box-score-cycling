@@ -67,3 +67,46 @@ reflection once settled), linked from the strip on index.html. To add a
 post-stage reflection, put a `"reflection"` field (string or list of
 paragraphs) in the stage's scenarios.json and rerun step 3 — it renders on
 both the stage page and its hub card.
+
+## One-day races (added 2026-09-08)
+
+A one-day race is a single unit called `race`, so everything the stage path
+spreads across `stage_NN` it keeps in one place:
+
+```
+performance_eval/<campaign>/predictions/race/scenarios.json    "target": "one_day"
+performance_eval/<campaign>/predictions/race/<key>.json        one board per scenario
+performance_eval/<campaign>/results/race/results.{csv,json}    the settled result
+netlify_site/<slug>-<year>.html                                the page
+```
+
+1. Write the config, or let the driver write it. `cycling_project/nightly/oneday.py`
+   builds it: the default `own_history` scenario's references are the race's own
+   last five editions, looked up from the database by `fc_race_id`, and any
+   alternate uses archetype references (`nightly refs --archetype …`). A one-day
+   config carries no `stage`, no `void_stages` and no `day_key` — the day-menu
+   channel prices stage-day shapes — and the loader refuses one that does.
+2. `uv run python netlify_site/build/predict_stage_scenarios.py <scenarios.json> [--no-log]`
+   — the same runner. It takes the field from a `startlist.json` beside the config
+   (what the cloud acquisition thread hands over), else the `cached_start_lists`
+   cache, else a rate-limited FirstCycling scrape; `--no-scrape` refuses the last.
+3. `python3 netlify_site/build/build_oneday_page.py <scenarios.json>`
+   — writes `netlify_site/<slug>-<year>.html`: the scenario fork, one board with
+   blend / cascade / LambdaRank / market columns, and after settlement the
+   "After the race" section scored against `results/race/results.csv`, joined on
+   the FirstCycling rider id through the riders table.
+4. `build_site_index.py` then `build_site_frame.py` — the race appears as a
+   single row in the calendar and races views, and `/race/<slug>/<year>` gets a
+   one-day hub whose board lives at `/race/<slug>/<year>/prediction`.
+
+Settling a race the database already holds (an old campaign, or one migrated
+before this path existed) needs no scrape:
+
+```python
+from cycling_project.nightly import oneday
+oneday.export_results_from_db("performance_eval/strade-bianche-2026", "54", 2026)
+```
+
+A board built after the race is a reconstruction: mark the config `post_hoc`
+and the page prints a banner saying so, naming the form leak (the serving path
+re-ages form to the day the board is built, not to the config's race date).

@@ -100,6 +100,7 @@ CSS = """
     text-decoration:line-through;text-decoration-thickness:1px}
   .chip.live{background:var(--blue-soft);color:var(--blue);border-color:var(--blue-soft)}
   .chip.archive{background:transparent}
+  .chip.post_hoc{background:#ece9e4;border-color:#ddd8d1;color:#6b6259}
   .mono{font-family:var(--mono);font-size:12.5px}
   .entry{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;padding:9px 0;
          border-bottom:1px solid var(--line);font-family:var(--sans);font-size:14.5px}
@@ -160,7 +161,8 @@ CSS = """
 
 CHIP_TEXT = {"settled": "settled", "predicted": "predicted",
              "upcoming": "upcoming", "cancelled": "cancelled",
-             "in_progress": "in progress", "archive": "archive"}
+             "in_progress": "in progress", "archive": "archive",
+             "post_hoc": "post-hoc"}
 
 STATUS_BLURB = {"settled": "Predictions published, results in, scored.",
                 "predicted": "Prediction published; awaiting the result.",
@@ -201,6 +203,31 @@ def short_label(stage):
         if sep in label:
             return label.split(sep, 1)[1]
     return "" if label == f"Stage {stage['stage']}" else label
+
+
+def is_one_day(race):
+    return race.get("type") == "one_day"
+
+
+def race_progress(race):
+    """'12/21 stages settled' for a stage race; a plain state for a one-day."""
+    if not is_one_day(race):
+        return f"{race['n_settled']}/{race['n_stages']} stages settled"
+    entry = (race.get("stages") or [{}])[0]
+    return {"settled": "result in, scored", "predicted": "predicted, awaiting the result",
+            "upcoming": "nothing published yet"}.get(entry.get("status"), "no page yet")
+
+
+def unit_name(race, entry, short=False):
+    """How one unit is named in a list: 'Stage 7' for a stage, the race for a one-day."""
+    if entry.get("kind") == "race" or entry.get("stage") is None:
+        return race["short_name"] if short else (entry.get("label") or race["name"])
+    return f"st {entry['stage']}" if short else f"Stage {entry['stage']}"
+
+
+def post_hoc_chip(obj):
+    """The second chip on a line, so it carries its own leading space."""
+    return " " + chip("post_hoc") if obj.get("post_hoc") else ""
 
 
 def page(title, body, active, description=""):
@@ -248,15 +275,18 @@ def dated_stage_rows(races):
 
 
 def entry_line(race, s, show_year=False):
-    text = f"Stage {s['stage']}"
-    sub = short_label(s)
-    if sub:
-        text += f" · {sub}"
+    if s.get("kind") == "race" or s.get("stage") is None:
+        text = "One-day race"
+    else:
+        text = f"Stage {s['stage']}"
+        sub = short_label(s)
+        if sub:
+            text += f" · {sub}"
     body = (f'<a href="{s["url"]}">{esc(text)}</a>' if s["url"]
             else f'<span>{esc(text)}</span>')
     return (f'<div class="entry"><span class="d">{fmt_date(s["date"], show_year)}</span>'
             f'<span class="race">{esc(race["short_name"])}</span>'
-            f'{body}{chip(s["status"])}</div>')
+            f'{body}{chip(s["status"])}{post_hoc_chip(s)}</div>')
 
 
 # ------------------------------------------------------------------ home
@@ -281,8 +311,8 @@ def render_home(idx, today):
                     and (s["date"] or "9999") >= today.isoformat()), None)
         nxt_html = ""
         if nxt:
-            what = f"Stage {nxt['stage']}"
-            if short_label(nxt):
+            what = esc(unit_name(race, nxt))
+            if nxt.get("kind") != "race" and short_label(nxt):
                 what += f" — {esc(short_label(nxt))}"
             when = fmt_date(nxt["date"]) if nxt["date"] else "date TBC"
             link = (f' · <a href="{nxt["url"]}">prediction →</a>'
@@ -290,15 +320,16 @@ def render_home(idx, today):
             nxt_html = (f'<p class="note" style="margin-top:10px">Next up: '
                         f'<b>{what}</b> ({when}){link}</p>')
         done = race["n_settled"]
-        pct_done = round(100 * done / race["n_stages"])
+        pct_done = round(100 * done / max(race["n_stages"], 1))
         live_html += f"""
 <section>
 <p class="kicker">Live now</p>
 <h2><a href="{race['url']}" style="color:inherit;text-decoration:none">{esc(race['name'])}</a> {chip('in_progress')}</h2>
 <p>{esc(race['blurb'])}</p>
-<div class="progress" title="{done} of {race['n_stages']} stages settled"><i style="width:{pct_done}%"></i></div>
-<p class="note muted" style="font-family:var(--sans);font-size:13px">{done} of {race['n_stages']} stages settled ·
- {fmt_date(race['start_date'], True)} – {fmt_date(race['end_date'], True)}</p>
+<div class="progress" title="{race_progress(race)}"><i style="width:{pct_done}%"></i></div>
+<p class="note muted" style="font-family:var(--sans);font-size:13px">{race_progress(race)} ·
+ {fmt_date(race['start_date'], True) if is_one_day(race) else
+  f"{fmt_date(race['start_date'], True)} – {fmt_date(race['end_date'], True)}"}</p>
 {nxt_html}
 <p class="go" style="font-family:var(--sans);font-size:13.5px;margin-top:14px">
 <a href="{race['url']}"><b>Race hub →</b></a>&nbsp;&nbsp; {'&nbsp;&nbsp; '.join(pcs)}</p>
@@ -320,10 +351,14 @@ the market benchmark.</p>
 <p class="go"><a href="{p['url']}">Read the review →</a></p></div>"""
     for race in races:
         if race["status"] == "settled":
+            note = ("The board and the result, side by side." if is_one_day(race) else
+                    f"{race['n_settled']} settled stages with predictions frozen before "
+                    "each start, plus the GC tracker as it evolved.")
+            if race.get("post_hoc"):
+                note += " Reconstructed after the race and labelled as such."
             retro_cards += f"""
 <div class="card"><h3><a href="{race['url']}">{esc(race['name'])} archive</a></h3>
-<p class="note">{race['n_settled']} settled stages with predictions frozen before each start,
-plus the GC tracker as it evolved.</p>
+<p class="note">{esc(note)}</p>
 <p class="go"><a href="{race['url']}">Open the race hub →</a></p></div>"""
     retro_cards += """
 <div class="card"><h3><a href="/model">How the model works</a></h3>
@@ -333,17 +368,22 @@ channel, and how the outputs are compared with the market.</p>
 
     n_pages = sum(1 for r in races for s in r["stages"] if s["url"])
     n_settled = sum(r["n_settled"] for r in races)
+    # A published reconstruction has to be exempted from the promise in the standfirst,
+    # or the page claims something about it that is not true.
+    post_hoc_clause = (" The exceptions are the pages marked post-hoc: boards rebuilt after "
+                       "the race, which are labelled as such and left out of the record."
+                       if any(r.get("post_hoc") for r in races) else "")
     body = f"""
 <header>
 <div class="eyebrow">Prospective predictions · scored in the open</div>
 <h1>Machine predictions for professional road cycling</h1>
 <p class="standfirst">Every prediction here was published before the race and settled against the
-result afterwards. Where market probabilities appear, they are the benchmark we score ourselves
-against — a measure of how much real information the model captures.</p>
+result afterwards.{post_hoc_clause} Where market probabilities appear, they are the benchmark we
+score ourselves against — a measure of how much real information the model captures.</p>
 <div class="meta">
 <span>Races covered <b>{len(races)}</b></span>
-<span>Stage predictions <b>{n_pages}</b></span>
-<span>Stages settled <b>{n_settled}</b></span>
+<span>Prediction pages <b>{n_pages}</b></span>
+<span>Units settled <b>{n_settled}</b></span>
 <span>Updated <b>{esc(idx['generated_at'][:10])}</b></span>
 </div>
 </header>
@@ -378,16 +418,24 @@ def render_races(idx):
 
     cards = ""
     for race in races:
+        when = (f"{fmt_date(race['start_date'], True)}" if is_one_day(race)
+                else None)
         links = [f'<a href="{race["url"]}"><b>Race hub →</b></a>']
         for p in race["pages"].values():
             links.append(f'<a href="{p["url"]}">{esc(p["title"])} →</a>')
-        when = (f"{fmt_date(race['start_date'], True)} – "
-                f"{fmt_date(race['end_date'], True)}")
+        if is_one_day(race):
+            # A one-day race has no sub-pages, so link its board straight from the card.
+            entry = (race.get("stages") or [{}])[0]
+            if entry.get("url"):
+                links.append(f'<a href="{entry["url"]}">Prediction board →</a>')
+        if when is None:
+            when = (f"{fmt_date(race['start_date'], True)} – "
+                    f"{fmt_date(race['end_date'], True)}")
         cards += f"""
 <div class="card race-card" data-status="{race['status']}" data-type="{race['type']}">
-<h3><a href="{race['url']}">{esc(race['name'])}</a> {chip(race['status'])}</h3>
+<h3><a href="{race['url']}">{esc(race['name'])}</a> {chip(race['status'])}{post_hoc_chip(race)}</h3>
 <p class="note muted">{'Stage race' if race['type'] == 'stage_race' else 'One-day race'} ·
- {when} · {race['n_settled']}/{race['n_stages']} stages settled</p>
+ {when} · {race_progress(race)}</p>
 <p class="note">{esc(race['blurb'])}</p>
 <p class="go">{'&nbsp;&nbsp; '.join(links)}</p>
 </div>"""
@@ -498,7 +546,9 @@ def render_calendar_month(idx, ym, today):
             today_cls = " today" if iso == today.isoformat() else ""
             evs = ""
             for race, s in by_day.get(day, []):
-                text = f"{esc(race['short_name'])} · st {s['stage']}"
+                text = esc(race["short_name"])
+                if s.get("kind") != "race" and s.get("stage") is not None:
+                    text += f" · st {s['stage']}"
                 cls = f"ev {s['status']}"
                 if s["url"]:
                     evs += (f'<a class="{cls}" href="{s["url"]}" '
@@ -511,6 +561,8 @@ def render_calendar_month(idx, ym, today):
 
     notes = ""
     for race in races:
+        if is_one_day(race):
+            continue
         undated = [s for s in race["stages"] if not s.get("date")]
         if undated and race["end_date"][:7] >= ym >= race["start_date"][:7]:
             lo, hi = undated[0]["stage"], undated[-1]["stage"]
@@ -538,7 +590,76 @@ yellow are predicted and awaiting a result, struck-through were cancelled.</p>
 
 # -------------------------------------------------------------- race hub
 
+def render_one_day_hub(race):
+    """The hub for a race that is one day long: the page, its status, the facts.
+
+    A one-day race has no stage strip, no GC tracker and no diary — the hub is
+    a cover for its single prediction page, so it carries the status chip, the
+    date, and the link, and says plainly when the boards are a reconstruction.
+    """
+    entry = (race.get("stages") or [{}])[0]
+    status_note = {"settled": "The race has been run and the boards are scored against the result.",
+                   "predicted": "The board is published; the result is not in yet.",
+                   "upcoming": "Nothing published yet — the board is cut before the start."}.get(
+                       entry.get("status"), "")
+    if entry.get("url"):
+        page_card = f"""
+<div class="card"><h3><a href="{entry['url']}">Prediction board</a></h3>
+<p class="note">The whole field priced under every course reading, with the market line
+alongside as the information benchmark{' and the result scored against it' if entry.get('status') == 'settled' else ''}.</p>
+<p class="go"><a href="{entry['url']}">Open the board →</a></p></div>"""
+    else:
+        page_card = """
+<div class="card"><h3>Prediction board</h3>
+<p class="note">Not published yet. The board for a one-day race is cut and frozen before
+the start, then scored once the result is archived.</p></div>"""
+    post_hoc_note = ('<p class="note muted" style="font-family:var(--sans);font-size:13px">'
+                     'These boards were reconstructed after the race to commission the one-day '
+                     'path. Nothing here was frozen before the start, so it is not part of the '
+                     'prospective record.</p>') if race.get("post_hoc") else ""
+    body = f"""
+<header>
+<div class="eyebrow">One-day race · {race['year']}</div>
+<h1>{esc(race['name'])} {chip(entry.get('status', race['status']))}{post_hoc_chip(race)}</h1>
+<p class="standfirst">{esc(race['blurb'])}</p>
+<div class="meta">
+<span>Raced <b>{fmt_date(race['start_date'], True)}</b></span>
+<span>Status <b>{esc(CHIP_TEXT.get(entry.get('status'), entry.get('status') or '—'))}</b></span>
+<span>Board <b>{'published' if entry.get('url') else 'not published'}</b></span>
+</div>
+{post_hoc_note}
+</header>
+<section>
+<p class="kicker">The race</p>
+<h2>One day, one board</h2>
+<p>{esc(status_note)}</p>
+<div class="cards">{page_card}
+<div class="card"><h3><a href="/model">How the model works</a></h3>
+<p class="note">The architecture behind this board: the pricing heads, the pricing layer,
+and how the outputs are compared with the market.</p>
+<p class="go"><a href="/model">Read the article →</a></p></div></div>
+</section>
+<section>
+<p class="kicker">Race log</p>
+<h2>The single unit</h2>
+<div class="tablewrap"><table>
+<thead><tr><th>Unit</th><th>Date</th><th>Race</th><th>Status</th><th>Page</th></tr></thead>
+<tbody><tr><td>Race</td>
+<td>{fmt_date(entry.get('date') or race['start_date'])}</td>
+<td>{esc(entry.get('label') or race['name'])}</td>
+<td>{chip(entry.get('status', race['status']))}</td>
+<td>{f'<a href="{entry["url"]}">prediction</a>' if entry.get('url') else '<span class="muted">—</span>'}</td>
+</tr></tbody>
+</table></div>
+</section>"""
+    return page(f"{race['name']} · Cycling Race Predictor", body, "/races",
+                f"{race['name']}: the model's board for the race, with the market "
+                "line as the benchmark.")
+
+
 def render_race_hub(idx, race):
+    if is_one_day(race):
+        return render_one_day_hub(race)
     links = []
     for p in race["pages"].values():
         links.append((p["url"], p["title"]))

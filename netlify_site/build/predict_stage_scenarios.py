@@ -37,10 +37,19 @@ race state (completed stages via DB/cache/scrape) to the MAIN models; a
 config with "target": "gc" keeps the main heads pre-race and feeds the state
 to the separate GC outlook head instead (gc_outlook_* columns in the JSON and
 prediction_log, stage_number logged NULL).
+
+One-day races ("target": "one_day", config at <campaign>/predictions/race/
+scenarios.json) have no stage number, no race state and no day key — the
+day-menu channel is a stage-day instrument — and the service builds the
+one-day contest-signature context from the scenario's references. The field
+comes from the cached start list, from a startlist.json written beside the
+config by the acquisition thread, or from a rate-limited FirstCycling scrape
+when neither exists (--no-scrape refuses the scrape instead).
 """
 
 import argparse
 import json
+import os
 import sqlite3
 import sys
 import unicodedata
@@ -73,6 +82,7 @@ from cycling_project.prediction_tools.prediction_service import (
     PredictionRequest,
     PredictionService,
 )
+from cycling_project.nightly import oneday
 from cycling_project.db_path import default_db_path
 
 MODEL_DIR = PROJECT_ROOT / "models" / "production"
@@ -159,6 +169,72 @@ def find_book(book, rider_name):
     return cands[0] if len(cands) == 1 else None
 
 
+def load_scenario_config(config_path):
+    """Read a scenario config and settle its target before anything is loaded.
+
+    Returns ``(config, target, stage_number)``. A ``one_day`` config is checked
+    against the one-day shape (no stage, no void stages, no day key, real
+    references) so a malformed morning config fails in a second rather than
+    after the model registry has loaded.
+    """
+    config_path = Path(config_path)
+    try:
+        config = json.loads(config_path.read_text())
+    except json.JSONDecodeError as exc:
+        sys.exit(f"{config_path}: not valid JSON ({exc})")
+    target = config.get("target", "stage")
+    if target not in ("stage", "gc", "one_day"):
+        sys.exit(f"{config_path}: unsupported target {target!r} "
+                 "(expected 'stage', 'gc' or 'one_day')")
+    if target == "one_day":
+        problems = oneday.validate_config(config)
+        if problems:
+            sys.exit(f"{config_path}: " + "; ".join(problems))
+        return config, target, None
+    if target == "gc":
+        return config, target, None
+    if config.get("stage") is None:
+        sys.exit(f"{config_path}: a stage config needs a 'stage' number")
+    return config, target, int(config["stage"])
+
+
+def resolve_startlist(config, config_path, db_path, allow_scrape=True):
+    """The field, and where it came from.
+
+    Order: a ``startlist.json`` beside the config (what the cloud acquisition
+    thread hands over, since the container cannot reach FirstCycling), then the
+    ``cached_start_lists`` cache, then a rate-limited scrape through the project
+    WebClient (SCRAPER_USE_BROWSER=1 opens the visible Chrome window the
+    Cloudflare challenge needs). ``allow_scrape=False`` refuses the scrape and
+    says so instead of going to the network.
+    """
+    fc_race_id, year = int(config["fc_race_id"]), int(config["year"])
+    handover = oneday.startlist_path(config_path.parent)
+    if handover.exists():
+        return oneday.load_startlist_file(handover), f"handover:{handover.name}"
+    from cycling_project.prediction_tools.future_race_loader import get_cached_start_list
+
+    cached = get_cached_start_list(fc_race_id, year, db_path)
+    if cached:
+        return cached, "cache"
+    if not allow_scrape:
+        sys.exit(f"No cached start list for race {fc_race_id} {year} and no "
+                 f"{handover.name} beside the config (--no-scrape given)")
+    # SCRAPER_USE_BROWSER lives in the repo .env (absent in a worktree) and in
+    # ~/.config/cycling-project/env; an exported value still wins.
+    from cycling_project.nightly.secrets import load_local_env
+
+    load_local_env()
+    print(f"No cached start list for race {fc_race_id} {year} — scraping "
+          f"FirstCycling (rate-limited, browser backend "
+          f"{'on' if os.environ.get('SCRAPER_USE_BROWSER', '').strip().lower() in ('1', 'true', 'yes') else 'off'})...",
+          flush=True)
+    teams, _from_cache = scrape_or_load_startlist(fc_race_id, year, db_path=db_path)
+    if not teams:
+        sys.exit(f"FirstCycling returned no start list for race {fc_race_id} {year}")
+    return teams, "scrape"
+
+
 def build_profile(spec, db_path):
     """Averaged real profile (refs) or synthetic override (base_refs+scores)."""
     ref_ids = spec.get("refs") or spec["base_refs"]
@@ -184,10 +260,12 @@ def main():
                     help="comma-separated scenario keys to run (default: all)")
     ap.add_argument("--no-log", action="store_true",
                     help="skip prediction_log writes")
+    ap.add_argument("--no-scrape", action="store_true",
+                    help="refuse to scrape a missing start list (cache/handover only)")
     args = ap.parse_args()
 
     config_path = Path(args.config).resolve()
-    config = json.loads(config_path.read_text())
+    config, target, stage_number = load_scenario_config(config_path)
     out_dir = config_path.parent
     only = set(args.only.split(",")) if args.only else None
     todo = {k: v for k, v in config["scenarios"].items()
@@ -200,15 +278,13 @@ def main():
     release_id = service.artifacts.model_version
     print(f"validated production release {release_id[:12]}", flush=True)
 
-    teams, from_cache = scrape_or_load_startlist(
-        int(config["fc_race_id"]), int(config["year"]), db_path=DB_PATH)
-    assert from_cache, "startlist should come from cache"
+    teams, startlist_source = resolve_startlist(
+        config, config_path, DB_PATH, allow_scrape=not args.no_scrape)
     matched, unmatched = match_riders_to_db(teams, DB_PATH)
-    print(f"Startlist: {len(matched)} matched, {len(unmatched)} unmatched", flush=True)
+    print(f"Startlist ({startlist_source}): {len(matched)} matched, "
+          f"{len(unmatched)} unmatched", flush=True)
 
     conn = sqlite3.connect(DB_PATH)
-    target = config.get("target", "stage")   # "stage", "gc" or "one_day"
-    stage_number = int(config["stage"]) if target == "stage" else None
     comp_id = resolve_competition_id(conn, str(config["fc_race_id"]),
                                      int(config["year"]), stage_number)
 
@@ -275,7 +351,11 @@ def main():
             f"{sk}={prof[fk]:.2f}" for sk, fk in SCORE_KEY_MAP.items()
             if prof.get(fk) is not None), flush=True)
 
-        day_key = spec.get("day_key") or config.get("day_key")
+        # A one-day race skips the day-menu channel (its menu items are
+        # stage-day shapes); load_scenario_config already refuses a config that
+        # carries one, so this is only belt-and-braces for --only reruns.
+        day_key = None if target == "one_day" else (
+            spec.get("day_key") or config.get("day_key"))
         prediction = service.predict(PredictionRequest(
             snapshots=snapshots,
             matched_riders=matched,

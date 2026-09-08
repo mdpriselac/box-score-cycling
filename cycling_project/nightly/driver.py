@@ -46,7 +46,7 @@ from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Tupl
 
 from cycling_project.db_path import ENV_VAR as DB_ENV_VAR, default_db_path
 from cycling_project.nightly import day_key_record as rec
-from cycling_project.nightly import pcs_ingest, uci_acquire, uci_identity, uci_ingest
+from cycling_project.nightly import oneday, pcs_ingest, uci_acquire, uci_identity, uci_ingest
 from cycling_project.nightly.crosswalk import CROSSWALK_CSV, build_operator_task, read_crosswalk_csv
 from cycling_project.nightly.secrets import load_local_env, redact
 from cycling_project.webscrape_tools.logging_config import get_logger
@@ -64,6 +64,7 @@ SCRIPTS = {
     "predict": SITE_BUILD / "predict_stage_scenarios.py",
     "gc_tracker": SITE_BUILD / "build_gc_tracker.py",
     "stage_page": SITE_BUILD / "build_stage_page.py",
+    "oneday_page": SITE_BUILD / "build_oneday_page.py",
     "site_index": SITE_BUILD / "build_site_index.py",
     "site_frame": SITE_BUILD / "build_site_frame.py",
     "score_day_keys": PERF_EVAL / "vuelta-2026" / "score_day_keys.py",
@@ -220,6 +221,16 @@ class Campaign:
 
     def unit_for(self, stage: Optional[int]) -> str:
         return f"stage_{int(stage):02d}" if stage is not None else ONE_DAY_UNIT
+
+    def oneday_page_name(self) -> str:
+        """netlify_site/<route slug>-<year>.html — mirrors build_oneday_page.py."""
+        site = self.cfg.get("site") or {}
+        slug = site.get("route_slug")
+        if not slug:
+            slug = self.slug
+            if self.year and slug.endswith(f"-{self.year}"):
+                slug = slug[: -len(f"-{self.year}")]
+        return f"{slug}-{self.year}.html"
 
     @staticmethod
     def stage_of(unit: str) -> Optional[int]:
@@ -632,9 +643,13 @@ class Driver:
             out["acquire"] = self.step("acquire", lambda: self._acquire(unit))
             out["ingest"] = self.step("ingest", lambda: self._ingest(unit))
 
-        # 2. seed the state cache BEFORE the GC refresh (the outlook head reads it)
-        self.script("seed_state_cache", [self.python, SCRIPTS["seed_state_cache"], "--race-id", c.fc_race_id,
-                                         "--year", c.year, "--out-root", results_dir.parent], lock=True)
+        # 2. seed the state cache BEFORE the GC refresh (the outlook head reads it).
+        # A one-day race has no within-race state to reconstruct.
+        if stage is not None:
+            self.script("seed_state_cache", [self.python, SCRIPTS["seed_state_cache"], "--race-id", c.fc_race_id,
+                                             "--year", c.year, "--out-root", results_dir.parent], lock=True)
+        else:
+            self.step("seed_state_cache", lambda: None, skip="one-day race: no within-race state")
 
         # 3. GC config templated, GC predict, tracker
         gc_cfg_path = c.pred_dir("gc") / "scenarios.json"
@@ -943,8 +958,12 @@ class Driver:
             r = self.script("stage_page", [self.python, SCRIPTS["stage_page"], cfg])
             if not r.get("skipped"):
                 self.built_pages.append(SITE_DIR / f"{c.site_prefix}stage{c.stage_of(unit):02d}.html")
+        elif cfg.exists() and oneday.is_one_day_unit(unit):
+            r = self.script("oneday_page", [self.python, SCRIPTS["oneday_page"], cfg])
+            if not r.get("skipped"):
+                self.built_pages.append(SITE_DIR / c.oneday_page_name())
         else:
-            self.step("stage_page", lambda: None, skip="no scenario config (one-day pages are chip K)")
+            self.step("stage_page", lambda: None, skip="no scenario config for this unit")
         r = self.script("site_index", [self.python, SCRIPTS["site_index"]])
         if not r.get("skipped"):
             self.built_pages.append(SITE_DIR / "site-index.json")
@@ -1016,7 +1035,25 @@ class Driver:
         cfg_path = pred / "scenarios.json"
         created = False
         cfg = _read_json(cfg_path)
-        if cfg is None:
+        if cfg is None and stage is None:
+            # A one-day race is its own reference set: the default scenario's refs are
+            # this race's own recent editions, looked up from the serving database, so a
+            # one-day preview is not blocked on a human writing reference ids.
+            refs = oneday.own_edition_refs(c.fc_race_id, c.year,
+                                           db_path=self.db_path if self.db_path.exists() else None)
+            if not refs:
+                raise WaitingForInput("scenarios_needed",
+                                      f"{c.slug} {unit}: no earlier edition of race {c.fc_race_id} in the "
+                                      "database to build the default reference set from — write "
+                                      "predictions/race/scenarios.json by hand",
+                                      {"path": str(cfg_path)})
+            cfg = oneday.build_config(
+                fc_race_id=c.fc_race_id, year=c.year,
+                date=c.stage_date(None) or c.cfg.get("start_date"),
+                label=c.cfg.get("name") or c.slug,
+                refs=refs, tag_prefix=f"{c.slug}_race")
+            created = True
+        elif cfg is None:
             template = _read_json(c.dir / "predictions" / TEMPLATE_NAME)
             if template is None:
                 raise WaitingForInput("scenarios_needed", f"{c.slug} {unit}: no scenarios.json and no {TEMPLATE_NAME}",
@@ -1024,26 +1061,21 @@ class Driver:
             cfg = json.loads(json.dumps(template))
             cfg.pop("day_key", None)
             cfg.pop("day_key_note", None)
-            if stage is not None:
-                cfg["stage"] = stage
-                cfg["label"] = f"Stage {stage}"
-            else:
-                cfg["target"] = "one_day"
-                cfg.pop("stage", None)
-                cfg["label"] = c.cfg.get("name") or c.slug
+            cfg["stage"] = stage
+            cfg["label"] = f"Stage {stage}"
             cfg["fc_race_id"] = c.fc_race_id or cfg.get("fc_race_id")
             cfg["year"] = c.year or cfg.get("year")
             cfg["date"] = c.stage_date(stage) or cfg.get("date")
-            prev = c.previous_config(stage) if stage else None
+            prev = c.previous_config(stage)
             cfg["void_stages"] = sorted(set(int(v) for v in ((prev or {}).get("void_stages") or [])) | set(c.void_stages))
             for key, spec in (cfg.get("scenarios") or {}).items():
-                if isinstance(spec, dict) and stage is not None:
+                if isinstance(spec, dict):
                     spec["tag"] = re.sub(r"_st\d+_", f"_st{stage:02d}_", str(spec.get("tag") or f"{c.slug}_st{stage:02d}_{key}"))
                     spec["refs"] = []                       # placeholders are never carried forward
             created = True
         # fill event id + odds capture when absent
         filled = []
-        if stage is not None and not cfg.get("event_id"):
+        if not cfg.get("event_id"):
             eid = (c.cfg.get("kambi_event_ids") or {}).get(unit)
             if eid:
                 cfg["event_id"] = str(eid)
@@ -1136,6 +1168,9 @@ class Driver:
                 problems.append(f"config lacks {k}")
         if stage is not None and int(cfg.get("stage", -1)) != stage:
             problems.append(f"config stage {cfg.get('stage')} != {stage}")
+        if stage is None and oneday.is_one_day_unit(unit):
+            # The one-day shape: target, no stage, no void stages, no day key, real refs.
+            problems.extend(oneday.validate_config(cfg))
 
         def _check_key(where: str, key: Any) -> None:
             if key is None:

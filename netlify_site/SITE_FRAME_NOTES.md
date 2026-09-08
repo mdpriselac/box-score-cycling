@@ -19,8 +19,9 @@ model is scored against — a measure of how much real information it captures
 | `/races` | `_frame/races.html` — filterable race list (status/type), archive table |
 | `/calendar` | 302 → the most relevant generated month |
 | `/calendar/2026/08` | `_frame/calendar/2026-08.html` — month grid with status chips |
-| `/race/<slug>/<year>` | `_frame/race/<slug>-<year>.html` — race hub (stage strip, views, stage log) |
+| `/race/<slug>/<year>` | `_frame/race/<slug>-<year>.html` — race hub (stage strip, views, stage log; a one-day race gets the compact variant) |
 | `/race/<slug>/<year>/stage-NN` | the existing flat stage page (e.g. `vuelta-stage07.html`) |
+| `/race/<slug>/<year>/prediction` | a one-day race's board (`strade-bianche-2026.html`) |
 | `/race/<slug>/<year>/gc` | the existing GC tracker (`gc.html` / `vuelta-gc.html`) |
 | `/race/<slug>/<year>/stages` | the existing stage-by-stage diary hub |
 | `/race/<slug>/<year>/review` | extra pages (TdF `review.html`) |
@@ -53,7 +54,10 @@ parses campaign HTML.
 - `build_site_index.py` scans `performance_eval/<campaign>/predictions/
   stage_NN/scenarios.json` (dates, labels, day keys, `void_stages`),
   `results/stage_NN/results.csv` (presence == settled), and the flat pages in
-  `netlify_site/` (presence == published). The hand-maintained parts are the
+  `netlify_site/` (presence == published). A `type: one_day` campaign is read
+  the same way with one unit — `predictions/race/`, `results/race/`,
+  `<slug>-<year>.html` — and every entry carries `kind` (`stage` / `race`) and
+  `unit`, so the frame renders either without guessing from the stage number. The hand-maintained parts are the
   `CAMPAIGNS` registry (slug, prefix, race dates — mirror of
   `CAMPAIGN_BRANDING` in `build_stage_page.py`) and `ARCHIVE_CAMPAIGNS`
   (spring evaluation campaigns with no pages).
@@ -87,11 +91,23 @@ account/domain decisions in the plan are made.
   the deployed asset set
 - `_frame/` — generated output; safe to delete and rebuild
 
+## One-day races (2026-09-08, build-queue chip K)
+
+A one-day race is one unit called `race`. Its board is built by
+`build/build_oneday_page.py` into `netlify_site/<slug>-<year>.html`, and the
+frame gives it a compact hub: race identity, status chip, the single unit in
+the race log, and a card linking to the board. It has no stage strip, no GC
+tracker and no diary, so `build_site_index.py` skips the `gc` / `stages`
+lookups for it — an empty `prefix` would otherwise match the Tour's own
+`gc.html` and `stages.html` and steal their redirects.
+
+A published board that was rebuilt after the race carries `post_hoc: true`
+(from the config); the frame then adds a "post-hoc" chip on the race card and
+hub, and the home page's standfirst gains a clause exempting those pages from
+the promise that everything was published before the start.
+
 ## Deferred to later phases
 
-- One-day race pages (`/race/milano-sanremo/2027`-style) — the index schema
-  already allows `type: one_day`; the hub renderer will need a one-day
-  variant when the first one publishes.
 - `/retrospectives/<year>/<month>` monthly reviews.
 - D1 replacing `site-index.json` as the index of record (plan phase 2).
 - The archive campaigns' model-vs-market data is repo-only for now; their
