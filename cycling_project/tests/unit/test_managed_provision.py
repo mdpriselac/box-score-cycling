@@ -112,7 +112,7 @@ def test_vault_and_deployment_specs(pv, env):
     d = p["deployments"]["deployments"][0]
     assert d["name"] == "nightly" and d["create_paused"] is True
     assert d["schedule"] == {"type": "cron", "expression": "45 19 * * *", "timezone": "UTC"}
-    assert d["budget"] == {"type": "limit", "max_list_cost": {"amount": "1200", "currency": "USD"}}
+    assert d["budget"] == {"type": "limit", "max_list_cost": {"amount": "2500", "currency": "USD"}}
     assert d["initial_events"] == [{"type": "user.message", "content": [{"type": "text", "text": "Run the nightly cycle."}]}]
     e = p["environment"]
     net = e["config"]["networking"]

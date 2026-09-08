@@ -332,3 +332,20 @@ def test_refs_archetype_query_excludes_used_refs(campaign, tmp_path):
     assert refs_mod.parse_where("top15_mountain>=0.4") == ("top15_mountain", ">=", 0.4)
     with pytest.raises(KeyError):
         refs_mod.query_refs(archetype="nope", signatures=sig)
+
+
+def test_a_finished_campaign_has_nothing_due(campaign, tmp_path, capsys):
+    """Config-only hydration of a finished campaign (the Tour in September) must not make every
+    past stage a permanently due settle."""
+    assert _run(campaign, tmp_path, "plan", "--dry-run", today="2026-10-15") == 0
+    out = _out(capsys)
+    assert out["finished"] is True and out["settle"] == [] and out["preview"] == [] and out["units"] == []
+    # a race that ended a few days ago still settles late
+    assert _run(campaign, tmp_path, "plan", "--dry-run", today="2026-09-08") == 0
+    out = _out(capsys)
+    assert not out.get("finished") and out["settle"]
+
+
+def test_a_missing_book_market_only_blocks_worldtour_previews():
+    assert drv.odds_required("wt")
+    assert not drv.odds_required("pro") and not drv.odds_required("d1") and not drv.odds_required(None)

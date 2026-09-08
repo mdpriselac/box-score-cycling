@@ -273,6 +273,29 @@ def test_identity_policy(campaign):
     assert not (campaign / "results" / "stage_14" / "results.csv").exists()   # nothing partial written
 
 
+def test_a_confirmed_crosswalk_row_from_the_hosted_table_resolves_the_rider(campaign):
+    """The inbox confirms land in the hosted `crosswalk` table as `uci:<key>` slugs; the UCI bridge
+    must honour them like aliases (2026-09-08: 24 confirmed riders were re-proposed on the second run)."""
+    _rename_rider(campaign, "SOSA CUERVO", "SOMEONEELSE")
+    rep = _ingest(campaign, write=False)
+    assert not rep.ok
+    prop = next(p for p in rep.proposals if p["pcs_name"] == "SOMEONEELSE Ivan Ramiro")
+    slug = prop["pcs_slug"]
+    assert slug.startswith("uci:")
+    hosted_row = {"pcs_slug": slug, "fc_rider_id": "61639", "fc_name": "Sosa Ivan", "birth_year": 1997,
+                  "confidence": 0.8, "source": "human", "confirmed_by": "mdp@example.org", "pcs_name": prop["pcs_name"]}
+    rep = _ingest(campaign, store_rows=[hosted_row])
+    assert rep.ok, rep.failing
+    assert slug not in {p["pcs_slug"] for p in rep.proposals}                    # not re-proposed
+    res = next(i for i in rep.identities if i["fc_rider_id"] == "61639")
+    assert res["via_alias"] and res["accepted"]
+    assert (campaign / "results/stage_14/results.csv").read_bytes() == (CAMPAIGN / "expected/stage_14/results.csv").read_bytes()
+    # an unconfirmed, low-confidence store row does nothing
+    _rename_rider(campaign, "SOMEONEELSE", "SOMEONEELSE")
+    rep = _ingest(campaign, write=False, store_rows=[{**hosted_row, "confirmed_by": "", "confidence": 0.5}])
+    assert not rep.ok
+
+
 def _rename_rider(campaign, old_last: str, new_last: str) -> None:
     """Rename a rider consistently in stage.json (results + podium) and gc.json."""
     for f in ("stage.json", "gc.json"):

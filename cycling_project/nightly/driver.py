@@ -70,6 +70,18 @@ SCRIPTS = {
 }
 
 EXIT_DONE, EXIT_WAITING, EXIT_FAILED = 0, 10, 20
+# A campaign whose last unit is older than this is finished: nothing is due, ever.  (2026-09-08: the
+# Tour's config-only hydration made its 21 July stages "due" every night.)  The window is wider
+# than the release bundle's 3-day grace so a race that ended a few days before its first agent
+# night (Tour of Britain) still settles late.
+FINISHED_AFTER_DAYS = 7
+# Kambi does not list most .1 / .Pro races.  Only a WorldTour preview waits on a market match;
+# elsewhere a missing book is recorded and the preview goes on without the benchmark columns.
+ODDS_REQUIRED_CATEGORIES = ("wt",)
+
+
+def odds_required(category: Optional[str]) -> bool:
+    return str(category or "").lower() in ODDS_REQUIRED_CATEGORIES
 PHASES_UNIT = ("settle", "preview", "acquire", "ingest", "bundle", "validate", "upload")
 ONE_DAY_UNIT = "race"
 TEMPLATE_NAME = "TEMPLATE_scenarios.json"
@@ -533,6 +545,11 @@ class Driver:
             entries = [(None, c.stage_date(None))]
         prev_settled = True
         latest_archived = c.latest_results_stage() if c.is_stage_race else None
+        dated = [dt.date.fromisoformat(d) for _n, d in entries if d]
+        if dated and max(dated) < today - dt.timedelta(days=FINISHED_AFTER_DAYS):
+            return {"campaign": c.slug, "today": str(today), "timezone": c.timezone, "void_stages": sorted(void),
+                    "units": [], "settle": [], "preview": [], "finished": True,
+                    "note": f"last unit {max(dated)} is more than {FINISHED_AFTER_DAYS} days ago: nothing is due"}
         for number, date_s in sorted(entries, key=lambda t: (t[0] is None, t[0] or 0)):
             if not date_s:
                 continue
@@ -951,7 +968,10 @@ class Driver:
 
         # 1. odds
         r = self.script("capture_odds", [self.python, SCRIPTS["capture_odds"], "--campaign", c.dir], ok_codes=(0, 1))
-        if not r.get("skipped") and r.get("returncode") == 1:
+        if not r.get("skipped") and r.get("returncode") == 1 and not odds_required(c.cfg.get("category")):
+            self._say(f"  note: Kambi lists no market for {c.slug} ({c.cfg.get('category')}): preview continues without the book benchmark")
+            out["odds"] = {"market": None, "reason": "no_kambi_market", "category": c.cfg.get("category")}
+        elif not r.get("skipped") and r.get("returncode") == 1:
             raise WaitingForInput("kambi_match", f"{c.slug}: Kambi answered but the race was not matched — confirm kambi_candidates in campaign.json",
                                   {"tail": (r.get("stdout") or "")[-800:]})
         if not r.get("skipped") and "degraded" in (r.get("stdout") or "").lower():

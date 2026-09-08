@@ -245,6 +245,27 @@ def _campaign_name_ok(campaign: Dict[str, Any], comp_name: Optional[str]) -> boo
     return bool(sig_a & b) or (bool(a & b) and len(a & b) >= 2)
 
 
+def merge_crosswalk_aliases(aliases: Dict[str, Dict[str, str]], xw_rows: Dict[str, Dict[str, Any]]) -> Dict[str, Dict[str, str]]:
+    """Confirmed ``uci:<key>`` crosswalk rows (CSV or the hosted table) resolve like aliases.
+
+    Until 2026-09-08 a human confirmation in the inbox changed nothing for the
+    UCI bridge: the identity index only ever fuzzy-matched names, so the same
+    riders were re-proposed every night.  An explicit alias row still wins.
+    """
+    out = dict(aliases)
+    for slug, row in xw_rows.items():
+        if not slug.startswith("uci:"):
+            continue
+        key = slug[4:]
+        if key in out or not str(row.get("fc_rider_id") or "").strip():
+            continue
+        out[key] = {"uci_key": key, "uci_name": row.get("pcs_name") or "", "fc_rider_id": str(row["fc_rider_id"]),
+                    "fc_name": row.get("fc_name") or "", "birth_year": row.get("birth_year") or "",
+                    "confidence": row.get("confidence") or "", "source": "crosswalk",
+                    "confirmed_by": row.get("confirmed_by") or "", "created_at": row.get("created_at") or ""}
+    return out
+
+
 def ingest(campaign_dir: Path, unit: str, *, crosswalk_csv: Optional[Path] = None, store_rows: Iterable[Dict[str, Any]] = (),
            db_path: Optional[Path] = None, aliases_csv: Optional[Path] = None, write: bool = True,
            now: Optional[datetime] = None) -> IngestReport:
@@ -415,6 +436,7 @@ def ingest(campaign_dir: Path, unit: str, *, crosswalk_csv: Optional[Path] = Non
     index_ = ident.build_index(roster=roster or fallback, crosswalk_csv=crosswalk_csv, db_path=db_path,
                                fc_race_id=campaign.get("fc_race_id"), year=campaign.get("year"))
     aliases = ident.read_aliases(aliases_csv)
+    aliases = merge_crosswalk_aliases(aliases, xw_rows)
     season_year = int(campaign.get("year") or comp.get("year") or 0) or None
     by_key: Dict[str, ident.Resolution] = {}
     resolutions = ident.resolve_all([r.rider for r in stage_rows], index_, season_year=season_year, aliases=aliases)
