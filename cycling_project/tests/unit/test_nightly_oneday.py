@@ -733,3 +733,16 @@ def test_a_one_day_config_that_carries_a_day_key_fails_validation(uci_campaign, 
 
     assert code == 10
     assert any("day-menu channel" in p for p in out["operator_task"]["detail"]["problems"])
+
+
+def test_the_service_re_ages_form_to_the_request_date_not_today():
+    """Chip K finding (2026-09-08): asof_date reached the stack features and pricing but never the
+    form re-aging, so any board rebuilt after race day saw the season after the race."""
+    import inspect
+    import re as _re
+    from cycling_project.prediction_tools import prediction_service as ps
+    src = inspect.getsource(ps.PredictionService)
+    calls = list(_re.finditer(r"assemble_prediction_df\((.*?)\n\s*\)", src, _re.S))
+    assert len(calls) == 2, "expected the board and the GC-outlook call"
+    for m in calls:
+        assert "asof_date=request.asof_date" in m.group(1), m.group(0)[:200]

@@ -191,6 +191,7 @@ class PredictionService:
             dict(request.field_features),
             dict(request.profile),
             form_status=form_status,
+            asof_date=request.asof_date,
         )
         main_state = request.race_state if request.target_type == "stage" else None
         pred_df = attach_race_state(pred_df, main_state)
@@ -326,6 +327,7 @@ class PredictionService:
             dict(request.field_features),
             dict(request.profile),
             form_status=form_status,
+            asof_date=request.asof_date,
         )
         frame = attach_race_state(frame, request.race_state)
         outlook = head.predict(frame)

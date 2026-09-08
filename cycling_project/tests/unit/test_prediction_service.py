@@ -65,7 +65,7 @@ def frames():
 def patched_pipeline(monkeypatch):
     state_calls = []
 
-    def assemble(snapshots, matched, field_features, profile, form_status):
+    def assemble(snapshots, matched, field_features, profile, form_status, asof_date=None):
         form_status["assembled"] = True
         return matched[["rider_id", "rider_name"]].copy()
 
