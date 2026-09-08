@@ -316,6 +316,11 @@ def read_index(uci_dir: Path) -> Optional[Dict[str, Any]]:
         return None
 
 
+def _page_usable(e: Dict[str, Any]) -> bool:
+    """200, no error, and at least one result row (an unraced stage is served as an empty doc)."""
+    return e.get("http_status") == 200 and not e.get("error") and bool(e.get("row_count"))
+
+
 def capture_is_complete(index: Optional[Dict[str, Any]], required: Optional[Tuple[str, ...]] = None) -> bool:
     if not index or index.get("provider") != PROVIDER:
         return False
@@ -325,7 +330,7 @@ def capture_is_complete(index: Optional[Dict[str, Any]], required: Optional[Tupl
         return False
     for kind in required:
         e = pages.get(kind) or {}
-        if e.get("http_status") != 200 or not e.get("file") or e.get("error"):
+        if not e.get("file") or not _page_usable(e):
             return False
     return bool(index.get("complete"))
 
@@ -440,9 +445,15 @@ def acquire(*, competition_url: str, unit: str, out_dir: Path, campaign_slug: Op
                                   row_count=row_count, required=CLASSIFICATIONS[kind][1])
         _write_index(out_dir, index)
 
-    required_ok = all((pages.get(k) or {}).get("http_status") == 200 and not (pages.get(k) or {}).get("error")
-                      for k in required_kinds(unit) if kinds is None or k in kinds)
+    # A required classification must answer 200 AND carry rows: the UCI site serves an empty
+    # (but well-formed) document for a stage that has not been raced yet, and a capture marked
+    # complete is reused by every later run without a request (2026-09-08: Vuelta stage 16 at
+    # 01:30 UTC came back 0 rows ×5 with complete=true and would never have been re-fetched).
+    required_ok = all(_page_usable(pages.get(k) or {}) for k in required_kinds(unit) if kinds is None or k in kinds)
     index["complete"] = required_ok
+    index["empty_required"] = [k for k in required_kinds(unit) if (kinds is None or k in kinds)
+                               and (pages.get(k) or {}).get("http_status") == 200 and not (pages.get(k) or {}).get("error")
+                               and not (pages.get(k) or {}).get("row_count")]
     index["requests_made"] = f.requests_made
     _write_index(out_dir, index)
     return index

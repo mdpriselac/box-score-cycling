@@ -129,6 +129,8 @@ class _FakeSession:
             kind = {"D2EV374857": "stage", "D2EV375761": "gc", "D2EV374856": "stage"}[code]
             if self.fail_kind == kind:
                 return _Resp(self.status, b'{"error":"boom"}', "application/json")
+            if getattr(self, "empty_kind", None) == kind:       # an unraced stage: well-formed, zero rows
+                return _Resp(200, b'{"results":[],"headers":[],"podium":[]}', "application/json; charset=utf-8")
             assert params["raceName"] in ("Stage Classification", "Stage General Classification")
             return _Resp(200, files[code].read_bytes(), "application/json; charset=utf-8")
         return _Resp(404, b"not found", "text/plain")
@@ -176,6 +178,21 @@ def test_acquire_incomplete_when_a_required_classification_fails(tmp_path):
     assert not ua.capture_is_complete(index)
     with pytest.raises(ua.AcquireError):
         ua.acquire(competition_url=COMP_URL, unit="stage_16", out_dir=tmp_path / "u16", fetcher=_fetcher(_FakeSession()))
+
+
+def test_an_unraced_stage_is_not_a_complete_capture_and_is_refetched(tmp_path):
+    out = tmp_path / "uci"
+    session = _FakeSession()
+    session.empty_kind = "stage"
+    index = ua.acquire(competition_url=COMP_URL, unit="stage_14", out_dir=out, kinds=["stage", "gc"],
+                       fetcher=_fetcher(session))
+    assert index["pages"]["stage"]["http_status"] == 200 and index["pages"]["stage"]["row_count"] == 0
+    assert not index["complete"] and index["empty_required"] == ["stage"]
+    assert not ua.capture_is_complete(index)
+    # the next run must fetch again rather than reuse the empty capture
+    again = ua.acquire(competition_url=COMP_URL, unit="stage_14", out_dir=out, kinds=["stage", "gc"],
+                       fetcher=_fetcher(_FakeSession()))
+    assert again["complete"] and again["pages"]["stage"]["row_count"] == 155 and again["empty_required"] == []
 
 
 def test_cli_exit_codes(tmp_path, monkeypatch, capsys):

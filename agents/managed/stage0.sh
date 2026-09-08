@@ -23,8 +23,24 @@ r = json.load(sys.stdin)[0]
 m = r.get("manifest") or {}
 print((m.get("git") or {}).get("code_zip") or "code-%s.zip" % r["git_sha"])')
 echo "stage0: release $tag, code $zip"
-curl -fsS "${auth[@]}" -o "$DEST/.release/$zip" \
-  "$SUPABASE_URL/storage/v1/object/authenticated/releases/$tag/$zip"
+# Objects over 4 MiB are stored as <name>.part0000, .part0001, … (store.PART_SIZE); try the whole
+# object first, then list the tag folder and concatenate the parts in order.
+if ! curl -fsS "${auth[@]}" -o "$DEST/.release/$zip" \
+     "$SUPABASE_URL/storage/v1/object/authenticated/releases/$tag/$zip" 2>/dev/null; then
+  parts=$(curl -fsS "${auth[@]}" -H "Content-Type: application/json" \
+    -d "{\"prefix\":\"$tag\",\"limit\":1000,\"sortBy\":{\"column\":\"name\",\"order\":\"asc\"}}" \
+    "$SUPABASE_URL/storage/v1/object/list/releases" \
+    | python3 -c "import json,sys; print(' '.join(sorted(o['name'] for o in json.load(sys.stdin) if o['name'].startswith('$zip.part'))))")
+  if [ -z "$parts" ]; then
+    echo "stage0: $zip is neither a whole object nor chunked under releases/$tag/ — stop and report (exit 4)" >&2
+    exit 4
+  fi
+  : > "$DEST/.release/$zip"
+  for part in $parts; do
+    curl -fsS "${auth[@]}" "$SUPABASE_URL/storage/v1/object/authenticated/releases/$tag/$part" >> "$DEST/.release/$zip"
+  done
+  echo "stage0: $zip reassembled from $(echo $parts | wc -w | tr -d ' ') parts"
+fi
 python3 - "$DEST/.release/$zip" "$DEST" <<'PY'
 import sys, zipfile
 zipfile.ZipFile(sys.argv[1]).extractall(sys.argv[2])
