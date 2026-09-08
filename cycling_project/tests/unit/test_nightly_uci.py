@@ -262,7 +262,7 @@ def test_identity_policy(campaign):
         assert by_name[n]["accepted"] and by_name[n]["via_alias"]
     # without the aliases those five are proposals, never acceptances, and the ingest rejects
     rep2 = ui.ingest(campaign, "stage_14", crosswalk_csv=campaign / "rider_crosswalk.csv", aliases_csv=campaign / "nope.csv", write=False)
-    assert not rep2.ok and {c["name"] for c in rep2.failing} == {"crosswalk_top", "crosswalk_all_rows"}   # Skjelmose sits in the GC top 20
+    assert not rep2.ok and {c["name"] for c in rep2.failing} == {"crosswalk_top"}   # Skjelmose sits in the GC top 20; all_rows is provisional now
     unres = {u["uci_name"]: u for u in rep2.unresolved}
     assert set(unres) == {"HAMILTON Christopher", "SCHULTZ Nicholas", "NIELSEN Magnus", "MULUEBERHAN Henok", "JENSEN Mattias Skjelmose Jennow"}
     assert unres["HAMILTON Christopher"]["best"]["fc_name"] == "Hamilton Chris" and unres["HAMILTON Christopher"]["best"]["confidence"] < 0.97
@@ -294,6 +294,24 @@ def test_a_confirmed_crosswalk_row_from_the_hosted_table_resolves_the_rider(camp
     _rename_rider(campaign, "SOMEONEELSE", "SOMEONEELSE")
     rep = _ingest(campaign, write=False, store_rows=[{**hosted_row, "confirmed_by": "", "confidence": 0.5}])
     assert not rep.ok
+
+
+def test_an_unmappable_back_marker_is_archived_under_a_provisional_uci_id(campaign):
+    """Operator ruling 2026-09-08: strict inside the top gate, provisional `uci:` ids outside it."""
+    stage = json.loads((campaign / "results/stage_14/uci/stage.json").read_text())
+    last = stage["results"][-1]["values"]["lastname"]                    # the last classified rider
+    _rename_rider(campaign, last, "NOBODYKNOWS")
+    rep = _ingest(campaign)
+    assert rep.ok, rep.failing
+    assert any("provisional uci: ids" in w for w in rep.warnings)
+    rows = list(csv.DictReader((campaign / "results/stage_14/results.csv").open(encoding="utf-8")))
+    prov = [r for r in rows if r["rider_id"].startswith("uci:")]
+    assert len(prov) == 1 and prov[0]["name"].startswith("NOBODYKNOWS")
+    assert any(p["pcs_name"].startswith("NOBODYKNOWS") for p in rep.proposals)      # still proposed for the inbox
+    # the top gate stays strict
+    _rename_rider(campaign, "SOSA CUERVO", "SOMEONEELSE")
+    rep = _ingest(campaign, write=False)
+    assert not rep.ok and "crosswalk_top" in [c["name"] for c in rep.failing]
 
 
 def _rename_rider(campaign, old_last: str, new_last: str) -> None:

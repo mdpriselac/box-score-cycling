@@ -469,8 +469,17 @@ def ingest(campaign_dir: Path, unit: str, *, crosswalk_csv: Optional[Path] = Non
     all_unres = unresolved_of(stage_rows)
     report.unresolved = all_unres
     report.proposals = [res.to_proposal(campaign.get("slug")) for res in by_key.values() if not res.accepted]  # type: ignore[attr-defined]
-    checks.append(Check("crosswalk_all_rows", not all_unres,
-                        {"unresolved": all_unres, "note": "every row needs a FirstCycling id before the archive can be written (shadow period: strict)"}))
+    # Operator ruling 2026-09-08: strict inside the top-15 stage / top-20 GC gate above; outside it a
+    # rider with no FirstCycling identity (typically a .1-race back-marker with no FC history at all)
+    # is archived under a provisional ``uci:<key>`` id with a warning, so one unmappable rider can no
+    # longer block a stage forever.  The proposals are still emitted for the inbox.
+    provisional = [u for u in all_unres if u not in top_stage_unres and u not in top_gc_unres]
+    if provisional:
+        report.warnings.append(f"{len(provisional)} row(s) outside the top gate carry provisional uci: ids: "
+                               + ", ".join(u["uci_name"] for u in provisional[:8]) + (" …" if len(provisional) > 8 else ""))
+    checks.append(Check("crosswalk_all_rows", True,
+                        {"unresolved": all_unres, "provisional": [u["uci_name"] for u in provisional],
+                         "note": "strict inside the top gate; provisional uci: ids outside it (operator ruling 2026-09-08)"}))
     fc_ids = [resolved(r).fc_rider_id for r in stage_rows if resolved(r)]
     checks.append(Check("fc_ids_unique", len(fc_ids) == len(set(fc_ids)), {"n": len(fc_ids), "duplicates": [x for x in set(fc_ids) if fc_ids.count(x) > 1][:10]}))
 
@@ -487,7 +496,11 @@ def ingest(campaign_dir: Path, unit: str, *, crosswalk_csv: Optional[Path] = Non
     def fc_row(r: UciRow, winner_flag: bool) -> Optional[Dict[str, Any]]:
         res = resolved(r)
         if res is None:
-            return None
+            # provisional identity (outside the top gate, see crosswalk_all_rows): the row is kept with a
+            # uci: id so the archive stays complete; nothing downstream joins it to the riders table.
+            gap = fc_gap_value(r.gap_seconds, winner_flag) if r.status == "classified" else ""
+            return {"place": str(r.place) if r.status == "classified" else r.status, "name": r.display,
+                    "rider_id": f"uci:{r.rider.key}", "team": r.team or "", "team_id": "", "gap": gap, "dob": ""}
         fc_id = res.fc_rider_id
         pres = roster.get(fc_id) or fallback.get(fc_id) or {}
         name = pres.get("name") or (res.candidate.name if res.candidate else "") or r.display
