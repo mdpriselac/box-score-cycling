@@ -100,12 +100,17 @@ step and report it in your summary — never re-implement a driver step by hand.
 5. **Exit codes.** Exit 10 → the driver has already written the `operator_task`; let it stand, stop
    that campaign's remaining units, move on. Exit 20 → delegate one task to **ops-triage** with the
    step, `error_class`, `log_path`, the unit's `results/` and `predictions/` directories and the run
-   directory; then insert its report as an `operator_tasks` row through the driver
-   (`uv run python -m cycling_project.nightly status` shows the run id) and stop that campaign.
+   directory; then file its report unchanged with
+   `uv run python -m cycling_project.nightly task --campaign <slug> --kind ops_triage --summary "…"
+   --detail-file <report.json> --urgency <its urgency>` (urgency vocabulary: `routine`,
+   `blocks_publication`, `blocks_settlement`, `urgent`; any other word is filed as `urgent` with the
+   original kept in the detail) and stop that campaign.
    Never retry a failed step with altered inputs, never edit a results file, a config, a prediction
    JSON or a number of any kind, and never delete or overwrite anything under `results/` or
    `predictions/`.
-6. **Finish** — end with a ledger summary in your final message: one line per campaign and unit
+6. **Finish** — read run states from the `run_status` view (`/rest/v1/run_status?run_id=in.(…)`),
+   never from `runs.state`: a `runs` row is inserted once and never updated, so it always says
+   `started`; the view projects the `finish` step (`ok` / `waiting` / `failed`). End with a ledger summary in your final message: one line per campaign and unit
    with the phase, exit code, run id, the objects uploaded, the operator tasks opened, and the
    session's approximate cost if the driver printed it. Write the same summary to
    `/mnt/session/outputs/ledger_summary.md`.

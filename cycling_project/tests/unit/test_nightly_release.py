@@ -151,6 +151,10 @@ def _make_perf_eval(root: Path) -> Path:
         "scenarios": {"g": {"label": "G", "tag": "g", "refs": [104]}},
     }))
     (perf / "tour-de-france-2026" / "campaign.json").write_text(json.dumps({"slug": "tour-de-france-2026"}))
+    # shared tooling that lives in the (finished) Tour dir — the driver runs these every settle
+    (perf / "tour-de-france-2026" / "seed_state_cache.py").write_text("# seed\n")
+    (perf / "tour-de-france-2026" / "capture_odds.py").write_text("# odds\n")
+    (perf / "tour-de-france-2026" / "build_review_dataset.py").write_text("# not shared\n")
     return perf
 
 
@@ -307,6 +311,9 @@ def test_manifest_round_trip_and_bundle_contents(fake_project, tmp_path):
     assert "performance_eval/vuelta-2026/DAILY_RUNBOOK.md" in files
     assert "performance_eval/tour-de-france-2026/campaign.json" in files      # registry entries always
     assert "performance_eval/tour-de-france-2026/predictions/gc/scenarios.json" not in files  # finished
+    assert "performance_eval/tour-de-france-2026/seed_state_cache.py" in files   # shared tooling ships regardless
+    assert "performance_eval/tour-de-france-2026/capture_odds.py" in files
+    assert "performance_eval/tour-de-france-2026/build_review_dataset.py" not in files
     assert manifest["campaigns"] == ["vuelta-2026"]
     assert manifest["db_snapshot_date"] == "2026-08-22"
     assert manifest["total_bytes"] == sum(m["size"] for m in files.values())

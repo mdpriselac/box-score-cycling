@@ -685,11 +685,26 @@ def merge_crosswalk(repo_rows: Iterable[dict[str, Any]], incoming: Iterable[dict
 # Operator task + proposal plumbing (agent-facing)
 # ---------------------------------------------------------------------------
 
+# The ledger's vocabulary (supabase/migrations/0001_control_plane.sql, operator_tasks.urgency CHECK).
+# 2026-09-08: the first cloud run lost every operator task to HTTP 400 because the driver said
+# "tonight" — a word the schema does not know.  Anything outside this set is filed as 'urgent'
+# with the requested word kept in detail.urgency_requested, so the task still reaches the inbox.
+URGENCIES = ("routine", "blocks_publication", "blocks_settlement", "urgent")
+
+
+def normalise_urgency(urgency: Optional[str], detail: dict[str, Any]) -> str:
+    if urgency in URGENCIES:
+        return urgency
+    detail.setdefault("urgency_requested", urgency)
+    return "urgent"
+
+
 def build_operator_task(kind: str, campaign: Optional[str], summary: str,
                         detail: dict[str, Any], urgency: str = "routine") -> dict[str, Any]:
+    detail = dict(detail or {})
     return {
         "kind": kind, "campaign": campaign, "summary": summary, "detail": detail,
-        "urgency": urgency, "author": "agent", "resolved": None,
+        "urgency": normalise_urgency(urgency, detail), "author": "agent", "resolved": None,
     }
 
 

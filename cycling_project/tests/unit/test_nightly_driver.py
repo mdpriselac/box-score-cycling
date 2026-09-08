@@ -283,7 +283,7 @@ def test_driver_source_contains_no_git_invocation():
     assert "publish" not in {a.dest for a in drv.build_parser()._subparsers._group_actions[0].choices.values()
                              for a in [a] if hasattr(a, "dest")} or True
     assert set(drv.build_parser()._subparsers._group_actions[0].choices) == {
-        "bootstrap", "plan", "night", "settle", "preview", "acquire", "ingest", "bundle", "refs", "validate", "upload", "status"}
+        "bootstrap", "plan", "night", "settle", "preview", "acquire", "ingest", "bundle", "refs", "validate", "upload", "status", "task"}
 
 
 def test_status_lists_ledger_and_plan(campaign, tmp_path, capsys):

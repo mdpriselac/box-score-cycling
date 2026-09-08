@@ -84,12 +84,24 @@ STATE_SENTENCE_RE = re.compile(r"State through stage \d+", re.I)
 # Errors and records
 # ---------------------------------------------------------------------------
 
+# operator_tasks.urgency is a CHECK-constrained vocabulary (crosswalk.URGENCIES); a settle that
+# cannot finish blocks settlement, a preview that cannot finish blocks publication.
+URGENCY_BY_KIND = {
+    "acquisition_needed": "blocks_settlement", "pcs_pages_needed": "blocks_settlement",
+    "ingest_failed": "blocks_settlement",
+    "kambi_match": "blocks_publication", "scenarios_needed": "blocks_publication",
+    "day_key_needed": "blocks_publication", "validate_failed": "blocks_publication",
+}
+
+
 class WaitingForInput(Exception):
     """A judgment or a human confirmation is needed: exit 10 with an operator task."""
 
-    def __init__(self, kind: str, summary: str, detail: Optional[Dict[str, Any]] = None, urgency: str = "tonight"):
+    def __init__(self, kind: str, summary: str, detail: Optional[Dict[str, Any]] = None,
+                 urgency: Optional[str] = None):
         super().__init__(summary)
-        self.kind, self.summary, self.detail, self.urgency = kind, summary, detail or {}, urgency
+        self.kind, self.summary, self.detail = kind, summary, detail or {}
+        self.urgency = urgency or URGENCY_BY_KIND.get(kind, "blocks_settlement")
 
 
 class DriverFailure(Exception):
@@ -1386,6 +1398,13 @@ def build_parser() -> argparse.ArgumentParser:
     common(p, unit=True); p.add_argument("--phase", choices=("settle", "preview"), required=True)
     p = sub.add_parser("status", help="ledger view")
     common(p, campaign_required=False)
+    p = sub.add_parser("task", help="file an operator_tasks row (e.g. an ops-triage report) through the store")
+    common(p, campaign_required=False)
+    p.add_argument("--kind", required=True, help="task kind, e.g. ops_triage")
+    p.add_argument("--summary", required=True)
+    p.add_argument("--detail-file", type=Path, default=None, help="JSON file inserted verbatim as detail")
+    p.add_argument("--urgency", default="routine",
+                   help="routine | blocks_publication | blocks_settlement | urgent (anything else is filed as urgent)")
     sub.add_parser("refs", help="reference sets from the signature table (delegates to nightly.refs)", add_help=False)
     return ap
 
@@ -1428,6 +1447,19 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
 
     if args.command == "status":
         return _emit(EXIT_DONE, {"status": "ok", **driver.status()})
+    if args.command == "task":
+        from cycling_project.nightly.crosswalk import build_operator_task
+        detail = json.loads(args.detail_file.read_text()) if args.detail_file else {}
+        if not isinstance(detail, dict):
+            return _emit(EXIT_FAILED, {"status": "failed", "error_class": "task_detail", "message": "--detail-file must hold a JSON object"})
+        task = build_operator_task(args.kind, campaign.slug if campaign else None, args.summary, detail, urgency=args.urgency)
+        if args.dry_run:
+            return _emit(EXIT_DONE, {"status": "ok", "dry_run": True, "task": task})
+        try:
+            row = store.insert_task(task)
+        except Exception as exc:  # noqa: BLE001
+            return _emit(EXIT_FAILED, {"status": "failed", "error_class": "task_insert", "message": str(exc), "task": task})
+        return _emit(EXIT_DONE, {"status": "ok", "task": task, "operator_task_id": (row or {}).get("id")})
     if campaign is None:
         return _emit(EXIT_FAILED, {"status": "failed", "error_class": "campaign_missing", "message": "--campaign is required"})
     if args.command == "plan":

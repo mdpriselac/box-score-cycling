@@ -1,5 +1,6 @@
 import os
 import logging
+import os
 from datetime import datetime
 from pathlib import Path
 import sys
@@ -43,7 +44,9 @@ def get_logger(module_name: str) -> logging.Logger:
     
     # Create handlers
     # Console handler
-    console_handler = logging.StreamHandler(sys.stdout)
+    # CYCLING_LOG_STREAM=stderr keeps stdout clean for callers that parse it (the nightly driver
+    # prints one JSON document per command; the cloud coordinator reads it).
+    console_handler = logging.StreamHandler(sys.stderr if os.environ.get('CYCLING_LOG_STREAM') == 'stderr' else sys.stdout)
     console_handler.setLevel(DEFAULT_LEVEL)
     console_handler.setFormatter(logging.Formatter(LOG_FORMAT, DATE_FORMAT))
     

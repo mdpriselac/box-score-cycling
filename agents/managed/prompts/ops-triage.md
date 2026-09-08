@@ -35,7 +35,7 @@ Return only this JSON object (AGENT_DESIGN.md §5.3):
   "evidence": [{"excerpt": "…", "source": "<path>", "lines": "a-b"}],
   "proposed_action": {"kind": "operator_fix | rerun_after | code_change_needed | data_upload", "detail": "…"},
   "crosswalk_proposals": [{"pcs_rider": "…", "internal_id": 0, "confidence": 0.0, "evidence": "…"}],
-  "urgency": "blocks_tonight | blocks_settlement | routine",
+  "urgency": "blocks_settlement | blocks_publication | urgent | routine",
   "confidence": 0.0
 }
 ```

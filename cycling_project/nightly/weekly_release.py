@@ -64,6 +64,12 @@ MANIFEST_SCHEMA_VERSION = 1
 KERNELS_NAME = "day_menu_kernels.parquet"
 CAMPAIGN_SUBDIRS = ("odds", "results", "predictions", "review")
 CAMPAIGN_TOP_SUFFIXES = (".json", ".md", ".py", ".csv")
+# driver.SCRIPTS entries under performance_eval/ (kept in sync by a test)
+SHARED_CAMPAIGN_TOOLS = (
+    "performance_eval/tour-de-france-2026/seed_state_cache.py",
+    "performance_eval/tour-de-france-2026/capture_odds.py",
+    "performance_eval/vuelta-2026/score_day_keys.py",
+)
 SKIP_NAMES = {"__pycache__", ".DS_Store"}
 NON_CAMPAIGN_DIRS = {"calendar", "crosswalk", "runs"}
 CAMPAIGN_GRACE_DAYS = 3
@@ -305,6 +311,14 @@ def build_bundle(
         rel = str(cj.relative_to(project_root))
         if rel not in files:
             _copy(cj, out_dir / rel)
+            add(rel, out_dir / rel)
+    # shared tooling that happens to live in a campaign dir ships regardless of the horizon
+    # (2026-09-08: the Tour dir aged out and took seed_state_cache.py / capture_odds.py with it —
+    # every settle failed at exit 20)
+    for rel in SHARED_CAMPAIGN_TOOLS:
+        src = project_root / rel
+        if src.is_file() and rel not in files:
+            _copy(src, out_dir / rel)
             add(rel, out_dir / rel)
 
     # 6. crosswalk
