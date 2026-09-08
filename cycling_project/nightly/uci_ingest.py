@@ -300,11 +300,26 @@ def ingest(campaign_dir: Path, unit: str, *, crosswalk_csv: Optional[Path] = Non
     label_ok = stage is None or ident.name_key(str(st.get("label") or "")) == ident.name_key(f"Stage {stage}")
     checks.append(Check("stage_in_schedule_and_results", bool(st.get("label")) and bool(st.get("schedule_date")) and label_ok
                         and bool(st.get("accordion_titles")), {"stage": st}))
-    bad_codes = [k for k in docs if not (pages.get(k) or {}).get("event_code") or (pages.get(k) or {}).get("race_type") not in ("A",)]
-    checks.append(Check("event_codes", not bad_codes, {"bad": bad_codes, "codes": {k: (pages.get(k) or {}).get("event_code") for k in docs}}))
-    bad_resp = [k for k, d in docs.items() if (pages.get(k) or {}).get("http_status") != 200 or "__malformed__" in d
-                or not isinstance(d.get("results"), list) or "headers" not in d or "podium" not in d]
-    checks.append(Check("responses_ok", not bad_resp, {"bad": bad_resp}))
+    # A bad OPTIONAL classification page (points / kom / youth / teams) is a warning and the page is
+    # dropped; only the required pages can reject the capture.  (2026-09-08: ZLM Tour stage 1 was
+    # refused over a non-200 KOM page while stage and GC were perfect.)
+    def _bad_code(k: str) -> bool:
+        return not (pages.get(k) or {}).get("event_code") or (pages.get(k) or {}).get("race_type") not in ("A",)
+
+    def _bad_resp(k: str, d: dict) -> bool:
+        return ((pages.get(k) or {}).get("http_status") != 200 or "__malformed__" in d
+                or not isinstance(d.get("results"), list) or "headers" not in d or "podium" not in d)
+
+    optional_bad = sorted(k for k, d in docs.items() if k not in REQUIRED_KINDS and (_bad_code(k) or _bad_resp(k, d)))
+    for k in optional_bad:
+        report.warnings.append(f"{k}: optional classification page unusable "
+                               f"(http {(pages.get(k) or {}).get('http_status')}, event_code {(pages.get(k) or {}).get('event_code')}) — dropped")
+        docs.pop(k, None)
+    bad_codes = [k for k in docs if _bad_code(k)]
+    checks.append(Check("event_codes", not bad_codes, {"bad": bad_codes, "dropped_optional": optional_bad,
+                                                       "codes": {k: (pages.get(k) or {}).get("event_code") for k in docs}}))
+    bad_resp = [k for k, d in docs.items() if _bad_resp(k, d)]
+    checks.append(Check("responses_ok", not bad_resp, {"bad": bad_resp, "dropped_optional": optional_bad}))
     if bad_codes or bad_resp or not label_ok:
         return report
 

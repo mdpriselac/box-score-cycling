@@ -298,6 +298,21 @@ def test_validator_fault_cases(campaign, name, mutate, check):
     assert not (campaign / "results/stage_14/results.csv").exists()
 
 
+def test_a_bad_optional_classification_page_is_a_warning_not_a_rejection(campaign):
+    uci_dir = campaign / "results/stage_14/uci"
+    (uci_dir / "kom.json").write_text("<html>502 Bad Gateway</html>", encoding="utf-8")
+    _edit_json(uci_dir / "uci_raw.json", lambda d: d["pages"]["kom"].update({"file": "kom.json", "http_status": 502}))
+    rep = _ingest(campaign)
+    assert rep.ok, rep.failing
+    assert any(w.startswith("kom: optional classification page unusable") for w in rep.warnings)
+    checks = {c.name: c for c in rep.checks}
+    assert checks["responses_ok"].detail["dropped_optional"] == ["kom"]
+    # the required pages still reject
+    (uci_dir / "stage.json").write_text("<html>502</html>", encoding="utf-8")
+    rep = _ingest(campaign)
+    assert not rep.ok and "responses_ok" in [c["name"] for c in rep.failing]
+
+
 def test_malformed_json_missing_required_and_wrong_competition(campaign):
     (campaign / "results/stage_14/uci/gc.json").write_text("{not json", encoding="utf-8")
     rep = _ingest(campaign)
