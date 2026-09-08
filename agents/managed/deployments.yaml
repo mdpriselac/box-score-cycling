@@ -18,7 +18,7 @@ deployments:
       type: cron
       expression: "45 19 * * *"
       timezone: UTC
-    budget_usd: "12.00"
+    budget_usd: "25.00"
     initial_events:
       - type: user.message
         text: Run the nightly cycle.
