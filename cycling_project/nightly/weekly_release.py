@@ -321,6 +321,15 @@ def build_bundle(
             _copy(src, out_dir / rel)
             add(rel, out_dir / rel)
 
+    # 5b. the campaign-agnostic documents at the top of performance_eval (DAILY_RUNBOOK.md,
+    # LESSONS.md, …): the campaign stubs point at them and a hydrated container should be able to
+    # read them (chip L finding, 2026-09-08 — they reached neither bundle group)
+    for doc in sorted(perf_eval.glob("*.md")):
+        rel = str(doc.relative_to(project_root))
+        if rel not in files:
+            _copy(doc, out_dir / rel)
+            add(rel, out_dir / rel)
+
     # 6. crosswalk
     crosswalk = perf_eval / "crosswalk" / "rider_crosswalk.csv"
     if crosswalk.is_file():
