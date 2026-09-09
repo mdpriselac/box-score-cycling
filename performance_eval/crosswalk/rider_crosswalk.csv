@@ -176,9 +176,12 @@ uci:benito gonzalez|adrian,174572,12385,BENITO GONZALEZ Adrian,Benito Adrián,20
 uci:cepeda ortiz|jefferson,68868,703,CEPEDA ORTIZ Jefferson,Cepeda Alexander,1998,1.00,human,reviewer@example.com,2026-09-09T00:10:32+00:00
 uci:de villiers|johan,188580,13061,,De Villiers Johan Fourie,2003,1.00,human,matt,2026-09-08T03:51:23+00:00
 uci:elphingstone|luke,178494,13049,,Elphingstone Luke,2003,1.00,human,matt,2026-09-08T03:49:39+00:00
+uci:garcia higuita|andres sergio,58639,613,,Higuita Sergio,1997,1.00,human,matt (Codex-assisted),2026-09-09T00:29:31+00:00
+uci:garcia pierna|carlos,62984,724,,Garcia Carlos,1999,1.00,human,matt (Codex-assisted),2026-09-09T00:29:29+00:00
 uci:greenwell|samuel,231214,13048,,Greenwell Samuel,2007,1.00,human,matt,2026-09-08T03:49:40+00:00
 uci:grittner|marco,177610,13057,,Grittner Marco,2001,1.00,human,matt,2026-09-08T03:49:43+00:00
 uci:hall|karl,178820,13038,,Hall Karl,2004,1.00,human,matt,2026-09-08T03:49:39+00:00
+uci:insausti izaguirre|ion,2977,600,,Izagirre Ion,1989,1.00,human,matt (Codex-assisted),2026-09-09T00:29:30+00:00
 uci:jensen|jennow mattias skjelmose,77103,569,JENSEN Mattias Skjelmose Jennow,Skjelmose Mattias,2000,1.00,human,reviewer@example.com,2026-09-09T00:09:42+00:00
 uci:kamolov|avazbek,256791,13056,,Kamolov Avazbek,2005,1.00,human,matt,2026-09-08T03:49:42+00:00
 uci:marchenko|ruslan,209235,13058,,Marchenko Ruslan,2006,1.00,human,matt,2026-09-08T03:49:44+00:00
@@ -195,6 +198,7 @@ uci:strelchenko|kirill,177087,13060,,Strelchenko Kirill,2003,1.00,human,matt,202
 uci:vestergaard|sebastian,237298,13037,,Vestergaard Sebastian,2006,1.00,human,matt,2026-09-08T03:49:38+00:00
 uci:walls|matthew,45352,415,,Walls Matthew,1998,1.00,human,matt,2026-09-08T03:51:23+00:00
 uci:walscheid|maximilian richard,9210,160,WALSCHEID Maximilian Richard,Walscheid Max,1993,1.00,human,reviewer@example.com,2026-09-09T00:09:33+00:00
+uci:wood|george,120441,3211,,Wood George,2002,1.00,human,matt (Codex-assisted),2026-09-09T00:29:28+00:00
 urko-berrade-fernandez,57355,721,BERRADE Urko,Berrade Urko,1997,0.99,pcs_startlist,,2026-09-06T02:42:28+00:00
 valentin-madouas,37379,30,MADOUAS Valentin,Madouas Valentin,1996,0.99,pcs_startlist,,2026-09-06T02:42:28+00:00
 valentin-paret-peintre,97944,698,PARET-PEINTRE Valentin,Paret-Peintre Valentin,2001,0.99,pcs_startlist,,2026-09-06T02:42:28+00:00

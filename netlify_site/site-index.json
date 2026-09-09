@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-09-06 13:51",
+ "generated_at": "2026-09-08 17:27",
  "site_name": "Cycling Race Predictor",
  "races": [
   {
@@ -29,6 +29,8 @@
    "stages": [
     {
      "stage": 1,
+     "unit": "stage_01",
+     "kind": "stage",
      "date": "2026-08-22",
      "label": "Stage 1 — Monaco ITT, 9.4 km",
      "status": "settled",
@@ -41,6 +43,8 @@
     },
     {
      "stage": 2,
+     "unit": "stage_02",
+     "kind": "stage",
      "date": "2026-08-23",
      "label": "Stage 2 — Monaco → Manosque, 214.3 km",
      "status": "settled",
@@ -54,6 +58,8 @@
     },
     {
      "stage": 3,
+     "unit": "stage_03",
+     "kind": "stage",
      "date": "2026-08-24",
      "label": "Stage 3 — Gruissan → Font-Romeu, 174 km",
      "status": "cancelled",
@@ -67,6 +73,8 @@
     },
     {
      "stage": 4,
+     "unit": "stage_04",
+     "kind": "stage",
      "date": "2026-08-25",
      "label": "Stage 4 — Andorra la Vella → Andorra la Vella, 104.8 km",
      "status": "settled",
@@ -80,6 +88,8 @@
     },
     {
      "stage": 5,
+     "unit": "stage_05",
+     "kind": "stage",
      "date": "2026-08-26",
      "label": "Stage 5 — Falset → Roquetes, 173.4 km",
      "status": "settled",
@@ -94,6 +104,8 @@
     },
     {
      "stage": 6,
+     "unit": "stage_06",
+     "kind": "stage",
      "date": "2026-08-27",
      "label": "Stage 6 — Alcossebre → Castellón, 177.4 km",
      "status": "settled",
@@ -107,6 +119,8 @@
     },
     {
      "stage": 7,
+     "unit": "stage_07",
+     "kind": "stage",
      "date": "2026-08-28",
      "label": "Stage 7 — Vall d'Alba → Aramón Valdelinares, 149.8 km",
      "status": "settled",
@@ -120,6 +134,8 @@
     },
     {
      "stage": 8,
+     "unit": "stage_08",
+     "kind": "stage",
      "date": "2026-08-29",
      "label": "Stage 8 — Puçol → Xeraco, 171 km",
      "status": "settled",
@@ -134,6 +150,8 @@
     },
     {
      "stage": 9,
+     "unit": "stage_09",
+     "kind": "stage",
      "date": "2026-08-30",
      "label": "Stage 9 — La Vila Joiosa/Villajoyosa → Alto de Aitana, 187.4 km",
      "status": "settled",
@@ -146,6 +164,8 @@
     },
     {
      "stage": 10,
+     "unit": "stage_10",
+     "kind": "stage",
      "date": "2026-09-01",
      "label": "Stage 10 — Sant Mateu → Vinaròs region, 1 September 2026",
      "status": "settled",
@@ -160,6 +180,8 @@
     },
     {
      "stage": 11,
+     "unit": "stage_11",
+     "kind": "stage",
      "date": "2026-09-02",
      "label": "Stage 11 — Cartagena → Lorca, 151.3 km",
      "status": "settled",
@@ -174,6 +196,8 @@
     },
     {
      "stage": 12,
+     "unit": "stage_12",
+     "kind": "stage",
      "date": "2026-09-03",
      "label": "Stage 12 — Vera → Observatorio de Calar Alto, 166.6 km",
      "status": "settled",
@@ -187,6 +211,8 @@
     },
     {
      "stage": 13,
+     "unit": "stage_13",
+     "kind": "stage",
      "date": "2026-09-04",
      "label": "Stage 13 — 4 September 2026 (no prediction made)",
      "status": "settled",
@@ -196,6 +222,8 @@
     },
     {
      "stage": 14,
+     "unit": "stage_14",
+     "kind": "stage",
      "date": "2026-09-05",
      "label": "Stage 14 — Jaén → Sierra de la Pandera, 154.5 km",
      "status": "settled",
@@ -209,6 +237,8 @@
     },
     {
      "stage": 15,
+     "unit": "stage_15",
+     "kind": "stage",
      "date": "2026-09-06",
      "label": "Stage 15 — Palma del Río → Córdoba, 110.2 km (shortened from 189.7 km, extreme-heat protocol)",
      "status": "settled",
@@ -223,15 +253,24 @@
     },
     {
      "stage": 16,
-     "date": null,
-     "label": "Stage 16",
-     "status": "upcoming",
-     "predicted": false,
-     "url": null,
-     "asset": null
+     "unit": "stage_16",
+     "kind": "stage",
+     "date": "2026-09-08",
+     "label": "Stage 16 — Cortegana → La Rábida. Palos de la Frontera, 181.1 km",
+     "status": "settled",
+     "predicted": true,
+     "url": "/race/vuelta-a-espana/2026/stage-16",
+     "asset": "/vuelta-stage16.html",
+     "day_key": {
+      "bunch": 0.55,
+      "res_3": 0.3,
+      "res_1": 0.15
+     }
     },
     {
      "stage": 17,
+     "unit": "stage_17",
+     "kind": "stage",
      "date": null,
      "label": "Stage 17",
      "status": "upcoming",
@@ -241,6 +280,8 @@
     },
     {
      "stage": 18,
+     "unit": "stage_18",
+     "kind": "stage",
      "date": null,
      "label": "Stage 18",
      "status": "upcoming",
@@ -250,6 +291,8 @@
     },
     {
      "stage": 19,
+     "unit": "stage_19",
+     "kind": "stage",
      "date": null,
      "label": "Stage 19",
      "status": "upcoming",
@@ -259,6 +302,8 @@
     },
     {
      "stage": 20,
+     "unit": "stage_20",
+     "kind": "stage",
      "date": null,
      "label": "Stage 20",
      "status": "upcoming",
@@ -268,6 +313,8 @@
     },
     {
      "stage": 21,
+     "unit": "stage_21",
+     "kind": "stage",
      "date": null,
      "label": "Stage 21",
      "status": "upcoming",
@@ -277,8 +324,9 @@
     }
    ],
    "n_stages": 21,
-   "n_settled": 14,
-   "n_predicted": 15
+   "n_settled": 15,
+   "n_predicted": 16,
+   "post_hoc": false
   },
   {
    "slug": "tour-de-france",
@@ -312,6 +360,8 @@
    "stages": [
     {
      "stage": 1,
+     "unit": "stage_01",
+     "kind": "stage",
      "date": "2026-07-04",
      "label": "Stage 1",
      "status": "settled",
@@ -321,6 +371,8 @@
     },
     {
      "stage": 2,
+     "unit": "stage_02",
+     "kind": "stage",
      "date": "2026-07-05",
      "label": "Stage 2",
      "status": "settled",
@@ -330,6 +382,8 @@
     },
     {
      "stage": 3,
+     "unit": "stage_03",
+     "kind": "stage",
      "date": "2026-07-06",
      "label": "Stage 3",
      "status": "settled",
@@ -339,6 +393,8 @@
     },
     {
      "stage": 4,
+     "unit": "stage_04",
+     "kind": "stage",
      "date": "2026-07-07",
      "label": "Stage 4",
      "status": "settled",
@@ -348,6 +404,8 @@
     },
     {
      "stage": 5,
+     "unit": "stage_05",
+     "kind": "stage",
      "date": "2026-07-08",
      "label": "Stage 5",
      "status": "settled",
@@ -357,6 +415,8 @@
     },
     {
      "stage": 6,
+     "unit": "stage_06",
+     "kind": "stage",
      "date": "2026-07-09",
      "label": "Stage 6",
      "status": "settled",
@@ -366,6 +426,8 @@
     },
     {
      "stage": 7,
+     "unit": "stage_07",
+     "kind": "stage",
      "date": "2026-07-10",
      "label": "Stage 7",
      "status": "settled",
@@ -375,6 +437,8 @@
     },
     {
      "stage": 8,
+     "unit": "stage_08",
+     "kind": "stage",
      "date": "2026-07-11",
      "label": "Stage 8",
      "status": "settled",
@@ -384,6 +448,8 @@
     },
     {
      "stage": 9,
+     "unit": "stage_09",
+     "kind": "stage",
      "date": "2026-07-12",
      "label": "Stage 9",
      "status": "settled",
@@ -393,6 +459,8 @@
     },
     {
      "stage": 10,
+     "unit": "stage_10",
+     "kind": "stage",
      "date": "2026-07-14",
      "label": "Stage 10",
      "status": "settled",
@@ -402,6 +470,8 @@
     },
     {
      "stage": 11,
+     "unit": "stage_11",
+     "kind": "stage",
      "date": "2026-07-15",
      "label": "Stage 11",
      "status": "settled",
@@ -411,6 +481,8 @@
     },
     {
      "stage": 12,
+     "unit": "stage_12",
+     "kind": "stage",
      "date": "2026-07-16",
      "label": "Stage 12",
      "status": "settled",
@@ -420,6 +492,8 @@
     },
     {
      "stage": 13,
+     "unit": "stage_13",
+     "kind": "stage",
      "date": "2026-07-17",
      "label": "Stage 13",
      "status": "settled",
@@ -429,6 +503,8 @@
     },
     {
      "stage": 14,
+     "unit": "stage_14",
+     "kind": "stage",
      "date": "2026-07-18",
      "label": "Stage 14",
      "status": "settled",
@@ -438,6 +514,8 @@
     },
     {
      "stage": 15,
+     "unit": "stage_15",
+     "kind": "stage",
      "date": "2026-07-19",
      "label": "Stage 15",
      "status": "settled",
@@ -447,6 +525,8 @@
     },
     {
      "stage": 16,
+     "unit": "stage_16",
+     "kind": "stage",
      "date": "2026-07-21",
      "label": "Stage 16",
      "status": "settled",
@@ -456,6 +536,8 @@
     },
     {
      "stage": 17,
+     "unit": "stage_17",
+     "kind": "stage",
      "date": "2026-07-22",
      "label": "Stage 17",
      "status": "settled",
@@ -465,6 +547,8 @@
     },
     {
      "stage": 18,
+     "unit": "stage_18",
+     "kind": "stage",
      "date": "2026-07-23",
      "label": "Stage 18",
      "status": "settled",
@@ -474,6 +558,8 @@
     },
     {
      "stage": 19,
+     "unit": "stage_19",
+     "kind": "stage",
      "date": "2026-07-24",
      "label": "Stage 19",
      "status": "settled",
@@ -483,6 +569,8 @@
     },
     {
      "stage": 20,
+     "unit": "stage_20",
+     "kind": "stage",
      "date": "2026-07-25",
      "label": "Stage 20",
      "status": "settled",
@@ -492,6 +580,8 @@
     },
     {
      "stage": 21,
+     "unit": "stage_21",
+     "kind": "stage",
      "date": "2026-07-26",
      "label": "Stage 21",
      "status": "settled",
@@ -502,7 +592,8 @@
    ],
    "n_stages": 21,
    "n_settled": 21,
-   "n_predicted": 20
+   "n_predicted": 20,
+   "post_hoc": false
   },
   {
    "slug": "tour-of-the-alps-2026",
@@ -673,6 +764,7 @@
   "/vuelta-stage13.html": "/race/vuelta-a-espana/2026/stage-13",
   "/vuelta-stage14.html": "/race/vuelta-a-espana/2026/stage-14",
   "/vuelta-stage15.html": "/race/vuelta-a-espana/2026/stage-15",
+  "/vuelta-stage16.html": "/race/vuelta-a-espana/2026/stage-16",
   "/gc.html": "/race/tour-de-france/2026/gc",
   "/stages.html": "/race/tour-de-france/2026/stages",
   "/review.html": "/race/tour-de-france/2026/review",
@@ -772,6 +864,10 @@
   },
   "/race/vuelta-a-espana/2026/stage-15": {
    "asset": "/vuelta-stage15.html",
+   "base": true
+  },
+  "/race/vuelta-a-espana/2026/stage-16": {
+   "asset": "/vuelta-stage16.html",
    "base": true
   },
   "/race/tour-de-france/2026": {

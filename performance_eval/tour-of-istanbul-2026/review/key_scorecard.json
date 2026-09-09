@@ -1,0 +1,29 @@
+[
+ {
+  "stage": 1,
+  "oracle_item": "res_1",
+  "day_class": "residual",
+  "rule_type": "tiny_group",
+  "wg_size": 3,
+  "wg_prop": 0.03,
+  "winning_time": 14315.0,
+  "winner": "Vadic Baptiste",
+  "winner_gc_morning": null,
+  "front5_gc_median": null,
+  "top15_shares": {
+   "sprint": 0.2,
+   "mountain": 0.067,
+   "hilly": 0.2,
+   "rolling": 0.0,
+   "breakaway": 0.067,
+   "time_trial": 0.467
+  },
+  "top15_unknown": 0.0,
+  "day_key": null,
+  "exact": null,
+  "covered": null,
+  "weight_on_true": null,
+  "key_source": null,
+  "scored_at": "2026-09-08T17:25:19.608335"
+ }
+]
