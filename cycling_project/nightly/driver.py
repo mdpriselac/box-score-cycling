@@ -150,6 +150,21 @@ def _write_json(path: Path, value: Any) -> None:
     path.write_text(json.dumps(value, indent=1, ensure_ascii=False, default=str) + "\n", encoding="utf-8")
 
 
+def _is_placeholder(value: Any, *, numeric: bool = False) -> bool:
+    """True when a config field is empty or still carries a ``TEMPLATE_scenarios.json`` sentinel.
+
+    The template ships sentinels rather than empty fields (``FILL_FROM_ODDS_PROVENANCE``,
+    ``YYYY-MM-DD/markets_HHMM.json``) and every one of them is truthy, so a plain
+    ``not cfg.get(...)`` guard reads a freshly templated config as already filled.
+    ``numeric=True`` also rejects anything that is not a bare number: a Kambi event id
+    is always digits.
+    """
+    s = "" if value is None else str(value).strip()
+    if not s or s.startswith(("FILL_", "YYYY")):
+        return True
+    return numeric and not s.isdigit()
+
+
 def fmt_gap(seconds: Optional[float]) -> str:
     if seconds is None:
         return "?"
@@ -267,6 +282,23 @@ class Campaign:
             return dt.datetime.now(ZoneInfo(self.timezone)).date()
         except Exception:  # noqa: BLE001 — unknown zone name
             return dt.datetime.now(dt.timezone.utc).date()
+
+    def refresh_event_ids(self) -> Dict[str, str]:
+        """Re-read the Kambi event ids ``capture_odds`` merged into ``campaign.json``; return the new ones.
+
+        ``cfg`` is read once, when the campaign is loaded.  The odds capture is a subprocess that
+        writes newly discovered ids back into the file, so without this the ids it just found are
+        invisible to the rest of the run and the fill can only happen on the next invocation.
+        """
+        disk = (_read_json(self.dir / "campaign.json", {}) or {}).get("kambi_event_ids")
+        known = self.cfg.get("kambi_event_ids")
+        if not isinstance(known, dict):
+            known = self.cfg["kambi_event_ids"] = {}
+        if not isinstance(disk, dict):
+            return {}
+        new = {k: str(v) for k, v in disk.items() if v and str(known.get(k) or "") != str(v)}
+        known.update(new)
+        return new
 
     def previous_config(self, stage: int) -> Optional[Dict[str, Any]]:
         for n in range(stage - 1, 0, -1):
@@ -871,7 +903,8 @@ class Driver:
         if date_s:
             cfg["date"] = date_s
         cfg["void_stages"] = voids
-        snap = self._newest_snapshot(date_s, cfg.get("event_id")) if date_s else None
+        gc_event_id = None if _is_placeholder(cfg.get("event_id"), numeric=True) else str(cfg["event_id"]).strip()
+        snap = self._newest_snapshot(date_s, gc_event_id) if date_s else None
         if snap:
             cfg["odds_capture"] = snap
         _write_json(gc_cfg_path, cfg)
@@ -1010,6 +1043,9 @@ class Driver:
         if not r.get("skipped") and "degraded" in (r.get("stdout") or "").lower():
             self._say("  note: odds capture degraded (every brand blocked) — bookless preview")
             out["odds"] = "degraded"
+        new_ids = c.refresh_event_ids()          # the capture writes ids into campaign.json; step 2 reads them
+        if new_ids:
+            self._say(f"  note: campaign.json gained event id(s): {', '.join(sorted(new_ids))}")
 
         # 2. stage config: create from the template when absent; fill event id + capture
         out["config"] = self.step("stage_config", lambda: self._ensure_config(unit))
@@ -1087,15 +1123,17 @@ class Driver:
                     spec["tag"] = re.sub(r"_st\d+_", f"_st{stage:02d}_", str(spec.get("tag") or f"{c.slug}_st{stage:02d}_{key}"))
                     spec["refs"] = []                       # placeholders are never carried forward
             created = True
-        # fill event id + odds capture when absent
+        # Fill event id + odds capture when absent — a config just made from the template
+        # carries sentinels, which are truthy but are not values (see _is_placeholder).
         filled = []
-        if not cfg.get("event_id"):
+        event_id = None if _is_placeholder(cfg.get("event_id"), numeric=True) else str(cfg["event_id"]).strip()
+        if event_id is None:
             eid = (c.cfg.get("kambi_event_ids") or {}).get(unit)
             if eid:
-                cfg["event_id"] = str(eid)
+                cfg["event_id"] = event_id = str(eid)
                 filled.append("event_id")
-        if not cfg.get("odds_capture") or cfg.get("odds_capture", "").startswith("YYYY"):
-            snap = self._newest_snapshot(str(self.today), cfg.get("event_id"))
+        if _is_placeholder(cfg.get("odds_capture")):
+            snap = self._newest_snapshot(str(self.today), event_id)   # no id known: newest snapshot of the day
             if snap:
                 cfg["odds_capture"] = snap
                 filled.append("odds_capture")
