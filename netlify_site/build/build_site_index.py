@@ -39,6 +39,7 @@ SITE_DIR = HERE.parent
 PROJECT_ROOT = SITE_DIR.parent
 PERF_ROOT = PROJECT_ROOT / "performance_eval"
 OUT_PATH = SITE_DIR / "site-index.json"
+PUBLISHED_PATH = SITE_DIR / "published-campaigns.json"
 
 # Published campaigns: pages exist in netlify_site/ under `prefix`.
 CAMPAIGNS = [
@@ -76,6 +77,51 @@ CAMPAIGNS = [
         "extra_pages": {},
     },
 ]
+
+
+def registry_campaign(dirname):
+    """Build site metadata for a campaign admitted by publication approval."""
+    registry = load_json(PERF_ROOT / dirname / "campaign.json") or {}
+    if not registry:
+        raise ValueError(f"published campaign {dirname!r} has no campaign.json")
+    year = int(registry.get("year") or str(registry.get("start_date", ""))[:4])
+    site = registry.get("site") or {}
+    slug = str(site.get("route_slug") or registry.get("slug") or dirname)
+    suffix = f"-{year}"
+    if slug.endswith(suffix):
+        slug = slug[:-len(suffix)]
+    is_stage = bool(registry.get("is_stage_race"))
+    name = str(registry.get("name") or dirname.replace("-", " ").title())
+    short_name = str(site.get("short_name") or name)
+    if str(year) not in short_name:
+        short_name = f"{short_name} {year}"
+    return {
+        "dir": dirname,
+        "slug": slug,
+        "year": year,
+        "name": name if str(year) in name else f"{name} {year}",
+        "short_name": short_name,
+        "type": "stage_race" if is_stage else "one_day",
+        "prefix": str(site.get("prefix") if site.get("prefix") is not None else
+                      (f"{dirname}-" if is_stage else "")),
+        "n_stages": len(registry.get("stages") or []) or 1,
+        "start_date": registry["start_date"],
+        "end_date": registry.get("end_date") or registry["start_date"],
+        "blurb": str(site.get("blurb") or
+                     f"Nightly model run and results record for {name}."),
+        "extra_pages": dict(site.get("extra_pages") or {}),
+    }
+
+
+def published_campaigns():
+    """Resolve the durable allow-list written by the operator-only promoter."""
+    names = load_json(PUBLISHED_PATH) or [c["dir"] for c in CAMPAIGNS]
+    legacy = {c["dir"]: c for c in CAMPAIGNS}
+    out = []
+    for dirname in names:
+        base = legacy.get(dirname)
+        out.append(load_campaign(base) if base else registry_campaign(dirname))
+    return out
 
 # Earlier 2026 evaluation campaigns: model-vs-market data archived in the
 # repo, no published pages. `circa` is derived from capture-file dates below.
@@ -346,7 +392,7 @@ def month_range(races):
 
 def main():
     today = date.today()
-    races = [build_campaign(load_campaign(c), today) for c in CAMPAIGNS]
+    races = [build_campaign(c, today) for c in published_campaigns()]
     races.sort(key=lambda r: r["start_date"], reverse=True)
     archives = [build_archive_entry(a) for a in ARCHIVE_CAMPAIGNS]
     archives.sort(key=lambda a: a["circa"] or "", reverse=True)

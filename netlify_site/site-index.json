@@ -1,7 +1,285 @@
 {
- "generated_at": "2026-09-08 17:40",
+ "generated_at": "2026-09-08 18:01",
  "site_name": "Cycling Race Predictor",
  "races": [
+  {
+   "slug": "giro-della-toscana",
+   "year": 2026,
+   "name": "Giro della Toscana 2026",
+   "short_name": "Giro della Toscana 2026",
+   "type": "one_day",
+   "status": "upcoming",
+   "start_date": "2026-09-09",
+   "end_date": "2026-09-09",
+   "blurb": "Nightly model run and results record for Giro della Toscana.",
+   "campaign_dir": "performance_eval/giro-della-toscana-2026",
+   "url": "/race/giro-della-toscana/2026",
+   "pages": {},
+   "stages": [
+    {
+     "stage": null,
+     "unit": "race",
+     "kind": "race",
+     "date": "2026-09-09",
+     "label": "Giro della Toscana",
+     "status": "predicted",
+     "predicted": true,
+     "post_hoc": false,
+     "url": "/race/giro-della-toscana/2026/prediction",
+     "asset": "/giro-della-toscana-2026.html"
+    }
+   ],
+   "n_stages": 1,
+   "n_settled": 0,
+   "n_predicted": 1,
+   "post_hoc": false
+  },
+  {
+   "slug": "gp-industria-artigianato",
+   "year": 2026,
+   "name": "GP Industria & Artigianato 2026",
+   "short_name": "GP Industria & Artigianato 2026",
+   "type": "one_day",
+   "status": "settled",
+   "start_date": "2026-09-06",
+   "end_date": "2026-09-06",
+   "blurb": "Nightly model run and results record for GP Industria & Artigianato.",
+   "campaign_dir": "performance_eval/gp-industria-artigianato-2026",
+   "url": "/race/gp-industria-artigianato/2026",
+   "pages": {},
+   "stages": [
+    {
+     "stage": null,
+     "unit": "race",
+     "kind": "race",
+     "date": "2026-09-06",
+     "label": "GP Industria & Artigianato 2026",
+     "status": "settled",
+     "predicted": false,
+     "post_hoc": false,
+     "url": null,
+     "asset": null
+    }
+   ],
+   "n_stages": 1,
+   "n_settled": 1,
+   "n_predicted": 0,
+   "post_hoc": false
+  },
+  {
+   "slug": "tour-of-istanbul",
+   "year": 2026,
+   "name": "Tour of Istanbul 2026",
+   "short_name": "Tour of Istanbul 2026",
+   "type": "stage_race",
+   "status": "settled",
+   "start_date": "2026-09-03",
+   "end_date": "2026-09-06",
+   "blurb": "Nightly model run and results record for Tour of Istanbul.",
+   "campaign_dir": "performance_eval/tour-of-istanbul-2026",
+   "url": "/race/tour-of-istanbul/2026",
+   "pages": {},
+   "stages": [
+    {
+     "stage": 1,
+     "unit": "stage_01",
+     "kind": "stage",
+     "date": "2026-09-03",
+     "label": "Stage 1",
+     "status": "settled",
+     "predicted": false,
+     "url": null,
+     "asset": null
+    },
+    {
+     "stage": 2,
+     "unit": "stage_02",
+     "kind": "stage",
+     "date": null,
+     "label": "Stage 2",
+     "status": "upcoming",
+     "predicted": false,
+     "url": null,
+     "asset": null
+    },
+    {
+     "stage": 3,
+     "unit": "stage_03",
+     "kind": "stage",
+     "date": null,
+     "label": "Stage 3",
+     "status": "upcoming",
+     "predicted": false,
+     "url": null,
+     "asset": null
+    },
+    {
+     "stage": 4,
+     "unit": "stage_04",
+     "kind": "stage",
+     "date": null,
+     "label": "Stage 4",
+     "status": "upcoming",
+     "predicted": false,
+     "url": null,
+     "asset": null
+    }
+   ],
+   "n_stages": 4,
+   "n_settled": 1,
+   "n_predicted": 0,
+   "post_hoc": false
+  },
+  {
+   "slug": "zlm-tour",
+   "year": 2026,
+   "name": "ZLM Tour 2026",
+   "short_name": "ZLM Tour 2026",
+   "type": "stage_race",
+   "status": "settled",
+   "start_date": "2026-09-02",
+   "end_date": "2026-09-06",
+   "blurb": "Nightly model run and results record for ZLM Tour.",
+   "campaign_dir": "performance_eval/zlm-tour-2026",
+   "url": "/race/zlm-tour/2026",
+   "pages": {},
+   "stages": [
+    {
+     "stage": 1,
+     "unit": "stage_01",
+     "kind": "stage",
+     "date": "2026-09-02",
+     "label": "Stage 1",
+     "status": "settled",
+     "predicted": false,
+     "url": null,
+     "asset": null
+    },
+    {
+     "stage": 2,
+     "unit": "stage_02",
+     "kind": "stage",
+     "date": null,
+     "label": "Stage 2",
+     "status": "upcoming",
+     "predicted": false,
+     "url": null,
+     "asset": null
+    },
+    {
+     "stage": 3,
+     "unit": "stage_03",
+     "kind": "stage",
+     "date": null,
+     "label": "Stage 3",
+     "status": "upcoming",
+     "predicted": false,
+     "url": null,
+     "asset": null
+    },
+    {
+     "stage": 4,
+     "unit": "stage_04",
+     "kind": "stage",
+     "date": null,
+     "label": "Stage 4",
+     "status": "upcoming",
+     "predicted": false,
+     "url": null,
+     "asset": null
+    },
+    {
+     "stage": 5,
+     "unit": "stage_05",
+     "kind": "stage",
+     "date": null,
+     "label": "Stage 5",
+     "status": "upcoming",
+     "predicted": false,
+     "url": null,
+     "asset": null
+    }
+   ],
+   "n_stages": 5,
+   "n_settled": 1,
+   "n_predicted": 0,
+   "post_hoc": false
+  },
+  {
+   "slug": "tour-of-britain",
+   "year": 2026,
+   "name": "Tour of Britain 2026",
+   "short_name": "Tour of Britain 2026",
+   "type": "stage_race",
+   "status": "settled",
+   "start_date": "2026-09-02",
+   "end_date": "2026-09-06",
+   "blurb": "Nightly model run and results record for Tour of Britain.",
+   "campaign_dir": "performance_eval/tour-of-britain-2026",
+   "url": "/race/tour-of-britain/2026",
+   "pages": {},
+   "stages": [
+    {
+     "stage": 1,
+     "unit": "stage_01",
+     "kind": "stage",
+     "date": "2026-09-02",
+     "label": "Stage 1",
+     "status": "upcoming",
+     "predicted": false,
+     "url": null,
+     "asset": null
+    },
+    {
+     "stage": 2,
+     "unit": "stage_02",
+     "kind": "stage",
+     "date": null,
+     "label": "Stage 2",
+     "status": "upcoming",
+     "predicted": false,
+     "url": null,
+     "asset": null
+    },
+    {
+     "stage": 3,
+     "unit": "stage_03",
+     "kind": "stage",
+     "date": null,
+     "label": "Stage 3",
+     "status": "upcoming",
+     "predicted": false,
+     "url": null,
+     "asset": null
+    },
+    {
+     "stage": 4,
+     "unit": "stage_04",
+     "kind": "stage",
+     "date": null,
+     "label": "Stage 4",
+     "status": "upcoming",
+     "predicted": false,
+     "url": null,
+     "asset": null
+    },
+    {
+     "stage": 5,
+     "unit": "stage_05",
+     "kind": "stage",
+     "date": null,
+     "label": "Stage 5",
+     "status": "upcoming",
+     "predicted": false,
+     "url": null,
+     "asset": null
+    }
+   ],
+   "n_stages": 5,
+   "n_settled": 0,
+   "n_predicted": 0,
+   "post_hoc": false
+  },
   {
    "slug": "vuelta-a-espana",
    "year": 2026,
@@ -751,6 +1029,7 @@
  "default_month": "2026-09",
  "aliases": {
   "/index.html": "/model",
+  "/giro-della-toscana-2026.html": "/race/giro-della-toscana/2026/prediction",
   "/vuelta-gc.html": "/race/vuelta-a-espana/2026/gc",
   "/vuelta-stages.html": "/race/vuelta-a-espana/2026/stages",
   "/vuelta-stage02.html": "/race/vuelta-a-espana/2026/stage-02",
@@ -802,6 +1081,25 @@
   },
   "/model": {
    "asset": "/index.html"
+  },
+  "/race/giro-della-toscana/2026": {
+   "asset": "/_frame/race/giro-della-toscana-2026.html"
+  },
+  "/race/giro-della-toscana/2026/prediction": {
+   "asset": "/giro-della-toscana-2026.html",
+   "base": true
+  },
+  "/race/gp-industria-artigianato/2026": {
+   "asset": "/_frame/race/gp-industria-artigianato-2026.html"
+  },
+  "/race/tour-of-istanbul/2026": {
+   "asset": "/_frame/race/tour-of-istanbul-2026.html"
+  },
+  "/race/zlm-tour/2026": {
+   "asset": "/_frame/race/zlm-tour-2026.html"
+  },
+  "/race/tour-of-britain/2026": {
+   "asset": "/_frame/race/tour-of-britain-2026.html"
   },
   "/race/vuelta-a-espana/2026": {
    "asset": "/_frame/race/vuelta-a-espana-2026.html"

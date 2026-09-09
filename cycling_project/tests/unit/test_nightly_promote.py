@@ -285,4 +285,5 @@ def test_commit_stages_only_what_it_published(store, site, monkeypatch):
         "R", (), {"stdout": "", "returncode": 0})())
     P.commit("msg", ["vuelta-stage15.html"])
     added = next(a for a in calls if a[0] == "add")
-    assert [Path(x).name for x in added[2:]] == ["site-index.json", "_frame", "vuelta-stage15.html"]
+    assert [Path(x).name for x in added[2:]] == [
+        "site-index.json", "_frame", "published-campaigns.json", "vuelta-stage15.html"]

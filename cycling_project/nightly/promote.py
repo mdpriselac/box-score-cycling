@@ -51,6 +51,7 @@ SITE_DIR = PROJECT_ROOT / "netlify_site"
 SITE_BUILD = SITE_DIR / "build"
 LAUNCH_JSON = PROJECT_ROOT / ".claude" / "launch.json"
 WRANGLER_CONFIG = SITE_DIR / "wrangler.jsonc"
+PUBLISHED_CAMPAIGNS = SITE_DIR / "published-campaigns.json"
 TRUNK = "webscrape-refactor"
 
 EXIT_OK = 0
@@ -208,6 +209,24 @@ def copy_into_site(staged: Path, pages: List[Dict[str, Any]], *, apply: bool) ->
     return {"added": sorted(added), "changed": sorted(changed), "unchanged": sorted(same)}
 
 
+def register_campaign(campaign: str, *, apply: bool) -> Dict[str, Any]:
+    """Persist the approval boundary used by the public site index."""
+    try:
+        names = json.loads(PUBLISHED_CAMPAIGNS.read_text())
+    except FileNotFoundError:
+        names = []
+    if campaign in names:
+        return {"campaign": campaign, "added": False}
+    campaign_file = PROJECT_ROOT / "performance_eval" / campaign / "campaign.json"
+    if not campaign_file.exists():
+        raise RuntimeError(f"approved campaign {campaign!r} has no local campaign.json")
+    names.append(campaign)
+    if apply:
+        PUBLISHED_CAMPAIGNS.write_text(
+            json.dumps(names, indent=2, ensure_ascii=False) + "\n")
+    return {"campaign": campaign, "added": True}
+
+
 # ---------------------------------------------------------------------------
 # rebuild / commit / deploy
 # ---------------------------------------------------------------------------
@@ -271,6 +290,7 @@ def commit(message: str, paths: Sequence[str] = ()) -> Dict[str, Any]:
     except ValueError:                       # a redirected SITE_DIR (tests)
         site = SITE_DIR
     targets = [str(site / "site-index.json"), str(site / "_frame")]
+    targets.append(str(site / "published-campaigns.json"))
     targets += [str(site / rel) for rel in paths]
     git("add", "--", *targets)
     staged = git("diff", "--cached", "--name-only").stdout.split()
@@ -366,6 +386,8 @@ def promote(store: Any, *, run_id: Optional[str] = None, campaign: Optional[str]
         result["objects"] = pages
         counts = copy_into_site(staged, pages, apply=not dry_run)
         result["pages"] = counts
+        result["campaign_registration"] = register_campaign(
+            str(run.get("campaign_slug")), apply=not dry_run)
 
         if dry_run:
             result["rebuilt"] = "skipped (dry run)"

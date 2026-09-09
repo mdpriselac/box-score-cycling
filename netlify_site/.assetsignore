@@ -6,6 +6,7 @@ wrangler.jsonc
 Archive.zip
 .assetsignore
 SITE_FRAME_NOTES.md
+published-campaigns.json
 # The operator inbox is a local page against the Supabase control plane
 # (build_ops_page.py). It is never part of the public site; the Worker 404s it
 # too, in case a copy ever reaches the asset set another way.
