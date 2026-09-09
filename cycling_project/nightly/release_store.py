@@ -51,6 +51,7 @@ class ReleaseStore(Protocol):
     def get_release(self, tag: str) -> Optional[dict]: ...
     def download_release_file(self, tag: str, relpath: str, dest: Path) -> Path: ...
     def list_artifacts_since(self, release_tag: str) -> List[dict]: ...
+    def list_artifacts(self) -> List[dict]: ...
     def download_artifact(self, key: str, dest: Path) -> Path: ...
 
 
@@ -151,12 +152,15 @@ class FakeStore:
     def list_artifacts_since(self, release_tag: str) -> List[dict]:
         release = self.get_release(release_tag)
         since = release.get("created_at", "") if release else ""
+        return [o for o in self.list_artifacts() if o["created_at"] >= since]
+
+    def list_artifacts(self) -> List[dict]:
+        """Every artifact of every run, oldest first."""
         out = []
         for meta in self.artifacts_dir.rglob("*.meta.json"):
             info = json.loads(meta.read_text())
             key = str(meta.relative_to(self.artifacts_dir))[: -len(".meta.json")]
-            if info["created_at"] >= since:
-                out.append({"key": key, "created_at": info["created_at"], "size": info["size"]})
+            out.append({"key": key, "created_at": info["created_at"], "size": info["size"]})
         return sorted(out, key=lambda o: (o["created_at"], o["key"]))
 
     def download_artifact(self, key: str, dest: Path) -> Path:

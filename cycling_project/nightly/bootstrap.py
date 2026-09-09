@@ -38,7 +38,7 @@ import sys
 import tempfile
 import zipfile
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Sequence
+from typing import Iterable, Any, Dict, List, Optional, Sequence
 
 from cycling_project.db_path import ENV_VAR as DB_ENV_VAR
 from cycling_project.nightly.release_store import MANIFEST_NAME, resolve_store
@@ -193,16 +193,31 @@ def uv_sync(dest: Path) -> None:
     subprocess.run(["uv", "sync"], cwd=dest, check=True)
 
 
-def overlay_artifacts(store: Any, tag: str, dest: Path) -> List[str]:
-    """Copy ``nightly-artifacts/<run_id>/<campaign>/<rel>`` objects newer than the release."""
+def overlay_artifacts(store: Any, tag: str, dest: Path, manifest_files: Optional[Iterable[str]] = None) -> List[str]:
+    """Copy ``nightly-artifacts/<run_id>/<campaign>/<rel>`` objects onto the bundle snapshot.
+
+    An artifact applies when the bundle has no file at that path at all, or when
+    it is newer than the release.  (2026-09-09: the release was cut between a
+    cloud settle and its results being committed, so the results existed only
+    as artifacts older than the release — the old "newer than the release"
+    rule skipped them and the tick settled Tour of Britain 1–4 a second time.)
+    Oldest first, so a later run's file wins.
+    """
     applied: List[str] = []
     perf = (dest / "performance_eval").resolve()
-    for obj in store.list_artifacts_since(tag):
+    bundled = set(manifest_files or ())
+    release = store.get_release(tag) or {}
+    since = release.get("created_at", "") or ""
+    objs = store.list_artifacts() if hasattr(store, "list_artifacts") else store.list_artifacts_since(tag)
+    for obj in objs:
         key = obj["key"]
         parts = key.split("/")
         if len(parts) < 3:
             continue                       # not a campaign file
         rel = Path(*parts[1:])             # drop the run id
+        in_bundle = f"performance_eval/{rel.as_posix()}" in bundled
+        if in_bundle and since and str(obj.get("created_at") or "") <= since:
+            continue                       # the bundle already carries a copy at least this new
         target = (perf / rel).resolve()
         if not str(target).startswith(str(perf) + os.sep):
             raise BootstrapError(f"artifact key escapes performance_eval: {key}")
@@ -274,7 +289,7 @@ def _bootstrap_locked(
 
     applied: List[str] = []
     if not skip_artifacts:
-        applied = overlay_artifacts(store, tag, dest)
+        applied = overlay_artifacts(store, tag, dest, manifest_files=manifest["files"].keys())
         _say(f"campaigns: {manifest.get('campaigns')} hydrated; {len(applied)} artifacts overlaid")
 
     slice_path = dest / SLICE_NAME

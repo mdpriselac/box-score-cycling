@@ -406,6 +406,7 @@ def ingest(campaign_dir: Path, unit: str, *, crosswalk_csv: Optional[Path] = Non
     dup_gc = [k for k, n in _counts(r.rider.key for r in gc_rows).items() if n > 1]
     checks.append(Check("riders_unique", not dup and not dup_gc, {"stage_duplicates": dup[:10], "gc_duplicates": dup_gc[:10]}))
     problems: List[str] = []
+    soft: List[str] = []
     prev = -1.0
     for r in classified:
         if r.gap_seconds is None:
@@ -414,10 +415,19 @@ def ingest(campaign_dir: Path, unit: str, *, crosswalk_csv: Optional[Path] = Non
         if r.gap_seconds < 0:
             problems.append(f"place {r.place}: negative gap {r.gap_seconds}")
         if r.gap_seconds + GAP_TOLERANCE_S < prev:
+            if r.place is not None and r.place > TOP_STAGE:
+                # 2026-09-09 Vuelta stage 17: place 143 published as "+0" between +2:48 and +6:57 —
+                # a UCI data slip on a back-marker.  Outside the top gate the gap is blanked (the
+                # FC archive writes '') and the stage still settles; inside it the stage is refused.
+                soft.append(f"place {r.place}: gap {r.gap_seconds} < previous {prev} — blanked")
+                r.gap_seconds = None
+                continue
             problems.append(f"place {r.place}: gap {r.gap_seconds} < previous {prev}")
         prev = max(prev, r.gap_seconds)
+    if soft:
+        report.warnings.append("non-monotone gaps outside the top gate blanked: " + "; ".join(soft[:8]))
     checks.append(Check("gaps", not problems and winner is not None and winner.absolute_seconds is not None,
-                        {"winning_time": report.winning_time, "problems": problems[:20]}))
+                        {"winning_time": report.winning_time, "problems": problems[:20], "blanked": soft[:20]}))
     checks.append(Check("statuses", not unknown, {"unrecognised": [(r.rank_text, r.result_raw, r.display) for r in unknown][:10],
                                                    "abandons": sorted({r.status for r in abandons})}))
 

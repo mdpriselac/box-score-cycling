@@ -640,6 +640,13 @@ class SupabaseStore:
         """``{key, created_at, size}`` for every artifact of a run started at/after the release."""
         release = self.get_release(release_tag)
         since = release.get("created_at", "") if release else ""
+        return self._list_run_artifacts(since)
+
+    def list_artifacts(self) -> List[dict]:
+        """Every artifact of every run, oldest first (the bootstrap overlay decides what applies)."""
+        return self._list_run_artifacts("")
+
+    def _list_run_artifacts(self, since: str) -> List[dict]:
         params = {"select": "run_id,created_at", "order": "created_at.asc"}
         if since:
             params["created_at"] = f"gte.{since}"
@@ -1074,6 +1081,11 @@ class FakeStore(_rs.FakeStore):
         if self.role == "reader":
             self._deny("release_reader cannot list artifacts")
         return super().list_artifacts_since(release_tag)
+
+    def list_artifacts(self):
+        if self.role == "reader":
+            self._deny("release_reader cannot list artifacts")
+        return super().list_artifacts()
 
     def download_artifact(self, key, dest):
         if self.role == "reader":

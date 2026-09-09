@@ -314,6 +314,36 @@ def test_an_unmappable_back_marker_is_archived_under_a_provisional_uci_id(campai
     assert not rep.ok and "crosswalk_top" in [c["name"] for c in rep.failing]
 
 
+def _set_result(campaign, place: int, result: str) -> str:
+    """Overwrite one classified rider's result string in stage.json; returns the rider's lastname."""
+    holder = {}
+    def fn(d):
+        for r in d["results"]:
+            if str(r["values"].get("rank")) == str(place):
+                r["values"]["result"] = result
+                holder["last"] = r["values"]["lastname"]
+    _edit_json(campaign / "results/stage_14/uci/stage.json", fn)
+    return holder["last"]
+
+
+def test_a_bad_back_marker_gap_is_blanked_but_a_top_gap_still_rejects(campaign):
+    """Vuelta 2026 stage 17: place 143 published as '+0' between +2:48 and +6:57 (UCI data slip)."""
+    last = _set_result(campaign, 120, "+0")
+    rep = _ingest(campaign)
+    assert rep.ok, rep.failing
+    assert any("non-monotone gaps outside the top gate blanked" in w for w in rep.warnings)
+    rows = list(csv.DictReader((campaign / "results/stage_14/results.csv").open(encoding="utf-8")))
+    row = next(r for r in rows if r["place"] == "120")
+    assert row["gap"] == ""                                              # blanked, not fabricated
+    assert next(r for r in rows if r["place"] == "121")["gap"] != ""     # neighbours untouched
+    # the same slip inside the top gate still refuses the stage
+    shutil.rmtree(campaign / "results/stage_14/uci"); shutil.copytree(UCI, campaign / "results/stage_14/uci")
+    (campaign / "results/stage_14/results.csv").unlink()
+    _set_result(campaign, 5, "+0")
+    rep = _ingest(campaign, write=False)
+    assert not rep.ok and "gaps" in [c["name"] for c in rep.failing]
+
+
 def _rename_rider(campaign, old_last: str, new_last: str) -> None:
     """Rename a rider consistently in stage.json (results + podium) and gc.json."""
     for f in ("stage.json", "gc.json"):
