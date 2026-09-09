@@ -463,5 +463,34 @@
   "covered": true,
   "weight_on_true": 0.55,
   "scored_at": "2026-09-08T17:40:34.643139"
+ },
+ {
+  "stage": 17,
+  "oracle_item": "bunch",
+  "day_class": "bunch",
+  "rule_type": "mass_sprint",
+  "wg_size": 103,
+  "wg_prop": 0.6959,
+  "winning_time": 14835.0,
+  "winner": "Brennan Matthew",
+  "winner_gc_morning": 99,
+  "front5_gc_median": 104.0,
+  "top15_shares": {
+   "sprint": 0.733,
+   "mountain": 0.0,
+   "hilly": 0.133,
+   "rolling": 0.067,
+   "breakaway": 0.067,
+   "time_trial": 0.0
+  },
+  "top15_unknown": 0.0,
+  "day_key": {
+   "bunch": 1.0
+  },
+  "key_source": "config-root",
+  "exact": true,
+  "covered": true,
+  "weight_on_true": 1.0,
+  "scored_at": "2026-09-09T14:11:46.660563"
  }
 ]
