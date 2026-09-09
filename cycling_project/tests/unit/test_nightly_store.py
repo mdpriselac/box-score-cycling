@@ -104,6 +104,26 @@ def test_key_travels_in_headers_only():
     assert st3._headers()["apikey"] == jwt and st3._headers()["Authorization"] == f"Bearer {jwt}"
 
 
+def test_hosted_crosswalk_upsert_requests_merge_duplicates():
+    captured = {}
+
+    class Sess:
+        def request(self, method, url, params=None, json=None, headers=None, timeout=None):
+            captured.update(method=method, url=url, params=params, json=json, headers=headers)
+            r = requests.Response(); r.status_code = 200; r._content = json_module.dumps(json).encode()
+            return r
+
+    # Avoid shadowing the imported json module with requests' json argument.
+    json_module = json
+    st = SupabaseStore(
+        role="operator", url="https://ref.supabase.co", key="sb_secret_abc", session=Sess(),
+    )
+    st.upsert_crosswalk({"pcs_slug": "uci:cepeda|jefferson", "fc_rider_id": "68868"})
+    assert captured["method"] == "POST"
+    assert captured["params"] == {"on_conflict": "pcs_slug"}
+    assert "resolution=merge-duplicates" in captured["headers"]["Prefer"]
+
+
 def test_hosted_and_fake_surfaces_match():
     hosted = {n for n in dir(SupabaseStore) if not n.startswith("_")}
     fake = {n for n in dir(FakeStore) if not n.startswith("_")}

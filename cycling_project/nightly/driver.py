@@ -587,7 +587,14 @@ class Driver:
             has_capture = has_pcs or has_uci
             due: List[str] = []
             flags: List[str] = []
-            if d <= today and not has_results:
+            # Stage races settle on the stage date because the nightly runs
+            # after European racing.  A one-day race may be in a timezone far
+            # ahead of UTC (Binzhou was planned at 05:49 local), so its date
+            # alone does not mean the result can exist yet.  The runbook's
+            # one-day contract is preview the evening before, settle the
+            # evening after: wait until the following race-local day.
+            settle_due = d <= today if c.is_stage_race else d < today
+            if settle_due and not has_results:
                 # A stage below the latest archived one is a missed day: the runbook's
                 # "a missed day cannot be recovered" — it is a gap, not a due settle,
                 # unless the acquisition thread has actually put PCS pages there.
@@ -606,7 +613,7 @@ class Driver:
             units.append({"unit": unit, "date": date_s, "void": False, "due": due, "flags": flags,
                           "has_results": has_results, "has_boards": has_boards, "has_pcs": has_pcs, "has_uci": has_uci,
                           "uci_competition_url": c.uci_competition_url})
-            if d <= today and "gap" not in flags:
+            if settle_due and "gap" not in flags:
                 prev_settled = has_results
         return {"campaign": c.slug, "today": str(today), "timezone": c.timezone, "void_stages": sorted(void), "units": units,
                 "settle": [u["unit"] for u in units if "settle" in u["due"]],

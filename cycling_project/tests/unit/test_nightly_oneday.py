@@ -315,6 +315,20 @@ def test_a_one_day_uci_capture_ingests_from_its_single_classification(uci_campai
     assert capture.detail["unit_kind"] == "one_day" and capture.detail["required"] == ["gc"]
 
 
+def test_a_one_day_race_settles_on_the_following_local_day(uci_campaign, tmp_path, capsys):
+    camp, db = uci_campaign
+
+    assert _drv_run(camp, tmp_path, "plan", today="2026-09-06", db_path=db) == 0
+    race_day = json.loads(capsys.readouterr().out)
+    assert race_day["settle"] == []
+
+    assert _drv_run(camp, tmp_path, "plan", today="2026-09-07", db_path=db) == 0
+    next_day = json.loads(capsys.readouterr().out)
+    assert next_day["settle"] == ["race"]
+    unit = next(u for u in next_day["units"] if u["unit"] == "race")
+    assert "settle_late" in unit["flags"]
+
+
 def test_the_one_day_archive_has_no_gc_csv(uci_campaign):
     camp, db = uci_campaign
 

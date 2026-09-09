@@ -168,6 +168,7 @@ def test_csv_round_trip(tmp_path):
     assert [r["pcs_slug"] for r in back] == ["a-rider", "b-rider"]  # deterministic order
     assert back[0]["confirmed_by"] == "matt" and back[1]["fc_rider_id"] == "2"
     assert list(back[0].keys()) == cw.CSV_FIELDS
+    assert b"\r\n" not in path.read_bytes()
     # idempotent
     write_crosswalk_csv(back, path)
     assert read_crosswalk_csv(path) == back

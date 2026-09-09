@@ -271,12 +271,17 @@ class SupabaseStore:
         return self._rest("GET", table, params=params, what=f"select {table}").json()
 
     def _insert(self, table: str, rows: List[Dict[str, Any]], *, returning: bool = True,
-                on_conflict: Optional[str] = None, ignore_duplicates: bool = False) -> List[dict]:
+                on_conflict: Optional[str] = None, ignore_duplicates: bool = False,
+                merge_duplicates: bool = False) -> List[dict]:
         if not rows:
             return []
+        if ignore_duplicates and merge_duplicates:
+            raise ValueError("duplicate resolution cannot both ignore and merge")
         prefer = ["return=representation" if returning else "return=minimal"]
         if ignore_duplicates:
             prefer.append("resolution=ignore-duplicates")
+        elif merge_duplicates:
+            prefer.append("resolution=merge-duplicates")
         params = {"on_conflict": on_conflict} if on_conflict else None
         r = self._rest("POST", table, params=params, json_body=rows, prefer=",".join(prefer),
                        what=f"insert {table}")
@@ -398,7 +403,9 @@ class SupabaseStore:
         """Operator-only human confirmation: the one write that may replace a row."""
         self._require_operator("crosswalk confirmation")
         payload = _normalise("crosswalk", row)
-        out = self._insert("crosswalk", [payload], returning=True, on_conflict="pcs_slug")
+        out = self._insert(
+            "crosswalk", [payload], returning=True, on_conflict="pcs_slug", merge_duplicates=True,
+        )
         # merge-duplicates is what an upsert needs; ignore-duplicates would keep the old row
         return out[0] if out else payload
 

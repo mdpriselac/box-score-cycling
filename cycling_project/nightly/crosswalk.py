@@ -646,7 +646,7 @@ def write_crosswalk_csv(rows: Iterable[dict[str, Any]], path: Path = CROSSWALK_C
     path.parent.mkdir(parents=True, exist_ok=True)
     ordered = sorted(rows, key=lambda r: (str(r.get("pcs_slug", "")), str(r.get("fc_rider_id", ""))))
     with open(path, "w", newline="", encoding="utf-8") as f:
-        w = csv.DictWriter(f, fieldnames=CSV_FIELDS, extrasaction="ignore")
+        w = csv.DictWriter(f, fieldnames=CSV_FIELDS, extrasaction="ignore", lineterminator="\n")
         w.writeheader()
         for r in ordered:
             w.writerow({k: ("" if r.get(k) is None else r.get(k)) for k in CSV_FIELDS})
