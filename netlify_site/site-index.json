@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-09-08 20:41",
+ "generated_at": "2026-09-09 13:38",
  "site_name": "Cycling Race Predictor",
  "races": [
   {
@@ -8,7 +8,7 @@
    "name": "Giro della Toscana 2026",
    "short_name": "Giro della Toscana 2026",
    "type": "one_day",
-   "status": "upcoming",
+   "status": "in_progress",
    "start_date": "2026-09-09",
    "end_date": "2026-09-09",
    "blurb": "Nightly model run and results record for Giro della Toscana.",
