@@ -363,7 +363,7 @@ def build_routes(races):
     clean = {
         "/": {"asset": "/_frame/home.html"},
         "/races": {"asset": "/_frame/races.html"},
-        "/model": {"asset": "/index.html"},
+        "/model": {"asset": "/index.html", "chrome": True, "active": "model"},
     }
     for race in races:
         if race["status"] == "archive":
@@ -372,11 +372,13 @@ def build_routes(races):
             "asset": f"/_frame/race/{race['slug']}-{race['year']}.html"}
         for page in race["pages"].values():
             aliases[page["asset"]] = page["url"]
-            clean[page["url"]] = {"asset": page["asset"], "base": True}
+            clean[page["url"]] = {
+                "asset": page["asset"], "base": True, "chrome": True, "active": "races"}
         for s in race["stages"]:
             if s["asset"]:
                 aliases[s["asset"]] = s["url"]
-                clean[s["url"]] = {"asset": s["asset"], "base": True}
+                clean[s["url"]] = {
+                    "asset": s["asset"], "base": True, "chrome": True, "active": "races"}
     return aliases, clean
 
 

@@ -584,7 +584,8 @@ def test_the_one_day_prediction_page_gets_a_clean_url_and_a_redirect(index_mod):
 
     assert aliases["/strade-bianche-2026.html"] == "/race/strade-bianche/2026/prediction"
     assert clean["/race/strade-bianche/2026/prediction"] == {
-        "asset": "/strade-bianche-2026.html", "base": True}
+        "asset": "/strade-bianche-2026.html", "base": True,
+        "chrome": True, "active": "races"}
     assert clean["/race/strade-bianche/2026"]["asset"] == "/_frame/race/strade-bianche-2026.html"
 
 

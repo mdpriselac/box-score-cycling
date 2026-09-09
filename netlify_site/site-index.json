@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-09-08 18:01",
+ "generated_at": "2026-09-08 20:41",
  "site_name": "Cycling Race Predictor",
  "races": [
   {
@@ -1080,14 +1080,18 @@
    "asset": "/_frame/races.html"
   },
   "/model": {
-   "asset": "/index.html"
+   "asset": "/index.html",
+   "chrome": true,
+   "active": "model"
   },
   "/race/giro-della-toscana/2026": {
    "asset": "/_frame/race/giro-della-toscana-2026.html"
   },
   "/race/giro-della-toscana/2026/prediction": {
    "asset": "/giro-della-toscana-2026.html",
-   "base": true
+   "base": true,
+   "chrome": true,
+   "active": "races"
   },
   "/race/gp-industria-artigianato/2026": {
    "asset": "/_frame/race/gp-industria-artigianato-2026.html"
@@ -1106,170 +1110,252 @@
   },
   "/race/vuelta-a-espana/2026/gc": {
    "asset": "/vuelta-gc.html",
-   "base": true
+   "base": true,
+   "chrome": true,
+   "active": "races"
   },
   "/race/vuelta-a-espana/2026/stages": {
    "asset": "/vuelta-stages.html",
-   "base": true
+   "base": true,
+   "chrome": true,
+   "active": "races"
   },
   "/race/vuelta-a-espana/2026/stage-02": {
    "asset": "/vuelta-stage02.html",
-   "base": true
+   "base": true,
+   "chrome": true,
+   "active": "races"
   },
   "/race/vuelta-a-espana/2026/stage-03": {
    "asset": "/vuelta-stage03.html",
-   "base": true
+   "base": true,
+   "chrome": true,
+   "active": "races"
   },
   "/race/vuelta-a-espana/2026/stage-04": {
    "asset": "/vuelta-stage04.html",
-   "base": true
+   "base": true,
+   "chrome": true,
+   "active": "races"
   },
   "/race/vuelta-a-espana/2026/stage-05": {
    "asset": "/vuelta-stage05.html",
-   "base": true
+   "base": true,
+   "chrome": true,
+   "active": "races"
   },
   "/race/vuelta-a-espana/2026/stage-06": {
    "asset": "/vuelta-stage06.html",
-   "base": true
+   "base": true,
+   "chrome": true,
+   "active": "races"
   },
   "/race/vuelta-a-espana/2026/stage-07": {
    "asset": "/vuelta-stage07.html",
-   "base": true
+   "base": true,
+   "chrome": true,
+   "active": "races"
   },
   "/race/vuelta-a-espana/2026/stage-08": {
    "asset": "/vuelta-stage08.html",
-   "base": true
+   "base": true,
+   "chrome": true,
+   "active": "races"
   },
   "/race/vuelta-a-espana/2026/stage-09": {
    "asset": "/vuelta-stage09.html",
-   "base": true
+   "base": true,
+   "chrome": true,
+   "active": "races"
   },
   "/race/vuelta-a-espana/2026/stage-10": {
    "asset": "/vuelta-stage10.html",
-   "base": true
+   "base": true,
+   "chrome": true,
+   "active": "races"
   },
   "/race/vuelta-a-espana/2026/stage-11": {
    "asset": "/vuelta-stage11.html",
-   "base": true
+   "base": true,
+   "chrome": true,
+   "active": "races"
   },
   "/race/vuelta-a-espana/2026/stage-12": {
    "asset": "/vuelta-stage12.html",
-   "base": true
+   "base": true,
+   "chrome": true,
+   "active": "races"
   },
   "/race/vuelta-a-espana/2026/stage-13": {
    "asset": "/vuelta-stage13.html",
-   "base": true
+   "base": true,
+   "chrome": true,
+   "active": "races"
   },
   "/race/vuelta-a-espana/2026/stage-14": {
    "asset": "/vuelta-stage14.html",
-   "base": true
+   "base": true,
+   "chrome": true,
+   "active": "races"
   },
   "/race/vuelta-a-espana/2026/stage-15": {
    "asset": "/vuelta-stage15.html",
-   "base": true
+   "base": true,
+   "chrome": true,
+   "active": "races"
   },
   "/race/vuelta-a-espana/2026/stage-16": {
    "asset": "/vuelta-stage16.html",
-   "base": true
+   "base": true,
+   "chrome": true,
+   "active": "races"
   },
   "/race/vuelta-a-espana/2026/stage-17": {
    "asset": "/vuelta-stage17.html",
-   "base": true
+   "base": true,
+   "chrome": true,
+   "active": "races"
   },
   "/race/tour-de-france/2026": {
    "asset": "/_frame/race/tour-de-france-2026.html"
   },
   "/race/tour-de-france/2026/gc": {
    "asset": "/gc.html",
-   "base": true
+   "base": true,
+   "chrome": true,
+   "active": "races"
   },
   "/race/tour-de-france/2026/stages": {
    "asset": "/stages.html",
-   "base": true
+   "base": true,
+   "chrome": true,
+   "active": "races"
   },
   "/race/tour-de-france/2026/review": {
    "asset": "/review.html",
-   "base": true
+   "base": true,
+   "chrome": true,
+   "active": "races"
   },
   "/race/tour-de-france/2026/stage-02": {
    "asset": "/stage02.html",
-   "base": true
+   "base": true,
+   "chrome": true,
+   "active": "races"
   },
   "/race/tour-de-france/2026/stage-03": {
    "asset": "/stage03.html",
-   "base": true
+   "base": true,
+   "chrome": true,
+   "active": "races"
   },
   "/race/tour-de-france/2026/stage-04": {
    "asset": "/stage04.html",
-   "base": true
+   "base": true,
+   "chrome": true,
+   "active": "races"
   },
   "/race/tour-de-france/2026/stage-05": {
    "asset": "/stage05.html",
-   "base": true
+   "base": true,
+   "chrome": true,
+   "active": "races"
   },
   "/race/tour-de-france/2026/stage-06": {
    "asset": "/stage06.html",
-   "base": true
+   "base": true,
+   "chrome": true,
+   "active": "races"
   },
   "/race/tour-de-france/2026/stage-07": {
    "asset": "/stage07.html",
-   "base": true
+   "base": true,
+   "chrome": true,
+   "active": "races"
   },
   "/race/tour-de-france/2026/stage-08": {
    "asset": "/stage08.html",
-   "base": true
+   "base": true,
+   "chrome": true,
+   "active": "races"
   },
   "/race/tour-de-france/2026/stage-09": {
    "asset": "/stage09.html",
-   "base": true
+   "base": true,
+   "chrome": true,
+   "active": "races"
   },
   "/race/tour-de-france/2026/stage-10": {
    "asset": "/stage10.html",
-   "base": true
+   "base": true,
+   "chrome": true,
+   "active": "races"
   },
   "/race/tour-de-france/2026/stage-11": {
    "asset": "/stage11.html",
-   "base": true
+   "base": true,
+   "chrome": true,
+   "active": "races"
   },
   "/race/tour-de-france/2026/stage-12": {
    "asset": "/stage12.html",
-   "base": true
+   "base": true,
+   "chrome": true,
+   "active": "races"
   },
   "/race/tour-de-france/2026/stage-13": {
    "asset": "/stage13.html",
-   "base": true
+   "base": true,
+   "chrome": true,
+   "active": "races"
   },
   "/race/tour-de-france/2026/stage-14": {
    "asset": "/stage14.html",
-   "base": true
+   "base": true,
+   "chrome": true,
+   "active": "races"
   },
   "/race/tour-de-france/2026/stage-15": {
    "asset": "/stage15.html",
-   "base": true
+   "base": true,
+   "chrome": true,
+   "active": "races"
   },
   "/race/tour-de-france/2026/stage-16": {
    "asset": "/stage16.html",
-   "base": true
+   "base": true,
+   "chrome": true,
+   "active": "races"
   },
   "/race/tour-de-france/2026/stage-17": {
    "asset": "/stage17.html",
-   "base": true
+   "base": true,
+   "chrome": true,
+   "active": "races"
   },
   "/race/tour-de-france/2026/stage-18": {
    "asset": "/stage18.html",
-   "base": true
+   "base": true,
+   "chrome": true,
+   "active": "races"
   },
   "/race/tour-de-france/2026/stage-19": {
    "asset": "/stage19.html",
-   "base": true
+   "base": true,
+   "chrome": true,
+   "active": "races"
   },
   "/race/tour-de-france/2026/stage-20": {
    "asset": "/stage20.html",
-   "base": true
+   "base": true,
+   "chrome": true,
+   "active": "races"
   },
   "/race/tour-de-france/2026/stage-21": {
    "asset": "/stage21.html",
-   "base": true
+   "base": true,
+   "chrome": true,
+   "active": "races"
   },
   "/calendar/2026/07": {
    "asset": "/_frame/calendar/2026-07.html"
