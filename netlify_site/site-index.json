@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-09-08 17:30",
+ "generated_at": "2026-09-08 17:40",
  "site_name": "Cycling Race Predictor",
  "races": [
   {
@@ -271,12 +271,15 @@
      "stage": 17,
      "unit": "stage_17",
      "kind": "stage",
-     "date": null,
-     "label": "Stage 17",
-     "status": "upcoming",
-     "predicted": false,
-     "url": null,
-     "asset": null
+     "date": "2026-09-09",
+     "label": "Stage 17 — Dos Hermanas → Sevilla, 185 km",
+     "status": "predicted",
+     "predicted": true,
+     "url": "/race/vuelta-a-espana/2026/stage-17",
+     "asset": "/vuelta-stage17.html",
+     "day_key": {
+      "bunch": 1.0
+     }
     },
     {
      "stage": 18,
@@ -325,7 +328,7 @@
    ],
    "n_stages": 21,
    "n_settled": 15,
-   "n_predicted": 16,
+   "n_predicted": 17,
    "post_hoc": false
   },
   {
@@ -765,6 +768,7 @@
   "/vuelta-stage14.html": "/race/vuelta-a-espana/2026/stage-14",
   "/vuelta-stage15.html": "/race/vuelta-a-espana/2026/stage-15",
   "/vuelta-stage16.html": "/race/vuelta-a-espana/2026/stage-16",
+  "/vuelta-stage17.html": "/race/vuelta-a-espana/2026/stage-17",
   "/gc.html": "/race/tour-de-france/2026/gc",
   "/stages.html": "/race/tour-de-france/2026/stages",
   "/review.html": "/race/tour-de-france/2026/review",
@@ -868,6 +872,10 @@
   },
   "/race/vuelta-a-espana/2026/stage-16": {
    "asset": "/vuelta-stage16.html",
+   "base": true
+  },
+  "/race/vuelta-a-espana/2026/stage-17": {
+   "asset": "/vuelta-stage17.html",
    "base": true
   },
   "/race/tour-de-france/2026": {
