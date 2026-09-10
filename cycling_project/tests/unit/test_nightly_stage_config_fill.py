@@ -99,6 +99,18 @@ def test_a_templated_config_fills_its_sentinel_event_id_and_odds_capture(campaig
     assert step["detail"] == {"created": True, "filled": ["event_id", "odds_capture"]}
 
 
+def test_an_unresolved_event_id_does_not_select_an_unrelated_snapshot(campaign, tmp_path, capsys):
+    assert UNIT not in json.loads((campaign / "campaign.json").read_text())["kambi_event_ids"]
+
+    assert _preview(campaign, tmp_path, "--dry-run") == drv.EXIT_WAITING
+    assert json.loads(capsys.readouterr().out)["operator_task"]["kind"] == "scenarios_needed"
+
+    cfg = _config(campaign)
+    assert cfg["event_id"] is None
+    assert cfg["odds_capture"] is None
+    assert cfg["odds_capture"] != f"{TODAY}/markets_1900.json"
+
+
 def test_a_config_that_already_carries_real_values_is_left_alone(campaign, tmp_path):
     _set_event_id(campaign, UNIT, EVENT_ID)
     pred = campaign / "predictions" / UNIT
@@ -113,6 +125,28 @@ def test_a_config_that_already_carries_real_values_is_left_alone(campaign, tmp_p
     assert cfg["event_id"] == "1028797999" and cfg["odds_capture"] == "2026-09-04/markets_1345.json"
     step = next(s for s in _ledger(tmp_path, "run_steps") if s["step"] == "stage_config")
     assert step["detail"] == {"created": False, "filled": []}
+
+
+@pytest.mark.parametrize("field,value", [
+    ("event_id", "FILL_FROM_ODDS_PROVENANCE"),
+    ("odds_capture", "YYYY-MM-DD/markets_HHMM.json"),
+])
+def test_validate_hard_fails_a_remaining_template_sentinel(campaign, tmp_path, capsys, field, value):
+    pred = campaign / "predictions" / UNIT
+    pred.mkdir(parents=True, exist_ok=True)
+    cfg = {"stage": 16, "fc_race_id": "23", "year": 2026, "date": TODAY,
+           "event_id": None, "odds_capture": None, "void_stages": [], "scenarios": {}}
+    cfg[field] = value
+    (pred / "scenarios.json").write_text(json.dumps(cfg))
+
+    code = drv.main(["validate", "--unit", UNIT, "--campaign", str(campaign),
+                     "--store", "fake", "--store-root", str(tmp_path / "store"),
+                     "--crosswalk", str(campaign / "rider_crosswalk.csv"), "--today", TODAY,
+                     "--db-path", str(tmp_path / "nonexistent.db"), "--dry-run"])
+    out = json.loads(capsys.readouterr().out)
+    assert code == drv.EXIT_WAITING and out["operator_task"]["kind"] == "validate_failed"
+    assert any(field in problem and "placeholder" in problem
+               for problem in out["operator_task"]["detail"]["problems"])
 
 
 # ---------------------------------------------------------------------------

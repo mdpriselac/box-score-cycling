@@ -1126,18 +1126,30 @@ class Driver:
         # Fill event id + odds capture when absent — a config just made from the template
         # carries sentinels, which are truthy but are not values (see _is_placeholder).
         filled = []
-        event_id = None if _is_placeholder(cfg.get("event_id"), numeric=True) else str(cfg["event_id"]).strip()
+        normalized = False
+        event_id_placeholder = _is_placeholder(cfg.get("event_id"), numeric=True)
+        event_id = None if event_id_placeholder else str(cfg["event_id"]).strip()
         if event_id is None:
             eid = (c.cfg.get("kambi_event_ids") or {}).get(unit)
             if eid:
                 cfg["event_id"] = event_id = str(eid)
                 filled.append("event_id")
+            elif event_id_placeholder and cfg.get("event_id") is not None:
+                # A template sentinel is never publishable provenance.  Keep an
+                # unresolved market explicitly absent until capture finds its id.
+                cfg["event_id"] = None
+                normalized = True
         if _is_placeholder(cfg.get("odds_capture")):
-            snap = self._newest_snapshot(str(self.today), event_id)   # no id known: newest snapshot of the day
+            # Without an event id, "newest" may belong to another stage/race.
+            # Do not attach unrelated market provenance merely because it shares a date.
+            snap = self._newest_snapshot(str(self.today), event_id) if event_id else None
             if snap:
                 cfg["odds_capture"] = snap
                 filled.append("odds_capture")
-        if created or filled:
+            elif cfg.get("odds_capture") is not None:
+                cfg["odds_capture"] = None
+                normalized = True
+        if created or filled or normalized:
             _write_json(cfg_path, cfg)
         return {"path": str(cfg_path), "created": created, "filled": filled, "event_id": cfg.get("event_id"),
                 "odds_capture": cfg.get("odds_capture"), "_detail": {"created": created, "filled": filled}}
@@ -1218,6 +1230,12 @@ class Driver:
         for k in ("fc_race_id", "year", "date", "scenarios"):
             if k not in cfg:
                 problems.append(f"config lacks {k}")
+        event_id = cfg.get("event_id")
+        if event_id not in (None, "") and _is_placeholder(event_id, numeric=True):
+            problems.append("config event_id is an unresolved/invalid placeholder")
+        odds_capture = cfg.get("odds_capture")
+        if odds_capture not in (None, "") and _is_placeholder(odds_capture):
+            problems.append("config odds_capture is an unresolved placeholder")
         if stage is not None and int(cfg.get("stage", -1)) != stage:
             problems.append(f"config stage {cfg.get('stage')} != {stage}")
         if stage is None and oneday.is_one_day_unit(unit):
