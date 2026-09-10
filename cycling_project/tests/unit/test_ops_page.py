@@ -85,6 +85,10 @@ def test_the_waiting_count_is_the_notification(page):
     assert "document.title" in page and "waiting" in page
 
 
+def test_operator_task_cards_show_their_task_number(page):
+    assert 'class="taskid">Task #${esc(t.id)}' in page
+
+
 def test_the_page_asks_search_engines_to_stay_away(page):
     assert 'name="robots" content="noindex, nofollow"' in page
 

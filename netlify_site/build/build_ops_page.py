@@ -106,6 +106,8 @@ OPS_CSS = """
   .item.urgent{border-left:4px solid var(--red)}
   .item.blocks{border-left:4px solid var(--yellow)}
   .item h3{margin:0 0 3px;font-size:16px}
+  .taskid{font-family:var(--mono);font-size:12.5px;color:var(--slate);
+    white-space:nowrap;margin-right:5px}
   .item .sub{font-family:var(--sans);font-size:12.5px;color:var(--slate);
     display:flex;flex-wrap:wrap;gap:4px 14px;margin-bottom:8px}
   .item .sub b{color:var(--ink);font-weight:600}
@@ -443,7 +445,7 @@ function renderTasks() {{
     const cls = t.urgency === "urgent" ? "urgent"
       : (t.urgency || "").startsWith("blocks") ? "blocks" : "";
     return `<div class="item ${{cls}}">
-      <h3>${{esc(t.summary)}}</h3>
+      <h3><span class="taskid">Task #${{esc(t.id)}}</span> ${{esc(t.summary)}}</h3>
       <div class="sub"><span>${{esc(t.kind)}}</span>
         <span>${{esc(t.campaign_slug || "—")}}</span>
         <span>urgency <b>${{esc(t.urgency)}}</b></span>
