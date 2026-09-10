@@ -67,6 +67,18 @@ WORKSPACE_ID = "wrkspc_01EXAMPLEB3AA2FEB16D1B0B"
 CONSOLE_BASE = f"https://platform.claude.com/workspaces/{WORKSPACE_ID}/sessions/"
 SUPABASE_JS = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.58.0/+esm"
 
+# A later successful step is deterministic evidence that this kind of blocker
+# no longer applies. Unstructured ops-triage tasks are deliberately absent.
+TASK_SUCCESS_STEPS = {
+    "acquisition_needed": "acquire",
+    "pcs_pages_needed": "acquire",
+    "ingest_failed": "ingest",
+    "kambi_match": "capture_odds",
+    "scenarios_needed": "stage_config",
+    "day_key_needed": "day_key",
+    "validate_failed": "validate",
+}
+
 # Publishable keys are public by design (they only reach the API gateway; the
 # JWT decides the role). A secret key here would be a mistake, so refuse one.
 SECRET_KEY_PREFIXES = ("sb_secret_", "service_role")
@@ -168,6 +180,7 @@ def build_html(url: str, publishable_key: str, *, local: bool, project_ref: str)
         "discouraged": list(DISCOURAGED_ITEMS),
         "familyOf": dict(FAMILY_OF),
         "tolerance": WEIGHT_TOLERANCE,
+        "taskSuccessSteps": TASK_SUCCESS_STEPS,
         "days": 14,
     }
     dash = (f"https://supabase.com/dashboard/project/{project_ref}" if project_ref else "")
@@ -410,8 +423,65 @@ async function load() {{
     steps = s.data || [];
   }}
   data = {{ tasks, keys, proposals, runs, approvals, steps }};
+  const reconciled = await reconcileTasks();
   render();
+  if (reconciled) toast(`Reconciled ${{reconciled}} superseded task${{reconciled === 1 ? "" : "s"}}.`);
   $("loaded").textContent = "loaded " + new Date().toLocaleTimeString();
+}}
+
+// The cloud agent stays append-only. Once an operator opens this page, only
+// ledger-proven stale alerts are resolved through the operator role.
+function taskUnit(t) {{
+  return t.detail && t.detail.unit ? String(t.detail.unit) : "";
+}}
+
+function supersededTaskResolution(t) {{
+  if (t.author && t.author !== "agent") return null;
+
+  if (t.kind === "crosswalk_proposals") {{
+    const refs = ((t.detail || {{}}).proposals || []).map((p) => p.pcs_slug).filter(Boolean);
+    const pending = new Set(data.proposals.map((p) => p.pcs_slug));
+    if (refs.length && !refs.some((slug) => pending.has(slug)))
+      return "Automatically reconciled: every referenced rider proposal has been decided.";
+    return null;
+  }}
+
+  const provingStep = CFG.taskSuccessSteps[t.kind];
+  const unit = taskUnit(t);
+  const created = Date.parse(t.created_at || "");
+  if (!provingStep || !unit || !Number.isFinite(created)) return null;
+
+  const newer = data.tasks.find((other) => other.id !== t.id && other.kind === t.kind
+    && other.campaign_slug === t.campaign_slug && taskUnit(other) === unit
+    && Date.parse(other.created_at || "") > created);
+  if (newer) return `Automatically reconciled: superseded by newer task #${{newer.id}}.`;
+
+  const laterRuns = data.runs.filter((r) => r.campaign_slug === t.campaign_slug
+    && r.unit === unit && Date.parse(r.started_at || "") > created);
+  for (const run of laterRuns) {{
+    const proved = data.steps.some((s) => s.run_id === run.run_id
+      && s.step === provingStep && s.state === "ok");
+    if (proved)
+      return `Automatically reconciled: ${{provingStep}} succeeded in later run ${{run.run_id}}.`;
+  }}
+  return null;
+}}
+
+async function reconcileTasks() {{
+  const stale = data.tasks.map((task) => [task, supersededTaskResolution(task)])
+    .filter(([, resolution]) => resolution);
+  if (!stale.length) return 0;
+
+  const resolved = new Set();
+  await Promise.all(stale.map(async ([task, resolution]) => {{
+    const {{ error }} = await sb.from("operator_tasks").update({{
+      resolved: true, resolved_by: "ops-reconciler", resolution,
+    }}).eq("id", task.id);
+    if (error) toast(`Could not reconcile task #${{task.id}}: ${{error.message}}`, true);
+    else resolved.add(task.id);
+  }}));
+  data.tasks = data.tasks.filter((task) => !resolved.has(task.id));
+  return resolved.size;
 }}
 
 // ---------------------------------------------------------------- render

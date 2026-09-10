@@ -554,6 +554,7 @@ class Driver:
         except WaitingForInput as w:
             task = build_operator_task(w.kind, self.campaign.slug if self.campaign else None, w.summary,
                                        {**w.detail, "unit": unit, "phase": phase, "run_id": self.run["run_id"]}, w.urgency)
+            task["run_id"] = self.run["run_id"]
             task_row = None
             try:
                 task_row = self.store.insert_task(task)

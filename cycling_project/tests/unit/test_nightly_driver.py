@@ -171,6 +171,7 @@ def test_settle_without_pcs_pages_exits_10_with_operator_task(campaign, tmp_path
     assert run["status"] == "waiting_for_input" and run["operator_task"]["kind"] == "acquisition_needed"
     tasks = _ledger(tmp_path, "operator_tasks")
     assert len(tasks) == 1 and tasks[0]["campaign_slug"] == "vuelta-2026" and tasks[0]["author"] == "agent"
+    assert tasks[0]["run_id"] == run["run_id"]
     assert not tasks[0].get("resolved")
     fin = [s for s in _ledger(tmp_path, "run_steps") if s["step"] == "finish"]
     assert fin[-1]["state"] == "waiting" and fin[-1]["exit_code"] == 10

@@ -89,6 +89,25 @@ def test_operator_task_cards_show_their_task_number(page):
     assert 'class="taskid">Task #${esc(t.id)}' in page
 
 
+def test_reconciliation_requires_deterministic_later_evidence(page, mod):
+    assert mod.TASK_SUCCESS_STEPS == {
+        "acquisition_needed": "acquire",
+        "pcs_pages_needed": "acquire",
+        "ingest_failed": "ingest",
+        "kambi_match": "capture_odds",
+        "scenarios_needed": "stage_config",
+        "day_key_needed": "day_key",
+        "validate_failed": "validate",
+    }
+    assert 'Date.parse(r.started_at || "") > created' in page
+    assert 's.step === provingStep && s.state === "ok"' in page
+    assert 'resolved_by: "ops-reconciler"' in page
+
+
+def test_unstructured_ops_triage_is_never_auto_reconciled(mod):
+    assert "ops_triage" not in mod.TASK_SUCCESS_STEPS
+
+
 def test_the_page_asks_search_engines_to_stay_away(page):
     assert 'name="robots" content="noindex, nofollow"' in page
 
