@@ -18,8 +18,10 @@
   ],
   "timezone": "America/Toronto",
   "kambi_match": "gp quebec",
-  "kambi_localised_name": null,
-  "kambi_event_ids": {},
+  "kambi_localised_name": "GP de Quebec 2026",
+  "kambi_event_ids": {
+    "race": "1029079979"
+  },
   "pcs_slug": "gp-quebec",
   "organiser_stage_urls": {},
   "void_stages": [],

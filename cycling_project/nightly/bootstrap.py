@@ -226,15 +226,18 @@ def overlay_artifacts(store: Any, tag: str, dest: Path, manifest_files: Optional
     return applied
 
 
-def write_env(dest: Path, slice_path: Path) -> None:
+def write_env(dest: Path, slice_path: Path, release_tag: str) -> None:
     os.environ[DB_ENV_VAR] = str(slice_path)
+    os.environ["NIGHTLY_RELEASE_TAG"] = release_tag
     env_file = dest / ".env"
     lines = []
     if env_file.exists():
-        lines = [ln for ln in env_file.read_text().splitlines() if not ln.startswith(f"{DB_ENV_VAR}=")]
-    lines.append(f"{DB_ENV_VAR}={slice_path}")
+        lines = [ln for ln in env_file.read_text().splitlines()
+                 if not ln.startswith((f"{DB_ENV_VAR}=", "NIGHTLY_RELEASE_TAG="))]
+    lines.extend((f"{DB_ENV_VAR}={slice_path}", f"NIGHTLY_RELEASE_TAG={release_tag}"))
     env_file.write_text("\n".join(lines) + "\n")
-    (dest / ENV_SCRIPT).write_text(f"export {DB_ENV_VAR}={slice_path}\n")
+    (dest / ENV_SCRIPT).write_text(
+        f"export {DB_ENV_VAR}={slice_path}\nexport NIGHTLY_RELEASE_TAG={release_tag}\n")
 
 
 # ---------------------------------------------------------------------------
@@ -294,7 +297,7 @@ def _bootstrap_locked(
 
     slice_path = dest / SLICE_NAME
     if SLICE_NAME in manifest["files"]:
-        write_env(dest, slice_path)
+        write_env(dest, slice_path, tag)
         _say(f"{DB_ENV_VAR}={slice_path}")
     else:
         _say("bundle has no inference slice; serving database not redirected")

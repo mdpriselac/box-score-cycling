@@ -74,8 +74,8 @@ logger = get_logger(__name__)
 
 REQUIRED_KINDS = tuple(k for k, (_t, req) in CLASSIFICATIONS.items() if req)
 ONE_DAY_STAGE_KEY = "race"      # what a one-day results.json puts in its ``stage`` field
-ABSOLUTE_TIME_RE = re.compile(r"^\d{1,2}:\d{2}:\d{2}$|^\d{1,3}:\d{2}$")
-GAP_RE = re.compile(r"^\+\s*(\d+(?::\d{2}){0,2})$")
+ABSOLUTE_TIME_RE = re.compile(r"^\d{1,2}:\d{2}:\d{2}(?:\.\d+)?$|^\d{1,3}:\d{2}(?:\.\d+)?$")
+GAP_RE = re.compile(r"^\+\s*(\d+(?::\d{2}){0,2}(?:\.\d+)?)$")
 DISCIPLINE_FOR_ROAD = "ROA"
 
 
@@ -187,9 +187,14 @@ def parse_rider_results(doc: Dict[str, Any], kind: str) -> List[UciRow]:
                 row.gap_seconds = prev_gap
             elif gap is not None:
                 row.gap_seconds = gap
-            elif absolute is not None and winner_abs is not None:
+            elif absolute is not None and winner_abs is not None and absolute >= winner_abs:
                 row.absolute_seconds = absolute
                 row.gap_seconds = absolute - winner_abs
+            elif absolute is not None and winner_abs is not None:
+                # Some UCI one-day classifications omit the leading ``+`` and
+                # publish ``0:01`` / ``0:14`` as gaps.  A post-winner value
+                # smaller than the winning time cannot be an absolute finish.
+                row.gap_seconds = absolute
             if row.gap_seconds is not None:
                 prev_gap = row.gap_seconds
         rows.append(row)

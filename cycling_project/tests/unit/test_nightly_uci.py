@@ -249,6 +249,23 @@ def test_stage14_accounting_and_gap_parsing(campaign):
     assert ui._status_of(None, "DSQ") == ("DSQ", None) and ui._status_of(None, "wat") == ("?", None)
 
 
+def test_fractional_itt_times_and_gaps_are_parsed():
+    assert ui.parse_result_value("35:22.82") == (None, 2122.82, False)
+    assert ui.parse_result_value("+3.00") == (3.0, None, False)
+    assert ui.parse_result_value("+1:01.00") == (61.0, None, False)
+
+
+def test_bare_post_winner_times_smaller_than_the_winner_are_gaps():
+    doc = {"results": [
+        {"values": {"rank": "1", "firstname": "Winner", "lastname": "One", "result": "4:25:06"}},
+        {"values": {"rank": "2", "firstname": "Second", "lastname": "Two", "result": "0:01"}},
+        {"values": {"rank": "3", "firstname": "Third", "lastname": "Three", "result": "0:14"}},
+    ]}
+    rows = ui.parse_rider_results(doc, "gc")
+    assert rows[0].absolute_seconds == 15906.0
+    assert [r.gap_seconds for r in rows] == [0.0, 1.0, 14.0]
+
+
 def test_identity_policy(campaign):
     rep = _ingest(campaign, write=False)
     by_name = {i["uci_name"]: i for i in rep.identities}

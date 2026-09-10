@@ -366,7 +366,9 @@ def test_bootstrap_hydrates_from_fake_store_and_fails_closed(fake_project, tmp_p
     assert "stale" not in (dest / "performance_eval" / "vuelta-2026" / "predictions" / "stage_15" / "scenarios.json").read_text()
     assert os.environ[db_path_mod.ENV_VAR] == str(dest / "inference_slice.db")
     assert f"{db_path_mod.ENV_VAR}={dest / 'inference_slice.db'}" in (dest / ".env").read_text()
-    assert (dest / bootstrap_mod.ENV_SCRIPT).read_text().startswith("export CYCLING_DB_PATH=")
+    env_script = (dest / bootstrap_mod.ENV_SCRIPT).read_text()
+    assert env_script.startswith("export CYCLING_DB_PATH=")
+    assert "export NIGHTLY_RELEASE_TAG=data-2026-09-05" in env_script
 
     # second run: everything already present, nothing downloaded
     again = bootstrap(dest, store, skip_uv_sync=True)
