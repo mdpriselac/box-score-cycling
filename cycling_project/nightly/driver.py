@@ -92,6 +92,18 @@ FAKESTORE_DIRNAME = "fakestore"
 LAMBDARANK_SUM_TOL = 0.02
 COVERAGE_WARN, COVERAGE_FAIL = 0.99, 0.90
 STATE_SENTENCE_RE = re.compile(r"State through stage \d+", re.I)
+NON_BOARD_JSON = {
+    "scenarios.json", "route.json", "route_raw.json", "route.override.json",
+    "agent_key.json", "agent_key_response.json", "retro_facts.json",
+}
+
+
+def _has_scenario_boards(pred: Path) -> bool:
+    """True when a prediction directory contains at least one rendered board."""
+    return pred.is_dir() and any(
+        p.suffix == ".json" and p.name not in NON_BOARD_JSON and not p.name.startswith("editorial_")
+        for p in pred.iterdir()
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -611,10 +623,7 @@ class Driver:
                 continue
             has_results = (c.results_dir(unit) / "results.csv").exists()
             pred = c.pred_dir(unit)
-            has_boards = pred.is_dir() and any(p.suffix == ".json" and p.name not in ("scenarios.json", "route.json", "route_raw.json",
-                                                                                    "route.override.json", "agent_key.json",
-                                                                                    "agent_key_response.json", "retro_facts.json")
-                                               and not p.name.startswith("editorial_") for p in pred.iterdir())
+            has_boards = _has_scenario_boards(pred)
             has_pcs = (c.results_dir(unit) / "pcs").is_dir()
             has_uci = uci_acquire.capture_is_complete(uci_acquire.read_index(c.results_dir(unit) / "uci"))
             has_capture = has_pcs or has_uci
@@ -1001,11 +1010,19 @@ class Driver:
 
     def _build_pages(self, unit: str) -> None:
         c = self.campaign
-        cfg = c.pred_dir(unit) / "scenarios.json"
+        pred = c.pred_dir(unit)
+        cfg = pred / "scenarios.json"
         if cfg.exists() and c.stage_of(unit) is not None:
-            r = self.script("stage_page", [self.python, SCRIPTS["stage_page"], cfg])
-            if not r.get("skipped"):
-                self.built_pages.append(SITE_DIR / f"{c.site_prefix}stage{c.stage_of(unit):02d}.html")
+            if self.record.get("phase") == "settle" and not _has_scenario_boards(pred):
+                # A stage that was never previewed can still be settled honestly:
+                # results, scoring and retro_facts are useful, but there is no
+                # pre-race board from which to construct a stage page.
+                self.step("stage_page", lambda: None,
+                          skip="retrospective-only settlement: no pre-race boards")
+            else:
+                r = self.script("stage_page", [self.python, SCRIPTS["stage_page"], cfg])
+                if not r.get("skipped"):
+                    self.built_pages.append(SITE_DIR / f"{c.site_prefix}stage{c.stage_of(unit):02d}.html")
         elif cfg.exists() and oneday.is_one_day_unit(unit):
             r = self.script("oneday_page", [self.python, SCRIPTS["oneday_page"], cfg])
             if not r.get("skipped"):

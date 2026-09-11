@@ -262,6 +262,35 @@ def test_phase_is_idempotent_and_never_invokes_git(campaign, tmp_path, capsys, m
     assert len(calls) == 2 * n
 
 
+def test_settle_without_pre_race_boards_is_retrospective_only(campaign, tmp_path, capsys, monkeypatch):
+    """A missed preview must not prevent results and retro facts from settling."""
+    for board in (campaign / "predictions/stage_14").glob("*.json"):
+        if board.name != "scenarios.json":
+            board.unlink()
+
+    calls = []
+
+    def fake_run(argv, **kw):
+        calls.append([str(a) for a in argv])
+        return subprocess.CompletedProcess(argv, 0, stdout="fake ok\n", stderr="")
+
+    monkeypatch.setattr(drv.subprocess, "run", fake_run)
+    monkeypatch.setattr(drv, "sqlite_lock", lambda *a, **k: __import__("contextlib").nullcontext())
+    code = _run(campaign, tmp_path, "settle", "--unit", "stage_14", "--store", "fake", "--no-log",
+                "--db-path", str(tmp_path / "nonexistent.db"))
+    out = _out(capsys)
+
+    assert code == 0, out
+    steps = {s["step"]: s for s in _ledger(tmp_path, "run_steps")}
+    assert "stage_page" in steps, steps
+    assert steps["stage_page"]["state"] == "skipped"
+    assert steps["stage_page"]["detail"]["reason"] == \
+        "retrospective-only settlement: no pre-race boards"
+    scripts = [Path(a[1]).name for a in calls]
+    assert "build_stage_page.py" not in scripts
+    assert scripts[-2:] == ["build_site_index.py", "build_site_frame.py"]
+
+
 def test_publish_and_commit_are_not_commands(capsys):
     for cmd in ("publish", "commit"):
         assert drv.main([cmd]) == 20
