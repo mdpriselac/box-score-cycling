@@ -240,8 +240,12 @@ def build_stage_entries(camp, today):
     for n in range(1, camp["n_stages"] + 1):
         cfg = load_json(pred_root / f"stage_{n:02d}" / "scenarios.json") or {}
         pred_dir = pred_root / f"stage_{n:02d}"
+        non_boards = {"scenarios.json", "startlist.json", "route.json", "route_raw.json",
+                      "route.override.json", "agent_key.json", "agent_key_response.json",
+                      "retro_facts.json"}
         has_predictions = pred_dir.is_dir() and any(
-            f.name != "scenarios.json" for f in pred_dir.glob("*.json"))
+            f.name not in non_boards and not f.name.startswith("editorial_")
+            for f in pred_dir.glob("*.json"))
         settled = (res_root / f"stage_{n:02d}" / "results.csv").exists()
         asset = stage_asset(camp, n)
 
@@ -269,6 +273,9 @@ def build_stage_entries(camp, today):
             "predicted": bool(has_predictions or asset),
             "url": f"{race_url(camp)}/stage-{n:02d}" if asset else None,
             "asset": asset,
+            "post_hoc": bool(cfg.get("post_hoc")) or (
+                bool(cfg.get("scenarios")) and
+                all(s.get("post_hoc") for s in cfg["scenarios"].values())),
         }
         if cfg.get("day_key"):
             entry["day_key"] = cfg["day_key"]

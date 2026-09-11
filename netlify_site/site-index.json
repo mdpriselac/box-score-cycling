@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-09-10 17:18",
+ "generated_at": "2026-09-10 17:28",
  "site_name": "Cycling Race Predictor",
  "races": [
   {
@@ -53,18 +53,18 @@
      "unit": "race",
      "kind": "race",
      "date": "2026-09-06",
-     "label": "GP Industria & Artigianato 2026",
+     "label": "GP Industria & Artigianato (no prediction made)",
      "status": "settled",
-     "predicted": false,
-     "post_hoc": false,
-     "url": null,
-     "asset": null
+     "predicted": true,
+     "post_hoc": true,
+     "url": "/race/gp-industria-artigianato/2026/prediction",
+     "asset": "/gp-industria-artigianato-2026.html"
     }
    ],
    "n_stages": 1,
    "n_settled": 1,
-   "n_predicted": 0,
-   "post_hoc": false
+   "n_predicted": 1,
+   "post_hoc": true
   },
   {
    "slug": "tour-of-istanbul",
@@ -78,18 +78,25 @@
    "blurb": "Nightly model run and results record for Tour of Istanbul.",
    "campaign_dir": "performance_eval/tour-of-istanbul-2026",
    "url": "/race/tour-of-istanbul/2026",
-   "pages": {},
+   "pages": {
+    "stages": {
+     "url": "/race/tour-of-istanbul/2026/stages",
+     "asset": "/tour-of-istanbul-2026-stages.html",
+     "title": "Stage-by-stage diary"
+    }
+   },
    "stages": [
     {
      "stage": 1,
      "unit": "stage_01",
      "kind": "stage",
      "date": "2026-09-03",
-     "label": "Stage 1",
+     "label": "Stage 1 (no prediction made)",
      "status": "settled",
-     "predicted": false,
-     "url": null,
-     "asset": null
+     "predicted": true,
+     "url": "/race/tour-of-istanbul/2026/stage-01",
+     "asset": "/tour-of-istanbul-2026-stage01.html",
+     "post_hoc": true
     },
     {
      "stage": 2,
@@ -100,7 +107,8 @@
      "status": "upcoming",
      "predicted": false,
      "url": null,
-     "asset": null
+     "asset": null,
+     "post_hoc": false
     },
     {
      "stage": 3,
@@ -111,7 +119,8 @@
      "status": "upcoming",
      "predicted": false,
      "url": null,
-     "asset": null
+     "asset": null,
+     "post_hoc": false
     },
     {
      "stage": 4,
@@ -122,12 +131,13 @@
      "status": "upcoming",
      "predicted": false,
      "url": null,
-     "asset": null
+     "asset": null,
+     "post_hoc": false
     }
    ],
    "n_stages": 4,
    "n_settled": 1,
-   "n_predicted": 0,
+   "n_predicted": 1,
    "post_hoc": false
   },
   {
@@ -142,18 +152,25 @@
    "blurb": "Nightly model run and results record for ZLM Tour.",
    "campaign_dir": "performance_eval/zlm-tour-2026",
    "url": "/race/zlm-tour/2026",
-   "pages": {},
+   "pages": {
+    "stages": {
+     "url": "/race/zlm-tour/2026/stages",
+     "asset": "/zlm-tour-2026-stages.html",
+     "title": "Stage-by-stage diary"
+    }
+   },
    "stages": [
     {
      "stage": 1,
      "unit": "stage_01",
      "kind": "stage",
      "date": "2026-09-02",
-     "label": "Stage 1",
+     "label": "Stage 1 (no prediction made)",
      "status": "settled",
-     "predicted": false,
-     "url": null,
-     "asset": null
+     "predicted": true,
+     "url": "/race/zlm-tour/2026/stage-01",
+     "asset": "/zlm-tour-2026-stage01.html",
+     "post_hoc": true
     },
     {
      "stage": 2,
@@ -164,7 +181,8 @@
      "status": "upcoming",
      "predicted": false,
      "url": null,
-     "asset": null
+     "asset": null,
+     "post_hoc": false
     },
     {
      "stage": 3,
@@ -175,7 +193,8 @@
      "status": "upcoming",
      "predicted": false,
      "url": null,
-     "asset": null
+     "asset": null,
+     "post_hoc": false
     },
     {
      "stage": 4,
@@ -186,7 +205,8 @@
      "status": "upcoming",
      "predicted": false,
      "url": null,
-     "asset": null
+     "asset": null,
+     "post_hoc": false
     },
     {
      "stage": 5,
@@ -197,12 +217,13 @@
      "status": "upcoming",
      "predicted": false,
      "url": null,
-     "asset": null
+     "asset": null,
+     "post_hoc": false
     }
    ],
    "n_stages": 5,
    "n_settled": 1,
-   "n_predicted": 0,
+   "n_predicted": 1,
    "post_hoc": false
   },
   {
@@ -228,7 +249,8 @@
      "status": "upcoming",
      "predicted": false,
      "url": null,
-     "asset": null
+     "asset": null,
+     "post_hoc": false
     },
     {
      "stage": 2,
@@ -239,7 +261,8 @@
      "status": "upcoming",
      "predicted": false,
      "url": null,
-     "asset": null
+     "asset": null,
+     "post_hoc": false
     },
     {
      "stage": 3,
@@ -250,7 +273,8 @@
      "status": "upcoming",
      "predicted": false,
      "url": null,
-     "asset": null
+     "asset": null,
+     "post_hoc": false
     },
     {
      "stage": 4,
@@ -261,7 +285,8 @@
      "status": "upcoming",
      "predicted": false,
      "url": null,
-     "asset": null
+     "asset": null,
+     "post_hoc": false
     },
     {
      "stage": 5,
@@ -272,7 +297,8 @@
      "status": "upcoming",
      "predicted": false,
      "url": null,
-     "asset": null
+     "asset": null,
+     "post_hoc": false
     }
    ],
    "n_stages": 5,
@@ -315,6 +341,7 @@
      "predicted": true,
      "url": null,
      "asset": null,
+     "post_hoc": false,
      "day_key": {
       "itt": 1.0
      }
@@ -329,6 +356,7 @@
      "predicted": true,
      "url": "/race/vuelta-a-espana/2026/stage-02",
      "asset": "/vuelta-stage02.html",
+     "post_hoc": false,
      "day_key": {
       "res_7": 0.55,
       "res_1": 0.45
@@ -344,6 +372,7 @@
      "predicted": true,
      "url": "/race/vuelta-a-espana/2026/stage-03",
      "asset": "/vuelta-stage03.html",
+     "post_hoc": false,
      "day_key": {
       "gc_day": 0.75,
       "res_2": 0.25
@@ -359,6 +388,7 @@
      "predicted": true,
      "url": "/race/vuelta-a-espana/2026/stage-04",
      "asset": "/vuelta-stage04.html",
+     "post_hoc": false,
      "day_key": {
       "gc_day": 0.6,
       "res_2": 0.4
@@ -374,6 +404,7 @@
      "predicted": true,
      "url": "/race/vuelta-a-espana/2026/stage-05",
      "asset": "/vuelta-stage05.html",
+     "post_hoc": false,
      "day_key": {
       "res_7": 0.5,
       "bunch": 0.35,
@@ -390,6 +421,7 @@
      "predicted": true,
      "url": "/race/vuelta-a-espana/2026/stage-06",
      "asset": "/vuelta-stage06.html",
+     "post_hoc": false,
      "day_key": {
       "res_2": 0.65,
       "gc_day": 0.35
@@ -405,6 +437,7 @@
      "predicted": true,
      "url": "/race/vuelta-a-espana/2026/stage-07",
      "asset": "/vuelta-stage07.html",
+     "post_hoc": false,
      "day_key": {
       "gc_day": 0.6,
       "res_2": 0.4
@@ -420,6 +453,7 @@
      "predicted": true,
      "url": "/race/vuelta-a-espana/2026/stage-08",
      "asset": "/vuelta-stage08.html",
+     "post_hoc": false,
      "day_key": {
       "bunch": 0.6,
       "res_3": 0.25,
@@ -436,6 +470,7 @@
      "predicted": true,
      "url": "/race/vuelta-a-espana/2026/stage-09",
      "asset": "/vuelta-stage09.html",
+     "post_hoc": false,
      "day_key": {
       "gc_day": 1.0
      }
@@ -450,6 +485,7 @@
      "predicted": true,
      "url": "/race/vuelta-a-espana/2026/stage-10",
      "asset": "/vuelta-stage10.html",
+     "post_hoc": false,
      "day_key": {
       "bunch": 0.5,
       "res_3": 0.3,
@@ -466,6 +502,7 @@
      "predicted": true,
      "url": "/race/vuelta-a-espana/2026/stage-11",
      "asset": "/vuelta-stage11.html",
+     "post_hoc": false,
      "day_key": {
       "bunch": 0.65,
       "res_3": 0.2,
@@ -482,6 +519,7 @@
      "predicted": true,
      "url": "/race/vuelta-a-espana/2026/stage-12",
      "asset": "/vuelta-stage12.html",
+     "post_hoc": false,
      "day_key": {
       "res_2": 0.55,
       "gc_day": 0.45
@@ -496,7 +534,8 @@
      "status": "settled",
      "predicted": true,
      "url": "/race/vuelta-a-espana/2026/stage-13",
-     "asset": "/vuelta-stage13.html"
+     "asset": "/vuelta-stage13.html",
+     "post_hoc": true
     },
     {
      "stage": 14,
@@ -508,6 +547,7 @@
      "predicted": true,
      "url": "/race/vuelta-a-espana/2026/stage-14",
      "asset": "/vuelta-stage14.html",
+     "post_hoc": false,
      "day_key": {
       "gc_day": 0.6,
       "res_2": 0.4
@@ -523,6 +563,7 @@
      "predicted": true,
      "url": "/race/vuelta-a-espana/2026/stage-15",
      "asset": "/vuelta-stage15.html",
+     "post_hoc": false,
      "day_key": {
       "bunch": 0.55,
       "res_3": 0.3,
@@ -539,6 +580,7 @@
      "predicted": true,
      "url": "/race/vuelta-a-espana/2026/stage-16",
      "asset": "/vuelta-stage16.html",
+     "post_hoc": false,
      "day_key": {
       "bunch": 0.55,
       "res_3": 0.3,
@@ -555,6 +597,7 @@
      "predicted": true,
      "url": "/race/vuelta-a-espana/2026/stage-17",
      "asset": "/vuelta-stage17.html",
+     "post_hoc": false,
      "day_key": {
       "bunch": 1.0
      }
@@ -565,10 +608,11 @@
      "kind": "stage",
      "date": "2026-09-10",
      "label": "Stage 18 — El Puerto de Santa Maria > Jerez de la Frontera, 32.1 km ITT",
-     "status": "predicted",
-     "predicted": true,
+     "status": "upcoming",
+     "predicted": false,
      "url": null,
-     "asset": null
+     "asset": null,
+     "post_hoc": false
     },
     {
      "stage": 19,
@@ -576,10 +620,11 @@
      "kind": "stage",
      "date": "2026-09-11",
      "label": "Stage 19 — Velez-Malaga > Penas Blancas, Estepona, 210.8 km",
-     "status": "predicted",
-     "predicted": true,
+     "status": "upcoming",
+     "predicted": false,
      "url": null,
-     "asset": null
+     "asset": null,
+     "post_hoc": false
     },
     {
      "stage": 20,
@@ -590,7 +635,8 @@
      "status": "upcoming",
      "predicted": false,
      "url": null,
-     "asset": null
+     "asset": null,
+     "post_hoc": false
     },
     {
      "stage": 21,
@@ -601,12 +647,13 @@
      "status": "upcoming",
      "predicted": false,
      "url": null,
-     "asset": null
+     "asset": null,
+     "post_hoc": false
     }
    ],
    "n_stages": 21,
    "n_settled": 16,
-   "n_predicted": 19,
+   "n_predicted": 17,
    "post_hoc": false
   },
   {
@@ -648,7 +695,8 @@
      "status": "settled",
      "predicted": false,
      "url": null,
-     "asset": null
+     "asset": null,
+     "post_hoc": false
     },
     {
      "stage": 2,
@@ -659,7 +707,8 @@
      "status": "settled",
      "predicted": true,
      "url": "/race/tour-de-france/2026/stage-02",
-     "asset": "/stage02.html"
+     "asset": "/stage02.html",
+     "post_hoc": false
     },
     {
      "stage": 3,
@@ -670,7 +719,8 @@
      "status": "settled",
      "predicted": true,
      "url": "/race/tour-de-france/2026/stage-03",
-     "asset": "/stage03.html"
+     "asset": "/stage03.html",
+     "post_hoc": false
     },
     {
      "stage": 4,
@@ -681,7 +731,8 @@
      "status": "settled",
      "predicted": true,
      "url": "/race/tour-de-france/2026/stage-04",
-     "asset": "/stage04.html"
+     "asset": "/stage04.html",
+     "post_hoc": false
     },
     {
      "stage": 5,
@@ -692,7 +743,8 @@
      "status": "settled",
      "predicted": true,
      "url": "/race/tour-de-france/2026/stage-05",
-     "asset": "/stage05.html"
+     "asset": "/stage05.html",
+     "post_hoc": false
     },
     {
      "stage": 6,
@@ -703,7 +755,8 @@
      "status": "settled",
      "predicted": true,
      "url": "/race/tour-de-france/2026/stage-06",
-     "asset": "/stage06.html"
+     "asset": "/stage06.html",
+     "post_hoc": false
     },
     {
      "stage": 7,
@@ -714,7 +767,8 @@
      "status": "settled",
      "predicted": true,
      "url": "/race/tour-de-france/2026/stage-07",
-     "asset": "/stage07.html"
+     "asset": "/stage07.html",
+     "post_hoc": false
     },
     {
      "stage": 8,
@@ -725,7 +779,8 @@
      "status": "settled",
      "predicted": true,
      "url": "/race/tour-de-france/2026/stage-08",
-     "asset": "/stage08.html"
+     "asset": "/stage08.html",
+     "post_hoc": false
     },
     {
      "stage": 9,
@@ -736,7 +791,8 @@
      "status": "settled",
      "predicted": true,
      "url": "/race/tour-de-france/2026/stage-09",
-     "asset": "/stage09.html"
+     "asset": "/stage09.html",
+     "post_hoc": false
     },
     {
      "stage": 10,
@@ -747,7 +803,8 @@
      "status": "settled",
      "predicted": true,
      "url": "/race/tour-de-france/2026/stage-10",
-     "asset": "/stage10.html"
+     "asset": "/stage10.html",
+     "post_hoc": false
     },
     {
      "stage": 11,
@@ -758,7 +815,8 @@
      "status": "settled",
      "predicted": true,
      "url": "/race/tour-de-france/2026/stage-11",
-     "asset": "/stage11.html"
+     "asset": "/stage11.html",
+     "post_hoc": false
     },
     {
      "stage": 12,
@@ -769,7 +827,8 @@
      "status": "settled",
      "predicted": true,
      "url": "/race/tour-de-france/2026/stage-12",
-     "asset": "/stage12.html"
+     "asset": "/stage12.html",
+     "post_hoc": false
     },
     {
      "stage": 13,
@@ -780,7 +839,8 @@
      "status": "settled",
      "predicted": true,
      "url": "/race/tour-de-france/2026/stage-13",
-     "asset": "/stage13.html"
+     "asset": "/stage13.html",
+     "post_hoc": false
     },
     {
      "stage": 14,
@@ -791,7 +851,8 @@
      "status": "settled",
      "predicted": true,
      "url": "/race/tour-de-france/2026/stage-14",
-     "asset": "/stage14.html"
+     "asset": "/stage14.html",
+     "post_hoc": false
     },
     {
      "stage": 15,
@@ -802,7 +863,8 @@
      "status": "settled",
      "predicted": true,
      "url": "/race/tour-de-france/2026/stage-15",
-     "asset": "/stage15.html"
+     "asset": "/stage15.html",
+     "post_hoc": false
     },
     {
      "stage": 16,
@@ -813,7 +875,8 @@
      "status": "settled",
      "predicted": true,
      "url": "/race/tour-de-france/2026/stage-16",
-     "asset": "/stage16.html"
+     "asset": "/stage16.html",
+     "post_hoc": false
     },
     {
      "stage": 17,
@@ -824,7 +887,8 @@
      "status": "settled",
      "predicted": true,
      "url": "/race/tour-de-france/2026/stage-17",
-     "asset": "/stage17.html"
+     "asset": "/stage17.html",
+     "post_hoc": false
     },
     {
      "stage": 18,
@@ -835,7 +899,8 @@
      "status": "settled",
      "predicted": true,
      "url": "/race/tour-de-france/2026/stage-18",
-     "asset": "/stage18.html"
+     "asset": "/stage18.html",
+     "post_hoc": false
     },
     {
      "stage": 19,
@@ -846,7 +911,8 @@
      "status": "settled",
      "predicted": true,
      "url": "/race/tour-de-france/2026/stage-19",
-     "asset": "/stage19.html"
+     "asset": "/stage19.html",
+     "post_hoc": false
     },
     {
      "stage": 20,
@@ -857,7 +923,8 @@
      "status": "settled",
      "predicted": true,
      "url": "/race/tour-de-france/2026/stage-20",
-     "asset": "/stage20.html"
+     "asset": "/stage20.html",
+     "post_hoc": false
     },
     {
      "stage": 21,
@@ -868,7 +935,8 @@
      "status": "settled",
      "predicted": true,
      "url": "/race/tour-de-france/2026/stage-21",
-     "asset": "/stage21.html"
+     "asset": "/stage21.html",
+     "post_hoc": false
     }
    ],
    "n_stages": 21,
@@ -1030,6 +1098,11 @@
  "aliases": {
   "/index.html": "/model",
   "/giro-della-toscana-2026.html": "/race/giro-della-toscana/2026/prediction",
+  "/gp-industria-artigianato-2026.html": "/race/gp-industria-artigianato/2026/prediction",
+  "/tour-of-istanbul-2026-stages.html": "/race/tour-of-istanbul/2026/stages",
+  "/tour-of-istanbul-2026-stage01.html": "/race/tour-of-istanbul/2026/stage-01",
+  "/zlm-tour-2026-stages.html": "/race/zlm-tour/2026/stages",
+  "/zlm-tour-2026-stage01.html": "/race/zlm-tour/2026/stage-01",
   "/vuelta-gc.html": "/race/vuelta-a-espana/2026/gc",
   "/vuelta-stages.html": "/race/vuelta-a-espana/2026/stages",
   "/vuelta-stage02.html": "/race/vuelta-a-espana/2026/stage-02",
@@ -1096,11 +1169,41 @@
   "/race/gp-industria-artigianato/2026": {
    "asset": "/_frame/race/gp-industria-artigianato-2026.html"
   },
+  "/race/gp-industria-artigianato/2026/prediction": {
+   "asset": "/gp-industria-artigianato-2026.html",
+   "base": true,
+   "chrome": true,
+   "active": "races"
+  },
   "/race/tour-of-istanbul/2026": {
    "asset": "/_frame/race/tour-of-istanbul-2026.html"
   },
+  "/race/tour-of-istanbul/2026/stages": {
+   "asset": "/tour-of-istanbul-2026-stages.html",
+   "base": true,
+   "chrome": true,
+   "active": "races"
+  },
+  "/race/tour-of-istanbul/2026/stage-01": {
+   "asset": "/tour-of-istanbul-2026-stage01.html",
+   "base": true,
+   "chrome": true,
+   "active": "races"
+  },
   "/race/zlm-tour/2026": {
    "asset": "/_frame/race/zlm-tour-2026.html"
+  },
+  "/race/zlm-tour/2026/stages": {
+   "asset": "/zlm-tour-2026-stages.html",
+   "base": true,
+   "chrome": true,
+   "active": "races"
+  },
+  "/race/zlm-tour/2026/stage-01": {
+   "asset": "/zlm-tour-2026-stage01.html",
+   "base": true,
+   "chrome": true,
+   "active": "races"
   },
   "/race/tour-of-britain/2026": {
    "asset": "/_frame/race/tour-of-britain-2026.html"

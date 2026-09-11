@@ -3,15 +3,18 @@
 Spec: NIGHTLY_AGENT_WORKFLOW.md §2.2 (commands), §2.8 (ingest) and
 ``performance_eval/DAILY_RUNBOOK.md`` (the process; its §4 and §5 name each
 command beside the manual step it replaces). The driver
-is deterministic and idempotent on ``(campaign, unit, phase)``; judgment
-(day keys, scenario references, prose, route overrides) is never produced
-here — when it is missing the driver stops with exit 10 and an operator task.
+is deterministic and idempotent on ``(campaign, unit, phase)``. Prospective
+judgment (day keys, scenario references, prose, route overrides) is never
+produced here — when it is missing the driver stops with exit 10 and an
+operator task.
 
 Exit codes: ``0`` done · ``10`` waiting for input (``operator_task`` in the
 JSON) · ``20`` failed (``error_class``, ``step``, ``log_path``). Every run
 and step is recorded through ``store.start_run`` / ``add_step`` /
 ``finish_run`` and mirrored to ``performance_eval/<campaign>/runs/<date>/``.
-Existing scripts are subprocessed unchanged (``PYTHONUNBUFFERED=1``, logs
+Prospective judgment is never invented by the driver; after settlement, a
+missed preview may be reconstructed from the result oracle and is permanently
+marked post-hoc. Existing scripts are subprocessed unchanged (``PYTHONUNBUFFERED=1``, logs
 captured); SQLite-writing steps take a global file lock.
 
 There is no ``publish`` or ``commit`` command and no git operation anywhere
@@ -47,7 +50,7 @@ from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Tupl
 
 from cycling_project.db_path import ENV_VAR as DB_ENV_VAR, default_db_path
 from cycling_project.nightly import day_key_record as rec
-from cycling_project.nightly import oneday, pcs_ingest, uci_acquire, uci_identity, uci_ingest
+from cycling_project.nightly import hindsight, oneday, pcs_ingest, uci_acquire, uci_identity, uci_ingest
 from cycling_project.nightly.crosswalk import CROSSWALK_CSV, build_operator_task, read_crosswalk_csv
 from cycling_project.nightly.secrets import load_local_env, redact
 from cycling_project.webscrape_tools.logging_config import get_logger
@@ -720,6 +723,18 @@ class Driver:
         if stage is not None:
             self.script("score_day_keys", [self.python, SCRIPTS["score_day_keys"], "--campaign", c.dir, "--stage", stage,
                                            "--also", "agent"], lock=True)
+
+        # A missed preview is still publishable as an honestly labelled
+        # retrospective.  Build it from the settled oracle, freeze the result
+        # field, and force --no-log so it can never enter the prospective log.
+        cfg_path = c.pred_dir(unit) / "scenarios.json"
+        if not cfg_path.exists():
+            out["hindsight"] = self.step("hindsight", lambda: hindsight.build(
+                c.dir, unit, fc_race_id=c.fc_race_id, year=c.year,
+                date=c.stage_date(stage) or c.cfg.get("start_date"),
+                label=(f"Stage {stage}" if stage is not None else c.cfg.get("name") or c.slug),
+                db_path=self.db_path, stage=stage, void_stages=c.void_stages))
+            self.script("hindsight_predict", [self.python, SCRIPTS["predict"], cfg_path, "--no-log"], lock=True)
 
         # 5. retro facts
         if stage is not None and (c.pred_dir(unit) / "scenarios.json").exists():
@@ -1406,6 +1421,10 @@ class Driver:
             files += sorted(p for p in (res / "uci").rglob("*") if p.is_file()) if (res / "uci").is_dir() else []
             files += [pred / "retro_facts.json", c.dir / "review" / "key_scorecard.json",
                       c.dir / "review" / "agent_replay_scorecard.json", c.pred_dir("gc") / "scenarios.json"]
+            if cfg := _read_json(pred / "scenarios.json"):
+                if cfg.get("post_hoc"):
+                    files += [pred / "scenarios.json", pred / "startlist.json"]
+                    files += sorted(p for p in pred.glob("*.json") if p.name not in NON_BOARD_JSON and p.name != "startlist.json")
             files += sorted(p for p in c.pred_dir("gc").glob("*.json") if p.name != "scenarios.json") if c.pred_dir("gc").is_dir() else []
         else:
             files += [pred / "scenarios.json", pred / "route.json", pred / "agent_key.json"]
@@ -1428,7 +1447,7 @@ class Driver:
         # predictions rows: one per board
         boards = 0
         cfg = _read_json(pred / "scenarios.json", {}) or {}
-        board_dirs = [(unit, pred, cfg)] if phase == "preview" else []
+        board_dirs = [(unit, pred, cfg)] if phase == "preview" or (phase == "settle" and cfg.get("post_hoc")) else []
         gc_cfg = _read_json(c.pred_dir("gc") / "scenarios.json")
         if phase == "settle" and gc_cfg:
             board_dirs.append(("gc", c.pred_dir("gc"), gc_cfg))

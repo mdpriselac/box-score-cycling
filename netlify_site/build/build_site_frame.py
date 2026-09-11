@@ -230,11 +230,15 @@ def post_hoc_chip(obj):
     return " " + chip("post_hoc") if obj.get("post_hoc") else ""
 
 
+def nav_current(href, active):
+    return ' class="here"' if href == active else ""
+
+
 def page(title, body, active, description=""):
     nav_links = [("/", "Home"), ("/races", "Races"),
                  ("/calendar", "Calendar"), ("/model", "How the model works")]
     nav = "".join(
-        f'<a href="{href}"{" class=\"here\"" if href == active else ""}>'
+        f'<a href="{href}"{nav_current(href, active)}>'
         f'{esc(text)}</a>'
         for href, text in nav_links if href != "/")
     desc = (f'<meta name="description" content="{esc(description)}">\n'
