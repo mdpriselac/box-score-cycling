@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-09-09 14:11",
+ "generated_at": "2026-09-10 17:18",
  "site_name": "Cycling Race Predictor",
  "races": [
   {
@@ -8,7 +8,7 @@
    "name": "Giro della Toscana 2026",
    "short_name": "Giro della Toscana 2026",
    "type": "one_day",
-   "status": "in_progress",
+   "status": "settled",
    "start_date": "2026-09-09",
    "end_date": "2026-09-09",
    "blurb": "Nightly model run and results record for Giro della Toscana.",
@@ -563,10 +563,10 @@
      "stage": 18,
      "unit": "stage_18",
      "kind": "stage",
-     "date": null,
-     "label": "Stage 18",
-     "status": "upcoming",
-     "predicted": false,
+     "date": "2026-09-10",
+     "label": "Stage 18 — El Puerto de Santa Maria > Jerez de la Frontera, 32.1 km ITT",
+     "status": "predicted",
+     "predicted": true,
      "url": null,
      "asset": null
     },
@@ -574,10 +574,10 @@
      "stage": 19,
      "unit": "stage_19",
      "kind": "stage",
-     "date": null,
-     "label": "Stage 19",
-     "status": "upcoming",
-     "predicted": false,
+     "date": "2026-09-11",
+     "label": "Stage 19 — Velez-Malaga > Penas Blancas, Estepona, 210.8 km",
+     "status": "predicted",
+     "predicted": true,
      "url": null,
      "asset": null
     },
@@ -606,7 +606,7 @@
    ],
    "n_stages": 21,
    "n_settled": 16,
-   "n_predicted": 17,
+   "n_predicted": 19,
    "post_hoc": false
   },
   {
