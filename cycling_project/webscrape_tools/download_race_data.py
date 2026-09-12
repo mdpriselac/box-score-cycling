@@ -45,6 +45,40 @@ def _parse_race_date(raw_date) -> Optional[date]:
             return None
     return None
 
+
+def incomplete_active_stage_names(race: Race, today: Optional[date] = None) -> List[str]:
+    """Past stages missing results while a stage race is still in progress.
+
+    FirstCycling occasionally renders a single stage as an empty shell during
+    an otherwise successful scrape. Saving that object would erase a real
+    stage on migration. A genuinely cancelled stage can remain empty once the
+    final GC settles the race; while the race is active, retaining the older
+    pickle and retrying is safer than guessing.
+    """
+    stages = list(getattr(race, "stages", None) or [])
+    if not stages:
+        return []
+    final_gc = any(str(r.get("place", "")).strip().isdigit()
+                   for r in (getattr(race, "results", None) or []))
+    if final_gc:
+        return []
+    now = today or date.today()
+    active = any(
+        not getattr(stage, "results", None)
+        and (_parse_race_date(getattr(stage, "date", None)) is None
+             or _parse_race_date(getattr(stage, "date", None)) > now)
+        for stage in stages
+    )
+    if not active:
+        return []
+    return [
+        str(getattr(stage, "name", "stage"))
+        for stage in stages
+        if not getattr(stage, "results", None)
+        and (d := _parse_race_date(getattr(stage, "date", None))) is not None
+        and d <= now
+    ]
+
 def read_race_list(tour_folder_path: str) -> List[Tuple[str, str]]:
     """
     Reads the .txt file in a directory and returns a list of name,url tuples for races.
@@ -184,7 +218,10 @@ def create_to_scrape_list_tour(tour_folder_path: str) -> List[Tuple[str, str]]:
 
                 if is_stale:
                     logger.info(f"Stale pkl found: {pkl_name} — will re-scrape")
-                    os.remove(pkl_path)
+                    # Keep the last known-good pickle until a replacement has
+                    # been fully scraped and atomically written. Deleting here
+                    # loses the archive when Chrome returns an empty shell or
+                    # the operator interrupts a long stage-race refresh.
                     stale_names.add(pkl_name)
             except Exception as e:
                 logger.warning(f"Error checking pkl {pkl_name}: {e}")
@@ -385,10 +422,21 @@ def update_tour_folder(tour_folder_dir: str) -> None:
                 logger.warning(f"Error adding bib numbers to {race_name}: {e}")
                 race_obj_w_bib_check = race_obj
 
-            # Save the race_obj as a pickle in this tour folder
+            incomplete = incomplete_active_stage_names(race_obj)
+            if incomplete:
+                logger.warning(
+                    "Not replacing %s: active race has past stages without results: %s",
+                    race_name, ", ".join(incomplete),
+                )
+                continue
+
+            # Save atomically so an interruption cannot truncate the last
+            # known-good race object.
             output_path = os.path.join(tour_folder_dir, f"{race_name}.pkl")
-            with open(output_path, 'wb') as f:
+            tmp_path = output_path + ".tmp"
+            with open(tmp_path, 'wb') as f:
                 pickle.dump(race_obj_w_bib_check, f)
+            os.replace(tmp_path, output_path)
 
             logger.info(f"Successfully saved {race_name} to {output_path}")
 

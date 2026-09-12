@@ -50,6 +50,7 @@ from cycling_project.webscrape_tools.create_race_data import Race, Stage
 from cycling_project.webscrape_tools.download_race_data import (
     RESULTS_POSTING_GRACE_DAYS,
     create_to_scrape_list_tour,
+    incomplete_active_stage_names,
 )
 
 YESTERDAY = (date.today() - timedelta(days=1)).isoformat()
@@ -123,7 +124,7 @@ def test_complete_stage_race_pickle_is_not_stale(tmp_path):
 def test_midrace_pickle_with_undated_future_stages_is_stale(tmp_path):
     tour = _tour_dir_with(tmp_path, _stage_race("Tour", 17, MIDRACE))
     assert create_to_scrape_list_tour(str(tour)) == [("Tour", "u")]
-    assert not (tour / "Tour.pkl").exists()  # stale pickle removed
+    assert (tour / "Tour.pkl").exists()  # retained until a good replacement lands
 
 
 @pytest.mark.unit
@@ -185,7 +186,7 @@ def test_resultless_oneday_race_within_grace_is_still_stale(tmp_path):
     # Raced yesterday, results not up yet — keep re-scraping.
     tour = _tour_dir_with(tmp_path, _one_day_race("Waiting", 7, YESTERDAY, False))
     assert create_to_scrape_list_tour(str(tour)) == [("Waiting", "u")]
-    assert not (tour / "Waiting.pkl").exists()
+    assert (tour / "Waiting.pkl").exists()
 
 
 @pytest.mark.unit
@@ -233,11 +234,27 @@ def test_dotted_race_name_stale_pickle_is_still_detected(tmp_path):
     # exist, so dotted-name pickles were never staleness-checked ("Error
     # checking pkl" warning every run). The deletion proves the loop now
     # opens the real dotted filename: raced yesterday, no results yet —
-    # stale, so re-scrape and drop the pickle.
+    # stale, so re-scrape while retaining the last known-good pickle.
     tour = _tour_dir_with(
         tmp_path, _one_day_race("Mem. Van Steenbergen", 12, YESTERDAY, False))
     assert create_to_scrape_list_tour(str(tour)) == [("Mem. Van Steenbergen", "u")]
-    assert not (tour / "Mem. Van Steenbergen.pkl").exists()
+    assert (tour / "Mem. Van Steenbergen.pkl").exists()
+
+
+@pytest.mark.unit
+def test_active_race_capture_with_empty_past_stage_is_rejected():
+    stages = [_stage("Stage: 01", YESTERDAY, False),
+              _stage("Stage: 02", TOMORROW, False)]
+    race = _stage_race("Tour", 17, stages)
+    assert incomplete_active_stage_names(race) == ["Stage: 01"]
+
+
+@pytest.mark.unit
+def test_final_gc_allows_a_genuinely_cancelled_stage():
+    stages = [_stage("Stage: 01", YESTERDAY, True),
+              _stage("Stage: 02", YESTERDAY, False)]
+    race = _stage_race("Tour", 17, stages, gc_results=True)
+    assert incomplete_active_stage_names(race) == []
 
 
 # ---------------------------------------------------------------------------
