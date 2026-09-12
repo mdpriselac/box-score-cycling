@@ -62,6 +62,12 @@ from cycling_project.db_path import default_db_path
 
 logger = get_logger(__name__)
 
+# A rendered FirstCycling team shell contains team blocks and sometimes one
+# placeholder row, so "teams is non-empty" is not evidence of a usable field.
+# The serving models in this project cover elite road races; a field below 20
+# linked riders is an incomplete/preliminary page, not a start list to freeze.
+MIN_STARTLIST_RIDERS = 20
+
 # Default database path
 _DEFAULT_DB = default_db_path()
 
@@ -160,7 +166,7 @@ def save_start_list_to_cache(
     teams: List[Team],
     db_path: str = None,
 ) -> None:
-    """Save a scraped start list to the cache."""
+    """Atomically replace one race's cache with a complete linked start list."""
     db_path = db_path or str(_DEFAULT_DB)
     _ensure_cache_tables(db_path)
 
@@ -173,7 +179,23 @@ def save_start_list_to_cache(
                 team.name, team.team_id, rider.number,
             ))
 
+    missing_ids = sum(1 for row in rows if not row[2])
+    if len(rows) < MIN_STARTLIST_RIDERS or missing_ids:
+        raise ValueError(
+            f"Incomplete start list for race {fc_race_id}, year {year}: "
+            f"{len(rows)} linked riders, {missing_ids} without FirstCycling ids "
+            f"(minimum {MIN_STARTLIST_RIDERS})"
+        )
+
     with sqlite3.connect(db_path) as conn:
+        # INSERT OR REPLACE alone leaves withdrawn riders behind when a
+        # preliminary list is refreshed. Validate first, then replace the
+        # race/year as one transaction so readers see the new field or the old
+        # field, never a mixture.
+        conn.execute(
+            "DELETE FROM cached_start_lists WHERE fc_race_id = ? AND year = ?",
+            (str(fc_race_id), int(year)),
+        )
         conn.executemany(
             "INSERT OR REPLACE INTO cached_start_lists "
             "(fc_race_id, year, rider_fc_id, rider_name, team_name, team_fc_id, bib_number) "
@@ -378,8 +400,14 @@ def get_default_references(
 def scrape_startlist(race_id: int, year: int) -> List[Team]:
     """Scrape a start list from FirstCycling."""
     teams = get_start_list(race_id, year)
-    if not teams:
-        raise ValueError(f"No start list found for race {race_id}, year {year}")
+    riders = [r for team in teams for r in team.riders]
+    linked = [r for r in riders if r.rider_id]
+    if len(linked) < MIN_STARTLIST_RIDERS or len(linked) != len(riders):
+        raise ValueError(
+            f"No complete start list found for race {race_id}, year {year}: "
+            f"{len(linked)} linked riders of {len(riders)} parsed "
+            f"(minimum {MIN_STARTLIST_RIDERS})"
+        )
     return teams
 
 
