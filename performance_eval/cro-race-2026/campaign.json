@@ -1,0 +1,167 @@
+{
+  "slug": "cro-race-2026",
+  "name": "CRO Race",
+  "fc_race_id": "773",
+  "uci_competition_url": "https://www.uci.org/competition-details/2026/ROA/78443",
+  "uci_competition_id": "78443",
+  "uci_discipline": "ROA",
+  "year": 2026,
+  "category": "pro",
+  "is_stage_race": true,
+  "start_date": "2026-09-22",
+  "end_date": "2026-09-27",
+  "stages": [
+    {
+      "number": 1,
+      "date": "2026-09-22",
+      "towns": null,
+      "distance_km": null,
+      "kind": null
+    },
+    {
+      "number": 2,
+      "date": "2026-09-23",
+      "towns": null,
+      "distance_km": null,
+      "kind": null
+    },
+    {
+      "number": 3,
+      "date": "2026-09-24",
+      "towns": null,
+      "distance_km": null,
+      "kind": null
+    },
+    {
+      "number": 4,
+      "date": "2026-09-25",
+      "towns": null,
+      "distance_km": null,
+      "kind": null
+    },
+    {
+      "number": 5,
+      "date": "2026-09-26",
+      "towns": null,
+      "distance_km": null,
+      "kind": null
+    },
+    {
+      "number": 6,
+      "date": "2026-09-27",
+      "towns": null,
+      "distance_km": null,
+      "kind": null
+    }
+  ],
+  "timezone": "Europe/Zagreb",
+  "kambi_match": "cro race",
+  "kambi_localised_name": null,
+  "kambi_event_ids": {},
+  "pcs_slug": "cro-race",
+  "organiser_stage_urls": {},
+  "void_stages": [],
+  "stages_provisional": true,
+  "uci_match_evidence": {
+    "matcher": "uci_calendar 1.0.0",
+    "matched_at": "2026-09-12T21:14:29+00:00",
+    "decision": "auto_accepted",
+    "existing_url_conflict": false,
+    "auto_accept_rule": "exact date range AND name similarity >= 0.90 AND no other exact-date candidate at that bar",
+    "score": 1.0,
+    "fields_compared": {
+      "dates": {
+        "campaign": "2026-09-22..2026-09-27",
+        "uci": "2026-09-22..2026-09-27",
+        "uci_text": "22 Sep - 27 Sep 2026",
+        "verdict": "exact"
+      },
+      "name": {
+        "campaign": "CRO Race",
+        "uci": "CRO Race",
+        "campaign_normalised": "cro race",
+        "uci_normalised": "cro race",
+        "variant": "full~full",
+        "similarity": 1.0,
+        "token_containment": 1.0
+      },
+      "country": {
+        "campaign": null,
+        "uci": "CRO",
+        "verdict": "not_compared",
+        "note": "the FirstCycling calendar rows and campaign files carry no country, so the listing's country is recorded but not used as a discriminator"
+      }
+    },
+    "candidate": {
+      "competition_id": "78443",
+      "discipline": "ROA",
+      "url": "https://www.uci.org/competition-details/2026/ROA/78443",
+      "name": "CRO Race",
+      "country": "CRO",
+      "dates_text": "22 Sep - 27 Sep 2026",
+      "start_date": "2026-09-22",
+      "end_date": "2026-09-27",
+      "listing": "upcoming"
+    },
+    "alternates": [
+      {
+        "competition_id": "78663",
+        "discipline": "ROA",
+        "url": "https://www.uci.org/competition-details/2026/ROA/78663",
+        "name": "Aichi Nagoya Asian Games Cycling - Road",
+        "country": "JPN",
+        "dates_text": "20 Sep - 23 Sep 2026",
+        "start_date": "2026-09-20",
+        "end_date": "2026-09-23",
+        "listing": "upcoming",
+        "similarity": 0.5,
+        "dates_verdict": "overlap"
+      },
+      {
+        "competition_id": "78425",
+        "discipline": "ROA",
+        "url": "https://www.uci.org/competition-details/2026/ROA/78425",
+        "name": "Tour of Poyang Lake",
+        "country": "CHN",
+        "dates_text": "20 Sep - 29 Sep 2026",
+        "start_date": "2026-09-20",
+        "end_date": "2026-09-29",
+        "listing": "upcoming",
+        "similarity": 0.3704,
+        "dates_verdict": "overlap"
+      },
+      {
+        "competition_id": "77169",
+        "discipline": "ROA",
+        "url": "https://www.uci.org/competition-details/2026/ROA/77169",
+        "name": "2026 UCI Road World Championships",
+        "country": "CAN",
+        "dates_text": "20 Sep - 27 Sep 2026",
+        "start_date": "2026-09-20",
+        "end_date": "2026-09-27",
+        "listing": "upcoming",
+        "similarity": 0.3333,
+        "dates_verdict": "overlap"
+      }
+    ],
+    "reasons": [
+      "exact date range and name similarity 1.000 (variant full~full) — unique at the bar"
+    ],
+    "snapshot": {
+      "captured_at": "2026-09-07T16:05:23+00:00",
+      "capturer": "uci_calendar 1.0.0",
+      "listings": {
+        "upcoming": {
+          "source_url": "https://www.uci.org/api/calendar/upcoming?discipline=ROA",
+          "sha256": "05074b45fbc5336e3c60b05c69b1e4677e77c3fd850ffe95c334a10b7b4c5556",
+          "competitions": 176
+        },
+        "past": {
+          "source_url": "https://www.uci.org/api/calendar/past?discipline=ROA",
+          "sha256": "5e0732365cb4c347099d3cf6acb259cfaf2c60281ae20b2ab5fbd14a33417bcd",
+          "competitions": 845
+        }
+      }
+    }
+  }
+}

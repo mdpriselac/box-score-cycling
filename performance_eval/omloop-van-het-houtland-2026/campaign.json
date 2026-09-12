@@ -1,0 +1,131 @@
+{
+  "slug": "omloop-van-het-houtland-2026",
+  "name": "Omloop van het Houtland",
+  "fc_race_id": "170",
+  "uci_competition_url": null,
+  "uci_competition_id": null,
+  "uci_discipline": null,
+  "year": 2026,
+  "category": "d1",
+  "is_stage_race": false,
+  "start_date": "2026-09-23",
+  "end_date": "2026-09-23",
+  "stages": [
+    {
+      "number": null,
+      "date": "2026-09-23",
+      "towns": null,
+      "distance_km": null,
+      "kind": "one_day"
+    }
+  ],
+  "timezone": "Europe/Brussels",
+  "kambi_match": "omloop van het houtland",
+  "kambi_localised_name": null,
+  "kambi_event_ids": {},
+  "pcs_slug": "omloop-van-het-houtland",
+  "organiser_stage_urls": {},
+  "void_stages": [],
+  "uci_match_evidence": {
+    "matcher": "uci_calendar 1.0.0",
+    "matched_at": "2026-09-12T21:14:29+00:00",
+    "decision": "operator_confirm",
+    "existing_url_conflict": false,
+    "auto_accept_rule": "exact date range AND name similarity >= 0.90 AND no other exact-date candidate at that bar",
+    "score": 0.8846,
+    "fields_compared": {
+      "dates": {
+        "campaign": "2026-09-23..2026-09-23",
+        "uci": "2026-09-23..2026-09-23",
+        "uci_text": "23 Sep 2026",
+        "verdict": "exact"
+      },
+      "name": {
+        "campaign": "Omloop van het Houtland",
+        "uci": "Lotto Omloop van het Houtland",
+        "campaign_normalised": "omloop van het houtland",
+        "uci_normalised": "lotto omloop van het houtland",
+        "variant": "full~full",
+        "similarity": 0.8846,
+        "token_containment": 1.0
+      },
+      "country": {
+        "campaign": null,
+        "uci": "BEL",
+        "verdict": "not_compared",
+        "note": "the FirstCycling calendar rows and campaign files carry no country, so the listing's country is recorded but not used as a discriminator"
+      }
+    },
+    "candidate": {
+      "competition_id": "78438",
+      "discipline": "ROA",
+      "url": "https://www.uci.org/competition-details/2026/ROA/78438",
+      "name": "Lotto Omloop van het Houtland",
+      "country": "BEL",
+      "dates_text": "23 Sep 2026",
+      "start_date": "2026-09-23",
+      "end_date": "2026-09-23",
+      "listing": "upcoming"
+    },
+    "alternates": [
+      {
+        "competition_id": "78425",
+        "discipline": "ROA",
+        "url": "https://www.uci.org/competition-details/2026/ROA/78425",
+        "name": "Tour of Poyang Lake",
+        "country": "CHN",
+        "dates_text": "20 Sep - 29 Sep 2026",
+        "start_date": "2026-09-20",
+        "end_date": "2026-09-29",
+        "listing": "upcoming",
+        "similarity": 0.381,
+        "dates_verdict": "overlap"
+      },
+      {
+        "competition_id": "78663",
+        "discipline": "ROA",
+        "url": "https://www.uci.org/competition-details/2026/ROA/78663",
+        "name": "Aichi Nagoya Asian Games Cycling - Road",
+        "country": "JPN",
+        "dates_text": "20 Sep - 23 Sep 2026",
+        "start_date": "2026-09-20",
+        "end_date": "2026-09-23",
+        "listing": "upcoming",
+        "similarity": 0.3333,
+        "dates_verdict": "overlap"
+      },
+      {
+        "competition_id": "78443",
+        "discipline": "ROA",
+        "url": "https://www.uci.org/competition-details/2026/ROA/78443",
+        "name": "CRO Race",
+        "country": "CRO",
+        "dates_text": "22 Sep - 27 Sep 2026",
+        "start_date": "2026-09-22",
+        "end_date": "2026-09-27",
+        "listing": "upcoming",
+        "similarity": 0.2581,
+        "dates_verdict": "overlap"
+      }
+    ],
+    "reasons": [
+      "name similarity 0.885 below 0.90 ('Omloop van het Houtland' vs 'Lotto Omloop van het Houtland')"
+    ],
+    "snapshot": {
+      "captured_at": "2026-09-07T16:05:23+00:00",
+      "capturer": "uci_calendar 1.0.0",
+      "listings": {
+        "upcoming": {
+          "source_url": "https://www.uci.org/api/calendar/upcoming?discipline=ROA",
+          "sha256": "05074b45fbc5336e3c60b05c69b1e4677e77c3fd850ffe95c334a10b7b4c5556",
+          "competitions": 176
+        },
+        "past": {
+          "source_url": "https://www.uci.org/api/calendar/past?discipline=ROA",
+          "sha256": "5e0732365cb4c347099d3cf6acb259cfaf2c60281ae20b2ab5fbd14a33417bcd",
+          "competitions": 845
+        }
+      }
+    }
+  }
+}
