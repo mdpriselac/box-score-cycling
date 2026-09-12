@@ -29,6 +29,9 @@ claim the original did not make.
 
 | Date | Tag | Lesson |
 |---|---|---|
+| 2026-09-12 | `tooling` | A shared builder hardcoded to one campaign fails silently, not loudly |
+| 2026-09-12 | `scoring` | A backfilled config must be marked `post_hoc` when it is written, not when someone notices |
+| 2026-09-12 | `tooling` | A post-hoc board's features are clean; the hindsight is in the operator |
 | 2026-09-08 | `tooling` | This ledger and the generic runbook do not ship in the release bundle |
 | 2026-09-06 | `keying` | One team owning both the sprinter and the puncheur breaks the chase-incentive test |
 | 2026-09-06 | `acquisition` | An organiser can redraw a stage after the market and the boards are done |
@@ -64,6 +67,69 @@ claim the original did not make.
 | 2026-07-05 | `acquisition` | A truncated FirstCycling results page is fixed by rerunning |
 
 ---
+
+## 2026-09-12 — A shared builder hardcoded to one campaign fails silently, not loudly
+
+**Tag:** `tooling` · Vuelta stage 20
+
+`build_stage_analysis.py` still had `PREDICTIONS_ROOT` and `RESULTS_ROOT`
+pinned to `performance_eval/tour-de-france-2026`, months after
+`predict_stage_scenarios.py`, `build_stage_page.py` and `build_gc_tracker.py`
+were each made campaign-portable. Stage 20 was the first Vuelta stage to use
+the analysis step, so the bug had never fired here before. It did not raise:
+`standings_gc_pool` found a perfectly good `gc.csv` — the Tour's — matched ten
+riders in it, printed "excluded 10 GC riders", and returned. The "If the break
+goes" pool then held Mas, Gall, Roglic and Onley, and the book's card tagged
+Carapaz "GC #8", his Tour placing, while the race leader read "free".
+
+**A path constant that resolves to a real file on the wrong race produces a
+plausible table, not an error. The tell is semantic: check that the excluded
+riders are the ones you meant to exclude before you trust the pool.**
+
+Fixed by `set_campaign_roots(config_path)`, resolving the campaign two levels
+above the config's directory, with `cycling_project/tests/unit/
+test_stage_analysis_campaign_roots.py` covering both the default and the
+repoint. Nothing published was affected — no other Vuelta config carries an
+analysis block — but the same class of bug is worth re-checking in
+`build_review_dataset.py`, which is still TdF-only by construction.
+
+## 2026-09-12 — A backfilled config must be marked `post_hoc` when it is written, not when someone notices
+
+**Tag:** `scoring` · Vuelta stage 19
+
+The 2026-09-05 lesson established that `post_hoc: true` stops the scorer
+promoting a hindsight key into the tier-3 archive. Stage 19 showed the same
+hole from the other side. Its config was drafted around the stage rather than
+before it, carried no root `day_key` and no `post_hoc` flag, and two of its
+scenarios carried their own `day_key`. `logged_key` fell through to the first
+of them and scored `{res_2 .85, gc_day .15}` against an `res_4` oracle as a
+genuine morning read — a fabricated MISS, on a day nobody keyed. The card read
+16 keyed stages when the campaign had keyed 15.
+
+**A scenario-level `day_key` is not a read. Any config written after its stage
+started needs `post_hoc: true` in the same edit that creates it, because the
+flag is the only thing standing between a draft scenario and the tier-3
+archive — and the error is silent in both directions.**
+
+Marking it post_hoc and rescoring restored the card to 15 keyed, 8 exact, 13
+covered, mean weight 0.52, with stage 19 correctly unkeyed.
+
+## 2026-09-12 — A post-hoc board's features are clean; the hindsight is in the operator
+
+**Tag:** `tooling` · Vuelta stages 18 and 19
+
+Worth recording because the natural assumption is the pessimistic one. When
+the boards for two missed stages were rebuilt two days late, the runner
+reported `Recomputed live form for 148 riders as of 2026-09-10` for the stage
+18 config and `as of 2026-09-11` for stage 19, and attached race state through
+stage 17 and stage 18 respectively. Form is re-aged to the config's own date,
+not the run date, and state comes from the seeded cache through N-1, so the
+model saw nothing from the stage it was pricing or from any stage after it.
+
+**A late board is not feature-leaked. What it cannot have is an operator who
+does not know the result — the hindsight lives in the choice of scenarios and
+in the prose, so that is what the `post_hoc` note should say.** Claiming a
+form leak that the logs disprove is its own kind of inaccuracy.
 
 ## 2026-09-08 — This ledger and the generic runbook do not ship in the release bundle
 
