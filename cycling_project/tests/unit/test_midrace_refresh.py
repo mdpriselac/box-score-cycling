@@ -51,6 +51,7 @@ from cycling_project.webscrape_tools.download_race_data import (
     RESULTS_POSTING_GRACE_DAYS,
     create_to_scrape_list_tour,
     incomplete_active_stage_names,
+    result_regressions,
 )
 
 YESTERDAY = (date.today() - timedelta(days=1)).isoformat()
@@ -247,6 +248,29 @@ def test_active_race_capture_with_empty_past_stage_is_rejected():
               _stage("Stage: 02", TOMORROW, False)]
     race = _stage_race("Tour", 17, stages)
     assert incomplete_active_stage_names(race) == ["Stage: 01"]
+
+
+@pytest.mark.unit
+def test_old_cancelled_stage_does_not_block_active_capture():
+    stages = [_stage("Stage: 01", LONG_AGO, False),
+              _stage("Stage: 02", TOMORROW, False)]
+    race = _stage_race("Tour", 17, stages)
+    assert incomplete_active_stage_names(race) == []
+
+
+@pytest.mark.unit
+def test_previously_captured_stage_results_cannot_disappear():
+    previous = _stage_race(
+        "Tour", 17,
+        [_stage("Stage: 01", LONG_AGO, True),
+         _stage("Stage: 02", LONG_AGO, False)],
+    )
+    candidate = _stage_race(
+        "Tour", 17,
+        [_stage(" stage: 01 ", LONG_AGO, False),
+         _stage("Stage: 02", LONG_AGO, False)],
+    )
+    assert result_regressions(previous, candidate) == ["Stage: 01"]
 
 
 @pytest.mark.unit

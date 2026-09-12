@@ -51,9 +51,8 @@ def incomplete_active_stage_names(race: Race, today: Optional[date] = None) -> L
 
     FirstCycling occasionally renders a single stage as an empty shell during
     an otherwise successful scrape. Saving that object would erase a real
-    stage on migration. A genuinely cancelled stage can remain empty once the
-    final GC settles the race; while the race is active, retaining the older
-    pickle and retrying is safer than guessing.
+    stage on migration. A genuinely cancelled stage can remain empty after the
+    results-posting grace even if the race is still active.
     """
     stages = list(getattr(race, "stages", None) or [])
     if not stages:
@@ -77,7 +76,25 @@ def incomplete_active_stage_names(race: Race, today: Optional[date] = None) -> L
         if not getattr(stage, "results", None)
         and (d := _parse_race_date(getattr(stage, "date", None))) is not None
         and d <= now
+        and d > now - timedelta(days=RESULTS_POSTING_GRACE_DAYS)
     ]
+
+
+def result_regressions(previous: Race, candidate: Race) -> List[str]:
+    """Return stages whose previously captured results disappeared."""
+    candidate_stages = {
+        str(getattr(stage, "name", "")).strip().casefold(): stage
+        for stage in (getattr(candidate, "stages", None) or [])
+    }
+    regressions = []
+    for stage in (getattr(previous, "stages", None) or []):
+        if not getattr(stage, "results", None):
+            continue
+        name = str(getattr(stage, "name", "stage")).strip()
+        replacement = candidate_stages.get(name.casefold())
+        if replacement is None or not getattr(replacement, "results", None):
+            regressions.append(name)
+    return regressions
 
 def read_race_list(tour_folder_path: str) -> List[Tuple[str, str]]:
     """
@@ -430,9 +447,24 @@ def update_tour_folder(tour_folder_dir: str) -> None:
                 )
                 continue
 
+            output_path = os.path.join(tour_folder_dir, f"{race_name}.pkl")
+            if os.path.exists(output_path):
+                try:
+                    with open(output_path, "rb") as f:
+                        previous = pickle.load(f)
+                    regressions = result_regressions(previous, race_obj)
+                except Exception as e:
+                    logger.warning("Could not compare prior %s capture: %s", race_name, e)
+                    regressions = []
+                if regressions:
+                    logger.warning(
+                        "Not replacing %s: previously captured stage results disappeared: %s",
+                        race_name, ", ".join(regressions),
+                    )
+                    continue
+
             # Save atomically so an interruption cannot truncate the last
             # known-good race object.
-            output_path = os.path.join(tour_folder_dir, f"{race_name}.pkl")
             tmp_path = output_path + ".tmp"
             with open(tmp_path, 'wb') as f:
                 pickle.dump(race_obj_w_bib_check, f)
