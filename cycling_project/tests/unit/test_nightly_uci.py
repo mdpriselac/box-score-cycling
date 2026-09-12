@@ -290,6 +290,43 @@ def test_identity_policy(campaign):
     assert not (campaign / "results" / "stage_14" / "results.csv").exists()   # nothing partial written
 
 
+def test_unique_exact_uci_name_auto_accepts_despite_case_whitespace_and_stale_team():
+    index = ident.CandidateIndex([
+        ident.Candidate("218657", "Iwamura Genji", 2006, frozenset({"Old Team"}), "db"),
+    ])
+    rider = ident.UciRider("  Genji ", " IWAMURA  ", team="New Team", age=20)
+    res = ident.resolve_rider(rider, index, season_year=2026)
+    assert res.accepted and res.fc_rider_id == "218657" and res.confidence == 0.99
+    assert "team differs (non-vetoing" in "; ".join(res.reasons)
+
+
+def test_unique_exact_provisional_uci_identity_does_not_ask_the_operator_to_match_it_to_itself():
+    index = ident.CandidateIndex([
+        ident.Candidate("uci:brandel|samuel", "BRANDEL Samuel", None, frozenset(), "roster"),
+    ])
+    rider = ident.UciRider("Samuel", "brandel")
+    res = ident.resolve_rider(rider, index, season_year=2026)
+    assert res.accepted and res.fc_rider_id == "uci:brandel|samuel" and res.confidence == ident.AUTO_ACCEPT
+
+
+def test_unique_extended_uci_name_uses_matching_age_when_team_history_is_stale():
+    index = ident.CandidateIndex([
+        ident.Candidate("2211", "Matthews Michael", 1990, frozenset({"Old Team"}), "db"),
+    ])
+    rider = ident.UciRider("Michael James", "MATTHEWS", team="Team Jayco AlUla", age=36)
+    res = ident.resolve_rider(rider, index, season_year=2026)
+    assert res.accepted and res.fc_rider_id == "2211" and res.confidence == ident.AUTO_ACCEPT
+    assert "age corroborates unique name" in "; ".join(res.reasons)
+
+
+def test_age_conflict_still_blocks_an_exact_unique_uci_name():
+    index = ident.CandidateIndex([
+        ident.Candidate("218657", "Iwamura Genji", 1990, frozenset(), "db"),
+    ])
+    res = ident.resolve_rider(ident.UciRider("Genji", "IWAMURA", age=20), index, season_year=2026)
+    assert not res.accepted and res.confidence == 0.40
+
+
 def test_a_confirmed_crosswalk_row_from_the_hosted_table_resolves_the_rider(campaign):
     """The inbox confirms land in the hosted `crosswalk` table as `uci:<key>` slugs; the UCI bridge
     must honour them like aliases (2026-09-08: 24 confirmed riders were re-proposed on the second run)."""

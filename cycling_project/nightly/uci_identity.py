@@ -15,15 +15,18 @@ Acceptance policy (auto-accept threshold ``AUTO_ACCEPT`` = 0.97):
 * a human-confirmed row in ``performance_eval/crosswalk/uci_aliases.csv`` —
   keyed by ``uci_key`` (``"<lastname tokens>|<firstname tokens>"``, an ALIAS
   key derived from the name, explicitly not a UCI id) — always wins;
-* exact accent-insensitive normalised full name, unique in scope, team
-  compatible, age consistent with the known birth year → 0.99;
-* the same with the surname *extended* on one side (UCI adds a second
+* exact accent-insensitive normalised full name, unique in scope, with no
+  age conflict → 0.97 (0.99 when age or team corroborates it). Team history
+  is supporting evidence, not a veto: it is frequently stale after transfers
+  and development-team moves;
+* the same with the name *extended* on one side (UCI adds a second
   surname: ``BUITRAGO SANCHEZ Santiago`` ↔ ``Buitrago Santiago``; or the
   FirstCycling name carries an extra token), given name identical, unique in
-  scope, team compatible, age consistent → 0.97 (evidence recorded);
-* exact name with a team mismatch, nickname-resolved names (``Chris`` ↔
-  ``Christopher``), homonyms, fuzzy similarity, age/nationality-only support →
-  a proposal (< 0.97), never an acceptance.
+  scope, and either team compatible or age consistent → 0.97 (evidence
+  recorded);
+* nickname-resolved names (``Chris`` ↔ ``Christopher``), homonyms, fuzzy
+  similarity, age/nationality-only support, and extended names without age or
+  team corroboration → a proposal (< 0.97), never an acceptance.
 
 Scope: the campaign roster (earlier ``results/stage_NN`` files) when it
 exists — after stage 1 it is the whole field — else the confirmed crosswalk
@@ -332,8 +335,11 @@ def resolve_rider(rider: UciRider, index: CandidateIndex, *, season_year: Option
             if team is True:
                 return Resolution(rider, c, 0.99, reasons + ["team matches"])
             if team is False:
-                return Resolution(rider, c, 0.85, reasons + [f"team differs (uci {rider.team!r} vs {sorted(c.teams)})"])
-            return Resolution(rider, c, 0.99 if age is True else 0.90, reasons + ["no team evidence"])
+                return Resolution(
+                    rider, c, 0.99 if age is True else 0.97,
+                    reasons + [f"team differs (non-vetoing; uci {rider.team!r} vs {sorted(c.teams)})"],
+                )
+            return Resolution(rider, c, 0.99 if age is True else 0.97, reasons + ["no team evidence"])
         by_team = [c for c in exact if _team_ok(rider, c) is True]
         return Resolution(rider, by_team[0] if len(by_team) == 1 else None, 0.50,
                           [f"exact name shared by {len(exact)} riders (homonym)", "team discriminates" if len(by_team) == 1 else "no discriminator"],
@@ -351,6 +357,9 @@ def resolve_rider(rider: UciRider, index: CandidateIndex, *, season_year: Option
                 reasons.append(f"age {rider.age} consistent with birth year {c.birth_year}")
             if team is True:
                 return Resolution(rider, c, 0.97, reasons + ["team matches"])
+            if age is True:
+                suffix = "team differs" if team is False else "no team evidence"
+                return Resolution(rider, c, 0.97, reasons + [f"{suffix} (age corroborates unique name)"])
             return Resolution(rider, c, 0.80, reasons + ["team differs or unknown"])
         if len(ext) > 1:
             return Resolution(rider, None, 0.50, ["surname-extended match is ambiguous"], ext)

@@ -1,9 +1,10 @@
 """Rider crosswalk: matcher confidence rules, CSV mirror, trust boundary.
 
 The rules under test (NIGHTLY_AGENT_WORKFLOW.md §2.8, AGENT_DESIGN.md §3.4):
-auto-accept ≥ 0.97 only for (exact normalised name + birth year) or (exact
-name unique in the DB + same team); everything else is a proposal; the
-agent-facing functions never confirm.
+auto-accept ≥ 0.97 for an exact normalised name that is unique in the DB
+and has no birth-year conflict. Team evidence corroborates but does not veto
+that identity; everything ambiguous remains a proposal and the agent-facing
+functions never confirm.
 """
 
 import ast
@@ -76,9 +77,9 @@ def test_exact_unique_name_plus_team_auto_accepts_without_birth_year(index):
     assert m.rider.fc_rider_id == "75998" and m.auto_accept and m.confidence == pytest.approx(0.97)
 
 
-def test_exact_unique_name_without_team_or_year_is_a_proposal(index):
+def test_exact_unique_name_without_team_or_year_auto_accepts(index):
     m = match_row(PcsRow("domen-novak", "NOVAK Domen"), index)
-    assert m.rider.fc_rider_id == "601" and not m.auto_accept and m.confidence == pytest.approx(0.90)
+    assert m.rider.fc_rider_id == "601" and m.auto_accept and m.confidence == pytest.approx(AUTO_ACCEPT)
 
 
 def test_exact_name_birth_year_mismatch_is_flagged_not_accepted(index):
@@ -108,6 +109,13 @@ def test_unknown_hyphen_drift_is_only_a_proposal(index):
 def test_homonym_without_discriminator_has_no_pick(index):
     m = match_row(PcsRow("carlos-garcia", "GARCÍA Carlos"), index)
     assert m.rider is None and not m.auto_accept and len(m.alternates) == 2
+
+
+def test_exact_unique_name_ignores_case_whitespace_and_stale_team(index):
+    m = match_row(PcsRow("domen-novak", "  NOVAK   Domen  ", "A new team"), index)
+    assert m.rider.fc_rider_id == "601"
+    assert m.auto_accept and m.confidence == pytest.approx(AUTO_ACCEPT)
+    assert "team differs (non-vetoing)" in m.reasons
 
 
 def test_homonym_resolved_by_birth_year_auto_accepts(index):
@@ -197,11 +205,11 @@ def test_propose_inserts_only_non_accepted_rows_and_one_task(index, tmp_path):
     results = [
         match_row(PcsRow("primoz-roglic", "ROGLIČ Primož", birth_year=1989), index),   # accepted
         match_row(PcsRow("carlos-garcia", "GARCÍA Carlos"), index),                   # homonym → proposal
-        match_row(PcsRow("domen-novak", "NOVAK Domen"), index),                        # 0.90 → proposal
+        match_row(PcsRow("domen-novak", "NOVAK Domen"), index),                        # exact unique → accepted
     ]
     inserted, task = propose_matches(results, store, campaign="vuelta-2026")
-    assert len(inserted) == 2 and task["kind"] == "crosswalk_proposals"
-    assert {p["pcs_slug"] for p in store.rows["crosswalk_proposals"]} == {"carlos-garcia", "domen-novak"}
+    assert len(inserted) == 1 and task["kind"] == "crosswalk_proposals"
+    assert {p["pcs_slug"] for p in store.rows["crosswalk_proposals"]} == {"carlos-garcia"}
     assert (tmp_path / "operator_tasks.jsonl").exists() and (tmp_path / "crosswalk_proposals.jsonl").exists()
     assert "crosswalk" not in store.rows  # nothing confirmed
 

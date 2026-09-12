@@ -332,11 +332,13 @@ identity layer does the bridging (below).
   against the campaign roster (the archived earlier stages — after stage 1
   it is the whole field), else the confirmed crosswalk rows, else the
   riders table with the race's cached startlist. Exact accent-insensitive
-  full name, unique in scope, team compatible, age consistent with the
-  known birth year → 0.99; the same with the surname or given names
+  full name, unique in scope, with no birth-year conflict → 0.97 (0.99
+  when age or team corroborates it); stored team history is evidence, not a
+  veto, because it can lag transfers. The same with surname or given names
   *extended* on one side (`BUITRAGO SANCHEZ Santiago` ↔ `Buitrago
-  Santiago`, `SOSA CUERVO Ivan Ramiro` ↔ `Sosa Ivan`) → 0.97 with the
-  evidence recorded; nicknames, homonyms, fuzzy similarity, or age /
+  Santiago`, `SOSA CUERVO Ivan Ramiro` ↔ `Sosa Ivan`) → 0.97 when age
+  or team corroborates the unique match, with the evidence recorded;
+  nicknames, homonyms, fuzzy similarity, or age /
   nationality alone → a `crosswalk_proposals` row (`pcs_slug =
   uci:<alias key>`, `source=uci` in the evidence) and an operator task,
   never an acceptance. Human-confirmed aliases live in

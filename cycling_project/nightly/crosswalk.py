@@ -5,7 +5,9 @@ Spec: NIGHTLY_AGENT_WORKFLOW.md §1a / §2.8 / §2.12 and AGENT_DESIGN.md §3.4.
 only at confidence ≥ 0.97, which exactly two evidence patterns reach:
 
 1. exact normalised name **and** matching birth year, or
-2. exact normalised name that is **unique in the DB** and the same team.
+2. exact normalised name that is **unique in the DB**, with no conflicting
+   birth year. Team history corroborates a match but does not veto it because
+   it can lag transfers.
 
 Everything else becomes a *proposal* (``crosswalk_proposals`` + an operator
 task). Confirmation is a human action (``confirm``) that runs with the
@@ -385,7 +387,10 @@ def match_row(pcs: PcsRow, index: RiderIndex,
         if len(by_year) > 1:
             return MatchResult(pcs, None, 0.50,
                                ["exact name + birth year shared by several riders"], by_year)
-        # Rule 2: exact + unique in DB + same team.
+        # Rule 2: an exact normalised name that is unique DB-wide is an
+        # identity, not an operator decision. Current provider team names can
+        # legitimately disagree with our latest stored team after a transfer.
+        # A known birth-year conflict remains a hard stop above.
         if unique:
             r = exact[0]
             yr = year_ok(r)
@@ -395,8 +400,10 @@ def match_row(pcs: PcsRow, index: RiderIndex,
             if team_ok(r):
                 return MatchResult(pcs, r, 0.97, ["exact normalised name", "unique in DB", "team matches"])
             if pcs.team and r.teams:
-                return MatchResult(pcs, r, 0.85, ["exact normalised name", "unique in DB", "team differs"])
-            return MatchResult(pcs, r, 0.90, ["exact normalised name", "unique in DB", "no team/birth-year evidence"])
+                return MatchResult(pcs, r, 0.97,
+                                   ["exact normalised name", "unique in DB", "team differs (non-vetoing)"])
+            return MatchResult(pcs, r, 0.97,
+                               ["exact normalised name", "unique in DB", "no conflicting identity evidence"])
         # Homonyms without a birth-year discriminator: proposal only.
         by_team = [r for r in exact if team_ok(r)]
         in_race = [r for r in exact if race_fc_ids and r.fc_rider_id in race_fc_ids]

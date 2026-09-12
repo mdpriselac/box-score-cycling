@@ -125,8 +125,8 @@ Match against the campaign roster and existing FC archive using these signals:
 
 Recommended acceptance policy:
 
-- Auto-accept an exact normalized name that is unique within the campaign roster and has a compatible team.
-- Permit a unique exact name with a known team-name drift only if the existing matcher’s score remains at least 0.97 and the evidence is recorded.
+- Auto-accept an exact normalized name that is unique within the campaign roster and has no conflicting birth year. A compatible team corroborates the match.
+- Permit a unique exact name with a team-name drift at 0.97 or above and record the drift as evidence; stored team history can lag transfers and must not veto an otherwise exact unique identity.
 - Never auto-accept a fuzzy name collision, ambiguous surname, or identity supported only by age/nationality.
 - Put unresolved cases into `crosswalk_proposals` with `source = "uci"` and open an operator task.
 - Preserve the existing rule that only a human/operator can confirm the durable crosswalk.
