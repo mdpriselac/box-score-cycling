@@ -40,10 +40,27 @@ import sqlite3
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
+# Campaign-relative; set_campaign_roots() points these at the campaign that owns
+# the config being built. The Tour defaults keep a bare invocation working.
+# Before 2026-09-12 they were hardcoded, so a second campaign's break pool and
+# GC ranks were silently read out of `tour-de-france-2026/results` — the same
+# bug build_gc_tracker.py was fixed for on 2026-08-28.
 PREDICTIONS_ROOT = (PROJECT_ROOT / "performance_eval" / "tour-de-france-2026"
                     / "predictions")
 RESULTS_ROOT = (PROJECT_ROOT / "performance_eval" / "tour-de-france-2026"
                 / "results")
+
+
+def set_campaign_roots(config_path):
+    """Point the prediction and result roots at the campaign owning the config.
+
+    A stage config lives at `<campaign>/predictions/<unit>/scenarios.json`, so
+    the campaign directory is two levels above the config's own directory."""
+    global PREDICTIONS_ROOT, RESULTS_ROOT
+    campaign = Path(config_path).resolve().parents[2]
+    PREDICTIONS_ROOT = campaign / "predictions"
+    RESULTS_ROOT = campaign / "results"
+    return campaign
 # CYCLING_DB_PATH redirects serving at a slim slice (see cycling_project/db_path.py);
 # resolved inline because this script runs without the package on sys.path.
 DB_PATH = Path(os.environ.get("CYCLING_DB_PATH")
@@ -166,6 +183,8 @@ def main():
     args = ap.parse_args()
 
     config_path = Path(args.config).resolve()
+    campaign_dir = set_campaign_roots(config_path)
+    print(f"campaign: {campaign_dir.name}")
     config = json.loads(config_path.read_text())
     scen = {}
     for key in config["scenarios"]:

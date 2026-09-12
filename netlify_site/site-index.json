@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-09-10 17:28",
+ "generated_at": "2026-09-11 19:36",
  "site_name": "Cycling Race Predictor",
  "races": [
   {
@@ -339,8 +339,8 @@
      "label": "Stage 1 — Monaco ITT, 9.4 km",
      "status": "settled",
      "predicted": true,
-     "url": null,
-     "asset": null,
+     "url": "/race/vuelta-a-espana/2026/stage-01",
+     "asset": "/vuelta-stage01.html",
      "post_hoc": false,
      "day_key": {
       "itt": 1.0
@@ -607,36 +607,41 @@
      "unit": "stage_18",
      "kind": "stage",
      "date": "2026-09-10",
-     "label": "Stage 18 — El Puerto de Santa Maria > Jerez de la Frontera, 32.1 km ITT",
-     "status": "upcoming",
-     "predicted": false,
-     "url": null,
-     "asset": null,
-     "post_hoc": false
+     "label": "Stage 18 — El Puerto de Santa Maria > Jerez de la Frontera, 32.1 km ITT (no morning read logged)",
+     "status": "settled",
+     "predicted": true,
+     "url": "/race/vuelta-a-espana/2026/stage-18",
+     "asset": "/vuelta-stage18.html",
+     "post_hoc": true
     },
     {
      "stage": 19,
      "unit": "stage_19",
      "kind": "stage",
      "date": "2026-09-11",
-     "label": "Stage 19 — Velez-Malaga > Penas Blancas, Estepona, 210.8 km",
-     "status": "upcoming",
-     "predicted": false,
-     "url": null,
-     "asset": null,
-     "post_hoc": false
+     "label": "Stage 19 — Velez-Malaga > Penas Blancas, Estepona, 210.8 km (no morning read logged)",
+     "status": "settled",
+     "predicted": true,
+     "url": "/race/vuelta-a-espana/2026/stage-19",
+     "asset": "/vuelta-stage19.html",
+     "post_hoc": true
     },
     {
      "stage": 20,
      "unit": "stage_20",
      "kind": "stage",
-     "date": null,
-     "label": "Stage 20",
-     "status": "upcoming",
-     "predicted": false,
-     "url": null,
-     "asset": null,
-     "post_hoc": false
+     "date": "2026-09-12",
+     "label": "Stage 20 — La Calahorra > Collado del Alguacil, 186.8 km",
+     "status": "predicted",
+     "predicted": true,
+     "url": "/race/vuelta-a-espana/2026/stage-20",
+     "asset": "/vuelta-stage20.html",
+     "post_hoc": false,
+     "day_key": {
+      "res_2": 0.45,
+      "gc_day": 0.4,
+      "res_4": 0.15
+     }
     },
     {
      "stage": 21,
@@ -652,8 +657,8 @@
     }
    ],
    "n_stages": 21,
-   "n_settled": 16,
-   "n_predicted": 17,
+   "n_settled": 18,
+   "n_predicted": 20,
    "post_hoc": false
   },
   {
@@ -1105,6 +1110,7 @@
   "/zlm-tour-2026-stage01.html": "/race/zlm-tour/2026/stage-01",
   "/vuelta-gc.html": "/race/vuelta-a-espana/2026/gc",
   "/vuelta-stages.html": "/race/vuelta-a-espana/2026/stages",
+  "/vuelta-stage01.html": "/race/vuelta-a-espana/2026/stage-01",
   "/vuelta-stage02.html": "/race/vuelta-a-espana/2026/stage-02",
   "/vuelta-stage03.html": "/race/vuelta-a-espana/2026/stage-03",
   "/vuelta-stage04.html": "/race/vuelta-a-espana/2026/stage-04",
@@ -1121,6 +1127,9 @@
   "/vuelta-stage15.html": "/race/vuelta-a-espana/2026/stage-15",
   "/vuelta-stage16.html": "/race/vuelta-a-espana/2026/stage-16",
   "/vuelta-stage17.html": "/race/vuelta-a-espana/2026/stage-17",
+  "/vuelta-stage18.html": "/race/vuelta-a-espana/2026/stage-18",
+  "/vuelta-stage19.html": "/race/vuelta-a-espana/2026/stage-19",
+  "/vuelta-stage20.html": "/race/vuelta-a-espana/2026/stage-20",
   "/gc.html": "/race/tour-de-france/2026/gc",
   "/stages.html": "/race/tour-de-france/2026/stages",
   "/review.html": "/race/tour-de-france/2026/review",
@@ -1223,6 +1232,12 @@
    "chrome": true,
    "active": "races"
   },
+  "/race/vuelta-a-espana/2026/stage-01": {
+   "asset": "/vuelta-stage01.html",
+   "base": true,
+   "chrome": true,
+   "active": "races"
+  },
   "/race/vuelta-a-espana/2026/stage-02": {
    "asset": "/vuelta-stage02.html",
    "base": true,
@@ -1315,6 +1330,24 @@
   },
   "/race/vuelta-a-espana/2026/stage-17": {
    "asset": "/vuelta-stage17.html",
+   "base": true,
+   "chrome": true,
+   "active": "races"
+  },
+  "/race/vuelta-a-espana/2026/stage-18": {
+   "asset": "/vuelta-stage18.html",
+   "base": true,
+   "chrome": true,
+   "active": "races"
+  },
+  "/race/vuelta-a-espana/2026/stage-19": {
+   "asset": "/vuelta-stage19.html",
+   "base": true,
+   "chrome": true,
+   "active": "races"
+  },
+  "/race/vuelta-a-espana/2026/stage-20": {
+   "asset": "/vuelta-stage20.html",
    "base": true,
    "chrome": true,
    "active": "races"

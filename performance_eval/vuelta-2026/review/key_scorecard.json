@@ -492,5 +492,71 @@
   "covered": true,
   "weight_on_true": 1.0,
   "scored_at": "2026-09-09T14:11:46.660563"
+ },
+ {
+  "agent_key": {
+   "itt": 1.0
+  },
+  "agent_exact": true,
+  "agent_covered": true,
+  "agent_weight_on_true": 1.0,
+  "agent_flagged": false,
+  "agent_self_flag": false,
+  "agent_family_covered": true,
+  "agent_confidence": 0.97,
+  "agent_replay": false,
+  "agent_scored_at": "2026-09-11T19:36:42.205386",
+  "stage": 18,
+  "oracle_item": "itt",
+  "day_class": "itt",
+  "rule_type": "solo",
+  "wg_size": 1,
+  "wg_prop": 0.0068,
+  "winning_time": 2122.82,
+  "winner": "K\u00fcng Stefan",
+  "winner_gc_morning": 59,
+  "front5_gc_median": 59.0,
+  "top15_shares": {
+   "sprint": 0.067,
+   "mountain": 0.067,
+   "hilly": 0.0,
+   "rolling": 0.0,
+   "breakaway": 0.0,
+   "time_trial": 0.867
+  },
+  "top15_unknown": 0.0,
+  "day_key": null,
+  "exact": null,
+  "covered": null,
+  "weight_on_true": null,
+  "key_source": null,
+  "scored_at": "2026-09-11T19:36:42.204795"
+ },
+ {
+  "stage": 19,
+  "oracle_item": "res_4",
+  "day_class": "residual",
+  "rule_type": "solo",
+  "wg_size": 1,
+  "wg_prop": 0.0069,
+  "winning_time": 18054.0,
+  "winner": "Dunbar Edward",
+  "winner_gc_morning": 35,
+  "front5_gc_median": 35.0,
+  "top15_shares": {
+   "sprint": 0.067,
+   "mountain": 0.4,
+   "hilly": 0.0,
+   "rolling": 0.267,
+   "breakaway": 0.2,
+   "time_trial": 0.067
+  },
+  "top15_unknown": 0.0,
+  "day_key": null,
+  "exact": null,
+  "covered": null,
+  "weight_on_true": null,
+  "key_source": null,
+  "scored_at": "2026-09-11T19:36:43.419611"
  }
 ]
