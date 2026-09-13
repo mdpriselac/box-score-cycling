@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-09-11 19:36",
+ "generated_at": "2026-09-12 18:16",
  "site_name": "Cycling Race Predictor",
  "races": [
   {
@@ -632,7 +632,7 @@
      "kind": "stage",
      "date": "2026-09-12",
      "label": "Stage 20 — La Calahorra > Collado del Alguacil, 186.8 km",
-     "status": "predicted",
+     "status": "settled",
      "predicted": true,
      "url": "/race/vuelta-a-espana/2026/stage-20",
      "asset": "/vuelta-stage20.html",
@@ -647,18 +647,23 @@
      "stage": 21,
      "unit": "stage_21",
      "kind": "stage",
-     "date": null,
-     "label": "Stage 21",
-     "status": "upcoming",
-     "predicted": false,
-     "url": null,
-     "asset": null,
-     "post_hoc": false
+     "date": "2026-09-13",
+     "label": "Stage 21 — Carrefour Granada > Granada, 112 km",
+     "status": "predicted",
+     "predicted": true,
+     "url": "/race/vuelta-a-espana/2026/stage-21",
+     "asset": "/vuelta-stage21.html",
+     "post_hoc": false,
+     "day_key": {
+      "res_7": 0.4,
+      "bunch": 0.35,
+      "res_1": 0.25
+     }
     }
    ],
    "n_stages": 21,
-   "n_settled": 18,
-   "n_predicted": 20,
+   "n_settled": 19,
+   "n_predicted": 21,
    "post_hoc": false
   },
   {
@@ -1130,6 +1135,7 @@
   "/vuelta-stage18.html": "/race/vuelta-a-espana/2026/stage-18",
   "/vuelta-stage19.html": "/race/vuelta-a-espana/2026/stage-19",
   "/vuelta-stage20.html": "/race/vuelta-a-espana/2026/stage-20",
+  "/vuelta-stage21.html": "/race/vuelta-a-espana/2026/stage-21",
   "/gc.html": "/race/tour-de-france/2026/gc",
   "/stages.html": "/race/tour-de-france/2026/stages",
   "/review.html": "/race/tour-de-france/2026/review",
@@ -1348,6 +1354,12 @@
   },
   "/race/vuelta-a-espana/2026/stage-20": {
    "asset": "/vuelta-stage20.html",
+   "base": true,
+   "chrome": true,
+   "active": "races"
+  },
+  "/race/vuelta-a-espana/2026/stage-21": {
+   "asset": "/vuelta-stage21.html",
    "base": true,
    "chrome": true,
    "active": "races"

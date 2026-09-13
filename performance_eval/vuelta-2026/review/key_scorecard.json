@@ -558,5 +558,50 @@
   "weight_on_true": null,
   "key_source": null,
   "scored_at": "2026-09-11T19:36:43.419611"
+ },
+ {
+  "stage": 20,
+  "oracle_item": "res_4",
+  "day_class": "residual",
+  "rule_type": "itt_like",
+  "wg_size": 1,
+  "wg_prop": 0.007,
+  "winning_time": 17881.0,
+  "winner": "Landa Mikel",
+  "winner_gc_morning": 38,
+  "front5_gc_median": 38.0,
+  "top15_shares": {
+   "sprint": 0.067,
+   "mountain": 0.733,
+   "hilly": 0.0,
+   "rolling": 0.133,
+   "breakaway": 0.0,
+   "time_trial": 0.067
+  },
+  "top15_unknown": 0.0,
+  "day_key": {
+   "res_2": 0.45,
+   "gc_day": 0.4,
+   "res_4": 0.15
+  },
+  "key_source": "config-root",
+  "exact": false,
+  "covered": true,
+  "weight_on_true": 0.15,
+  "scored_at": "2026-09-12T17:59:22.754591",
+  "agent_key": {
+   "gc_day": 0.42,
+   "res_2": 0.35,
+   "res_4": 0.23
+  },
+  "agent_exact": false,
+  "agent_covered": true,
+  "agent_weight_on_true": 0.23,
+  "agent_flagged": true,
+  "agent_self_flag": true,
+  "agent_family_covered": true,
+  "agent_confidence": 0.42,
+  "agent_replay": false,
+  "agent_scored_at": "2026-09-12T17:59:22.754861"
  }
 ]
