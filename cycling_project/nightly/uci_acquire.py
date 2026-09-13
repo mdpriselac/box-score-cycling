@@ -81,9 +81,13 @@ EXIT_OK, EXIT_INCOMPLETE, EXIT_FAILED = 0, 10, 20
 CLASSIFICATIONS: Dict[str, Tuple[Tuple[str, ...], bool]] = {
     "stage": (("Stage Classification",), True),
     "gc": (("Stage General Classification", "General Classification", "Final Classification"), True),
-    "points": (("Overall Points Classification",), False),
-    "kom": (("Overall Mountain Classification", "Overall Mountains Classification"), False),
-    "youth": (("Overall Youth Classification",), False),
+    # The bare titles are how the end-of-race "Final Classification" accordion
+    # names the jerseys; a stage's own entry always prefixes them with "Stage"
+    # or "Overall", so accepting both here cannot cross-match mid-race.
+    "points": (("Overall Points Classification", "Points Classification"), False),
+    "kom": (("Overall Mountain Classification", "Overall Mountains Classification",
+             "Mountain Classification", "Mountains Classification"), False),
+    "youth": (("Overall Youth Classification", "Youth Classification"), False),
     "teams": (("Overall Team Classification", "Overall Teams Classification", "Team Classification"), False),
 }
 SUPPORTED_RACE_TYPES = ("A",)          # observed on every road classification; anything else is rejected
@@ -97,6 +101,24 @@ SUPPORTED_RACE_TYPES = ("A",)          # observed on every road classification; 
 # one-day race.  ``one_day`` is the unit name the registry gives them and
 # ``race`` the name uci_acquire's CLI has always used; both mean the same thing.
 ONE_DAY_UNITS = ("race", "one_day")
+
+# On the LAST stage of a stage race the UCI does not repeat the overall
+# classifications inside that stage's accordion entry.  Stages 1..N-1 each carry
+# a "Stage General Classification"; stage N carries only its four stage-level
+# documents, and the final standings live in a SIBLING accordion entry labelled
+# "Final Classification" holding "General Classification", "Points
+# Classification", "Youth Classification" and "Mountain Classification".
+# Verified 2026-09-13 on Vuelta a España 2026 (competition 76942): the stage-21
+# accordion held only Stage/Points/Mountain/Youth Classification, while the
+# "Final Classification" entry held General Classification D2EV375983.  Without
+# this fallback the final stage of every stage race is permanently
+# un-settleable — the acquirer reports "not in the results accordion for this
+# stage" for a document the page is serving one entry away.
+FINAL_ACCORDION_LABEL = "Final Classification"
+
+# The kinds that may be taken from the final-classification entry.  "stage" is
+# never among them: a stage result is always the stage's own document.
+FINAL_FALLBACK_KINDS = ("gc", "points", "kom", "youth", "teams")
 
 
 class AcquireError(RuntimeError):
@@ -184,22 +206,66 @@ def find_stage(props: Dict[str, Any], unit: str) -> Dict[str, Any]:
         raise AcquireError(f"{label!r} is not in the competition schedule")
     if entry is None:
         raise AcquireError(f"{label!r} has no results in the accordion yet (schedule date {sched.get('date')!r})")
-    return {"label": entry.get("label"), "accordion": entry, "schedule_date": sched.get("date"), "schedule": race}
+    final_entry = next((a for a in accordion
+                        if _norm_label(a.get("label")) == _norm_label(FINAL_ACCORDION_LABEL)), None)
+    return {"label": entry.get("label"), "accordion": entry, "schedule_date": sched.get("date"),
+            "schedule": race, "final_accordion": final_entry,
+            "is_last_stage": is_last_stage(props, unit)}
 
 
-def select_classifications(entry: Dict[str, Any], kinds: Optional[List[str]] = None) -> Dict[str, Dict[str, Any]]:
-    """kind → ``{title, event_code, race_type}`` for every supported classification present, by exact title."""
+def is_last_stage(props: Dict[str, Any], unit: str) -> bool:
+    """True when ``unit`` is the highest-numbered stage the competition schedules.
+
+    Read off the schedule rather than a campaign's stage count, so it is right
+    even when a stage is cancelled or the campaign file is stale.  A one-day
+    unit is never a "last stage" — it has its own single-entry path.
+    """
+    m = re.fullmatch(r"stage_(\d+)", unit or "")
+    if not m:
+        return False
+    want = int(m.group(1))
+    numbers = []
+    for item in ((props.get("schedule") or {}).get("items")) or []:
+        for r in item.get("races") or []:
+            mm = re.fullmatch(r"stage\s+(\d+)", _norm_label(r.get("raceName")))
+            if mm:
+                numbers.append(int(mm.group(1)))
+    return bool(numbers) and want == max(numbers)
+
+
+def select_classifications(entry: Dict[str, Any], kinds: Optional[List[str]] = None,
+                           final_entry: Optional[Dict[str, Any]] = None) -> Dict[str, Dict[str, Any]]:
+    """kind → ``{title, event_code, race_type}`` for every supported classification present, by exact title.
+
+    ``final_entry`` is the competition's "Final Classification" accordion entry.
+    Pass it ONLY for the last stage of a stage race: the overall classifications
+    are not repeated in that stage's own entry, so they are taken from there and
+    marked ``from_final_accordion``.  A mid-race stage must never read it, or a
+    stage-14 capture would attach the race's final standings.
+    """
     wanted = kinds or list(CLASSIFICATIONS)
     by_title = {}
     for r in entry.get("results") or []:
         by_title[_norm_label(r.get("title"))] = r
+    final_by_title = {}
+    for r in (final_entry or {}).get("results") or []:
+        final_by_title[_norm_label(r.get("title"))] = r
     out: Dict[str, Dict[str, Any]] = {}
     for kind in wanted:
         titles, _required = CLASSIFICATIONS[kind]
         for t in titles:
             r = by_title.get(_norm_label(t))
             if r is not None:
-                out[kind] = {"title": r.get("title"), "event_code": r.get("eventCode"), "race_type": r.get("raceType")}
+                out[kind] = {"title": r.get("title"), "event_code": r.get("eventCode"),
+                             "race_type": r.get("raceType")}
+                break
+        if kind in out or kind not in FINAL_FALLBACK_KINDS or not final_by_title:
+            continue
+        for t in titles:
+            r = final_by_title.get(_norm_label(t))
+            if r is not None:
+                out[kind] = {"title": r.get("title"), "event_code": r.get("eventCode"),
+                             "race_type": r.get("raceType"), "from_final_accordion": True}
                 break
     return out
 
@@ -406,7 +472,13 @@ def acquire(*, competition_url: str, unit: str, out_dir: Path, campaign_slug: Op
                       "race_class": (stage["schedule"] or {}).get("raceClass"),
                       "category": (stage["schedule"] or {}).get("category"),
                       "accordion_titles": [x.get("title") for x in stage["accordion"].get("results") or []]}
-    selected = select_classifications(stage["accordion"], kinds)
+    selected = select_classifications(stage["accordion"], kinds,
+                                      final_entry=stage.get("final_accordion")
+                                      if stage.get("is_last_stage") else None)
+    index["stage"]["is_last_stage"] = bool(stage.get("is_last_stage"))
+    if stage.get("is_last_stage") and stage.get("final_accordion"):
+        index["stage"]["final_accordion_titles"] = [
+            x.get("title") for x in (stage["final_accordion"].get("results") or [])]
     for kind in (kinds or list(CLASSIFICATIONS)):
         if kind not in selected:
             pages[kind] = {"available": False, "reason": "not in the results accordion for this stage",

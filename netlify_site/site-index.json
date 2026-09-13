@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-09-12 18:16",
+ "generated_at": "2026-09-13 13:47",
  "site_name": "Cycling Race Predictor",
  "races": [
   {
@@ -649,7 +649,7 @@
      "kind": "stage",
      "date": "2026-09-13",
      "label": "Stage 21 — Carrefour Granada > Granada, 112 km",
-     "status": "predicted",
+     "status": "settled",
      "predicted": true,
      "url": "/race/vuelta-a-espana/2026/stage-21",
      "asset": "/vuelta-stage21.html",
@@ -662,7 +662,7 @@
     }
    ],
    "n_stages": 21,
-   "n_settled": 19,
+   "n_settled": 20,
    "n_predicted": 21,
    "post_hoc": false
   },
