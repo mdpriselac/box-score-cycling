@@ -29,6 +29,9 @@ claim the original did not make.
 
 | Date | Tag | Lesson |
 |---|---|---|
+| 2026-09-13 | `acquisition` | A stage race's LAST stage keeps its overall classifications in a different accordion |
+| 2026-09-13 | `keying` | The bunch macro grades winner-group SIZE, not winner TYPE |
+| 2026-09-13 | `keying` | The closing-circuit time freeze is a Tour practice, not a grand tour one |
 | 2026-09-12 | `tooling` | A shared builder hardcoded to one campaign fails silently, not loudly |
 | 2026-09-12 | `scoring` | A backfilled config must be marked `post_hoc` when it is written, not when someone notices |
 | 2026-09-12 | `tooling` | A post-hoc board's features are clean; the hindsight is in the operator |
@@ -67,6 +70,78 @@ claim the original did not make.
 | 2026-07-05 | `acquisition` | A truncated FirstCycling results page is fixed by rerunning |
 
 ---
+
+## 2026-09-13 — A stage race's LAST stage keeps its overall classifications in a different accordion
+
+**Tag:** `acquisition` · Vuelta stage 21
+
+Stages 1 to N-1 each carry a "Stage General Classification" inside their own
+results accordion entry. Stage N does not. On Vuelta 2026 the stage-21 entry
+held only Stage, Stage Points, Stage Mountain and Stage Youth Classification,
+while the race's final standings sat in a sibling entry labelled **"Final
+Classification"** holding General Classification D2EV375983 plus the three
+jerseys under their bare titles. `uci_acquire` only ever looked inside the
+requested stage's entry, so `gc` came back "not in the results accordion for
+this stage", the capture never reached complete, and `settle` exited 10.
+
+**The final stage of every stage race was un-settleable from the UCI, for a
+document the page was serving one entry away.** The same shape as the one-day
+rule already in the code, which also reads its single result out of a "Final
+Classification" entry.
+
+Fixed by a fallback gated on `is_last_stage`, read off the competition
+schedule rather than a campaign's stage count so a cancelled stage cannot
+fool it. A mid-race stage must never read that entry or a stage-14 capture
+would attach the race's final standings, and the stage result itself is never
+taken from it. `cycling_project/tests/unit/test_uci_final_accordion.py` covers
+both directions.
+
+Second lesson from the same evening: the UCI was still serving that document
+**empty** three hours after the finish. The fix resolves the entry; it cannot
+conjure rows. The final classifications came from FirstCycling by the
+supervised path, scoped with `--stage 21` so twenty settled archives were left
+alone, with the UCI capture kept beside them.
+
+## 2026-09-13 — The bunch macro grades winner-group SIZE, not winner TYPE
+
+**Tag:** `keying` · Vuelta stage 21
+
+Granada's closing circuit took a partly cobbled 2.1 km at 6.6% four times with
+the last crest 7.8 km out. The read was that puncheurs, not pure sprinters,
+would win — and it was right. The realised top fifteen came back sprint .20,
+rolling .267, mountain .267, with a front-five classification median of 77th.
+Matthew Brennan, who won four stages at this race, was fourth. Wout van Aert,
+the book's favourite at 1.75, was sixty-fifth. The winner, Tobias Halland
+Johannessen, was a climber lying 26th.
+
+And the oracle said `bunch`, because forty riders finished on his time.
+
+**Being right about who wins tells you nothing about the item. The macro is a
+group-size question; composition is a different question with a different
+answer, and a key that spends its weight on the composition read will be
+covered rather than exact.** The punchy filter answered the composition
+question well (van Aert retained 0.61 of his sprint-anchor probability,
+Brennan 0.00) and that is still not what the key grades.
+
+## 2026-09-13 — The closing-circuit time freeze is a Tour practice, not a grand tour one
+
+**Tag:** `keying` · Vuelta stage 21
+
+The stage-21 key put 0.35 on `bunch` rather than a minority weight, largely
+because the last two Tour de France circuit finales — Montmartre 2025 and 2026
+— both recorded **every** finisher on the winner's time, wg_prop 1.000. Under
+a neutralised clock `bunch` is true by construction whoever wins, and van Aert
+taking the 2025 edition still labelled mass_sprint.
+
+Granada did not neutralise. Winner-group proportion was 0.282: forty riders
+together, seventy-eight at 1:49, fourteen at 3:59. The road produced the split
+honestly.
+
+**The hedge was right and the argument behind it was wrong, which is worth
+recording as plainly as a miss.** The Vuelta's own closing stages never froze
+either (2019 wg_prop .634, 2022 .216, 2023 .324). Do not carry the Montmartre
+precedent to another organiser's circuit; check wg_prop == 1.000 when settling
+and let that, not the design of the day, decide whether a freeze happened.
 
 ## 2026-09-12 — A shared builder hardcoded to one campaign fails silently, not loudly
 
