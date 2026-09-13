@@ -440,6 +440,24 @@ def test_validator_fault_cases(campaign, name, mutate, check):
     assert not (campaign / "results/stage_14/results.csv").exists()
 
 
+def test_exact_duplicate_source_row_with_conflicting_nationality_is_collapsed(campaign):
+    """UCI Taihu stage 1 duplicated one rank 113 row as RSA and CHN."""
+    for filename in ("stage.json", "gc.json"):
+        def duplicate(d):
+            original = d["results"][20]
+            clone = json.loads(json.dumps(original))
+            clone["values"]["nationality"] = "ZZZ"
+            d["results"].append(clone)
+
+        _edit_json(campaign / "results/stage_14/uci" / filename, duplicate)
+
+    rep = _ingest(campaign)
+    assert rep.ok, rep.failing
+    assert any("exact duplicate UCI source rows collapsed" in warning for warning in rep.warnings)
+    assert (campaign / "results/stage_14/results.csv").read_bytes() == \
+        (CAMPAIGN / "expected/stage_14/results.csv").read_bytes()
+
+
 def test_a_bad_optional_classification_page_is_a_warning_not_a_rejection(campaign):
     uci_dir = campaign / "results/stage_14/uci"
     (uci_dir / "kom.json").write_text("<html>502 Bad Gateway</html>", encoding="utf-8")

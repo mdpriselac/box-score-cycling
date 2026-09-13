@@ -201,6 +201,47 @@ def parse_rider_results(doc: Dict[str, Any], kind: str) -> List[UciRow]:
     return rows
 
 
+def deduplicate_exact_source_rows(rows: Iterable[UciRow]) -> Tuple[List[UciRow], List[Dict[str, Any]]]:
+    """Collapse byte-equivalent UCI result identities that differ only by nationality.
+
+    The UCI occasionally emits the same rider twice at the same rank, team,
+    age and time while assigning the duplicate a different nationality.  That
+    is one source row duplicated, not two riders.  Keep the first row and
+    report the discarded nationality.  Any difference in rank, status, team,
+    result, points or age remains visible to the normal uniqueness validators.
+    """
+    kept: List[UciRow] = []
+    seen: Dict[Tuple[Any, ...], UciRow] = {}
+    dropped: List[Dict[str, Any]] = []
+    for row in rows:
+        identity = row.rider.key
+        signature = (
+            identity,
+            row.rank_text,
+            row.status,
+            row.place,
+            ident.name_key(row.team or ""),
+            row.result_raw.strip(),
+            row.points,
+            row.age,
+        )
+        previous = seen.get(signature) if identity.strip("|") else None
+        if previous is None:
+            seen[signature] = row
+            kept.append(row)
+            continue
+        dropped.append({
+            "rider": row.display,
+            "rank": row.rank_text,
+            "team": row.team,
+            "kept_nationality": previous.nationality,
+            "dropped_nationality": row.nationality,
+            "kept_index": previous.index,
+            "dropped_index": row.index,
+        })
+    return kept, dropped
+
+
 def parse_team_results(doc: Dict[str, Any]) -> List[TeamRow]:
     rows: List[TeamRow] = []
     prev: Optional[float] = None
@@ -383,6 +424,17 @@ def ingest(campaign_dir: Path, unit: str, *, crosswalk_csv: Optional[Path] = Non
     except UciIngestError as exc:
         checks.append(Check("parse", False, str(exc)))
         return report
+    stage_rows, stage_dropped = deduplicate_exact_source_rows(stage_rows)
+    if one_day:
+        gc_rows_all = stage_rows
+        gc_dropped: List[Dict[str, Any]] = []
+    else:
+        gc_rows_all, gc_dropped = deduplicate_exact_source_rows(gc_rows_all)
+    if stage_dropped or gc_dropped:
+        report.warnings.append(
+            "exact duplicate UCI source rows collapsed: "
+            + json.dumps({"stage": stage_dropped, "gc": gc_dropped}, ensure_ascii=False, sort_keys=True)
+        )
     classified = [r for r in stage_rows if r.status == "classified"]
     abandons = [r for r in stage_rows if r.status != "classified"]
     unknown = [r for r in stage_rows if r.status == "?"]
