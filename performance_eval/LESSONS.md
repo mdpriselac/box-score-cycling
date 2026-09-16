@@ -225,12 +225,15 @@ next tick. Runbook §6a; scheduling in `agents/mac/README.md`.
 
 Two things this cost, worth keeping:
 
-- **`startlist.json` reads as a rendered board.** `driver._has_scenario_boards`
+- **`startlist.json` read as a rendered board.** `driver._has_scenario_boards`
   counts any `predictions/<unit>/*.json` outside `NON_BOARD_JSON` as a board,
-  and the handover file is not in that set — so a unit that has only a start
-  list looks already previewed and `plan` never lists it. `horizon` works
-  around it with its own copy of the preview rule; the one-line fix belongs in
-  `driver.py` (add `startlist.json` to `NON_BOARD_JSON`) and is not yet made.
+  and the handover file was not in that set — so a unit that had only a start
+  list looked already previewed and `plan` never listed it: the exact failure
+  the capture exists to prevent. **Fixed 2026-09-16**: `startlist.json` and
+  `horizon_raw.json` are in `NON_BOARD_JSON`, `horizon.has_boards` now just
+  calls the driver's test, and `test_nightly_driver.py` pins a start-list-only
+  unit as still preview-due. The preview upload still ships the file (its
+  exclusion list is separate), so the cloud gets the field.
 - **A capture scheduled after the tick is a capture the cloud sees tomorrow.**
   The tick is 19:45 UTC and this Mac runs on US Pacific, so the job is at
   10:30 local, not the late-afternoon slot a European clock would suggest.

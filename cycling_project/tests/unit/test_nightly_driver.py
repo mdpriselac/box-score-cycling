@@ -69,6 +69,26 @@ def test_plan_due_units_stage14_to_15(campaign, tmp_path, capsys):
     assert st16["due"] == ["preview"] and "blocked" in st16["flags"]
 
 
+def test_a_startlist_handover_is_not_a_rendered_board(campaign, tmp_path, capsys):
+    """The Mac horizon capture writes ``startlist.json`` into ``predictions/<unit>/`` for every
+    unit the cloud is about to preview. That file is a handover, not a board: it must not make
+    ``plan`` think the unit was already previewed (2026-09-16 `acquisition` lesson)."""
+    pred = campaign / "predictions" / "stage_15"
+    (pred / "startlist.json").write_text(json.dumps({"riders": [{"name": "x"}]}))
+    (pred / "route.json").write_text("{}")
+    assert (pred / "scenarios.json").exists()
+    assert drv._has_scenario_boards(pred) is False
+    assert _run(campaign, tmp_path, "plan", "--dry-run") == 0
+    plan = _out(capsys)
+    assert plan["preview"] == ["stage_15"]
+    assert "preview" in next(u for u in plan["units"] if u["unit"] == "stage_15")["due"]
+    # a real board flips it
+    (pred / "bunch.json").write_text('{"riders": []}')
+    assert drv._has_scenario_boards(pred) is True
+    assert _run(campaign, tmp_path, "plan", "--dry-run") == 0
+    assert _out(capsys)["preview"] == []
+
+
 # ---------------------------------------------------------------------------
 # night --dry-run replay: stage 14 settle, stage 15 preview
 # ---------------------------------------------------------------------------

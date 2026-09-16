@@ -1624,7 +1624,7 @@ class Driver:
             if cfg := _read_json(pred / "scenarios.json"):
                 if cfg.get("post_hoc"):
                     files += [pred / "scenarios.json", pred / "startlist.json"]
-                    files += sorted(p for p in pred.glob("*.json") if p.name not in NON_BOARD_JSON and p.name != "startlist.json")
+                    files += sorted(p for p in pred.glob("*.json") if p.name not in NON_BOARD_JSON)
             files += sorted(p for p in c.pred_dir("gc").glob("*.json") if p.name != "scenarios.json") if c.pred_dir("gc").is_dir() else []
         else:
             files += [pred / "scenarios.json", pred / "route.json", pred / "agent_key.json"]
