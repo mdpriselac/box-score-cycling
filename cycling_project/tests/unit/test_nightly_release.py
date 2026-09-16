@@ -133,6 +133,16 @@ def _make_full_db(path: Path) -> None:
     conn.close()
 
 
+def _seed_signature_tables(exp: Path) -> None:
+    import gzip
+    exp.mkdir(parents=True, exist_ok=True)
+    for stamp in ("20260501_000000", "20260611_084046"):
+        with gzip.open(exp / f"selection_signatures_{stamp}.csv.gz", "wt") as fh:
+            fh.write("comp_id,competition_type,date,wg_prop\n1,stage,2025-01-01,0.5\n")
+        (exp / f"selection_signatures_{stamp}.json").write_text('{"stamp": "%s"}' % stamp)
+    (exp / "unrelated_20260611.csv.gz").write_bytes(b"")
+
+
 def _make_perf_eval(root: Path) -> Path:
     perf = root / "performance_eval"
     unit = perf / "vuelta-2026" / "predictions" / "stage_15"
@@ -279,6 +289,7 @@ def fake_project(tmp_path):
     (root / "pyproject.toml").write_text('[project]\nname = "fake"\nversion = "0"\n')
     _seed_models(root / "models" / "production")
     _make_perf_eval(root)
+    _seed_signature_tables(root / "experiments")
     _git(root, "init", "-q")
     _git(root, "add", "-A")
     _git(root, "commit", "-q", "-m", "release commit")
@@ -317,6 +328,11 @@ def test_manifest_round_trip_and_bundle_contents(fake_project, tmp_path):
     assert "performance_eval/tour-de-france-2026/capture_odds.py" in files
     assert "performance_eval/tour-de-france-2026/build_review_dataset.py" not in files
     assert "performance_eval/DAILY_RUNBOOK.md" in files and "performance_eval/LESSONS.md" in files
+    # the newest signature table (+ sidecar) ships; older stamps and unrelated gz files do not
+    assert "experiments/selection_signatures_20260611_084046.csv.gz" in files
+    assert "experiments/selection_signatures_20260611_084046.json" in files
+    assert "experiments/selection_signatures_20260501_000000.csv.gz" not in files
+    assert "experiments/unrelated_20260611.csv.gz" not in files
     assert manifest["campaigns"] == ["vuelta-2026"]
     assert manifest["db_snapshot_date"] == "2026-08-22"
     assert manifest["total_bytes"] == sum(m["size"] for m in files.values())

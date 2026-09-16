@@ -179,6 +179,40 @@ def test_settle_without_pcs_pages_exits_10_with_operator_task(campaign, tmp_path
     assert not (campaign / "runs" / "2026-09-05").exists()
 
 
+def test_same_ask_is_not_filed_twice(campaign, tmp_path, capsys):
+    shutil.rmtree(campaign / "results" / "stage_14")
+    assert _run(campaign, tmp_path, "night", "--dry-run") == 10
+    first = _out(capsys)["runs"][0]
+    assert _run(campaign, tmp_path, "night", "--dry-run") == 10
+    second = _out(capsys)["runs"][0]
+    tasks = _ledger(tmp_path, "operator_tasks")
+    assert len(tasks) == 1 and tasks[0]["kind"] == "acquisition_needed"
+    assert second["duplicate_of"] == tasks[0]["id"] == first["operator_task_id"]
+    assert second["operator_task_id"] == tasks[0]["id"]
+    fin = [s for s in _ledger(tmp_path, "run_steps") if s["step"] == "finish"]
+    assert fin[-1]["state"] == "waiting" and fin[-1]["detail"]["duplicate_of"] == tasks[0]["id"]
+
+
+def test_task_command_dedupes_ops_triage_reports(campaign, tmp_path, capsys):
+    report = tmp_path / "report.json"
+    report.write_text(json.dumps({"trigger": {"step": "hindsight", "race": "vuelta-2026", "stage": 15,
+                                              "error_class": "ValueError"}, "diagnosis": "table missing"}))
+    args = ("task", "--store", "fake", "--kind", "ops_triage", "--summary", "vuelta-2026 stage_15 settle: hindsight failed",
+            "--detail-file", str(report), "--urgency", "routine")
+    assert _run(campaign, tmp_path, *args) == 0
+    first = _out(capsys)
+    assert _run(campaign, tmp_path, *args) == 0
+    second = _out(capsys)
+    tasks = _ledger(tmp_path, "operator_tasks")
+    assert len(tasks) == 1 and first["operator_task_id"] == tasks[0]["id"]
+    assert second["duplicate_of"] == tasks[0]["id"] and second["operator_task_id"] == tasks[0]["id"]
+    # a different unit is a different ask
+    report.write_text(json.dumps({"trigger": {"step": "hindsight", "race": "vuelta-2026", "stage": 16,
+                                              "error_class": "ValueError"}}))
+    assert _run(campaign, tmp_path, *args) == 0
+    assert len(_ledger(tmp_path, "operator_tasks")) == 2
+
+
 def test_preview_without_a_key_exits_10_day_key_needed(campaign, tmp_path, capsys):
     cfg_path = campaign / "predictions/stage_15/scenarios.json"
     cfg = json.loads(cfg_path.read_text())

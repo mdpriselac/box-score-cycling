@@ -29,6 +29,7 @@ claim the original did not make.
 
 | Date | Tag | Lesson |
 |---|---|---|
+| 2026-09-16 | `tooling` | A gitignored input is invisible to the release bundle until a settle needs it; one root cause must file one task |
 | 2026-09-13 | `acquisition` | A stage race's LAST stage keeps its overall classifications in a different accordion |
 | 2026-09-13 | `keying` | The bunch macro grades winner-group SIZE, not winner TYPE |
 | 2026-09-13 | `keying` | The closing-circuit time freeze is a Tour practice, not a grand tour one |
@@ -70,6 +71,30 @@ claim the original did not make.
 | 2026-07-05 | `acquisition` | A truncated FirstCycling results page is fixed by rerunning |
 
 ---
+
+## 2026-09-16 — A gitignored input is invisible to the release bundle until a settle needs it; one root cause must file one task
+
+**Tag:** `tooling`
+
+Three ticks in a row (2026-09-14..16) every stage-race settle in the cloud
+died at `hindsight` with "no usable historical references match the settled
+oracle". The per-competition signature table
+`experiments/selection_signatures_<stamp>.csv.gz` is gitignored
+(`experiments/*.csv.gz`) and belonged to no bundle group, so the container
+never had it; `nearest_refs` returned nothing. One-day races hid the hole
+because they fall back to their own past editions. The Vuelta hid it too:
+every stage had a morning preview, so no settle ever reached hindsight. The
+2026-09-08 lesson above was the same shape (top-level docs), and the fix is
+the same: `weekly_release.build_bundle` now ships the newest table and its
+sidecar under `experiments/`. When a serving or settle path reads a file, ask
+whether the bundle carries it before the first cloud run needs it.
+
+The second half: the ops-triage agent diagnosed the cause correctly on the
+first night and then filed the same diagnosis five more times, one per unit
+per tick, so an inbox with one defect read as sixteen. The driver now
+fingerprints an operator task on kind + campaign + unit + phase (a triage
+report's `trigger.race/stage/step` counts) and reuses an unresolved twin
+instead of inserting; the run's `finish` step records `duplicate_of`.
 
 ## 2026-09-13 — A stage race's LAST stage keeps its overall classifications in a different accordion
 

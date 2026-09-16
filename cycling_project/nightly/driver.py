@@ -142,6 +142,47 @@ class DriverFailure(Exception):
         self.error_class, self.log_path, self.detail = error_class, log_path, detail or {}
 
 
+def task_fingerprint(task: Dict[str, Any]) -> Tuple[str, str, str, str]:
+    """What makes two operator tasks the same ask: kind, campaign, unit and phase.
+
+    The driver files a task from ``WaitingForInput`` (detail carries ``unit`` / ``phase``);
+    the coordinator files an ops-triage report through ``nightly task`` (its detail carries
+    ``trigger.race`` / ``trigger.stage`` / ``trigger.step``). A tick that meets the same wall
+    as last night must not file the same task again — three nights of the missing
+    signature table filed six triage rows for one cause (2026-09-14..16).
+    """
+    detail = task.get("detail") if isinstance(task.get("detail"), dict) else {}
+    trigger = detail.get("trigger") if isinstance(detail.get("trigger"), dict) else {}
+    unit = detail.get("unit")
+    if not unit and trigger.get("stage") not in (None, "", 0):
+        try:
+            unit = f"stage_{int(trigger['stage']):02d}"
+        except (TypeError, ValueError):
+            unit = str(trigger["stage"])
+    if not unit and trigger.get("stage") in (0, "0") and trigger.get("race"):
+        unit = "race"
+    phase = detail.get("phase") or trigger.get("step") or ""
+    campaign = task.get("campaign_slug") or task.get("campaign") or trigger.get("race") or ""
+    return (str(task.get("kind") or ""), str(campaign), str(unit or ""), str(phase))
+
+
+def find_open_duplicate(store: Any, task: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    """An unresolved task with the same fingerprint, else None (a store error counts as none)."""
+    campaign = task.get("campaign_slug") or task.get("campaign")
+    try:
+        candidates = store.open_tasks(campaign) if campaign else store.open_tasks()
+    except Exception as exc:  # noqa: BLE001 — dedupe is best-effort; filing still proceeds
+        logger.warning("open_tasks failed, filing without dedupe: %s", exc)
+        return None
+    want = task_fingerprint(task)
+    for row in candidates:
+        if row.get("resolved"):
+            continue
+        if task_fingerprint(row) == want:
+            return row
+    return None
+
+
 def assert_no_git(argv: Sequence[str]) -> None:
     """The driver never runs git — not as a command, not through a shell."""
     for a in argv:
@@ -571,13 +612,20 @@ class Driver:
                                        {**w.detail, "unit": unit, "phase": phase, "run_id": self.run["run_id"]}, w.urgency)
             task["run_id"] = self.run["run_id"]
             task_row = None
-            try:
-                task_row = self.store.insert_task(task)
-            except Exception as exc:  # noqa: BLE001
-                self._say(f"  [store] insert_task failed: {exc}")
-            self.finish("waiting", EXIT_WAITING, {"operator_task": task})
+            duplicate = find_open_duplicate(self.store, task)
+            if duplicate:
+                task_row = duplicate
+                self._say(f"  [store] same ask already open as task {duplicate.get('id')}; not filed again")
+            else:
+                try:
+                    task_row = self.store.insert_task(task)
+                except Exception as exc:  # noqa: BLE001
+                    self._say(f"  [store] insert_task failed: {exc}")
+            self.finish("waiting", EXIT_WAITING, {"operator_task": task,
+                                                  "duplicate_of": (duplicate or {}).get("id")})
             return EXIT_WAITING, {**base, "status": "waiting_for_input", "operator_task": task,
-                                  "operator_task_id": (task_row or {}).get("id")}
+                                  "operator_task_id": (task_row or {}).get("id"),
+                                  "duplicate_of": (duplicate or {}).get("id")}
         except DriverFailure as f:
             self.finish("failed", EXIT_FAILED, {"error_class": f.error_class, "message": str(f)})
             return EXIT_FAILED, {**base, "status": "failed", "error_class": f.error_class, "message": str(f),
@@ -1617,6 +1665,11 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         task = build_operator_task(args.kind, campaign.slug if campaign else None, args.summary, detail, urgency=args.urgency)
         if args.dry_run:
             return _emit(EXIT_DONE, {"status": "ok", "dry_run": True, "task": task})
+        duplicate = find_open_duplicate(store, task)
+        if duplicate:
+            return _emit(EXIT_DONE, {"status": "ok", "task": task, "operator_task_id": duplicate.get("id"),
+                                     "duplicate_of": duplicate.get("id"),
+                                     "note": "an unresolved task with the same kind/campaign/unit/phase is already open; not filed again"})
         try:
             row = store.insert_task(task)
         except Exception as exc:  # noqa: BLE001

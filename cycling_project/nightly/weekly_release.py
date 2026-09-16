@@ -10,6 +10,10 @@ bundle::
     performance_eval/<campaign>/…       campaign.json + odds/results/predictions/review
                                         for every campaign still in the horizon
     performance_eval/crosswalk/rider_crosswalk.csv   (when present)
+    experiments/selection_signatures_<stamp>.csv.gz  the newest per-competition
+                                        signature table (+ its .json sidecar):
+                                        hindsight references and the day-menu
+                                        retrieval read it, and it is gitignored
     manifest.json                       sha256 + size per file, git sha, model
                                         contract hashes, db snapshot date, horizon
 
@@ -178,6 +182,20 @@ def campaign_files(campaign_dir: Path) -> List[Path]:
     return files
 
 
+def signature_table_files(experiments_dir: Path) -> List[Path]:
+    """The newest ``selection_signatures_<stamp>.csv.gz`` plus its ``.json`` sidecar (when present)."""
+    from cycling_project.nightly.refs import newest_signature_table
+    table = newest_signature_table(experiments_dir)
+    if table is None:
+        logger.warning("no experiments/selection_signatures_*.csv.gz to ship: hindsight will have no references")
+        return []
+    out = [table]
+    sidecar = table.with_name(table.name[: -len(".csv.gz")] + ".json")
+    if sidecar.is_file():
+        out.append(sidecar)
+    return out
+
+
 def slice_snapshot(slice_path: Path) -> dict:
     """What the slice knows: latest dates and row counts of the key tables."""
     with sqlite3.connect(f"file:{slice_path}?mode=ro", uri=True) as conn:
@@ -233,6 +251,7 @@ def build_bundle(
     perf_eval: Path = PERF_EVAL,
     db_path: Optional[Path] = None,
     skip_slice: bool = False,
+    experiments_dir: Optional[Path] = None,
 ) -> dict:
     """Assemble the bundle under ``out_dir`` and return its manifest."""
     today = today or dt.date.today()
@@ -335,6 +354,15 @@ def build_bundle(
     if crosswalk.is_file():
         rel = str(crosswalk.relative_to(project_root))
         _copy(crosswalk, out_dir / rel)
+        add(rel, out_dir / rel)
+
+    # 7. the newest per-competition signature table. `experiments/*.csv.gz` is gitignored and
+    # belonged to no bundle group, so a hydrated container had none: every stage-race settle
+    # that fell through to hindsight failed with "no usable historical references"
+    # (Abruzzo / Taihu / Luxembourg, ticks 2026-09-14..16). Only the newest stamp ships.
+    for f in signature_table_files(experiments_dir or project_root / "experiments"):
+        rel = str(Path("experiments") / f.name)
+        _copy(f, out_dir / rel)
         add(rel, out_dir / rel)
 
     manifest = {
