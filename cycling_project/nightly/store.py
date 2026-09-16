@@ -45,6 +45,7 @@ tests and ``--dry-run`` exercise the trust boundary without a network.
 
 from __future__ import annotations
 
+import concurrent.futures
 import datetime as dt
 import hashlib
 import json
@@ -55,7 +56,7 @@ import os
 import posixpath
 import uuid
 from pathlib import Path, PurePosixPath
-from typing import Any, Dict, Iterable, List, Optional
+from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 import requests
 
@@ -91,7 +92,9 @@ AGENT_SELECT_TABLES = frozenset({
 OPERATOR_ONLY_TABLES = frozenset({"calendar", "campaigns", "stages", "releases", "crosswalk",
                                   "approvals", "reconciliation", "operators"})
 
-_PAGE = 500
+_PAGE = 500                 # Storage list page
+_INDEX_PAGE = 1000          # PostgREST rows per rpc/artifact_index page (Supabase max-rows default)
+_WALK_WORKERS = 8           # parallel run folders in the fallback walk
 
 
 class StoreError(RuntimeError):
@@ -178,6 +181,24 @@ def artifact_key(run_id: str, path: str) -> str:
 
 def _is_api_key(key: str) -> bool:
     return key.startswith(("sb_secret_", "sb_publishable_"))
+
+
+def _md5_etag(value: Any) -> Optional[str]:
+    """Storage's ``eTag`` (``"<md5>"`` / ``W/"<md5>"``) as bare md5 hex, else ``None``.
+
+    A single-request upload (every nightly artifact — only release files are
+    chunked, and those live in another bucket) gets the body's md5; a
+    multipart tag carries a ``-N`` suffix and is not comparable to a file hash.
+    """
+    if not value:
+        return None
+    text = str(value).strip()
+    if text.startswith("W/"):
+        text = text[2:]
+    text = text.strip('"').lower()
+    if len(text) == 32 and all(c in "0123456789abcdef" for c in text):
+        return text
+    return None
 
 
 # ---------------------------------------------------------------------------
@@ -347,9 +368,16 @@ class SupabaseStore:
             tmp.replace(dest)
         return dest
 
-    def _list(self, bucket: str, prefix: str, recursive: bool = True) -> List[dict]:
-        """Objects under ``prefix`` as ``{key, created_at, size}`` (folders expanded)."""
-        out: List[dict] = []
+    def _list_level(self, bucket: str, prefix: str) -> Tuple[List[dict], List[str]]:
+        """One folder level of ``prefix`` (paged): ``(objects, subfolder prefixes)``.
+
+        Storage's list endpoint is folder-at-a-time: an entry with ``id: null``
+        is a folder, anything else an object with its ``metadata`` (size and
+        the md5 ``eTag``). No recursive form exists on this project's
+        storage-api (1.77.5; ``list-v2`` answers NoSuchBucket) — see 0007.
+        """
+        objects: List[dict] = []
+        folders: List[str] = []
         offset = 0
         while True:
             body = {"prefix": prefix, "limit": _PAGE, "offset": offset,
@@ -363,15 +391,23 @@ class SupabaseStore:
                 name = it["name"]
                 full = f"{prefix.rstrip('/')}/{name}" if prefix else name
                 if it.get("id") is None:                      # a folder
-                    if recursive:
-                        out.extend(self._list(bucket, full, True))
+                    folders.append(full)
                     continue
                 meta = it.get("metadata") or {}
-                out.append({"key": full, "created_at": it.get("created_at") or "",
-                            "size": int(meta.get("size") or meta.get("contentLength") or 0)})
+                objects.append({"key": full, "created_at": it.get("created_at") or "",
+                                "size": int(meta.get("size") or meta.get("contentLength") or 0),
+                                "etag": _md5_etag(meta.get("eTag"))})
             if len(items) < _PAGE:
                 break
             offset += _PAGE
+        return objects, folders
+
+    def _list(self, bucket: str, prefix: str, recursive: bool = True) -> List[dict]:
+        """Objects under ``prefix`` as ``{key, created_at, size, etag}`` (folders expanded)."""
+        out, folders = self._list_level(bucket, prefix)
+        if recursive:
+            for full in folders:
+                out.extend(self._list(bucket, full, True))
         return out
 
     # -- diagnostics ----------------------------------------------------------
@@ -637,22 +673,58 @@ class SupabaseStore:
         return self._upload(bucket, key, data, content_type)
 
     def list_artifacts_since(self, release_tag: str) -> List[dict]:
-        """``{key, created_at, size}`` for every artifact of a run started at/after the release."""
+        """``{key, created_at, size, etag}`` for every artifact created at/after the release."""
         release = self.get_release(release_tag)
-        since = release.get("created_at", "") if release else ""
-        return self._list_run_artifacts(since)
+        since = _rs.parse_timestamp(release.get("created_at")) if release else None
+        objs = self.list_artifacts()
+        if since is None:
+            return objs
+        return [o for o in objs if (_rs.parse_timestamp(o["created_at"]) or since) >= since]
 
     def list_artifacts(self) -> List[dict]:
-        """Every artifact of every run, oldest first (the bootstrap overlay decides what applies)."""
-        return self._list_run_artifacts("")
+        """Every artifact of every run, oldest first (the bootstrap overlay decides what applies).
 
-    def _list_run_artifacts(self, since: str) -> List[dict]:
-        params = {"select": "run_id,created_at", "order": "created_at.asc"}
-        if since:
-            params["created_at"] = f"gte.{since}"
+        One paged PostgREST call to ``public.artifact_index()`` (migration
+        0007, a SELECT over ``storage.objects``). When that function is not
+        deployed yet (PGRST202) or not granted to the role (42501) this falls
+        back to the Storage folder walk — one request per folder per run, in
+        parallel.
+        """
+        try:
+            return self._artifact_index()
+        except StoreError as exc:
+            if exc.code not in ("PGRST202", "42883", "42501") and exc.status not in (403, 404):
+                raise
+            logger.warning("public.artifact_index() is unavailable to this role (%s; push "
+                           "supabase/migrations/0007); walking %s folder by folder instead",
+                           exc, ARTIFACTS_BUCKET)
+        return self._walk_artifacts()
+
+    def _artifact_index(self) -> List[dict]:
         out: List[dict] = []
-        for run in self._select("runs", params):
-            out.extend(self._list(ARTIFACTS_BUCKET, str(run["run_id"]), recursive=True))
+        offset = 0
+        while True:
+            page = self._rest("POST", "rpc/artifact_index", json_body={},
+                              params={"limit": str(_INDEX_PAGE), "offset": str(offset)},
+                              what="rpc artifact_index").json()
+            for row in page:
+                out.append({"key": row["key"], "created_at": row.get("created_at") or "",
+                            "size": int(row.get("size") or 0), "etag": _md5_etag(row.get("etag"))})
+            if len(page) < _INDEX_PAGE:
+                break
+            offset += _INDEX_PAGE
+        return sorted(out, key=lambda o: (o["created_at"], o["key"]))
+
+    def _walk_artifacts(self) -> List[dict]:
+        """Fallback: the bucket root names every run folder that holds an object
+        (no ``runs`` query, empty runs cost nothing); each run's tree is walked
+        recursively, runs in parallel."""
+        objs, run_folders = self._list_level(ARTIFACTS_BUCKET, "")
+        out: List[dict] = list(objs)
+        if run_folders:
+            with concurrent.futures.ThreadPoolExecutor(max_workers=_WALK_WORKERS) as pool:
+                for listed in pool.map(lambda f: self._list(ARTIFACTS_BUCKET, f, True), run_folders):
+                    out.extend(listed)
         return sorted(out, key=lambda o: (o["created_at"], o["key"]))
 
     def download_artifact(self, key: str, dest: Path) -> Path:

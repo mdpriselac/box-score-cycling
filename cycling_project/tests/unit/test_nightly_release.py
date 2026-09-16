@@ -412,6 +412,68 @@ def test_bootstrap_hydrates_from_fake_store_and_fails_closed(fake_project, tmp_p
         bootstrap(tmp_path / "dest3", store, skip_uv_sync=True)
 
 
+def test_overlay_fetches_each_path_once_and_newest_run_wins(fake_project, tmp_path, monkeypatch):
+    """Three runs upload the same path: one download, the newest object lands (2026-09-16 speedup)."""
+    root, out, manifest = _bundle(fake_project, tmp_path)
+    store = FakeStore(tmp_path / "store")
+    upload_bundle(store, out, manifest)
+    store.approve("data-2026-09-05", by="human")
+    monkeypatch.delenv(db_path_mod.ENV_VAR, raising=False)
+    rel = "vuelta-2026/results/stage_16/results.csv"
+    store.put_artifact(f"run-a/{rel}", b"place,name\n1,First\n", created_at="2026-09-06T00:00:00+00:00")
+    store.put_artifact(f"run-c/{rel}", b"place,name\n1,Third\n", created_at="2026-09-08T00:00:00Z")   # newest, Z suffix
+    store.put_artifact(f"run-b/{rel}", b"place,name\n1,Second\n", created_at="2026-09-07T00:00:00+00:00")
+    # a bundled path re-uploaded before the release by two runs: neither is fetched
+    stale = "vuelta-2026/predictions/stage_15/scenarios.json"
+    store.put_artifact(f"run-a/{stale}", b"{}", created_at="2020-01-01T00:00:00+00:00")
+    store.put_artifact(f"run-b/{stale}", b"{}", created_at="2020-01-02T00:00:00+00:00")
+
+    downloads = []
+    real_download = store.download_artifact
+    def counting_download(key, dest):
+        downloads.append(key)
+        return real_download(key, dest)
+    monkeypatch.setattr(store, "download_artifact", counting_download)
+
+    dest = tmp_path / "dest"
+    summary = bootstrap(dest, store, skip_uv_sync=True)
+    assert downloads == [f"run-c/{rel}"]                                      # one fetch, the newest
+    assert summary["artifacts_overlaid"] == [f"run-c/{rel}"]
+    assert (dest / "performance_eval" / rel).read_text().endswith("1,Third\n")
+    assert "stale" not in (dest / "performance_eval" / stale).read_text()
+
+    # second bootstrap on the same dest: the bytes are already there (etag match) -> nothing fetched
+    downloads.clear()
+    again = bootstrap(dest, store, skip_uv_sync=True)
+    assert downloads == [] and again["artifacts_overlaid"] == []
+    assert (dest / "performance_eval" / rel).read_text().endswith("1,Third\n")
+
+    # a fourth run lands later: only that path is fetched again
+    store.put_artifact(f"run-d/{rel}", b"place,name\n1,Fourth\n", created_at="2026-09-09T00:00:00+00:00")
+    downloads.clear()
+    third = bootstrap(dest, store, skip_uv_sync=True)
+    assert downloads == [f"run-d/{rel}"] and third["artifacts_overlaid"] == [f"run-d/{rel}"]
+    assert (dest / "performance_eval" / rel).read_text().endswith("1,Fourth\n")
+
+
+def test_plan_overlay_collapses_and_applies_bundle_rule():
+    since = "2026-09-05T12:00:00+00:00"
+    objs = [
+        {"key": "r1/c/results/s1/results.csv", "created_at": "2026-09-01T00:00:00+00:00", "size": 1, "etag": None},
+        {"key": "r2/c/results/s1/results.csv", "created_at": "2026-09-06T00:00:00.000Z", "size": 1, "etag": None},
+        {"key": "r3/c/results/s1/results.csv", "created_at": "2026-09-06T00:00:00+00:00", "size": 1, "etag": None},  # equal instant, Z sorts after '+' lexically -> tie broken by key
+        {"key": "r0/c/results/s1/results.csv", "created_at": "2026-09-05T23:00:00-02:00", "size": 1, "etag": None},  # 01:00Z on the 6th: newest by instant, oldest by string
+        {"key": "r1/c/odds/markets.json", "created_at": "2026-09-01T00:00:00+00:00", "size": 1, "etag": None},   # bundled, older -> skip
+        {"key": "r1/c/results/s0/results.csv", "created_at": "2020-01-01T00:00:00+00:00", "size": 1, "etag": None},  # not bundled -> applies
+        {"key": "r1/loose.json", "created_at": "2026-09-06T00:00:00+00:00", "size": 1, "etag": None},          # not a campaign file
+    ]
+    plan = bootstrap_mod.plan_overlay(objs, ["performance_eval/c/odds/markets.json"], since)
+    assert {rel: o["key"] for rel, o in plan.items()} == {
+        "c/results/s1/results.csv": "r0/c/results/s1/results.csv",
+        "c/results/s0/results.csv": "r1/c/results/s0/results.csv",
+    }
+
+
 def test_bootstrap_refuses_concurrent_owner_and_recovers_after_release(tmp_path):
     dest = tmp_path / "dest"
     dest.mkdir()

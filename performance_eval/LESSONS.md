@@ -29,6 +29,7 @@ claim the original did not make.
 
 | Date | Tag | Lesson |
 |---|---|---|
+| 2026-09-16 | `tooling` | Bootstrap listed the artifact bucket one run at a time and fetched every version of every path |
 | 2026-09-16 | `tooling` | A gitignored input is invisible to the release bundle until a settle needs it; one root cause must file one task |
 | 2026-09-16 | `keying` | An unresolved rider must not hold a settle hostage when nobody is watching |
 | 2026-09-16 | `tooling` | A race no human prepared is a race the driver cannot run — until the config writes itself |
@@ -75,6 +76,31 @@ claim the original did not make.
 | 2026-07-05 | `acquisition` | A truncated FirstCycling results page is fixed by rerunning |
 
 ---
+
+## 2026-09-16 — Bootstrap listed the artifact bucket one run at a time and fetched every version of every path
+
+**Tag:** `tooling`
+
+`nightly bootstrap --tag data-2026-09-17` took ~25 minutes on the Mac, and the
+cloud tick paid the same every night (sessions 18–27 min active). The bundle
+download was a few minutes; the rest was `overlay_artifacts`.
+`store.list_artifacts()` issued one Storage list request per folder per run —
+Storage's list endpoint is folder-at-a-time and this project's storage-api
+(1.77.5) has no recursive form — 471 requests / 63 s for 140 runs, and a bare
+call from a script hit the 60 s read timeout. Then every object that was
+bundle-lacking or newer than the release was downloaded oldest-first, later
+runs overwriting earlier downloads of the same path: 344 downloads for 219
+distinct paths.
+
+Fix (branch of 2026-09-16): the listing is one paged PostgREST call to
+`public.artifact_index()` — migration 0007, a SELECT over `storage.objects`
+that the agent role may already read — falling back to a parallel folder walk
+from the bucket root until the migration is pushed; the objects collapse to
+the newest per campaign-relative path before anything is fetched; a path whose
+local file already carries the object's md5 (Storage's etag) is not fetched
+again; and bootstrap prints one line, `artifacts: N objects listed over P
+paths; A applied, S skipped (…)`. A path the bundle lacks still always applies
+(the 2026-09-09 rule).
 
 ## 2026-09-16 — A gitignored input is invisible to the release bundle until a settle needs it; one root cause must file one task
 
