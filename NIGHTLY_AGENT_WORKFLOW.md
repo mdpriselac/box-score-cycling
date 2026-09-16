@@ -151,6 +151,52 @@ is_stage_race, dates, stages[], timezone, `kambi_match`, `pcs_slug`,
 ≥ 7 days of cover. `CAMPAIGN_BRANDING` / `CAMPAIGNS` in the builders read
 from campaign.json; Tour and Vuelta get hand-written files.
 
+### 2.1a Horizon capture — daily, from the Mac, uploaded as artifacts
+
+Built 2026-09-16 (build-queue chip S): `cycling_project/nightly/horizon.py`,
+scheduled by `agents/mac/com.cycling.horizon.plist`.
+
+The registry gives the cloud a *calendar-shaped* campaign — one stage per
+calendar day, `stages_provisional: true`, `towns: null` — and nothing else.
+The container cannot close that gap itself: FirstCycling and PCS are behind
+Cloudflare, the UCI serves a calendar and results but no start list and no
+route, and Kambi lists WorldTour only. That is why GP de Wallonie's preview
+failed on 2026-09-15 with "no start list from any source" while Abruzzo,
+Luxembourg, Slovenska and Huangshan previewed with no route or stage facts.
+
+So the Mac supplies it, daily, before the tick. For every unit whose preview
+falls inside the horizon (default 3 days — the same rule the driver's `plan`
+uses for `preview`), `horizon` captures through the project's rate-limited
+`WebClient`:
+
+- the **start list** → `cached_start_lists` *and*
+  `predictions/<unit>/startlist.json`, the handover shape
+  `oneday.load_startlist_file` reads and `resolve_startlist` prefers; the
+  existing completeness check rejects a preliminary FirstCycling shell;
+- the **FirstCycling stage page**, verbatim, → `results/<unit>/stage_page_<date>.html`
+  (plus a `horizon_raw.json` index with url, time and sha256), then
+  `route_facts.ingest_route` → `predictions/<unit>/route.json`;
+- **stage metadata** (date, towns, distance, `itt`/`ttt` when the page says so
+  in words) merged into `campaign.json` under the chip-D provisional gate:
+  the stage list may only grow — or lose a calendar-invented rest-day stage —
+  while `stages_provisional` is true, and the flag clears only when every
+  stage is known.
+
+Everything captured is uploaded with `upload_artifact` under
+`<run_id>/<campaign_slug>/<relpath>`, which is exactly what
+`bootstrap.overlay_artifacts` lays back over the release bundle on the next
+tick; changed stage lists also go to `campaigns` / `stages` through
+`sync_campaign` / `sync_stages`. The run is a `runs` row with phase
+`horizon`, `host = 'mac'`, one `run_steps` row per step. A campaign that
+fails files an `operator_tasks` row of kind `horizon_failed` (urgency
+`routine`) and the command still exits 0.
+
+It is idempotent and cheap: anything younger than `--max-age-hours` (20) is
+reused, no HTTP client is built when nothing is due, and a normal day costs
+one race page plus one stage page per due unit. It runs as **operator**
+(host `mac`, and the registry sync is operator-only), unlike the cloud
+driver.
+
 ### 2.2 The driver — `cycling_project/nightly/driver.py`
 
 `python -m cycling_project.nightly <command>`; JSON out; exit 0 done /

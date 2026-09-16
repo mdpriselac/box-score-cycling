@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Daily horizon capture — the Mac's handover to the cloud nightly.
+
+  Runs `python -m cycling_project.nightly.horizon --store auto` from the MAIN
+  checkout (never a worktree: a worktree has no .env, and the capture wants the
+  real campaign directories and the real SQLite database).
+
+  Timing: the cloud tick is 19:45 UTC.  This Mac runs on US Pacific time, so
+  10:30 local = 17:30 UTC — about two hours of margin, enough for a slow
+  Cloudflare challenge and a dozen rate-limited requests.  If the tick moves,
+  or the Mac moves timezone, re-time this job: a capture that lands AFTER the
+  tick is a capture the cloud only sees the following night.
+
+  A VISIBLE Chrome window is required (SCRAPER_USE_BROWSER=1, headless is
+  detected), so the job is deliberately scheduled for the middle of the working
+  day, while someone is logged in.  launchd runs it in the user's GUI session
+  (this is a LaunchAgent, not a LaunchDaemon); if the Mac is asleep at 10:30,
+  launchd runs it at wake.
+-->
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.cycling.horizon</string>
+
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/zsh</string>
+    <string>-lc</string>
+    <string>cd "$HOME/Documents/Cycling Project" &amp;&amp; mkdir -p performance_eval/runs &amp;&amp; exec caffeinate -i uv run python -m cycling_project.nightly.horizon --store auto &gt;&gt; "performance_eval/runs/horizon_$(date +%Y-%m-%d).log" 2&gt;&amp;1</string>
+  </array>
+
+  <key>StartCalendarInterval</key>
+  <dict>
+    <key>Hour</key><integer>10</integer>
+    <key>Minute</key><integer>30</integer>
+  </dict>
+
+  <!-- Credentials come from ~/.config/cycling-project/{env,secrets.env} through
+       cycling_project.nightly.secrets.load_local_env; nothing secret is set here. -->
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>PATH</key>
+    <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+    <key>PYTHONUNBUFFERED</key>
+    <string>1</string>
+  </dict>
+
+  <key>RunAtLoad</key>
+  <false/>
+  <key>StandardOutPath</key>
+  <string>/tmp/com.cycling.horizon.out</string>
+  <key>StandardErrorPath</key>
+  <string>/tmp/com.cycling.horizon.err</string>
+</dict>
+</plist>
