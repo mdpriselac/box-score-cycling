@@ -98,6 +98,7 @@ STATE_SENTENCE_RE = re.compile(r"State through stage \d+", re.I)
 NON_BOARD_JSON = {
     "scenarios.json", "route.json", "route_raw.json", "route.override.json",
     "agent_key.json", "agent_key_response.json", "retro_facts.json",
+    "startlist.json", "horizon_raw.json",   # Mac horizon handover files, never a rendered board (2026-09-16)
 }
 
 
