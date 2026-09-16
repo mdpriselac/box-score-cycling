@@ -50,7 +50,7 @@ from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Tupl
 
 from cycling_project.db_path import ENV_VAR as DB_ENV_VAR, default_db_path
 from cycling_project.nightly import day_key_record as rec
-from cycling_project.nightly import hindsight, oneday, pcs_ingest, uci_acquire, uci_identity, uci_ingest
+from cycling_project.nightly import autoconfig, hindsight, oneday, pcs_ingest, uci_acquire, uci_identity, uci_ingest
 from cycling_project.nightly.crosswalk import CROSSWALK_CSV, build_operator_task, read_crosswalk_csv
 from cycling_project.nightly.secrets import load_local_env, redact
 from cycling_project.webscrape_tools.logging_config import get_logger
@@ -437,7 +437,7 @@ class Driver:
                  python: Optional[str] = None, crosswalk_csv: Optional[Path] = None,
                  db_path: Optional[Path] = None, agent_key: Optional[Path] = None,
                  release_tag: Optional[str] = None, acquire: bool = True, provider: str = "auto",
-                 aliases_csv: Optional[Path] = None,
+                 aliases_csv: Optional[Path] = None, signatures: Optional[Path] = None,
                  identity_policy: str = uci_ingest.DEFAULT_IDENTITY_POLICY):
         self.campaign = campaign
         self.acquire_enabled = acquire            # settle may run the deterministic UCI acquisition itself
@@ -456,6 +456,9 @@ class Driver:
         self.crosswalk_csv = Path(crosswalk_csv) if crosswalk_csv else CROSSWALK_CSV
         self.db_path = Path(db_path) if db_path else default_db_path()
         self.agent_key = Path(agent_key) if agent_key else None
+        # experiments/selection_signatures_*.csv.gz — the reference table machine-chosen
+        # scenario references are drawn from (None: newest in experiments/).
+        self.signatures = Path(signatures) if signatures else None
         self.release_tag = release_tag or os.environ.get("NIGHTLY_RELEASE_TAG")
         # per-run state
         self.run: Optional[Dict[str, Any]] = None
@@ -1180,9 +1183,18 @@ class Driver:
         if new_ids:
             self._say(f"  note: campaign.json gained event id(s): {', '.join(sorted(new_ids))}")
 
-        # 2. stage config: create from the template when absent; fill event id + capture
+        # 2. stage config: create it when absent (template if the campaign ships one, else
+        # from campaign.json itself) and fill event id + capture.  References stay empty here:
+        # they are judgment tied to the day key, which is only resolved at step 5.
         out["config"] = self.step("stage_config", lambda: self._ensure_config(unit))
         cfg_path = c.pred_dir(unit) / "scenarios.json"
+
+        # 2b. the GC board's config, so the settle step has something to re-stamp
+        if stage is not None and c.is_stage_race and not (c.pred_dir("gc") / "scenarios.json").exists():
+            out["gc_config"] = self.step("gc_config", lambda: self._ensure_gc_config())
+        else:
+            self.step("gc_config", lambda: None,
+                      skip="predictions/gc/scenarios.json exists" if stage is not None else "one-day race: no GC")
 
         # 3. route facts from the acquisition thread's route_raw (or an operator override)
         pred = c.pred_dir(unit)
@@ -1197,8 +1209,15 @@ class Driver:
         else:
             self.step("bundle", lambda: None, skip="one-day race: no day key bundle")
 
-        # 5. the key (judgment) + references (judgment)
+        # 5. the key (approved, else agent shadow, else exit 10)
         out["key"] = self.step("day_key", lambda: self._resolve_key(unit))
+
+        # 5b. references, derived from the key that was just resolved
+        missing = autoconfig.scenarios_missing_refs(_read_json(cfg_path, {}) or {})
+        if missing:
+            out["refs"] = self.step("scenario_refs", lambda: self._scenario_refs(unit, out.get("key") or {}))
+        else:
+            self.step("scenario_refs", lambda: None, skip="every scenario already carries references")
 
         # 6. predict
         self.script("predict", [self.python, SCRIPTS["predict"], cfg_path] + (["--no-log"] if self.no_log else []), lock=True)
@@ -1236,11 +1255,19 @@ class Driver:
                 label=c.cfg.get("name") or c.slug,
                 refs=refs, tag_prefix=f"{c.slug}_race")
             created = True
+        elif cfg is None and _read_json(c.dir / "predictions" / TEMPLATE_NAME) is None:
+            # No human ever wrote a template for this race — the common case, and until
+            # 2026-09-16 the end of the thread.  The config is built from campaign.json:
+            # one scenario, no references (the key at step 5 chooses them), no odds
+            # provenance (the odds step fills it when Kambi lists a market).
+            entry = next((x for x in c.stages if int(x["number"]) == stage), None)
+            cfg = autoconfig.build_stage_skeleton(
+                slug=c.slug, stage=stage, fc_race_id=c.fc_race_id, year=c.year,
+                date=c.stage_date(stage), label=autoconfig.stage_label(stage, entry),
+                void_stages=sorted(set(c.void_stages) | set(int(v) for v in ((c.previous_config(stage) or {}).get("void_stages") or []))))
+            created = True
         elif cfg is None:
             template = _read_json(c.dir / "predictions" / TEMPLATE_NAME)
-            if template is None:
-                raise WaitingForInput("scenarios_needed", f"{c.slug} {unit}: no scenarios.json and no {TEMPLATE_NAME}",
-                                      {"path": str(cfg_path)})
             cfg = json.loads(json.dumps(template))
             cfg.pop("day_key", None)
             cfg.pop("day_key_note", None)
@@ -1310,12 +1337,8 @@ class Driver:
         stage = c.stage_of(unit)
         cfg_path = c.pred_dir(unit) / "scenarios.json"
         cfg = _read_json(cfg_path, {})
-        # references are judgment too: a template config cannot be priced
-        placeholders = [k for k, s in (cfg.get("scenarios") or {}).items()
-                        if isinstance(s, dict) and not [x for x in (s.get("refs") or s.get("base_refs") or []) if int(x or 0) > 0]]
-        if placeholders:
-            raise WaitingForInput("scenarios_needed", f"{c.slug} {unit}: scenario references needed for {placeholders} "
-                                  f"(see `nightly refs --archetype …`)", {"path": str(cfg_path), "scenarios": placeholders})
+        # References used to be gated here; since 2026-09-16 they are derived from the key
+        # itself, one step later (``_scenario_refs``).
         if stage is None:
             return {"source": "one_day", "day_key": None}
         if cfg.get("day_key"):
@@ -1346,6 +1369,82 @@ class Driver:
             return {"source": cfg["day_key_source"], "day_key": key, "shadow": True}
         raise WaitingForInput("day_key_needed", f"{c.slug} {unit}: day key needed (no config key, no approved day_key_decisions row)",
                               {"path": str(cfg_path), "bundle": str(c.pred_dir(unit) / "bundle")})
+
+    # -- references, derived from the key ---------------------------------------
+    def _scenario_refs(self, unit: str, key_result: Dict[str, Any]) -> Dict[str, Any]:
+        """Fill every reference-less scenario from the resolved day key (2026-09-16).
+
+        References are judgment, but they are judgment *about the key*: the key names the
+        shape of the day, the menu's canonical signature maps that shape to an archetype,
+        and the archetype names the days worth averaging into a profile.  A human writing
+        them by hand was the last hard gate on a stage race with no template.  An
+        auto-written config also gains its alternate branch here — the key's
+        second-weighted family — because that too is only knowable once the key exists.
+        """
+        c = self.campaign
+        stage = c.stage_of(unit)
+        cfg_path = c.pred_dir(unit) / "scenarios.json"
+        cfg = _read_json(cfg_path, {}) or {}
+        key = key_result.get("day_key") or cfg.get("day_key")
+        if stage is None:
+            return {"skipped": "one-day race: references are the race's own editions"}
+        if not key:
+            raise WaitingForInput("scenarios_needed", f"{c.slug} {unit}: no day key, so no archetype to choose references from",
+                                  {"path": str(cfg_path)})
+        key = rec.normalise_key(key)
+        added = None
+        if cfg.get("config_source") == autoconfig.CONFIG_SOURCE:
+            alt = autoconfig.alternate_scenario(key, slug=c.slug, stage=stage)
+            if alt and alt[0] not in (cfg.get("scenarios") or {}):
+                cfg["scenarios"][alt[0]] = alt[1]
+                added = alt[0]
+        try:
+            report = autoconfig.fill_scenario_refs(
+                cfg, key=key, slug=c.slug, campaign_dir=c.dir,
+                db_path=self.db_path if self.db_path.exists() else None,
+                signatures=self.signatures, category=c.cfg.get("category"))
+        except autoconfig.AutoConfigError as exc:
+            # The genuinely impossible case: no signature table (and, for a one-day, no own
+            # editions).  Ask a human rather than guessing a reference set.
+            raise WaitingForInput("scenarios_needed", f"{c.slug} {unit}: {exc}",
+                                  {"path": str(cfg_path), "scenarios": autoconfig.scenarios_missing_refs(cfg)}) from exc
+        _write_json(cfg_path, cfg)
+        detail = {"scenarios": report["scenarios"], "alternate": added,
+                  "archetypes": {k: v["archetype"] for k, v in report["filled"].items()}}
+        return {**detail, "source": autoconfig.REFS_SOURCE, "day_key": key, "_detail": detail}
+
+    def _ensure_gc_config(self) -> Dict[str, Any]:
+        """Create ``predictions/gc/scenarios.json`` for a stage race that has none.
+
+        The settle step only re-stamps a GC config that already exists, so without this a
+        machine-run stage race never shows a general-classification board.  References are
+        this race's own earlier editions when the database holds at least three, else recent
+        GC competitions from the signature table.  A GC board is a bonus, never a blocker:
+        when no reference set can be found the step says so and the preview goes on.
+        """
+        c = self.campaign
+        gc_path = c.pred_dir("gc") / "scenarios.json"
+        try:
+            refs, source = autoconfig.gc_refs(
+                fc_race_id=c.fc_race_id, year=c.year, campaign_dir=c.dir,
+                db_path=self.db_path if self.db_path.exists() else None,
+                signatures=self.signatures, category=c.cfg.get("category"))
+        except autoconfig.AutoConfigError as exc:
+            self._say(f"  note: no GC config written ({exc})")
+            return {"created": False, "reason": str(exc), "_detail": {"created": False}}
+        if not refs:
+            self._say("  note: no GC config written (no own editions and no GC days in the signature table)")
+            return {"created": False, "reason": "no_refs", "_detail": {"created": False}}
+        cfg = autoconfig.build_gc_skeleton(
+            slug=c.slug, fc_race_id=c.fc_race_id, year=c.year,
+            date=c.cfg.get("end_date") or c.stage_date(None), refs=refs, source=source,
+            void_stages=c.void_stages, race_name=c.cfg.get("name"))
+        problems = autoconfig.validate_gc_config(cfg)
+        if problems:
+            raise DriverFailure("gc_config_invalid", f"{c.slug}: generated GC config is invalid: {'; '.join(problems)}")
+        _write_json(gc_path, cfg)
+        return {"created": True, "path": str(gc_path), "refs": refs, "refs_source": source,
+                "_detail": {"created": True, "refs_source": source}}
 
     # ------------------------------------------------------------------------
     # validate
@@ -1631,6 +1730,8 @@ def build_parser() -> argparse.ArgumentParser:
         p.add_argument("--force", action="store_true", help="re-run a phase already completed")
         p.add_argument("--crosswalk", type=Path, default=None, help="crosswalk CSV override (default performance_eval/crosswalk)")
         p.add_argument("--db-path", type=Path, default=None)
+        p.add_argument("--signatures", type=Path, default=None,
+                       help="selection_signatures_*.csv.gz override (default: newest in experiments/)")
         p.add_argument("--release-tag", default=None)
         p.add_argument("--provider", choices=("auto", "uci", "pcs"), default="auto",
                        help="result provider: auto = UCI when captured, else PCS fallback")
@@ -1715,6 +1816,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
                     crosswalk_csv=args.crosswalk, db_path=args.db_path, agent_key=getattr(args, "agent_key", None),
                     release_tag=args.release_tag, acquire=not getattr(args, "no_acquire", False),
                     provider=getattr(args, "provider", "auto"), aliases_csv=getattr(args, "aliases", None),
+                    signatures=getattr(args, "signatures", None),
                     identity_policy=getattr(args, "identity_policy", uci_ingest.DEFAULT_IDENTITY_POLICY))
 
     if args.command == "status":

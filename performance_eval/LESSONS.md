@@ -31,6 +31,8 @@ claim the original did not make.
 |---|---|---|
 | 2026-09-16 | `tooling` | A gitignored input is invisible to the release bundle until a settle needs it; one root cause must file one task |
 | 2026-09-16 | `keying` | An unresolved rider must not hold a settle hostage when nobody is watching |
+| 2026-09-16 | `tooling` | A race no human prepared is a race the driver cannot run — until the config writes itself |
+| 2026-09-16 | `keying` | References are judgment about the KEY, so the key has to come first |
 | 2026-09-13 | `acquisition` | A stage race's LAST stage keeps its overall classifications in a different accordion |
 | 2026-09-13 | `keying` | The bunch macro grades winner-group SIZE, not winner TYPE |
 | 2026-09-13 | `keying` | The closing-circuit time freeze is a Tour practice, not a grand tour one |
@@ -134,6 +136,64 @@ now replaces confirmed `uci:` ids across `results.csv`, `gc.csv`,
 `results.json` and `classifications.json`, idempotently, and only on a human
 confirmation — a high-confidence proposal is exactly what the ingest already
 declined to accept, so it must not rewrite a published result on its own.
+## 2026-09-16 — A race no human prepared is a race the driver cannot run
+
+**Tag:** `tooling` · Giro d'Abruzzo, Tour de Luxembourg, Okolo Slovenska, Tour of Huangshan
+
+Four stage races died in one week at the same line, with hosted ledger tasks
+66, 71, 72 and 78 to show for it: `preview` refused every stage race that had
+no `predictions/TEMPLATE_scenarios.json`, and only the Vuelta ever had one.
+The template was never judgment — it is stage number, date, label, void
+stages and a tag convention, every field of which is already in
+`campaign.json`. The same was true of `predictions/gc/scenarios.json`: the
+settle step re-stamps a GC config it finds, so a race without one simply never
+showed a general-classification board.
+
+The driver now writes both (`cycling_project/nightly/autoconfig.py`). A stage
+config comes from the campaign — `label` from the stage's towns and distance
+when they are known, `"Stage N"` when they are not — with `odds_capture` and
+`event_id` left absent, because most `.1` and `.Pro` races have no Kambi
+market and an absent market is not an error. The GC config prefers this race's
+own earlier editions and falls back to recent GC competitions when the
+database holds fewer than three. Everything generated says so in the file
+(`config_source`, `refs_source`, `refs_note`), so a page or a retrospective
+can never present a machine-written config as a human read.
+
+`scenarios_needed` survives for exactly one case: no
+`experiments/selection_signatures_*.csv.gz` to query. That is not a judgment
+gap, it is a missing artifact.
+
+---
+
+## 2026-09-16 — References are judgment about the KEY, so the key has to come first
+
+**Tag:** `keying` · the same four races
+
+The second half of the same gate was the reference sets. They *are* judgment,
+which is why they were a human step — but they are judgment **about the day
+key**, not independent of it: the key names the shape of the day, and the
+references are the days worth averaging into a profile for that shape. The
+driver had the order backwards, writing the config at step 2 and resolving the
+key at step 5, so it had to ask a human for references before it knew what it
+was asking about.
+
+Preview now runs `day_key` and then `scenario_refs`. The chain is
+deterministic: menu item → that item's canonical archetype-share signature in
+`models/production/day_menu_v1.json` → a `refs.ARCHETYPES` filter → the five
+most recent unspent matching days, this race's own earlier editions first,
+then the campaign's own category tier. Frozen menu v1 gives
+`bunch → bunch_sprint`, `res_3 → reduced_sprint`, `res_7 → punchy_select`,
+`res_1 → small_group`, `res_2` and `gc_day → gc_from_two`,
+`res_4 → mountain_break`, `res_6` and `res_0 → solo`, `itt → itt_like`.
+
+One alternate board comes with it, and it is the key's second-weighted
+**family**, not its second-weighted item — neighbours flip and families do
+not (2026-08-09), so an alternate inside the leading family would bracket
+nothing. A key of `bunch 0.6 / res_2 0.4` gets a mass-sprint main read and a
+climbers-alone alternate; a key of `bunch 0.6 / itt 0.4`, both macro, gets no
+alternate at all.
+
+---
 
 ## 2026-09-13 — A stage race's LAST stage keeps its overall classifications in a different accordion
 

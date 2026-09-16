@@ -171,9 +171,14 @@ on the first morning.
       scenarios, and confirm the key routes to a board with a sensible pool
       size. The scenario JSONs that dry run leaves behind get overwritten by
       the real morning run.
-- [ ] `predictions/TEMPLATE_scenarios.json` present in the campaign directory.
+- [ ] `predictions/TEMPLATE_scenarios.json` — **optional since 2026-09-16**.
+      Write one only when the campaign wants a house shape for every stage;
+      without it the driver writes each stage's config from `campaign.json`
+      (`nightly/autoconfig.py`) and derives the references from the day key.
 - [ ] A GC config at `predictions/gc/scenarios.json` with `"target": "gc"`
-      (stage races only).
+      (stage races only) — also **optional since 2026-09-16**: the first
+      driver preview creates one from this race's own earlier editions, or
+      from recent GC competitions when the database has fewer than three.
 
 ---
 
@@ -492,8 +497,9 @@ and who owns both the sprinter and the puncheur — are in `LESSONS.md` under
 **Driver:** step 5 of `preview` resolves the key in this order: a key already
 in the config, then an approved `day_key_decisions` row, then `--agent-key
 <path>` in shadow. With none of those it exits 10 with a `day_key_needed`
-operator task. It also exits 10 when a scenario still holds placeholder
-references — those are judgment too.
+operator task. The key now comes **before** the references: step 5b
+(`scenario_refs`) derives every missing reference set from the key it just
+resolved, so a placeholder reference is no longer a human gate.
 
 ### 5.5 Choose the scenario paradigms (judgment)
 
@@ -549,9 +555,22 @@ today's `YYYY-MM-DD/markets_HHMM.json`, `event_id`, and the scenarios with
 label / short / refs-or-scores / tag / note). Tag convention:
 `stageN_<slug>`.
 
-**Driver:** `preview` writes the config from the template when it is absent,
-fills in the event id and the odds capture, and stops at exit 10 if the
-references are still placeholders.
+**Driver:** `preview` writes the config when it is absent — from the template
+if the campaign ships one, otherwise from `campaign.json` itself (stage,
+date, `label` from the stage's towns and distance, `void_stages`, one
+reference-less `main_read` scenario) — and fills in the event id and the odds
+capture. **Since 2026-09-16 no human writes the references either**: the
+`scenario_refs` step runs after the key is resolved and fills every
+reference-less scenario from it (menu item → the item's canonical
+archetype-share signature in `models/production/day_menu_v1.json` →
+`refs.ARCHETYPES` → five unspent days, this race's own editions and the
+campaign's category tier first), and an auto-written config also gains one
+alternate branch for the key's second-weighted *family*. Every generated
+scenario carries `refs_source` / `refs_archetype` / `refs_note`, so the page
+and the retro can say the references were machine-chosen. `preview` still
+exits 10 with `day_key_needed` when there is no key, and with
+`scenarios_needed` only in the one genuinely impossible case: no
+`experiments/selection_signatures_*.csv.gz` to query.
 
 ### 5.6 Run the models
 
