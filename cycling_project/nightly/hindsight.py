@@ -31,7 +31,10 @@ def _classified(result: Dict[str, Any]) -> List[Dict[str, Any]]:
 
 
 def _profiles(fc_ids: Iterable[Any], db_path: Path) -> Dict[str, str]:
-    ids = [str(x) for x in fc_ids if x not in (None, "")]
+    # A provisional ``uci:<key>`` id (identity_policy=provisional, ruling 2026-09-16) is not a
+    # FirstCycling id: it can never join the riders table, so it is dropped here and the caller
+    # sees the rider as "unknown" — the same reading as a rider who is not in the model field.
+    ids = [str(x) for x in fc_ids if x not in (None, "") and not str(x).startswith("uci:")]
     if not ids or not db_path.exists():
         return {}
     con = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)
@@ -151,14 +154,21 @@ def _write_result_field(result: Dict[str, Any], path: Path, *, fc_race_id: str, 
     if path.exists():
         return
     teams: Dict[tuple[str, str], List[Dict[str, Any]]] = {}
+    skipped: List[str] = []
     for row in result.get("results", []):
         if not row.get("rider_id"):
+            continue
+        if str(row["rider_id"]).startswith("uci:"):
+            # A provisional identity is not a rider the model can price: it never enters the frozen
+            # field (a uci: key would resolve to nothing downstream).  Recorded, not silently dropped.
+            skipped.append(str(row.get("name") or row["rider_id"]))
             continue
         key = (str(row.get("team") or "Unknown team"), str(row.get("team_id") or ""))
         teams.setdefault(key, []).append({"name": row.get("name"), "rider_id": str(row["rider_id"]), "number": ""})
     doc = {
         "fc_race_id": str(fc_race_id), "year": int(year),
         "source": "settled results (post-hoc field; not a morning start list)",
+        "excluded_provisional_identities": skipped,
         "teams": [{"name": name, "team_id": team_id or None, "riders": riders}
                   for (name, team_id), riders in teams.items()],
     }

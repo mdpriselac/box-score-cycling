@@ -548,6 +548,34 @@ def analysis_sections(config):
     return "".join(out)
 
 
+def provisional_note(results, rows=None, top_n=15, scope=None):
+    """A plain note naming the riders shown under a provisional identity.
+
+    The nightly ingest can settle a race with a rider it could not match to a
+    FirstCycling id (operator ruling 2026-09-16): the row keeps its place and
+    time under a ``uci:`` id, and the page says so rather than presenting the
+    name as if it were joined to the model's rider. The list comes from what
+    the ingest recorded in results.json; the archived rows are the fallback so
+    an older archive still gets the note.
+    """
+    scope = scope or f"the top {top_n}"
+    named = [r.get("name") for r in ((results or {}).get("provisional_identities") or [])
+             if r.get("name")]
+    if not named:
+        src = rows if rows is not None else (results or {}).get("results") or []
+        named = [r.get("name") for r in src
+                 if str(r.get("rider_id") or "").startswith("uci:")
+                 and str(r.get("place", "")).strip().isdigit()
+                 and int(r["place"]) <= top_n]
+    if not named:
+        return ""
+    n = len(named)
+    return (f'<p class="note muted" style="font-family:var(--sans);font-size:13px">'
+            f'{n} rider{"s" if n != 1 else ""} in {scope} '
+            f'{"are" if n != 1 else "is"} shown under a provisional identity pending '
+            f'reconciliation: {esc(", ".join(named))}.</p>')
+
+
 def results_section(config, scen, results):
     if not results:
         return """<section>
@@ -602,6 +630,7 @@ results capture runs after the finish.</p>
 <p class="kicker">After the stage</p>
 <h2>Results — won by {esc(winner['name']) if winner else '?'}</h2>
 <div class="tablewrap"><table>{head}{"".join(body)}</table></div>
+{provisional_note(results, rows=finishers)}
 {score}
 </section>"""
 

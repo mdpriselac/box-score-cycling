@@ -30,6 +30,18 @@ collapses into the top-15 result gate.
 
 Identity: ``uci_identity.py`` (roster / crosswalk / DB scope, aliases,
 proposals). Names are never used as ids.
+
+``identity_policy`` decides what an unresolved rider INSIDE the top-15 stage /
+top-20 GC gate does (operator ruling 2026-09-16):
+
+* ``strict`` — the capture is refused and a human is asked (attended Mac runs).
+* ``provisional`` (the default; the cloud has no operator) — the row is archived
+  exactly like an outside-the-gate row: provisional ``uci:<key>`` id, row kept,
+  place and time intact.  ``crosswalk_top`` becomes a warning, the rows are
+  reported as ``provisional_top`` and recorded in ``results.json`` under
+  ``provisional_identities`` so the published page can caveat them, and the
+  crosswalk proposals are filed as usual.  ``nightly crosswalk reconcile-results``
+  on the weekly Mac run rewrites the archived id once a human confirms it.
 """
 
 from __future__ import annotations
@@ -77,6 +89,9 @@ ONE_DAY_STAGE_KEY = "race"      # what a one-day results.json puts in its ``stag
 ABSOLUTE_TIME_RE = re.compile(r"^\d{1,2}:\d{2}:\d{2}(?:\.\d+)?$|^\d{1,3}:\d{2}(?:\.\d+)?$")
 GAP_RE = re.compile(r"^\+\s*(\d+(?::\d{2}){0,2}(?:\.\d+)?)$")
 DISCIPLINE_FOR_ROAD = "ROA"
+# Identity policy inside the top-15 stage / top-20 GC gate (operator ruling 2026-09-16).
+IDENTITY_POLICIES = ("strict", "provisional")
+DEFAULT_IDENTITY_POLICY = "provisional"     # the cloud has no operator; the Mac runbook passes --identity-policy strict
 
 
 class UciIngestError(RuntimeError):
@@ -331,11 +346,14 @@ def merge_crosswalk_aliases(aliases: Dict[str, Dict[str, str]], xw_rows: Dict[st
 
 def ingest(campaign_dir: Path, unit: str, *, crosswalk_csv: Optional[Path] = None, store_rows: Iterable[Dict[str, Any]] = (),
            db_path: Optional[Path] = None, aliases_csv: Optional[Path] = None, write: bool = True,
-           now: Optional[datetime] = None) -> IngestReport:
+           identity_policy: str = DEFAULT_IDENTITY_POLICY, now: Optional[datetime] = None) -> IngestReport:
+    policy = str(identity_policy or DEFAULT_IDENTITY_POLICY)
+    if policy not in IDENTITY_POLICIES:
+        raise UciIngestError(f"identity_policy must be one of {IDENTITY_POLICIES}, not {identity_policy!r}")
     campaign_dir = Path(campaign_dir)
     unit_dir = campaign_dir / "results" / unit
     uci_dir = unit_dir / "uci"
-    report = IngestReport(unit=unit, verdict="rejected")
+    report = IngestReport(unit=unit, verdict="rejected", identity_policy=policy)
     report.identities = []          # type: ignore[attr-defined]  (extra: resolution table + proposals)
     report.proposals = []           # type: ignore[attr-defined]
     report.provider = PROVIDER      # type: ignore[attr-defined]
@@ -560,28 +578,53 @@ def ingest(campaign_dir: Path, unit: str, *, crosswalk_csv: Optional[Path] = Non
             if resolved(r) is None:
                 res = by_key.get(r.rider.key)
                 out.append({"place": r.rank_text, "uci_name": r.display, "team": r.team, "age": r.age, "nationality": r.nationality,
-                            "best": res.as_dict() if res else None})
+                            "rider_id": f"uci:{r.rider.key}", "best": res.as_dict() if res else None})
         return out
 
     top_stage_unres = unresolved_of(classified[:TOP_STAGE])
     top_gc_unres = [] if one_day else unresolved_of(gc_rows[:TOP_GC])
-    checks.append(Check("crosswalk_top", not top_stage_unres and not top_gc_unres,
-                        {"threshold": ident.AUTO_ACCEPT, "stage_top15_unresolved": top_stage_unres, "gc_top20_unresolved": top_gc_unres,
-                         "scope": getattr(index_, "scope", None)}))
+    top_unres = top_stage_unres + [u for u in top_gc_unres if u not in top_stage_unres]
+    # Operator ruling 2026-09-16 (supersedes the strict-gate half of the 2026-09-08 ruling for
+    # UNATTENDED runs): ``strict`` keeps the old behaviour — an unresolved rider inside the top-15
+    # stage / top-20 GC gate refuses the capture and asks a human.  ``provisional`` (the default,
+    # because the cloud has no operator) archives that rider exactly like an outside-the-gate row —
+    # provisional ``uci:<key>`` id, row kept, place and time intact — turns ``crosswalk_top`` into a
+    # warning, and reports the rows so the page can caveat them.  Either way the crosswalk proposals
+    # are filed, and the weekly Mac reconcile (``nightly crosswalk reconcile-results``) rewrites the
+    # archived id once a human confirms it.  Three nights of Trofeo Matteotti / Okolo Slovenska
+    # stuck in ``waiting`` over one back-of-the-top-15 rider is what this ruling ends.
+    strict = policy == "strict"
+    checks.append(Check("crosswalk_top", strict is False or (not top_stage_unres and not top_gc_unres),
+                        {"threshold": ident.AUTO_ACCEPT, "identity_policy": policy,
+                         "stage_top15_unresolved": top_stage_unres, "gc_top20_unresolved": top_gc_unres,
+                         "scope": getattr(index_, "scope", None),
+                         "note": ("strict: an unresolved rider inside the top gate refuses the capture"
+                                  if strict else
+                                  "provisional: top-gate rows are archived under uci: ids and caveated on the page "
+                                  "(operator ruling 2026-09-16)")}))
     all_unres = unresolved_of(stage_rows)
     report.unresolved = all_unres
+    report.identity_policy = policy
     report.proposals = [res.to_proposal(campaign.get("slug")) for res in by_key.values() if not res.accepted]  # type: ignore[attr-defined]
-    # Operator ruling 2026-09-08: strict inside the top-15 stage / top-20 GC gate above; outside it a
-    # rider with no FirstCycling identity (typically a .1-race back-marker with no FC history at all)
-    # is archived under a provisional ``uci:<key>`` id with a warning, so one unmappable rider can no
-    # longer block a stage forever.  The proposals are still emitted for the inbox.
-    provisional = [u for u in all_unres if u not in top_stage_unres and u not in top_gc_unres]
-    if provisional:
-        report.warnings.append(f"{len(provisional)} row(s) outside the top gate carry provisional uci: ids: "
-                               + ", ".join(u["uci_name"] for u in provisional[:8]) + (" …" if len(provisional) > 8 else ""))
+    # Outside the top gate a rider with no FirstCycling identity (typically a .1-race back-marker with
+    # no FC history at all) has been archived under a provisional ``uci:<key>`` id since 2026-09-08.
+    outside = [u for u in all_unres if u not in top_unres]
+    provisional = outside if strict else all_unres
+    report.provisional_top = [] if strict else list(top_unres)
+    if outside:
+        report.warnings.append(f"{len(outside)} row(s) outside the top gate carry provisional uci: ids: "
+                               + ", ".join(u["uci_name"] for u in outside[:8]) + (" …" if len(outside) > 8 else ""))
+    if report.provisional_top:
+        report.warnings.append(
+            f"{len(report.provisional_top)} rider(s) INSIDE the top gate carry provisional uci: ids "
+            f"(identity_policy=provisional): "
+            + ", ".join(f"{u['uci_name']} (place {u['place']})" for u in report.provisional_top[:8])
+            + (" …" if len(report.provisional_top) > 8 else ""))
     checks.append(Check("crosswalk_all_rows", True,
                         {"unresolved": all_unres, "provisional": [u["uci_name"] for u in provisional],
-                         "note": "strict inside the top gate; provisional uci: ids outside it (operator ruling 2026-09-08)"}))
+                         "provisional_top": report.provisional_top, "identity_policy": policy,
+                         "note": ("strict inside the top gate; provisional uci: ids outside it "
+                                  "(operator rulings 2026-09-08 / 2026-09-16)")}))
     fc_ids = [resolved(r).fc_rider_id for r in stage_rows if resolved(r)]
     checks.append(Check("fc_ids_unique", len(fc_ids) == len(set(fc_ids)), {"n": len(fc_ids), "duplicates": [x for x in set(fc_ids) if fc_ids.count(x) > 1][:10]}))
 
@@ -638,6 +681,15 @@ def ingest(campaign_dir: Path, unit: str, *, crosswalk_csv: Optional[Path] = Non
         "n_results": len(results),
         "results": results,
         "source": PROVIDER,
+        # Rows carrying a provisional ``uci:`` id INSIDE the top gate: the page caveats them and the
+        # weekly reconcile rewrites them.  Absent/empty means every top-gate rider is a real FC id.
+        "provisional_identities": [
+            {"place": u["place"], "name": u["uci_name"], "team": u["team"], "age": u["age"],
+             "rider_id": u["rider_id"],
+             "best_candidate": (u.get("best") or {}).get("fc_name"),
+             "best_confidence": (u.get("best") or {}).get("confidence")}
+            for u in report.provisional_top],
+        "identity_policy": policy,
         "uci": {"competition": comp, "stage": st,
                 "pages": {k: {"file": v["file"], "sha256": v["sha256"], "source_url": v.get("source_url"), "fetched_at": v.get("fetched_at"),
                               "event_code": v.get("event_code"), "race_name": v.get("race_name")} for k, v in report.pages.items()},

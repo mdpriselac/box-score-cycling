@@ -165,6 +165,11 @@ def rider_profiles(fc_ids: list) -> dict:
     discipline)."""
     con = sqlite3.connect(DB_PATH)
     con.execute("CREATE TEMP TABLE want(fc_id TEXT PRIMARY KEY)")
+    # A provisional ``uci:<key>`` id (identity_policy=provisional, ruling 2026-09-16) is not a
+    # FirstCycling id and cannot join the riders table: it is dropped before the query and the
+    # rider scores as "unknown" — deliberately the same as a rider outside the model field, so a
+    # caveated identity shifts the archetype shares rather than crashing or dropping the result row.
+    fc_ids = [i for i in fc_ids if not str(i).startswith("uci:")]
     con.executemany("INSERT OR IGNORE INTO want VALUES (?)",
                     [(str(i),) for i in fc_ids])
     rows = con.execute("""

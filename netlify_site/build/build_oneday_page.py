@@ -34,6 +34,8 @@ from pathlib import Path
 HERE = Path(__file__).parent
 SITE_DIR = HERE.parent
 PROJECT_ROOT = SITE_DIR.parent
+sys.path.insert(0, str(HERE))
+from build_stage_page import provisional_note  # noqa: E402  (sibling script, same directory)
 
 # CYCLING_DB_PATH redirects serving at a slim slice (see cycling_project/db_path.py);
 # resolved inline because this script runs without the package on sys.path.
@@ -437,6 +439,7 @@ results archive lands under results/race/.</p>
 <p class="kicker">After the race</p>
 <h2>Result — won by {esc(winner['name']) if winner else '?'}</h2>
 <div class="tablewrap"><table>{head}{"".join(body)}</table></div>
+{provisional_note(results, rows=finishers)}
 {score}
 {join_note}
 </section>"""

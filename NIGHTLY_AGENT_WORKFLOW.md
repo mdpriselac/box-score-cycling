@@ -321,8 +321,8 @@ identity layer does the bridging (below).
   `+h:mm:ss`, equal-time) non-negative and monotone; statuses recognised
   (DNS DNF OTL DSQ DQ NR DF); `podium` equals the first three rows; the GC
   winner has an absolute total and GC gaps parse; GC rows = the classified
-  field; stage top-15 and GC top-20 resolve to FirstCycling ids at ≥ 0.97;
-  **every** row resolves (strict during the shadow period); FC ids unique.
+  field; stage top-15 and GC top-20 resolve to FirstCycling ids at ≥ 0.97
+  (see the identity-policy ruling below); FC ids unique.
   Only then are `results.csv` / `results.json` / `gc.csv` /
   `classifications.json` written (byte-compatible with the FirstCycling
   capture; `results.json` keeps the original UCI strings under `uci`).
@@ -349,6 +349,33 @@ identity layer does the bridging (below).
   zero errors against the archive; the five leftovers (Chris/Christopher,
   Nick/Nicholas, Mulubrhan/Mulueberhan, Skjelmose's Danish name order,
   Cort/Nielsen) are confirmed aliases.
+- **Identity policy inside the top gate — operator ruling 2026-09-16**
+  (supersedes the strict half of the 2026-09-08 ruling for **unattended**
+  runs). `--identity-policy {strict,provisional}` on `nightly ingest`,
+  `settle` and `night`, **default `provisional`** because the cloud tick has
+  no operator:
+  - `strict` — an unresolved rider inside the top-15 stage / top-20 GC gate
+    refuses the capture (exit 10, `ingest_failed`, `blocks_settlement`) and
+    asks a human. The Mac runbook passes this for attended runs.
+  - `provisional` — that rider is archived exactly like an
+    outside-the-gate row: provisional `uci:<alias key>` id, the row kept,
+    place and time intact. `crosswalk_top` becomes a **warning**, the report
+    gains `provisional_top` (name, place, best candidate + score, team, age),
+    `results.json` records `provisional_identities` / `identity_policy`, the
+    published page carries a plain caveat naming the riders, and the driver
+    files a **routine** `identity_provisional` task (never a waiting state).
+    The `crosswalk_proposals` rows are filed either way.
+  The fix is made durable on the Mac: confirm the mapping in the inbox
+  (`crosswalk confirm` / `confirm --from-pending`), then run `python -m
+  cycling_project.nightly.crosswalk reconcile-results --campaign <dir>`,
+  which rewrites the confirmed `uci:` ids in every archived `results.csv` /
+  `gc.csv` / `results.json` / `classifications.json` (idempotent; only a
+  human confirmation rewrites an archived result). Downstream, a provisional
+  id is read as a rider who is **not in the model field**: `hindsight` and
+  `score_day_keys` drop it before the riders-table join (archetype
+  "unknown"), and the frozen post-hoc field excludes it and records that it
+  did. What this ends: Trofeo Matteotti (rank 15) and Okolo Slovenska (ranks
+  11, 14) each sat in `waiting` for three nights over one unmappable rider.
 - **Provider selection and provenance** (`driver.py`): `uci` is primary
   whenever a complete capture exists; `pcs` only when the campaign has no
   `uci_competition_url`, UCI has not published, or the capture is

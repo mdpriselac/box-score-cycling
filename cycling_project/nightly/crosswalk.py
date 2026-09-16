@@ -908,6 +908,117 @@ def cmd_confirm(args: argparse.Namespace) -> int:
     return EXIT_OK
 
 
+# ---------------------------------------------------------------------------
+# Provisional identities in the archive (operator ruling 2026-09-16)
+# ---------------------------------------------------------------------------
+
+PROVISIONAL_PREFIX = "uci:"
+ARCHIVE_CSVS = ("results.csv", "gc.csv")
+
+
+def confirmed_uci_mappings(rows: Iterable[dict[str, Any]]) -> dict[str, dict[str, Any]]:
+    """``{'uci:<key>': row}`` for every crosswalk row a human has confirmed.
+
+    Only a confirmation counts: a high-confidence proposal is exactly what the
+    ingest already declined to accept, so it must not silently rewrite an
+    archived result.
+    """
+    out: dict[str, dict[str, Any]] = {}
+    for r in rows:
+        slug = str(r.get("pcs_slug") or "")
+        if not slug.startswith(PROVISIONAL_PREFIX):
+            continue
+        if not str(r.get("confirmed_by") or "").strip() or not str(r.get("fc_rider_id") or "").strip():
+            continue
+        out[slug] = dict(r)
+    return out
+
+
+def _apply_mapping(row: dict[str, Any], mapping: dict[str, dict[str, Any]]) -> Optional[dict[str, Any]]:
+    """Rewrite one archived row in place; returns the change record, or None."""
+    rid = str(row.get("rider_id") or "")
+    if not rid.startswith(PROVISIONAL_PREFIX) or rid not in mapping:
+        return None
+    m = mapping[rid]
+    before = {"rider_id": rid, "name": row.get("name")}
+    row["rider_id"] = str(m["fc_rider_id"])
+    if m.get("fc_name"):
+        row["name"] = m["fc_name"]
+    if str(m.get("birth_year") or "").strip() and not str(row.get("dob") or "").strip():
+        row["dob"] = str(m["birth_year"])
+    return {"place": row.get("place"), "from": before, "to": {"rider_id": row["rider_id"], "name": row.get("name")}}
+
+
+def reconcile_results(campaign_dir: Path, mapping: dict[str, dict[str, Any]], *,
+                      dry_run: bool = False) -> dict[str, Any]:
+    """Replace confirmed provisional ``uci:`` ids in a campaign's archived results.
+
+    The nightly settle may publish a rider under a provisional id (see
+    ``uci_ingest.py``, ``identity_policy=provisional``). Once a human confirms
+    the mapping in the inbox, this is what makes the fix durable: every
+    ``results.csv`` / ``gc.csv`` / ``results.json`` / ``classifications.json``
+    under ``<campaign>/results/`` gets the real FirstCycling id, the rider's FC
+    name, and the row drops out of ``provisional_identities``. Idempotent, and
+    it never touches a row whose id is already a real one.
+    """
+    campaign_dir = Path(campaign_dir)
+    changes: list[dict[str, Any]] = []
+    files: list[str] = []
+    for unit_dir in sorted(p for p in (campaign_dir / "results").glob("*") if p.is_dir()):
+        for name in ARCHIVE_CSVS:
+            f = unit_dir / name
+            if not f.exists():
+                continue
+            with open(f, newline="", encoding="utf-8") as fh:
+                reader = csv.DictReader(fh)
+                fields, rows = reader.fieldnames or [], [dict(r) for r in reader]
+            hits = [c for c in (_apply_mapping(r, mapping) for r in rows) if c]
+            if not hits:
+                continue
+            changes += [{**c, "file": str(f.relative_to(campaign_dir))} for c in hits]
+            files.append(str(f.relative_to(campaign_dir)))
+            if not dry_run:
+                with open(f, "w", newline="", encoding="utf-8") as fh:
+                    w = csv.DictWriter(fh, fieldnames=fields, lineterminator="\n")
+                    w.writeheader()
+                    w.writerows(rows)
+        for name in ("results.json", "classifications.json"):
+            f = unit_dir / name
+            if not f.exists():
+                continue
+            doc = json.loads(f.read_text(encoding="utf-8"))
+            hits: list[dict[str, Any]] = []
+            buckets = ([doc.get("results") or []] if name == "results.json"
+                       else [v for v in (doc.get("tables") or {}).values() if isinstance(v, list)])
+            for bucket in buckets:
+                for row in bucket:
+                    if isinstance(row, dict):
+                        c = _apply_mapping(row, mapping)
+                        if c:
+                            hits.append(c)
+            if name == "results.json":
+                kept = [p for p in (doc.get("provisional_identities") or [])
+                        if str(p.get("rider_id") or "") not in mapping]
+                if kept != (doc.get("provisional_identities") or []):
+                    doc["provisional_identities"] = kept
+                    hits.append({"file": name, "provisional_identities_remaining": len(kept)})
+            if not hits:
+                continue
+            changes += [{**c, "file": str(f.relative_to(campaign_dir))} for c in hits]
+            files.append(str(f.relative_to(campaign_dir)))
+            if not dry_run:
+                f.write_text(json.dumps(doc, indent=1, ensure_ascii=False), encoding="utf-8")
+    return {"campaign": campaign_dir.name, "confirmed_mappings": len(mapping),
+            "files_rewritten": sorted(set(files)), "changes": changes, "dry_run": dry_run}
+
+
+def cmd_reconcile_results(args: argparse.Namespace) -> int:
+    mapping = confirmed_uci_mappings(read_crosswalk_csv(Path(args.csv)))
+    out = reconcile_results(Path(args.campaign), mapping, dry_run=args.dry_run)
+    _print(out)
+    return EXIT_OK
+
+
 def cmd_export(args: argparse.Namespace) -> int:
     rows = read_crosswalk_csv(Path(args.csv))
     out = write_crosswalk_csv(rows, Path(args.to))
@@ -966,6 +1077,13 @@ def build_parser() -> argparse.ArgumentParser:
                         "(review the printed list first — this is the human decision)")
     s.add_argument("--min-confidence", type=float, default=0.93)
     s.set_defaults(func=cmd_confirm)
+
+    s = sub.add_parser("reconcile-results",
+                       help="rewrite confirmed provisional 'uci:' ids in a campaign's archived results "
+                            "(the durable half of identity_policy=provisional — weekly Mac step)")
+    s.add_argument("--campaign", required=True, help="campaign directory (performance_eval/<slug>)")
+    s.add_argument("--dry-run", action="store_true")
+    s.set_defaults(func=cmd_reconcile_results)
 
     s = sub.add_parser("export", help="write the repo CSV to another path (bundle)")
     s.add_argument("--to", required=True)

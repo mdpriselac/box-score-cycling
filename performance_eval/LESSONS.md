@@ -29,6 +29,7 @@ claim the original did not make.
 
 | Date | Tag | Lesson |
 |---|---|---|
+| 2026-09-16 | `keying` | An unresolved rider must not hold a settle hostage when nobody is watching |
 | 2026-09-13 | `acquisition` | A stage race's LAST stage keeps its overall classifications in a different accordion |
 | 2026-09-13 | `keying` | The bunch macro grades winner-group SIZE, not winner TYPE |
 | 2026-09-13 | `keying` | The closing-circuit time freeze is a Tour practice, not a grand tour one |
@@ -70,6 +71,45 @@ claim the original did not make.
 | 2026-07-05 | `acquisition` | A truncated FirstCycling results page is fixed by rerunning |
 
 ---
+
+## 2026-09-16 — An unresolved rider must not hold a settle hostage when nobody is watching
+
+**Tag:** `keying` · Trofeo Matteotti, Okolo Slovenska
+
+The 2026-09-08 ruling made the identity gate strict inside the top-15 stage /
+top-20 GC places: a rider the roster could not match to a FirstCycling id
+refused the whole capture and asked a human. That is the right call when a
+human is there. In the unattended cloud tick there is nobody to ask, so the
+race simply stopped. Trofeo Matteotti waited three nights over **one** rider
+at rank 15 ("LOPEZ SEVILLA Diego Pablo", Team Polti); Okolo Slovenska waited
+three nights over ranks 11 and 14 ("PAKOT Andras Gusztav", "KADLEC Milan").
+Hosted tasks 70, 76 and 77. **Three settled races went unpublished to protect
+one name in a result table nobody could read.**
+
+The owner's ruling: settle and publish with a provisional `uci:` id and a
+visible caveat; the weekly Mac reconcile fixes it durably. The general shape —
+an unattended run should degrade to something honest and labelled, not to
+silence — is the lesson; the switch is `--identity-policy
+{strict,provisional}`, defaulting to `provisional` in the cloud and passed as
+`strict` in the attended runbook.
+
+What "honest and labelled" costs: the row keeps its place and time under a
+provisional id, `crosswalk_top` becomes a warning, the page says "N riders in
+the top 15 are shown under a provisional identity pending reconciliation" and
+names them, the crosswalk proposal still reaches the inbox, and the task is
+filed as `routine` rather than `blocks_settlement`. Downstream the provisional
+rider is read as a rider who is **not in the model field** — `hindsight` and
+`score_day_keys` drop the key before the riders-table join and score him
+"unknown", and the frozen post-hoc field excludes him and records that it did.
+Nothing pretends the identity is known.
+
+The durable half had to be built: the weekly reconcile compared the archive
+with FirstCycling but never rewrote it, so a confirmed alias left the
+published id stale forever. `crosswalk reconcile-results --campaign <dir>`
+now replaces confirmed `uci:` ids across `results.csv`, `gc.csv`,
+`results.json` and `classifications.json`, idempotently, and only on a human
+confirmation — a high-confidence proposal is exactly what the ingest already
+declined to accept, so it must not rewrite a published result on its own.
 
 ## 2026-09-13 — A stage race's LAST stage keeps its overall classifications in a different accordion
 

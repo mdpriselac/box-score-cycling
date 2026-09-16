@@ -226,6 +226,35 @@ Provider selection is automatic: UCI when its capture is complete, the
 ProCyclingStats fallback otherwise, with the reason recorded. Force one with
 `--provider uci|pcs`; `--no-acquire` disables the in-process fetch.
 
+**Identity policy (operator ruling 2026-09-16).** `--identity-policy
+{strict,provisional}` on `ingest`, `settle` and `night` decides what an
+unresolved rider **inside** the top-15 stage / top-20 GC gate does. The
+default is `provisional`, for the unattended cloud tick: the rider is
+archived under a provisional `uci:<key>` id with his place and time intact,
+the page carries a plain caveat naming him, and a **routine**
+`identity_provisional` task goes to the inbox instead of a waiting state.
+**You are attended, so pass `strict`** — it refuses the capture and asks you,
+which is still the better read when someone is watching:
+
+```bash
+uv run python -m cycling_project.nightly ingest \
+    --campaign <campaign> --unit stage_NN --identity-policy strict
+uv run python -m cycling_project.nightly settle \
+    --campaign <campaign> --unit stage_NN --identity-policy strict
+```
+
+After confirming an alias (or a pending proposal) on the Mac, make the fix
+durable in the archive — this is what replaces a provisional id the cloud
+already published, and it is idempotent:
+
+```bash
+uv run python -m cycling_project.nightly.crosswalk reconcile-results \
+    --campaign <campaign>            # add --dry-run to see the rewrites first
+```
+
+Only a human-confirmed mapping rewrites an archived result. Rebuild the
+stage / one-day / GC pages afterwards so the caveat disappears with it.
+
 ### 4.2 Seed the model's state cache
 
 **Manual:**
