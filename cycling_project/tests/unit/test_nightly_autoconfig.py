@@ -236,13 +236,40 @@ def test_gc_config_is_created_from_the_races_own_earlier_editions(campaign, tmp_
     assert out["gc_config"]["created"] and out["gc_config"]["refs_source"] == "own_editions"
 
 
-def test_gc_config_falls_back_to_gc_archetype_days_without_own_editions(campaign, tmp_path, signatures, capsys):
-    code = _preview(campaign, tmp_path, signatures, {"bunch": 1.0})
+def test_gc_config_falls_back_to_recent_gcs_from_the_database(campaign, tmp_path, signatures, capsys):
+    # this race has ONE earlier edition (under the two-edition bar); other races' GCs fill in,
+    # same category tier first, newest first, the own edition never among them
+    db = _db_with_editions(tmp_path / "own.db", years=(2025,))
+    con = sqlite3.connect(db)
+    con.execute("ALTER TABLE races ADD COLUMN category TEXT")
+    con.execute("UPDATE races SET category = 'pro'")
+    others = [(3000, "wt", "2026-06-01"), (3001, "pro", "2026-05-01"), (3002, "pro", "2026-04-01"),
+              (3003, "d1", "2026-07-01"), (3004, "pro", "2025-03-01"), (3005, "pro", "2026-08-30")]
+    for i, (cid, cat, date) in enumerate(others, start=10):
+        con.execute("INSERT INTO races VALUES (?,?,?,?,?)", (i, str(9000 + i), 2026, f"Race {i}", cat))
+        con.execute("INSERT INTO competitions VALUES (?,?,?,?,?)", (cid, i, "gc", date, "GC"))
+        con.execute("INSERT INTO competition_field_features VALUES (?)", (cid,))
+    con.execute("INSERT INTO competitions VALUES (?,?,?,?,?)", (3999, 10, "gc", "2026-06-02", "GC no features"))
+    con.commit(); con.close()
+    rec_path = tmp_path / "agent_key.json"
+    rec_path.write_text(json.dumps({"key": {"bunch": 1.0}}))
+    cj = json.loads((campaign / "campaign.json").read_text()); cj["category"] = "pro"
+    (campaign / "campaign.json").write_text(json.dumps(cj))
+    code = drv.main(["preview", "--unit", UNIT, "--campaign", str(campaign), "--store", "fake",
+                     "--store-root", str(tmp_path / "store"), "--crosswalk", str(campaign / "rider_crosswalk.csv"),
+                     "--today", TODAY, "--db-path", str(db), "--signatures", str(signatures),
+                     "--agent-key", str(rec_path), "--dry-run"])
     assert code == drv.EXIT_DONE, capsys.readouterr().out
     gc = json.loads((campaign / "predictions" / "gc" / "scenarios.json").read_text())
-    assert [r for r in gc["scenarios"]["gc"]["refs"]] == [3000, 3001, 3002, 3003]
+    assert gc["scenarios"]["gc"]["refs"] == [3005, 3001, 3002, 3004, 3003]
     assert gc["scenarios"]["gc"]["refs_source"] == autoconfig.GC_REFS_SOURCE
     assert autoconfig.validate_gc_config(gc) == []
+
+
+def test_two_own_editions_are_enough_for_a_gc_board(tmp_path):
+    db = _db_with_editions(tmp_path / "own.db", years=(2024, 2025))
+    refs, source = autoconfig.gc_refs(fc_race_id="700", year=2026, campaign_dir=None, db_path=db, signatures=None)
+    assert (refs, source) == ([501, 500], "own_editions")
 
 
 def test_a_second_preview_leaves_the_written_config_alone(campaign, tmp_path, signatures, capsys):

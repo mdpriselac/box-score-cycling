@@ -33,15 +33,15 @@ from __future__ import annotations
 import json
 import sqlite3
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Sequence, Set, Tuple
+from typing import Any, Dict, Iterable, List, Optional, Sequence, Set, Tuple
 
 from cycling_project.nightly import day_key_record as rec
-from cycling_project.nightly.refs import ARCHETYPES, query_refs
+from cycling_project.nightly.refs import ARCHETYPES, query_refs, used_refs
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 MENU_PATH = PROJECT_ROOT / "models" / "production" / "day_menu_v1.json"
 REFS_PER_SCENARIO = 5
-GC_OWN_EDITION_MIN = 3
+GC_OWN_EDITION_MIN = 2   # Giro d'Abruzzo 2026 had exactly two editions in the DB (2026-09-16)
 REFS_SOURCE = "auto:day_menu_archetype"
 GC_REFS_SOURCE = "auto:gc_archetype"
 CONFIG_SOURCE = "auto:campaign.json"
@@ -471,20 +471,55 @@ def build_gc_skeleton(*, slug: str, fc_race_id: Optional[str], year: Optional[in
     }
 
 
+def recent_gc_refs(*, year: Optional[int], db_path: Optional[Path], category: Optional[str] = None,
+                   exclude: Iterable[int] = (), limit: int = REFS_PER_SCENARIO) -> List[int]:
+    """The newest settled GC competitions of other stage races (same category tier first).
+
+    The signature table holds stage and one-day result shapes only — a GC has
+    no winner-group signature — so a GC fallback must come from the database:
+    ``gc`` competitions with a ``competition_field_features`` row, newest
+    first, this race's own editions and already-spent refs excluded.
+    """
+    if not db_path or not Path(db_path).exists():
+        return []
+    try:
+        con = sqlite3.connect(f"file:{Path(db_path)}?mode=ro", uri=True)
+    except sqlite3.Error:
+        return []
+    try:
+        rows = con.execute(
+            """
+            SELECT c.id, r.category
+            FROM competitions c
+            JOIN races r ON c.race_id = r.id
+            JOIN competition_field_features cff ON cff.competition_id = c.id
+            WHERE c.competition_type = 'gc' AND c.date IS NOT NULL
+              AND (? IS NULL OR r.year <= ?)
+            ORDER BY c.date DESC
+            LIMIT 400
+            """, (year, year)).fetchall()
+    except sqlite3.Error:
+        return []
+    finally:
+        con.close()
+    skip = {int(x) for x in exclude}
+    cat = str(category or "").lower()
+    same = [int(cid) for cid, rc in rows if int(cid) not in skip and cat and str(rc or "").lower() == cat]
+    rest = [int(cid) for cid, rc in rows if int(cid) not in skip and int(cid) not in same]
+    return (same + rest)[:limit]
+
+
 def gc_refs(*, fc_race_id: Optional[str], year: Optional[int], campaign_dir: Optional[Path],
             db_path: Optional[Path], signatures: Optional[Path], category: Optional[str] = None,
             count: int = REFS_PER_SCENARIO) -> Tuple[List[int], str]:
-    """``(refs, source)`` for a GC board: own earlier editions when ≥ 3, else GC archetype days."""
+    """``(refs, source)`` for a GC board: own earlier editions when ≥ 2, else recent GCs from the DB."""
     own: List[int] = []
     if fc_race_id and year:
         own = own_edition_gc_refs(fc_race_id, year, limit=count, db_path=db_path)
     if len(own) >= GC_OWN_EDITION_MIN:
         return own, "own_editions"
-    rows = _candidates(archetype=None, where=["competition_type==gc"], campaign_dir=campaign_dir,
-                       signatures=signatures, db_path=db_path)
-    cat = str(category or "").lower()
-    rows.sort(key=lambda r: 0 if cat and str(r.get("category") or "").lower() == cat else 1)
-    ids = [int(r["comp_id"]) for r in rows[:count]]
+    spent = set(own) | set(used_refs(campaign_dir) if campaign_dir else ())
+    ids = recent_gc_refs(year=year, db_path=db_path, category=category, exclude=spent, limit=count)
     return ids, "archetype"
 
 
