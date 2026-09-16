@@ -12,9 +12,11 @@ Steps (fail closed on any hash mismatch):
    the hash recorded from ``production_release_manifest.json``, and the
    manifest validates in place (``validate_release_manifest``).
 5. ``uv sync`` in ``--dest`` (skip with ``--skip-uv-sync``).
-6. Hydrate campaign dirs: the bundle snapshot is already on disk; overlay
-   every ``nightly-artifacts/`` object inserted since the release
-   (``store.list_artifacts_since``), oldest first so later runs win.
+6. Hydrate campaign dirs: the bundle snapshot is already on disk; list the
+   whole ``nightly-artifacts/`` bucket once (``store.list_artifacts``),
+   collapse to the newest object per campaign-relative path, and download
+   each path that the bundle lacks or that is newer than the release — once,
+   skipping any whose bytes are already on disk (Storage md5 etag).
 7. Point serving at the slice: export ``CYCLING_DB_PATH`` for this process,
    write it into ``<dest>/.env`` and ``<dest>/nightly_env.sh``.
 8. Print the release tag.
@@ -29,7 +31,9 @@ Usage::
 from __future__ import annotations
 
 import argparse
+import concurrent.futures
 import contextlib
+import datetime as dt
 import fcntl
 import json
 import os
@@ -41,7 +45,7 @@ from pathlib import Path
 from typing import Iterable, Any, Dict, List, Optional, Sequence
 
 from cycling_project.db_path import ENV_VAR as DB_ENV_VAR
-from cycling_project.nightly.release_store import MANIFEST_NAME, resolve_store
+from cycling_project.nightly.release_store import MANIFEST_NAME, md5_file, parse_timestamp, resolve_store
 from cycling_project.nightly.weekly_release import sha256_file
 from cycling_project.prediction_tools.production_release import validate_release_manifest
 from cycling_project.webscrape_tools.logging_config import get_logger
@@ -52,6 +56,7 @@ RELEASE_DIR = ".release"          # <dest>/.release/{manifest.json, code-*.zip}
 SLICE_NAME = "inference_slice.db"
 ENV_SCRIPT = "nightly_env.sh"
 LOCK_NAME = "bootstrap.lock"
+DOWNLOAD_WORKERS = 8              # parallel artifact downloads in overlay_artifacts
 
 
 class BootstrapError(RuntimeError):
@@ -193,37 +198,85 @@ def uv_sync(dest: Path) -> None:
     subprocess.run(["uv", "sync"], cwd=dest, check=True)
 
 
-def overlay_artifacts(store: Any, tag: str, dest: Path, manifest_files: Optional[Iterable[str]] = None) -> List[str]:
-    """Copy ``nightly-artifacts/<run_id>/<campaign>/<rel>`` objects onto the bundle snapshot.
+_EPOCH = dt.datetime(1970, 1, 1, tzinfo=dt.timezone.utc)
 
-    An artifact applies when the bundle has no file at that path at all, or when
-    it is newer than the release.  (2026-09-09: the release was cut between a
-    cloud settle and its results being committed, so the results existed only
-    as artifacts older than the release — the old "newer than the release"
-    rule skipped them and the tick settled Tour of Britain 1–4 a second time.)
-    Oldest first, so a later run's file wins.
+
+def _recency(obj: dict) -> tuple:
+    """Sort key: parsed ``created_at`` (unparseable -> epoch), then object key."""
+    return (parse_timestamp(obj.get("created_at")) or _EPOCH, obj["key"])
+
+
+def plan_overlay(objs: Iterable[dict], bundled: Iterable[str], since: Any) -> Dict[str, dict]:
+    """Newest object per campaign-relative path that the overlay must consider.
+
+    ``objs`` are ``{key, created_at, size, etag}`` rows with keys
+    ``<run_id>/<campaign>/<rel>``; the run id is dropped and, per path, only
+    the newest object (``created_at``, then key) survives — a path uploaded by
+    twelve runs is fetched at most once and the latest run wins.
+
+    A path is then dropped when the bundle carries a file there AND the object
+    is not newer than the release: the bundle's copy is at least as new.
+    (2026-09-09: the release was cut between a cloud settle and its results
+    being committed, so the results existed only as artifacts older than the
+    release — the previous "newer than the release" rule skipped them and the
+    tick settled Tour of Britain 1–4 a second time. A path the bundle lacks
+    therefore always applies.)
     """
-    applied: List[str] = []
-    perf = (dest / "performance_eval").resolve()
-    bundled = set(manifest_files or ())
-    release = store.get_release(tag) or {}
-    since = release.get("created_at", "") or ""
-    objs = store.list_artifacts() if hasattr(store, "list_artifacts") else store.list_artifacts_since(tag)
+    bundled_set = set(bundled)
+    release_ts = parse_timestamp(since)
+    newest: Dict[str, dict] = {}
     for obj in objs:
-        key = obj["key"]
-        parts = key.split("/")
+        parts = obj["key"].split("/")
         if len(parts) < 3:
             continue                       # not a campaign file
-        rel = Path(*parts[1:])             # drop the run id
-        in_bundle = f"performance_eval/{rel.as_posix()}" in bundled
-        if in_bundle and since and str(obj.get("created_at") or "") <= since:
-            continue                       # the bundle already carries a copy at least this new
-        target = (perf / rel).resolve()
+        rel = "/".join(parts[1:])          # drop the run id
+        cur = newest.get(rel)
+        if cur is None or _recency(obj) > _recency(cur):
+            newest[rel] = obj
+    plan: Dict[str, dict] = {}
+    for rel, obj in newest.items():
+        if f"performance_eval/{rel}" in bundled_set and release_ts is not None:
+            obj_ts = parse_timestamp(obj.get("created_at"))
+            if obj_ts is not None and obj_ts <= release_ts:
+                continue                   # the bundle already carries a copy at least this new
+        plan[rel] = obj
+    return plan
+
+
+def overlay_artifacts(store: Any, tag: str, dest: Path, manifest_files: Optional[Iterable[str]] = None) -> List[str]:
+    """Copy the newest ``nightly-artifacts/<run_id>/<campaign>/<rel>`` per path onto the bundle.
+
+    One bucket listing, one download per path at most: :func:`plan_overlay`
+    collapses runs and applies the bundle rule; a planned path whose local
+    file already has the object's md5 (Storage's etag) is not fetched again.
+    Returns the applied object keys, oldest first.
+    """
+    perf = (dest / "performance_eval").resolve()
+    release = store.get_release(tag) or {}
+    since = release.get("created_at", "") or ""
+    objs = list(store.list_artifacts()) if hasattr(store, "list_artifacts") else list(store.list_artifacts_since(tag))
+    plan = plan_overlay(objs, manifest_files or (), since)
+    n_paths = len({"/".join(o["key"].split("/")[1:]) for o in objs if len(o["key"].split("/")) >= 3})
+
+    fetch: List[tuple] = []
+    identical = 0
+    for rel in sorted(plan):
+        obj = plan[rel]
+        target = (perf / Path(*rel.split("/"))).resolve()
         if not str(target).startswith(str(perf) + os.sep):
-            raise BootstrapError(f"artifact key escapes performance_eval: {key}")
-        store.download_artifact(key, target)
-        applied.append(key)
-    return applied
+            raise BootstrapError(f"artifact key escapes performance_eval: {obj['key']}")
+        etag = obj.get("etag")
+        if etag and target.is_file() and md5_file(target) == etag:
+            identical += 1
+            continue                       # the bytes are already on disk
+        fetch.append((obj, target))
+    # distinct targets, so the downloads are independent; a pool hides per-request latency
+    with concurrent.futures.ThreadPoolExecutor(max_workers=DOWNLOAD_WORKERS) as pool:
+        list(pool.map(lambda item: store.download_artifact(item[0]["key"], item[1]), fetch))
+    applied = sorted((obj for obj, _ in fetch), key=_recency)
+    _say(f"artifacts: {len(objs)} objects listed over {n_paths} paths; {len(applied)} applied, "
+         f"{n_paths - len(applied)} skipped ({n_paths - len(plan)} bundle at least as new, {identical} identical on disk)")
+    return [o["key"] for o in applied]
 
 
 def write_env(dest: Path, slice_path: Path, release_tag: str) -> None:
@@ -293,7 +346,7 @@ def _bootstrap_locked(
     applied: List[str] = []
     if not skip_artifacts:
         applied = overlay_artifacts(store, tag, dest, manifest_files=manifest["files"].keys())
-        _say(f"campaigns: {manifest.get('campaigns')} hydrated; {len(applied)} artifacts overlaid")
+        _say(f"campaigns: {manifest.get('campaigns')} hydrated")
 
     slice_path = dest / SLICE_NAME
     if SLICE_NAME in manifest["files"]:

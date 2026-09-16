@@ -621,3 +621,59 @@ def test_the_schema_accepts_every_state_the_driver_records():
     allowed = _allowed_run_step_states()
     assert allowed, "no CHECK on run_steps.state found in supabase/migrations"
     assert written <= allowed, f"driver writes states the schema rejects: {sorted(written - allowed)}"
+
+
+
+def test_list_artifacts_prefers_index_rpc_and_walks_folders_when_missing(monkeypatch):
+    st = SupabaseStore("agent", url="https://x.supabase.co", key="k", apikey="a")
+    calls = []
+
+    def fake_rest(method, table, *, params=None, json_body=None, prefer=None, what=""):
+        calls.append(("rest", table, dict(params or {})))
+        if table == "rpc/artifact_index":
+            off = int(params["offset"])
+            rows = [{"key": "r1/c/results/s1/results.csv", "created_at": "2026-09-06T00:00:00+00:00",
+                     "size": 12, "etag": "cfd6e303a08819423d12c85c4f859ff4"}] if off == 0 else []
+
+            class R:
+                def json(self_inner):
+                    return rows
+            return R()
+        raise AssertionError(table)
+    monkeypatch.setattr(st, "_rest", fake_rest)
+    objs = st.list_artifacts()
+    assert objs == [{"key": "r1/c/results/s1/results.csv", "created_at": "2026-09-06T00:00:00+00:00",
+                     "size": 12, "etag": "cfd6e303a08819423d12c85c4f859ff4"}]
+    assert [c[1] for c in calls] == ["rpc/artifact_index"]                   # one request, no runs query
+
+    # the function is not deployed yet -> PGRST202 -> folder walk from the bucket root
+    def missing_rest(method, table, **kw):
+        calls.append(("rest", table))
+        raise StoreError("rpc artifact_index: HTTP 404 Could not find the function", 404, "PGRST202")
+    monkeypatch.setattr(st, "_rest", missing_rest)
+    tree = {
+        "": ([], ["r1", "r2"]),
+        "r1": ([], ["r1/c"]),
+        "r1/c": ([{"key": "r1/c/a.json", "created_at": "2026-09-06T00:00:00.000Z", "size": 2,
+                   "etag": "0" * 32}], []),
+        "r2": ([], ["r2/c"]),
+        "r2/c": ([{"key": "r2/c/a.json", "created_at": "2026-09-07T00:00:00.000Z", "size": 2,
+                   "etag": None}], []),
+    }
+    listed = []
+    def fake_level(bucket, prefix):
+        listed.append(prefix)
+        return tree[prefix]
+    monkeypatch.setattr(st, "_list_level", fake_level)
+    calls.clear()
+    objs = st.list_artifacts()
+    assert [o["key"] for o in objs] == ["r1/c/a.json", "r2/c/a.json"]      # oldest first
+    assert sorted(listed) == ["", "r1", "r1/c", "r2", "r2/c"]               # root + one per folder
+    assert calls == [("rest", "rpc/artifact_index")]                        # runs table never queried
+
+
+def test_md5_etag_parsing():
+    from cycling_project.nightly.store import _md5_etag
+    assert _md5_etag('"cfd6e303a08819423d12c85c4f859ff4"') == "cfd6e303a08819423d12c85c4f859ff4"
+    assert _md5_etag('W/"CFD6E303A08819423D12C85C4F859FF4"') == "cfd6e303a08819423d12c85c4f859ff4"
+    assert _md5_etag('"abc-3"') is None and _md5_etag(None) is None and _md5_etag("") is None

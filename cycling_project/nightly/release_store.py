@@ -14,8 +14,13 @@ Interface (all paths are bundle-relative, e.g. ``models/production/x.txt``)::
     newest_approved_release() -> dict | None                     # releases row incl. manifest
     get_release(tag) -> dict | None
     download_release_file(tag, relpath, dest) -> Path
-    list_artifacts_since(release_tag) -> list[dict]              # {key, created_at, size}
+    list_artifacts_since(release_tag) -> list[dict]              # {key, created_at, size, etag}
+    list_artifacts() -> list[dict]                               # same shape, every run
     download_artifact(key, dest) -> Path
+
+``etag`` is the object's md5 hex as Storage reports it (quotes stripped), or
+``None`` when the store cannot supply one; ``bootstrap.overlay_artifacts``
+uses it to skip a download whose bytes are already on disk.
 
 Storage layout mirrored by the fake:  ``releases/<tag>/<relpath>`` and
 ``nightly-artifacts/<run_id>/<campaign>/<relpath>``.  The fake keeps the
@@ -25,6 +30,7 @@ Storage layout mirrored by the fake:  ``releases/<tag>/<relpath>`` and
 from __future__ import annotations
 
 import datetime as dt
+import hashlib
 import json
 import shutil
 from pathlib import Path
@@ -57,6 +63,39 @@ class ReleaseStore(Protocol):
 
 def _utcnow() -> str:
     return dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds")
+
+
+def parse_timestamp(value: Any) -> Optional[dt.datetime]:
+    """ISO-8601 -> aware UTC datetime; accepts Storage's ``…Z`` and PostgREST's ``…+00:00``.
+
+    Returns ``None`` for empty/unparseable input so callers fall back to the
+    conservative branch instead of comparing timestamp strings, whose
+    lexical order breaks across the two suffix styles.
+    """
+    if not value:
+        return None
+    text = str(value).strip()
+    if text.endswith(("Z", "z")):
+        text = text[:-1] + "+00:00"
+    try:
+        parsed = dt.datetime.fromisoformat(text)
+    except ValueError:
+        return None
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=dt.timezone.utc)
+    return parsed.astimezone(dt.timezone.utc)
+
+
+def md5_hex(data: bytes) -> str:
+    return hashlib.md5(data).hexdigest()
+
+
+def md5_file(path: Path) -> str:
+    h = hashlib.md5()
+    with open(path, "rb") as fh:
+        for chunk in iter(lambda: fh.read(1 << 20), b""):
+            h.update(chunk)
+    return h.hexdigest()
 
 
 class FakeStore:
@@ -146,21 +185,26 @@ class FakeStore:
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_bytes(data)
         meta = self.artifacts_dir / (key + ".meta.json")
-        meta.write_text(json.dumps({"created_at": created_at or _utcnow(), "size": len(data)}))
+        meta.write_text(json.dumps({"created_at": created_at or _utcnow(), "size": len(data),
+                                    "etag": md5_hex(data)}))
         return key
 
     def list_artifacts_since(self, release_tag: str) -> List[dict]:
         release = self.get_release(release_tag)
-        since = release.get("created_at", "") if release else ""
-        return [o for o in self.list_artifacts() if o["created_at"] >= since]
+        since = parse_timestamp(release.get("created_at")) if release else None
+        if since is None:
+            return self.list_artifacts()
+        return [o for o in self.list_artifacts()
+                if (parse_timestamp(o["created_at"]) or since) >= since]
 
     def list_artifacts(self) -> List[dict]:
-        """Every artifact of every run, oldest first."""
+        """Every artifact of every run, oldest first: ``{key, created_at, size, etag}``."""
         out = []
         for meta in self.artifacts_dir.rglob("*.meta.json"):
             info = json.loads(meta.read_text())
             key = str(meta.relative_to(self.artifacts_dir))[: -len(".meta.json")]
-            out.append({"key": key, "created_at": info["created_at"], "size": info["size"]})
+            out.append({"key": key, "created_at": info["created_at"], "size": info["size"],
+                        "etag": info.get("etag")})
         return sorted(out, key=lambda o: (o["created_at"], o["key"]))
 
     def download_artifact(self, key: str, dest: Path) -> Path:
