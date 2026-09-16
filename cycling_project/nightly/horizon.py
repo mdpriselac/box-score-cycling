@@ -70,7 +70,7 @@ from cycling_project.db_path import default_db_path
 from cycling_project.nightly import registry, route_facts
 from cycling_project.nightly.crosswalk import build_operator_task
 from cycling_project.nightly.driver import (
-    FINISHED_AFTER_DAYS, NON_BOARD_JSON, ONE_DAY_UNIT, Campaign,
+    FINISHED_AFTER_DAYS, NON_BOARD_JSON, ONE_DAY_UNIT, Campaign, find_open_duplicate,
 )
 from cycling_project.nightly.secrets import load_local_env
 from cycling_project.webscrape_tools.logging_config import get_logger
@@ -676,7 +676,12 @@ class Run:
                                    urgency="routine")
         self.task = task
         try:
-            self.store.insert_task(task)
+            duplicate = find_open_duplicate(self.store, task)   # a daily job must not file the same ask daily
+            if duplicate:
+                logger.info("%s: same ask already open as task %s; not filed again", self.campaign.slug, duplicate.get("id"))
+                detail = {**detail, "duplicate_of": duplicate.get("id")}
+            else:
+                self.store.insert_task(task)
         except Exception as exc:  # noqa: BLE001
             logger.warning("%s: insert_task failed (%s)", self.campaign.slug, exc)
         self.finish("failed", 20, {"summary": summary, **detail})
