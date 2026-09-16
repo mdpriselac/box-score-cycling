@@ -29,6 +29,7 @@ claim the original did not make.
 
 | Date | Tag | Lesson |
 |---|---|---|
+| 2026-09-16 | `acquisition` | The cloud cannot learn about a new race by itself; the Mac captures its horizon |
 | 2026-09-13 | `acquisition` | A stage race's LAST stage keeps its overall classifications in a different accordion |
 | 2026-09-13 | `keying` | The bunch macro grades winner-group SIZE, not winner TYPE |
 | 2026-09-13 | `keying` | The closing-circuit time freeze is a Tour practice, not a grand tour one |
@@ -70,6 +71,46 @@ claim the original did not make.
 | 2026-07-05 | `acquisition` | A truncated FirstCycling results page is fixed by rerunning |
 
 ---
+
+## 2026-09-16 — The cloud cannot learn about a new race by itself
+
+**Tag:** `acquisition` · GP de Wallonie, Abruzzo, Luxembourg, Slovenska, Huangshan
+
+`registry sync` creates a campaign from the calendar and nothing more: one
+stage per calendar day, `stages_provisional: true`, `towns: null`,
+`distance_km: null`, no start list, no route. The container cannot close that
+gap — FirstCycling and PCS are behind Cloudflare, the UCI serves a calendar and
+results but no field and no course, and Kambi lists WorldTour only. On
+2026-09-15 GP de Wallonie's preview failed with "no start list from any
+source", and Abruzzo, Luxembourg, Slovenska and Huangshan previewed with no
+route or stage facts at all.
+
+**A preview needs three things the cloud cannot fetch: the field, the stage
+page, and the schedule.** They are all one rate-limited FirstCycling visit
+away *on the Mac*, so the Mac takes it, daily, before the tick:
+
+```bash
+uv run python -m cycling_project.nightly.horizon --store auto
+```
+
+`cycling_project/nightly/horizon.py` (chip S) captures the start list into
+`cached_start_lists` and `predictions/<unit>/startlist.json`, archives the
+stage page verbatim for `route_facts`, fills `campaign.json`'s stage rows
+under the chip-D provisional gate, and uploads everything as
+`<run_id>/<campaign>/<relpath>` artifacts, which `bootstrap` overlays on the
+next tick. Runbook §6a; scheduling in `agents/mac/README.md`.
+
+Two things this cost, worth keeping:
+
+- **`startlist.json` reads as a rendered board.** `driver._has_scenario_boards`
+  counts any `predictions/<unit>/*.json` outside `NON_BOARD_JSON` as a board,
+  and the handover file is not in that set — so a unit that has only a start
+  list looks already previewed and `plan` never lists it. `horizon` works
+  around it with its own copy of the preview rule; the one-line fix belongs in
+  `driver.py` (add `startlist.json` to `NON_BOARD_JSON`) and is not yet made.
+- **A capture scheduled after the tick is a capture the cloud sees tomorrow.**
+  The tick is 19:45 UTC and this Mac runs on US Pacific, so the job is at
+  10:30 local, not the late-afternoon slot a European clock would suggest.
 
 ## 2026-09-13 — A stage race's LAST stage keeps its overall classifications in a different accordion
 

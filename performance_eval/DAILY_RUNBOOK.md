@@ -676,6 +676,54 @@ so mark the config `post_hoc` and the page prints a banner naming the leak.
 
 ---
 
+## 6a. Horizon capture (Mac, daily)
+
+The cloud cannot fetch a start list, a stage page or a route: FirstCycling and
+PCS are behind Cloudflare, the UCI serves results only, Kambi lists WorldTour
+only. The Mac captures them the same day and hands them over as artifacts.
+
+```bash
+# scheduled: agents/mac/com.cycling.horizon.plist, 10:30 local (17:30 UTC),
+# about two hours before the 19:45 UTC tick
+uv run python -m cycling_project.nightly.horizon --store auto
+
+# what it would do — no fetch, no writes, fake store
+uv run python -m cycling_project.nightly.horizon --dry-run --days 4
+
+# one campaign, or a wider horizon
+uv run python -m cycling_project.nightly.horizon --campaign giro-d-abruzzo-2026
+uv run python -m cycling_project.nightly.horizon --days 5 --max-age-hours 12
+```
+
+For every unit due to be previewed inside `--days` (default 3) it writes:
+
+| What | Where | Read by |
+|---|---|---|
+| start list | `cached_start_lists` + `predictions/<unit>/startlist.json` | `resolve_startlist` (handover first), `oneday.load_startlist_file` |
+| stage page (verbatim) | `results/<unit>/stage_page_<date>.html` + `horizon_raw.json` | `route_facts.ingest_route` |
+| route facts | `predictions/<unit>/route.json` | the preview, the day key, the page |
+| stage metadata | `campaign.json` `stages[]` (date, towns, distance, `itt`/`ttt`) | the hub, the registry rows |
+
+All of it uploads as `<run_id>/<campaign>/<relpath>` artifacts, which
+`bootstrap` overlays into the container on the next tick, and the run appears
+in the ledger with phase `horizon`, host `mac`.
+
+Notes that bite:
+
+- **A visible Chrome window is required** (`SCRAPER_USE_BROWSER=1`); run it
+  while logged in, and do not close the window mid-run.
+- It is idempotent: anything younger than `--max-age-hours` (20) is reused, so
+  a second run the same day makes no requests at all.
+- A campaign that fails files a `horizon_failed` operator task (urgency
+  `routine`) and the command still exits **0** — one bad race never costs the
+  others their handover. Check the inbox, then re-run just that campaign.
+- `stages_provisional` only clears when every stage has a date, towns and a
+  distance; until then the stage list stays honest about what is not yet known.
+- Logs: `performance_eval/runs/horizon_<date>.log`. Setup and `launchctl`
+  commands: `agents/mac/README.md`.
+
+---
+
 ## 7. Cloud variant — the nightly
 
 One scheduled Managed Agents deployment, 19:45 UTC, one session, one thread
