@@ -130,8 +130,9 @@ def test_night_dry_run_replays_stage_14_to_15(campaign, tmp_path, capsys):
                             ("stage_page", "skipped"), ("site_index", "skipped"), ("site_frame", "skipped"),
                             ("upload", "ok"), ("finish", "ok")]
     preview_steps = [(s["step"], s["state"]) for s in steps if s["run_id"] == runs[1]["run_id"]]
-    assert preview_steps == [("capture_odds", "skipped"), ("stage_config", "ok"), ("route_facts", "ok"), ("bundle", "ok"),
-                             ("day_key", "ok"), ("predict", "skipped"), ("validate", "ok"), ("stage_page", "skipped"),
+    assert preview_steps == [("capture_odds", "skipped"), ("stage_config", "ok"), ("gc_config", "skipped"),
+                             ("route_facts", "ok"), ("bundle", "ok"), ("day_key", "ok"), ("scenario_refs", "skipped"),
+                             ("predict", "skipped"), ("validate", "ok"), ("stage_page", "skipped"),
                              ("site_index", "skipped"), ("site_frame", "skipped"), ("upload", "ok"), ("finish", "ok")]
     seed = next(s for s in steps if s["step"] == "seed_state_cache")
     assert seed["detail"]["argv"][1].endswith("seed_state_cache.py") and "--race-id" in seed["detail"]["argv"]

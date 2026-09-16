@@ -86,10 +86,11 @@ def test_a_templated_config_fills_its_sentinel_event_id_and_odds_capture(campaig
     assert template["event_id"] == "FILL_FROM_ODDS_PROVENANCE" and template["odds_capture"].startswith("YYYY")
     _set_event_id(campaign, UNIT, EVENT_ID)
 
-    # the run stops later, at day_key: stage 16 has no scenario references yet.  The config
+    # the run stops later, at day_key: the template carries no key and nothing has approved one
+    # (since 2026-09-16 references are derived from the key, one step further on).  The config
     # was written — with both fields filled — several steps before that.
     assert _preview(campaign, tmp_path, "--dry-run") == drv.EXIT_WAITING
-    assert json.loads(capsys.readouterr().out)["operator_task"]["kind"] == "scenarios_needed"
+    assert json.loads(capsys.readouterr().out)["operator_task"]["kind"] == "day_key_needed"
 
     cfg = _config(campaign)
     assert cfg["event_id"] == EVENT_ID
@@ -103,7 +104,7 @@ def test_an_unresolved_event_id_does_not_select_an_unrelated_snapshot(campaign, 
     assert UNIT not in json.loads((campaign / "campaign.json").read_text())["kambi_event_ids"]
 
     assert _preview(campaign, tmp_path, "--dry-run") == drv.EXIT_WAITING
-    assert json.loads(capsys.readouterr().out)["operator_task"]["kind"] == "scenarios_needed"
+    assert json.loads(capsys.readouterr().out)["operator_task"]["kind"] == "day_key_needed"
 
     cfg = _config(campaign)
     assert cfg["event_id"] is None
