@@ -190,6 +190,11 @@ class IngestReport:
     winning_time: Optional[float] = None
     unresolved: List[Dict[str, Any]] = field(default_factory=list)
     pages: Dict[str, Dict[str, Any]] = field(default_factory=dict)
+    # Identity policy inside the top gate and, under ``provisional``, the top-gate rows archived
+    # under a ``uci:`` id (operator ruling 2026-09-16; see uci_ingest.py).  The PCS path leaves
+    # both at their defaults: it has always been strict.
+    identity_policy: str = "strict"
+    provisional_top: List[Dict[str, Any]] = field(default_factory=list)
 
     @property
     def ok(self) -> bool:
@@ -207,6 +212,7 @@ class IngestReport:
             "n_classified": self.n_classified, "n_abandons": self.n_abandons,
             "winner": self.winner, "winning_time": self.winning_time,
             "unresolved": self.unresolved, "pages": self.pages,
+            "identity_policy": self.identity_policy, "provisional_top": self.provisional_top,
         }
 
 

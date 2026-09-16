@@ -118,6 +118,9 @@ def _has_scenario_boards(pred: Path) -> bool:
 URGENCY_BY_KIND = {
     "acquisition_needed": "blocks_settlement", "pcs_pages_needed": "blocks_settlement",
     "ingest_failed": "blocks_settlement",
+    # Not a blocker by design (operator ruling 2026-09-16): the stage settles and publishes with a
+    # provisional uci: id and a visible caveat; the weekly Mac reconcile turns it into a real id.
+    "identity_provisional": "routine",
     "kambi_match": "blocks_publication", "scenarios_needed": "blocks_publication",
     "day_key_needed": "blocks_publication", "validate_failed": "blocks_publication",
 }
@@ -434,11 +437,16 @@ class Driver:
                  python: Optional[str] = None, crosswalk_csv: Optional[Path] = None,
                  db_path: Optional[Path] = None, agent_key: Optional[Path] = None,
                  release_tag: Optional[str] = None, acquire: bool = True, provider: str = "auto",
-                 aliases_csv: Optional[Path] = None):
+                 aliases_csv: Optional[Path] = None,
+                 identity_policy: str = uci_ingest.DEFAULT_IDENTITY_POLICY):
         self.campaign = campaign
         self.acquire_enabled = acquire            # settle may run the deterministic UCI acquisition itself
         self.provider_pref = provider              # auto | uci | pcs
         self.aliases_csv = Path(aliases_csv) if aliases_csv else None
+        # strict = an unresolved rider inside the top-15/top-20 gate asks a human (attended Mac runs);
+        # provisional = archive it under a uci: id, caveat the page, file a routine task (the default,
+        # because the unattended cloud tick has nobody to ask).  Operator ruling 2026-09-16.
+        self.identity_policy = identity_policy or uci_ingest.DEFAULT_IDENTITY_POLICY
         self.store = store
         self.dry_run = dry_run
         self.today_override = today
@@ -880,7 +888,7 @@ class Driver:
         db = self.db_path if self.db_path.exists() else None
         if provider == "uci":
             report = uci_ingest.ingest(c.dir, unit, crosswalk_csv=self.crosswalk_csv, store_rows=store_rows, db_path=db,
-                                       aliases_csv=self.aliases_csv)
+                                       aliases_csv=self.aliases_csv, identity_policy=self.identity_policy)
         else:
             report = pcs_ingest.ingest(c.dir, unit, crosswalk_csv=self.crosswalk_csv, store_rows=store_rows, db_path=db)
         for kind, meta in report.pages.items():
@@ -910,9 +918,46 @@ class Driver:
             raise WaitingForInput("ingest_failed", f"{c.slug} {unit}: {provider} ingest rejected ({len(report.failing)} checks)",
                                   {"provider": provider, "checks": report.failing, "unresolved_riders": report.unresolved,
                                    "proposals": proposals, "warnings": report.warnings})
+        self._file_provisional_identity_task(unit, report)
         return {"provider": provider, "verdict": report.verdict, "n_classified": report.n_classified, "n_abandons": report.n_abandons,
                 "winner": report.winner, "winning_time": report.winning_time, "written": report.written,
-                "warnings": report.warnings, "_detail": {"provider": provider, "winner": report.winner, "n_classified": report.n_classified}}
+                "identity_policy": report.identity_policy, "provisional_top": report.provisional_top,
+                "warnings": report.warnings, "_detail": {"provider": provider, "winner": report.winner, "n_classified": report.n_classified,
+                                                          "provisional_top": len(report.provisional_top)}}
+
+    def _file_provisional_identity_task(self, unit: str, report: Any) -> None:
+        """One ROUTINE task per unit listing the top-gate rows archived under a provisional id.
+
+        Deliberately not a ``WaitingForInput``: under ``identity_policy=provisional`` the settle
+        finishes and publishes with a visible caveat, and this task only asks the operator to confirm
+        the mapping at leisure (inbox → ``crosswalk confirm`` → ``crosswalk reconcile-results`` on the
+        weekly Mac run).  Operator ruling 2026-09-16.
+        """
+        rows = list(getattr(report, "provisional_top", None) or [])
+        if not rows:
+            return
+        c = self.campaign
+        names = ", ".join(f"{r['uci_name']} (place {r['place']})" for r in rows[:6])
+        task = build_operator_task(
+            "identity_provisional", c.slug if c else None,
+            f"{c.slug if c else '-'} {unit}: {len(rows)} top-gate rider(s) published under a provisional id — {names}",
+            {"unit": unit, "phase": self.record.get("phase"), "run_id": (self.run or {}).get("run_id"),
+             "identity_policy": getattr(report, "identity_policy", None),
+             "provisional": [{"place": r["place"], "uci_name": r["uci_name"], "rider_id": r["rider_id"],
+                              "team": r["team"], "age": r["age"],
+                              "best_candidate": (r.get("best") or {}).get("fc_name"),
+                              "best_fc_rider_id": (r.get("best") or {}).get("fc_rider_id"),
+                              "best_confidence": (r.get("best") or {}).get("confidence")} for r in rows],
+             "next_step": ("confirm the mapping in the inbox, then run "
+                           "`python -m cycling_project.nightly.crosswalk reconcile-results --campaign <dir>` "
+                           "on the Mac to rewrite the archived id")},
+            urgency="routine")
+        task["run_id"] = (self.run or {}).get("run_id")
+        try:
+            self.store.insert_task(task)
+            self._say(f"  routine task filed: {len(rows)} provisional top-gate identity(ies)")
+        except Exception as exc:  # noqa: BLE001 — a routine task must never fail a settle
+            self._say(f"  [store] insert_task(identity_provisional) failed: {exc}")
 
     def _template_gc_config(self, gc_cfg_path: Path, stage: int) -> Dict[str, Any]:
         c = self.campaign
@@ -1053,6 +1098,12 @@ class Driver:
         results["rule_type"] = rule
         results["abandons"] = [{"status": r["place"], "name": r["name"], "rider_id": r["rider_id"]} for r in rows
                                if not str(r.get("place", "")).isdigit()]
+        # Provisional identities (ruling 2026-09-16), threaded straight from what the ingest wrote into
+        # results.json so the editorial bundle and the page tell the reader the same thing.  Every such
+        # rider is treated as NOT in the model field: no board row joins a uci: key.
+        rjson = _read_json(res_dir / "results.json", {}) or {}
+        results["provisional_identities"] = list(rjson.get("provisional_identities") or [])
+        results["identity_policy"] = rjson.get("identity_policy")
         bundle["key_vs_oracle"] = ({k: card_row.get(k) for k in ("day_key", "key_source", "oracle_item", "day_class", "exact",
                                                                   "covered", "weight_on_true", "agent_key", "agent_exact",
                                                                   "agent_covered", "agent_weight_on_true", "agent_flagged")}
@@ -1068,6 +1119,7 @@ class Driver:
         path = c.pred_dir(unit) / "retro_facts.json"
         _write_json(path, bundle)
         return {"path": str(path), "winner": results["winner"], "winning_group": wg,
+                "provisional_identities": results["provisional_identities"],
                 "retrieval": bundle["retrieval_summary"],
                 "_detail": {"winner": results["winner"], "winning_group": wg}}
 
@@ -1586,20 +1638,29 @@ def build_parser() -> argparse.ArgumentParser:
         p.add_argument("--aliases", type=Path, default=None, help="UCI alias CSV override (default performance_eval/crosswalk/uci_aliases.csv)")
         p.add_argument("--json", action="store_true", default=True, help=argparse.SUPPRESS)
 
+    def identity_flag(p: argparse.ArgumentParser) -> None:
+        """Operator ruling 2026-09-16: unattended runs settle with a provisional id and a caveat."""
+        p.add_argument("--identity-policy", choices=uci_ingest.IDENTITY_POLICIES,
+                       default=uci_ingest.DEFAULT_IDENTITY_POLICY,
+                       help="unresolved rider inside the top-15 stage / top-20 GC gate: 'strict' refuses the "
+                            "capture and asks a human (attended Mac runs); 'provisional' (default) archives it "
+                            "under a uci: id, caveats the page and files a routine task")
+
     sub.add_parser("bootstrap", help="hydrate the container from the newest approved release (delegates to nightly.bootstrap)",
                    add_help=False)
     p = sub.add_parser("plan", help="due units for a campaign (settle / preview) as JSON")
     common(p); p.add_argument("--now", action="store_true", help="plan as of now (default)"); p.add_argument("--horizon-days", type=int, default=1)
     p = sub.add_parser("night", help="every due settle, then every due preview")
     common(p); p.add_argument("--horizon-days", type=int, default=1); p.add_argument("--agent-key", type=Path, default=None)
+    identity_flag(p)
     p = sub.add_parser("settle", help="ingest → seed → GC → score → retro facts → pages → upload")
-    common(p, unit=True)
+    common(p, unit=True); identity_flag(p)
     p = sub.add_parser("preview", help="odds → config → route → bundle → key gate → predict → validate → pages → upload")
     common(p, unit=True); p.add_argument("--agent-key", type=Path, default=None, help="shadow mode: key the stage from an agent record")
     p = sub.add_parser("acquire", help="run the deterministic UCI acquisition for a unit (idempotent)")
     common(p, unit=True); p.add_argument("--competition-url", default=None, help="override campaign.json uci_competition_url")
     p = sub.add_parser("ingest", help="validate the captured results (UCI, else PCS) and write the FC-shaped archive")
-    common(p, unit=True)
+    common(p, unit=True); identity_flag(p)
     p = sub.add_parser("bundle", help="freeze predictions/<unit>/bundle/")
     common(p, unit=True)
     p = sub.add_parser("validate", help="schema / NaN / lambdarank sum / post_hoc / void_stages / key weights / crosswalk")
@@ -1653,7 +1714,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     driver = Driver(campaign, store, dry_run=args.dry_run, today=args.today, no_log=args.no_log, force=args.force,
                     crosswalk_csv=args.crosswalk, db_path=args.db_path, agent_key=getattr(args, "agent_key", None),
                     release_tag=args.release_tag, acquire=not getattr(args, "no_acquire", False),
-                    provider=getattr(args, "provider", "auto"), aliases_csv=getattr(args, "aliases", None))
+                    provider=getattr(args, "provider", "auto"), aliases_csv=getattr(args, "aliases", None),
+                    identity_policy=getattr(args, "identity_policy", uci_ingest.DEFAULT_IDENTITY_POLICY))
 
     if args.command == "status":
         return _emit(EXIT_DONE, {"status": "ok", **driver.status()})

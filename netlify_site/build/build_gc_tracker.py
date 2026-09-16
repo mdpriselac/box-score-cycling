@@ -34,7 +34,7 @@ from pathlib import Path
 
 from build_stage_page import (
     CSS, DB_PATH, PROJECT_ROOT, SITE_DIR,
-    esc, pct, resolve_campaign, _fc_to_internal_ids,
+    esc, pct, provisional_note, resolve_campaign, _fc_to_internal_ids,
 )
 
 # Campaign archives — rebound in main() from the config's own campaign
@@ -332,6 +332,14 @@ def build(config):
                     f"newest logged opinion still sees state through stage "
                     f"{board_stage}; tonight's refresh closes the gap.")
 
+    # Riders the nightly ingest archived under a provisional identity (ruling 2026-09-16) are named
+    # on the classification table rather than passed off as matched riders.
+    gc_provisional = provisional_note(
+        None,
+        rows=[{"rider_id": r["fc"], "place": r["place"], "name": r["name"]}
+              for r in standings.get(newest_stage, [])],
+        top_n=20, scope="the top 20 on general classification")
+
     n_field = len(latest["riders"])
     pfx = CAMPAIGN["prefix"]
     page = f"""<!DOCTYPE html>
@@ -386,6 +394,7 @@ this position", not as odds.</div>
 <section>
 <h2>How the race has actually gone</h2>
 {race_table(standings, void_stages)}
+{gc_provisional}
 <div class="note">The official classification after each stage, from the
 FirstCycling results archive — place, with the gap to the leader beneath it.
 Every rider who has held a top-10 place, ordered by the current standing;
