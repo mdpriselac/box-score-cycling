@@ -70,7 +70,7 @@ from cycling_project.db_path import default_db_path
 from cycling_project.nightly import registry, route_facts
 from cycling_project.nightly.crosswalk import build_operator_task
 from cycling_project.nightly.driver import (
-    FINISHED_AFTER_DAYS, NON_BOARD_JSON, ONE_DAY_UNIT, Campaign,
+    FINISHED_AFTER_DAYS, ONE_DAY_UNIT, Campaign, _has_scenario_boards,
 )
 from cycling_project.nightly.secrets import load_local_env
 from cycling_project.webscrape_tools.logging_config import get_logger
@@ -221,22 +221,16 @@ class Due:
 
 
 def has_boards(pred_dir: Path) -> bool:
-    """``driver._has_scenario_boards``, minus the start-list handover.
+    """The driver's own board test (``driver._has_scenario_boards``).
 
-    The driver counts any ``predictions/<unit>/*.json`` outside its
-    ``NON_BOARD_JSON`` set as a rendered board, and ``startlist.json`` is not in
-    that set — so the handover this module writes reads there as "already
-    previewed".  The one-line fix belongs to ``driver.py``, which this chip does
-    not own (2026-09-16 `acquisition` lesson), so the due logic here is
-    ``Driver.plan``'s preview rule with the handover excluded.  Everything else
-    — the horizon window, void stages, the finished-campaign cut-off — is the
-    driver's own, imported.
+    Until 2026-09-16 this carried its own copy of the preview rule, because
+    ``startlist.json`` — the handover this module writes — was missing from the
+    driver's ``NON_BOARD_JSON`` and read there as a rendered board, so a unit
+    with only a start list looked already previewed.  The fix landed in
+    ``driver.py`` the same day (``startlist.json`` and ``horizon_raw.json`` are
+    in the set), so the due logic here is the driver's, unmodified.
     """
-    if not pred_dir.is_dir():
-        return False
-    ignore = set(NON_BOARD_JSON) | {STARTLIST_NAME}
-    return any(p.suffix == ".json" and p.name not in ignore and not p.name.startswith("editorial_")
-               for p in pred_dir.iterdir())
+    return _has_scenario_boards(pred_dir)
 
 
 def preview_due(campaign: Campaign, *, days: int, today: dt.date,
