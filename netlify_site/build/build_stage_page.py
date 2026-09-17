@@ -354,9 +354,13 @@ DAY_MENU_NAMES = {
 }
 
 
-def day_key_chip(data):
+def day_key_chip(data, config=None):
     """'keyed: mountain escape 0.6 / hard puncheur 0.4' badge for boards
-    ranked by the day-menu retrieval channel (prices stay production)."""
+    ranked by the day-menu retrieval channel (prices stay production).
+
+    When the key came from the automated reader rather than a person, say so
+    here: it is the one thing about the ordering a reader cannot otherwise
+    tell, and the page is where the claim has to live (2026-09-17)."""
     key = data.get("day_key")
     if not key or data.get("board") != "daymenu":
         return ""
@@ -365,8 +369,11 @@ def day_key_chip(data):
     txt = " / ".join(
         f"{DAY_MENU_NAMES.get(i, i)}" + (f" {float(w)/tot:.1f}" if len(parts) > 1 else "")
         for i, w in parts)
+    by_machine = ((config or {}).get("day_key_author") == "agent")
+    author = (' <span class="muted">(written by the automated reader, not by a '
+              'person)</span>' if by_machine else "")
     return ('<div class="note" style="border-left:3px solid #7a5df0;'
-            'padding-left:7px"><b>keyed:</b> ' + esc(txt) +
+            'padding-left:7px"><b>keyed:</b> ' + esc(txt) + author +
             ' <span class="muted">(board order by rider-type retrieval; '
             'prices unchanged)</span></div>')
 
@@ -386,7 +393,7 @@ def scenario_cards(config, scen):
 <h3>{esc(spec.get('short', key))}</h3>
 <div class="muted" style="font-family:var(--sans);font-size:12.5px">{esc(data['scenario'])}</div>
 {profile_bars(data['avg_profile'])}
-{day_key_chip(data)}
+{day_key_chip(data, config)}
 <div class="note">{esc(spec.get('note', ''))}</div>
 <div class="note"><b>{label}:</b> {toplist}</div>
 </div>""")

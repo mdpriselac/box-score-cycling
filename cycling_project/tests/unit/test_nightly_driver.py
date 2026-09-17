@@ -12,6 +12,7 @@ import datetime as dt
 import gzip
 import json
 import shutil
+import sqlite3
 import subprocess
 from pathlib import Path
 
@@ -150,10 +151,13 @@ def test_night_dry_run_replays_stage_14_to_15(campaign, tmp_path, capsys):
                             ("stage_page", "skipped"), ("site_index", "skipped"), ("site_frame", "skipped"),
                             ("upload", "ok"), ("finish", "ok")]
     preview_steps = [(s["step"], s["state"]) for s in steps if s["run_id"] == runs[1]["run_id"]]
-    assert preview_steps == [("capture_odds", "skipped"), ("stage_config", "ok"), ("gc_config", "skipped"),
+    assert preview_steps == [("capture_odds", "skipped"), ("stage_config", "ok"), ("startlist", "skipped"),
+                             ("gc_config", "skipped"),
                              ("route_facts", "ok"), ("bundle", "ok"), ("day_key", "ok"), ("scenario_refs", "skipped"),
                              ("predict", "skipped"), ("validate", "ok"), ("stage_page", "skipped"),
                              ("site_index", "skipped"), ("site_frame", "skipped"), ("upload", "ok"), ("finish", "ok")]
+    # the runner is never allowed to reach FirstCycling from the driver unless asked
+    assert "--no-scrape" in next(s for s in steps if s["step"] == "predict")["detail"]["argv"]
     seed = next(s for s in steps if s["step"] == "seed_state_cache")
     assert seed["detail"]["argv"][1].endswith("seed_state_cache.py") and "--race-id" in seed["detail"]["argv"]
     assert next(s for s in steps if s["step"] == "score_day_keys")["detail"]["argv"][2:6] == ["--campaign", str(campaign), "--stage", "14"]
@@ -246,7 +250,7 @@ def test_preview_without_a_key_exits_10_day_key_needed(campaign, tmp_path, capsy
     assert ("bundle", "ok") in steps and ("day_key", "waiting") in steps and ("predict", "skipped") not in steps
 
 
-def test_preview_uses_an_approved_store_key_or_an_agent_key_in_shadow(campaign, tmp_path, capsys):
+def test_preview_uses_an_approved_store_key_or_an_agent_key(campaign, tmp_path, capsys):
     cfg_path = campaign / "predictions/stage_15/scenarios.json"
     cfg = json.loads(cfg_path.read_text())
     cfg.pop("day_key")
@@ -258,15 +262,118 @@ def test_preview_uses_an_approved_store_key_or_an_agent_key_in_shadow(campaign, 
     out = _out(capsys)
     assert code == 0 and out["key"]["source"].startswith("store:approved:") and out["key"]["day_key"] == {"bunch": 1.0}
     assert json.loads(cfg_path.read_text())["day_key"] == {"bunch": 1.0}
-    # shadow mode: an agent record keys the board, flagged so the scorer never treats it as the human read
+    # an explicit agent record keys the board, stamped so the scorer never treats it as the human read
     cfg = json.loads(cfg_path.read_text()); cfg.pop("day_key"); cfg.pop("day_key_source", None)
     cfg_path.write_text(json.dumps(cfg))
     rec_path = tmp_path / "agent_key.json"
     rec_path.write_text(json.dumps({"key": {"res_3": 0.6, "bunch": 0.4}}))
     code = _run(campaign, tmp_path / "other", "preview", "--unit", "stage_15", "--dry-run", "--agent-key", str(rec_path))
     out = _out(capsys)
-    assert code == 0 and out["key"]["shadow"] and out["key"]["day_key"] == {"res_3": 0.6, "bunch": 0.4}
+    assert code == 0 and out["key"]["author"] == "agent" and out["key"]["day_key"] == {"res_3": 0.6, "bunch": 0.4}
+    assert out["key"]["explicit"] and out["key"]["source"] == "agent:agent_key.json"
     assert json.loads(cfg_path.read_text())["day_key_author"] == "agent"
+
+
+# ---------------------------------------------------------------------------
+# chip U — the agent's own key prices the board, unattended
+# ---------------------------------------------------------------------------
+
+def _unkey(cfg_path):
+    cfg = json.loads(cfg_path.read_text())
+    for k in ("day_key", "day_key_source", "day_key_author", "day_key_note"):
+        cfg.pop(k, None)
+    cfg_path.write_text(json.dumps(cfg))
+    return cfg
+
+
+@pytest.mark.parametrize("name", ["agent_key.json", "day_key_agent.json"])
+def test_an_agent_record_beside_the_config_keys_the_board_without_the_flag(campaign, tmp_path, capsys, name):
+    """The 2026-09-17 tick wrote a key and stopped: nothing told the driver it was there.
+
+    The record the day-key-reader leaves in the unit's own directory is now picked up on the next
+    pass with no extra argument, so one unattended night reaches a priced board.
+    """
+    cfg_path = campaign / "predictions/stage_15/scenarios.json"
+    _unkey(cfg_path)
+    (campaign / "predictions/stage_15" / name).write_text(json.dumps(
+        {"key": {"res_3": 0.6, "bunch": 0.4}, "confidence": 0.55, "rationale": "Rolling day into a long drag."}))
+    code = _run(campaign, tmp_path, "preview", "--unit", "stage_15", "--dry-run")
+    out = _out(capsys)
+    assert code == 0, out
+    assert out["key"]["day_key"] == {"res_3": 0.6, "bunch": 0.4}
+    assert out["key"]["author"] == "agent" and out["key"]["source"] == f"agent:{name}" and not out["key"]["explicit"]
+    written = json.loads(cfg_path.read_text())
+    assert written["day_key_author"] == "agent" and written["day_key_note"].startswith("Rolling day")
+    # the board is priced: predict, validate, pages and upload all ran, and no task was filed
+    steps = {s["step"] for s in _ledger(tmp_path, "run_steps")}
+    assert {"predict", "validate", "upload"} <= steps
+    assert _ledger(tmp_path, "operator_tasks") == []
+    # the record itself is never mistaken for a rendered board
+    assert drv._has_scenario_boards(campaign / "predictions/stage_15") is False
+
+
+def test_an_approved_human_key_still_wins_over_an_agent_record(campaign, tmp_path, capsys):
+    cfg_path = campaign / "predictions/stage_15/scenarios.json"
+    _unkey(cfg_path)
+    (campaign / "predictions/stage_15/agent_key.json").write_text(json.dumps({"key": {"res_3": 1.0}}))
+    store = FakeStore(tmp_path / "store", role="operator")
+    store.approve_day_key("vuelta-2026", "stage_15", "bunch", by="human@test")
+    assert _run(campaign, tmp_path, "preview", "--unit", "stage_15", "--dry-run") == 0
+    out = _out(capsys)
+    assert out["key"]["source"].startswith("store:approved:") and out["key"]["day_key"] == {"bunch": 1.0}
+    assert "day_key_author" not in json.loads(cfg_path.read_text())
+
+
+def test_no_key_at_all_still_exits_10(campaign, tmp_path, capsys):
+    """The gate is unchanged when nobody — human or agent — has read the day."""
+    cfg_path = campaign / "predictions/stage_15/scenarios.json"
+    _unkey(cfg_path)
+    assert _run(campaign, tmp_path, "preview", "--unit", "stage_15", "--dry-run") == 10
+    out = _out(capsys)
+    assert out["operator_task"]["kind"] == "day_key_needed"
+    assert "agent_key.json" in out["operator_task"]["summary"]
+
+
+def test_the_stage_page_says_when_the_key_was_machine_written():
+    """A reader cannot tell a machine key from a human one by looking at the board, so the page
+    has to say it. Plain language, and no betting vocabulary (lint_prose lexicon)."""
+    import runpy
+    import sys
+    build = Path(drv.PROJECT_ROOT) / "netlify_site" / "build"
+    sys.path.insert(0, str(build))
+    try:
+        page = runpy.run_path(str(build / "build_stage_page.py"), run_name="_page_for_tests")
+    finally:
+        sys.path.remove(str(build))
+    board = {"day_key": {"res_2": 0.6, "res_4": 0.4}, "board": "daymenu"}
+    by_agent = page["day_key_chip"](board, {"day_key_author": "agent"})
+    assert "written by the automated reader, not by a person" in by_agent
+    assert "mountain escape" in by_agent and "prices unchanged" in by_agent
+    by_human = page["day_key_chip"](board, {"day_key_author": "human"})
+    assert "automated reader" not in by_human and "mountain escape" in by_human
+    assert page["day_key_chip"](board) == by_human                 # no config: unchanged, as before
+    for word in ("bet", "wager", "odds on", "value"):
+        assert word not in by_agent.lower()
+
+
+def test_the_inbox_clears_a_day_key_ask_once_the_step_succeeds(campaign, tmp_path, capsys):
+    """Fix 1 leaves one task behind on the first pass; the reconciler's proving step retires it."""
+    import importlib.util
+    cfg_path = campaign / "predictions/stage_15/scenarios.json"
+    _unkey(cfg_path)
+    assert _run(campaign, tmp_path, "preview", "--unit", "stage_15", "--dry-run") == 10
+    capsys.readouterr()
+    (campaign / "predictions/stage_15/agent_key.json").write_text(json.dumps({"key": {"bunch": 1.0}}))
+    assert _run(campaign, tmp_path, "preview", "--unit", "stage_15", "--dry-run") == 0
+    capsys.readouterr()
+    task = _ledger(tmp_path, "operator_tasks")[0]
+    spec = importlib.util.spec_from_file_location(
+        "build_ops_page", Path(drv.PROJECT_ROOT) / "netlify_site/build/build_ops_page.py")
+    ops = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(ops)
+    proving = ops.TASK_SUCCESS_STEPS[task["kind"]]
+    later = [s for s in _ledger(tmp_path, "run_steps") if s["step"] == proving and s["state"] == "ok"]
+    assert proving == "day_key" and later, "the reconciler needs a later ok day_key step to retire the ask"
 
 
 def test_validate_rejects_bad_key_weights_and_stale_void_stages(campaign, tmp_path, capsys):
@@ -435,3 +542,148 @@ def test_a_finished_campaign_has_nothing_due(campaign, tmp_path, capsys):
 def test_a_missing_book_market_only_blocks_worldtour_previews():
     assert drv.odds_required("wt")
     assert not drv.odds_required("pro") and not drv.odds_required("d1") and not drv.odds_required(None)
+
+
+# ---------------------------------------------------------------------------
+# chip U — the field must be here before predict, and the driver never scrapes
+# ---------------------------------------------------------------------------
+
+def _oneday_campaign(tmp_path, *, date="2026-09-19", slug="kampioenschap-2026"):
+    """A minimal one-day campaign: campaign.json plus a written config."""
+    d = tmp_path / slug
+    (d / "predictions" / "race").mkdir(parents=True)
+    (d / "campaign.json").write_text(json.dumps(
+        {"slug": slug, "name": "Kampioenschap van Vlaanderen", "fc_race_id": "54", "year": 2026,
+         "is_stage_race": False, "category": "pro", "date": date, "start_date": date,
+         "timezone": "Europe/Brussels"}))
+    (d / "predictions" / "race" / "scenarios.json").write_text(json.dumps(
+        {"fc_race_id": "54", "year": 2026, "date": date, "target": "one_day", "label": "Kampioenschap",
+         "scenarios": {"default": {"tag": f"{slug}_race_default", "label": "Kampioenschap",
+                                   "short": "Race", "refs": [101, 102, 103]}}}))
+    return d
+
+
+def test_a_one_day_preview_with_no_start_list_asks_instead_of_scraping(tmp_path, capsys):
+    """Task 93 (2026-09-17): the container fell through to a live FirstCycling scrape inside
+    ``predict``, hit Cloudflare, and turned a missing hand-over into a paid triage cycle."""
+    camp = _oneday_campaign(tmp_path)
+    code = drv.main(["preview", "--campaign", str(camp), "--unit", "race", "--dry-run",
+                     "--store-root", str(tmp_path / "store"), "--today", "2026-09-18",
+                     "--db-path", str(tmp_path / "nonexistent.db")])
+    out = _out(capsys)
+    assert code == 10, out
+    task = out["operator_task"]
+    assert task["kind"] == "startlist_needed" and task["urgency"] == "blocks_publication"
+    assert "horizon" in task["summary"] and task["detail"]["fc_race_id"] == "54"
+    steps = [(s["step"], s["state"]) for s in _ledger(tmp_path, "run_steps")]
+    assert ("startlist", "waiting") in steps
+    assert not any(step == "predict" for step, _ in steps), "predict must never be reached"
+
+
+def test_a_handover_start_list_lets_the_one_day_preview_run(tmp_path, capsys):
+    camp = _oneday_campaign(tmp_path)
+    (camp / "predictions/race/startlist.json").write_text(json.dumps(
+        {"fc_race_id": "54", "year": 2026, "teams": [{"name": "T", "team_id": "1",
+                                                      "riders": [{"name": "R", "rider_id": "9"}]}]}))
+    code = drv.main(["preview", "--campaign", str(camp), "--unit", "race", "--dry-run",
+                     "--store-root", str(tmp_path / "store"), "--today", "2026-09-18",
+                     "--db-path", str(tmp_path / "nonexistent.db")])
+    out = _out(capsys)
+    assert code == 0, out
+    assert out["startlist"]["source"] == "handover:startlist.json"
+    predict = next(s for s in _ledger(tmp_path, "run_steps") if s["step"] == "predict")
+    assert "--no-scrape" in predict["detail"]["argv"]
+
+
+def test_a_cached_start_list_counts_as_the_field(tmp_path, capsys):
+    camp = _oneday_campaign(tmp_path)
+    db = tmp_path / "serving.db"
+    con = sqlite3.connect(db)
+    con.execute("CREATE TABLE cached_start_lists (fc_race_id TEXT, year INTEGER, rider_fc_id TEXT, "
+                "rider_name TEXT, team_name TEXT, team_fc_id TEXT, bib_number TEXT)")
+    con.executemany("INSERT INTO cached_start_lists VALUES (?,?,?,?,?,?,?)",
+                    [("54", 2026, str(i), f"R{i}", "T", "1", str(i)) for i in range(3)])
+    con.commit(); con.close()
+    code = drv.main(["preview", "--campaign", str(camp), "--unit", "race", "--dry-run",
+                     "--store-root", str(tmp_path / "store"), "--today", "2026-09-18", "--db-path", str(db)])
+    out = _out(capsys)
+    assert code == 0, out
+    assert out["startlist"] == {"source": "cache", "riders": 3, "_detail": {"source": "cache", "riders": 3}}
+
+
+def test_allow_scrape_reaches_the_runner_and_skips_the_gate(tmp_path, capsys):
+    """An attended Mac run may fetch the list; that choice is explicit and visible in the argv."""
+    camp = _oneday_campaign(tmp_path)
+    code = drv.main(["preview", "--campaign", str(camp), "--unit", "race", "--dry-run", "--allow-scrape",
+                     "--store-root", str(tmp_path / "store"), "--today", "2026-09-18",
+                     "--db-path", str(tmp_path / "nonexistent.db")])
+    out = _out(capsys)
+    assert code == 0, out
+    assert out["startlist"]["source"] == "scrape_allowed"
+    predict = next(s for s in _ledger(tmp_path, "run_steps") if s["step"] == "predict")
+    assert "--no-scrape" not in predict["detail"]["argv"]
+
+
+def test_stage_one_is_gated_on_the_field_but_later_stages_are_not(campaign, tmp_path, capsys):
+    """Stage 1 is where the start list is first needed; from stage 2 the cache already holds it."""
+    assert _run(campaign, tmp_path, "preview", "--unit", "stage_15", "--dry-run",
+                "--db-path", str(tmp_path / "nonexistent.db")) == 0
+    out = _out(capsys)
+    assert out["config"] and "startlist" not in out
+    skipped = next(s for s in _ledger(tmp_path, "run_steps") if s["step"] == "startlist")
+    assert skipped["state"] == "skipped" and "stage 15" in skipped["detail"]["reason"]
+
+
+# ---------------------------------------------------------------------------
+# chip U — a stage settles only after its own race-local day is over
+# ---------------------------------------------------------------------------
+
+def _huangshan(tmp_path):
+    d = tmp_path / "huangshan-2026"
+    d.mkdir()
+    (d / "campaign.json").write_text(json.dumps(
+        {"slug": "huangshan-2026", "name": "Tour of Huangshan", "fc_race_id": "900", "year": 2026,
+         "is_stage_race": True, "category": "d1", "timezone": "Asia/Shanghai",
+         "stages": [{"number": 1, "date": "2026-09-18"}, {"number": 2, "date": "2026-09-19"}]}))
+    return d
+
+
+def _plan(camp, tmp_path, capsys, local_now):
+    assert drv.main(["plan", "--campaign", str(camp), "--dry-run", "--store-root", str(tmp_path / "store"),
+                     "--local-now", local_now]) == 0
+    return _out(capsys)
+
+
+def test_a_stage_is_not_settle_due_before_its_local_day_ends(tmp_path, capsys):
+    """Hosted task 88: the 19:45 UTC tick of 2026-09-17 was already 03:45 on the 18th in Shanghai,
+    so stage 1 — dated the 18th and not yet ridden — was listed as settle-due and an acquisition
+    ask was filed for a stage that did not exist yet."""
+    camp = _huangshan(tmp_path)
+    plan = _plan(camp, tmp_path, capsys, "2026-09-18T03:45")
+    assert plan["settle"] == [], plan
+    assert plan["preview"] == ["stage_01"], plan       # a morning read is still honest at 03:45
+    assert plan["local_now"].startswith("2026-09-18T03:45")
+
+    # mid-race: stage 1 has begun, so it is neither settle-due nor previewable.  (Stage 2 enters
+    # the ordinary one-day horizon here exactly as it always has; the real tick never fires at
+    # this local hour for a race this far east.)
+    plan = _plan(camp, tmp_path, capsys, "2026-09-18T13:00")
+    assert plan["settle"] == [] and "stage_01" not in plan["preview"]
+
+    # the same evening, local: the racing is done and the stage settles
+    plan = _plan(camp, tmp_path, capsys, "2026-09-18T21:00")
+    assert plan["settle"] == ["stage_01"] and plan["preview"] == ["stage_02"]
+
+    # and the next local day it is late, not merely due
+    plan = _plan(camp, tmp_path, capsys, "2026-09-19T03:45")
+    assert plan["settle"] == ["stage_01"]
+    assert "settle_late" in next(u for u in plan["units"] if u["unit"] == "stage_01")["flags"]
+
+
+def test_a_date_only_override_still_means_that_evening(campaign, tmp_path, capsys):
+    """Every existing caller of ``--today`` means the nightly tick, after racing: stage 14, dated
+    2026-09-05, must stay settle-due under a bare date."""
+    assert _run(campaign, tmp_path, "plan", "--dry-run") == 0
+    plan = _out(capsys)
+    assert plan["settle"] == ["stage_14"] and plan["preview"] == ["stage_15"]
+    assert drv.RACE_DAY_START_HOUR < drv.RACE_DAY_OVER_HOUR

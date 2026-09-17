@@ -98,6 +98,8 @@ def test_reconciliation_requires_deterministic_later_evidence(page, mod):
         "scenarios_needed": "stage_config",
         "day_key_needed": "day_key",
         "validate_failed": "validate",
+        # 2026-09-17: the start-list ask is proved by the step that consumes the field
+        "startlist_needed": "predict",
     }
     assert 'Date.parse(r.started_at || "") > created' in page
     assert 's.step === provingStep && s.state === "ok"' in page

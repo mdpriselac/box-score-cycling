@@ -211,10 +211,10 @@ and a real key on the Mac).
 | Command | Runs |
 |---|---|
 | `bootstrap` | Download the release named in `releases` (newest `approved`) by sha, verify model contract hashes, `uv sync`, point serving at `inference_slice.db`, **hydrate** campaign dirs from the bundle snapshot + all `nightly-artifacts/` inserted since, load approved `day_key_decisions` into the local configs. Fails closed on any mismatch. |
-| `plan [--now]` | Due units from `campaigns`/`stages` + local state: `settle` (date past, no results), `preview` (tomorrow race-local, no boards); flags `settle_late`, `blocked`. |
+| `plan [--now]` | Due units from `campaigns`/`stages` + local state, on the **race-local clock**: `settle` once the unit's own local day is over (a past local date, or the local date past 18:00 local), `preview` while that day has not begun (before 09:00 local) and it is inside the horizon; flags `settle_late`, `blocked`. The fixed 19:45 UTC tick is already tomorrow east of UTC, which made Huangshan stage 1 settle-due before it was ridden (2026-09-17). `--local-now <ISO>` overrides the clock; `--today` alone reads as that date's evening. |
 | `night --campaign <slug>` | Every due `settle`, then every due `preview`, in order. |
 | `settle` | `ingest` → `seed_state_cache.py` → GC config templated → GC predict → `build_gc_tracker.py` → `score_day_keys.py` (always) → `retro_facts.json` → `build_stage_page.py` → site index + frame → `upload` (results files, facts, pages, `prediction_log` rows). |
-| `preview` | Kambi capture → stage config (template if the campaign ships one, else written from `campaign.json`) → GC config when absent → route facts (from the acquisition thread's `route_raw`) → `bundle` → **exit 10 unless** an approved `day_key` exists (or `--agent-key` in shadow) → `scenario_refs` (references derived from that key) → `predict_stage_scenarios.py` → `validate` → `build_stage_page.py` → site index + frame → `upload`. One-day races skip the key and reference their own editions. |
+| `preview` | Kambi capture → stage config (template if the campaign ships one, else written from `campaign.json`) → GC config when absent → route facts (from the acquisition thread's `route_raw`) → **`startlist`** (a handover or a cache row, else exit 10 `startlist_needed`; one-day and stage 1 only) → `bundle` → **exit 10 unless** a key exists: config key, then an approved `day_key_decisions` row, then the agent's own record (`--agent-key <path>`, or `predictions/<unit>/agent_key.json` found without a flag) → `scenario_refs` (references derived from that key) → `predict_stage_scenarios.py` (`--no-scrape` unless `--allow-scrape`) → `validate` → `build_stage_page.py` → site index + frame → `upload`. One-day races skip the key and reference their own editions. |
 | `ingest` | Reads `results/<unit>/pcs_raw.json`; validates (§2.8); writes the FC-shaped files or exits 10 with the failing checks. |
 | `bundle` | Freezes `predictions/<unit>/bundle/` + `manifest.json` (odds, latest `gc.csv`, startlist + withdrawals, settled-stage ledger, `route.json`, `day_menu_v1_reference.md`, scorecard). |
 | `refs --archetype <name>` | Signature-table query for named archetypes, excluding refs already used in the campaign. Since 2026-09-16 `preview` runs the same query itself (`nightly/autoconfig.py`, step `scenario_refs`): a stage race needs no `TEMPLATE_scenarios.json`, no hand-written references and no hand-written GC config. |
@@ -258,6 +258,25 @@ to `day_key_decisions` (`author = agent`); the human's approved key is a
 separate row with `approved_by`; `score_day_keys.py --also agent` scores
 both.
 
+**The agent's key prices the board when no human key exists (2026-09-17).**
+Until then the key gate was terminal for an unattended night: the 09-17 tick
+built configs, bundles and agent keys for Tour de Luxembourg stage 3 and Giro
+d'Abruzzo stage 4 and published no board at all (hosted tasks 90, 91). The
+driver now resolves a key as: config key → approved `day_key_decisions` row →
+the agent's own record (`--agent-key <path>`, or `predictions/<unit>/agent_key.json`
+found without a flag) → exit 10. A board priced from the agent's record carries
+`day_key_author: "agent"` and `day_key_source: "agent:<file>"`.
+
+This does **not** move Gate K. Gate K is about whose judgment the *tier-3
+archive* records, and the stamp keeps that boundary exactly where it was:
+`score_day_keys.py` refuses to read an agent-authored config as a logged human
+read (the tier-3 row stays unkeyed) and scores the record through
+`--also agent`, so the agent is graded as itself, on its own card, against the
+human's when one exists. The public claim is gated twice over: the page says
+the key was machine-written, and publication still needs an inbox approval and
+`promote.py`. What changed is the *cost of an unattended night* — a board and a
+page now exist to approve — not who is trusted with the judgment.
+
 ### 2.5 Editorial agent skill + lexicon linter — `agents/skills/editorial/`
 
 Unchanged from rev 1. Drafts go to `editorial_drafts`; the builder uses a
@@ -282,6 +301,18 @@ registry has loaded.
   `startlist.json` beside the config (what the acquisition thread hands over,
   since the container cannot reach FirstCycling), else `cached_start_lists`,
   else a rate-limited scrape (`--no-scrape` refuses it).
+- **The driver proves the field before it runs `predict` (2026-09-17).** The
+  scrape is the last resort in `resolve_startlist`, and in the container it is
+  a Cloudflare 403 *inside* the runner: Kampioenschap van Vlaanderen 2026 had
+  no handover, missed the cache, and turned a missing start list into exit 20
+  and a paid ops-triage cycle (hosted task 93). A one-day preview — and stage 1
+  of a stage race — with neither a handover nor a `cached_start_lists` row for
+  (`fc_race_id`, `year`) now exits 10 with `startlist_needed`
+  (`blocks_publication`), naming the Mac's daily `nightly.horizon` capture as
+  the supply. The driver also passes `--no-scrape` to the runner by default, on
+  every predict it launches; `--allow-scrape` is the attended-Mac opt-in. The
+  inbox retires the ask when a later run's `predict` step succeeds — the step
+  that consumes the list is the proof it arrived.
 - **Results**: `results/race/results.{csv,json}` + `classifications.json`, the
   same FC-shaped archive a stage settles to. `uci_ingest` reads a one-day
   capture's single "General Classification" as the race result, keeps the

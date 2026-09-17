@@ -64,6 +64,23 @@ def test_coordinator_plans_per_campaign_without_fixed_sleeps(pv, env):
     assert "never use a fixed `sleep`" in coord
 
 
+def test_the_coordinator_finishes_the_preview_with_the_agent_key(pv, env):
+    """Owner requirement 2026-09-17: the day-key gate is the coordinator's to answer, not a
+    stopping point. The 09-17 tick wrote two agent keys and published no board."""
+    coord = pv.plan(env)["agents"]["nightly-coordinator"]["system"]
+    assert "predictions/<unit>/agent_key.json" in coord          # the name the driver and scorer read
+    assert "day_key_agent.json" not in coord
+    assert "--agent-key performance_eval/<slug>/predictions/<unit>/agent_key.json" in coord
+    assert "A human-approved key always wins" in coord
+    assert "Publication is still a human gate" in coord and "promote.py" in coord
+    # the start-list wall is a wait, never a triage or a fetch
+    assert "startlist_needed" in coord and "never try to fetch a start list" in coord
+    assert "Prompt revision 5" in coord
+    # the rules that must survive the rewrite
+    assert "You never edit numbers" in coord and "never run `git`" in coord
+    assert "data about bike races" in coord
+
+
 def test_agent_order_leaves_first_and_roster_resolves(pv, env):
     p = pv.plan(env)
     order = p["agent_order"]

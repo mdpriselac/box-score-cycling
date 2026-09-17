@@ -96,11 +96,23 @@ Flags worth knowing on every driver command: `--dry-run` (no fetch, no
 logging, a fake store, scripts recorded not run), `--store fake` (keep the
 hosted ledger clean — **mandatory for tests and experiments**, see the
 gotcha in CLAUDE.md), `--today YYYY-MM-DD` (race-local date override for
-replay), `--force` (re-run a phase already marked complete), `--no-log`.
+replay), `--local-now <ISO datetime>` (race-local wall clock; `--today` alone
+reads as that date's evening, after racing), `--allow-scrape` (let the runner
+fetch a missing start list — attended Mac runs only), `--force` (re-run a phase
+already marked complete), `--no-log`.
 
 `nightly plan --campaign <campaign>` lists what is due; `nightly night
 --campaign <campaign>` runs every due settle, then every due preview.
 There is no `publish` command and no git operation anywhere in the driver.
+
+**Due-ness is a race-local clock, not a date** (2026-09-17). A stage settles
+only once its own race-local day is over — a past local date, or the local date
+past 18:00 local — and stays previewable while that day has not begun (before
+09:00 local). The tick is a fixed 19:45 UTC, so for a race far east of UTC it
+lands in the small hours of the *next* local day: Tour of Huangshan stage 1,
+dated 2026-09-18 in Asia/Shanghai, was listed as settle-due at 03:45 local and
+an acquisition task was filed for a stage nobody had ridden. Under the clock
+rule that same tick previews it instead, which is what it is: a morning read.
 
 ---
 
@@ -495,11 +507,28 @@ and who owns both the sprinter and the puncheur — are in `LESSONS.md` under
 `keying`, each with the stage that produced it.
 
 **Driver:** step 5 of `preview` resolves the key in this order: a key already
-in the config, then an approved `day_key_decisions` row, then `--agent-key
-<path>` in shadow. With none of those it exits 10 with a `day_key_needed`
-operator task. The key now comes **before** the references: step 5b
-(`scenario_refs`) derives every missing reference set from the key it just
-resolved, so a placeholder reference is no longer a human gate.
+in the config, then an approved `day_key_decisions` row, then the agent's own
+decision record — `--agent-key <path>`, or, since 2026-09-17, whatever sits at
+`predictions/<unit>/agent_key.json` with no flag at all. With none of those it
+exits 10 with a `day_key_needed` operator task. The key comes **before** the
+references: step 5b (`scenario_refs`) derives every missing reference set from
+the key it just resolved, so a placeholder reference is no longer a human gate.
+
+A board priced from the agent's record is stamped `day_key_author: "agent"` and
+`day_key_source: "agent:<file>"`. That stamp is what keeps the two reads apart
+everywhere downstream:
+
+- `score_day_keys.py` leaves the tier-3 card **unkeyed** for such a config (it
+  is not a human morning read) and scores the record itself through
+  `--also agent`, so the agent is still graded on the day;
+- the stage page says on its face that the key was written by the automated
+  reader, not by a person;
+- publication is unaffected and still human: pages go to `site-staging/` and
+  reach the public site only through an inbox approval and `promote.py`.
+
+An approved human key always wins; the agent record is only read when no human
+key exists. The `day_key_needed` task the first pass files is left alone — the
+inbox reconciles it once a later run's `day_key` step succeeds.
 
 ### 5.5 Choose the scenario paradigms (judgment)
 
@@ -692,6 +721,13 @@ What changes:
 - **The field** comes from a `startlist.json` beside the config (what the
   cloud acquisition thread hands over), else the `cached_start_lists` cache,
   else a rate-limited FirstCycling scrape; `--no-scrape` refuses the last.
+  **The driver checks for the field before `predict` and refuses the scrape by
+  default** (2026-09-17): a one-day preview — and stage 1 of a stage race —
+  with neither a handover nor a cache row exits 10 with `startlist_needed`
+  (`blocks_publication`) and names the Mac's `nightly.horizon` capture as the
+  supply. Nothing is fetched, no triage is spent, and the unit comes back
+  tomorrow. An attended Mac run that *wants* the scrape passes `--allow-scrape`,
+  which also drops `--no-scrape` from the runner's argv.
 - **UCI ingest reads the single "General Classification" document as the race
   result** and writes **no `gc.csv`** — a one-day race has no standing. The
   ProCyclingStats fallback is still stage-shaped and refuses a one-day

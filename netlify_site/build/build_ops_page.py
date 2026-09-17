@@ -77,6 +77,9 @@ TASK_SUCCESS_STEPS = {
     "scenarios_needed": "stage_config",
     "day_key_needed": "day_key",
     "validate_failed": "validate",
+    # The start list is proved by the step that consumes it: once predict has run for the unit,
+    # the field was there (2026-09-17).
+    "startlist_needed": "predict",
 }
 
 # Publishable keys are public by design (they only reach the API gateway; the

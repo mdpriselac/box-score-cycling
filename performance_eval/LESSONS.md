@@ -29,6 +29,9 @@ claim the original did not make.
 
 | Date | Tag | Lesson |
 |---|---|---|
+| 2026-09-17 | `keying` | A key nobody uses is not a key: the agent's read has to price the board |
+| 2026-09-17 | `acquisition` | The last resort of a serving path is the first thing to fail in the cloud |
+| 2026-09-17 | `tooling` | "Is this stage due?" is a question about a clock, not a date |
 | 2026-09-16 | `tooling` | Bootstrap listed the artifact bucket one run at a time and fetched every version of every path |
 | 2026-09-16 | `tooling` | A gitignored input is invisible to the release bundle until a settle needs it; one root cause must file one task |
 | 2026-09-16 | `keying` | An unresolved rider must not hold a settle hostage when nobody is watching |
@@ -76,6 +79,96 @@ claim the original did not make.
 | 2026-07-05 | `acquisition` | A truncated FirstCycling results page is fixed by rerunning |
 
 ---
+
+## 2026-09-17 — A key nobody uses is not a key: the agent's read has to price the board
+
+**Tag:** `keying`
+
+The 2026-09-17 tick (session `sesn_01EXAMPLE84203F8B85F028F`, release
+`data-2026-09-17`) settled 10 of 12 units and produced **no preview board at
+all**. It was not a failure: every piece worked. Tour de Luxembourg stage 3 and
+Giro d'Abruzzo stage 4 got a machine-written config, a GC config, a frozen
+bundle and a day key from the day-key-reader — Abruzzo came back
+`bunch 0.60 / res_3 0.28 / res_7 0.12` — and then the thread stopped, because
+the coordinator's own instructions told it to save the record and let the
+operator task stand (hosted tasks 90, 91). The key was filed where nothing read
+it. Every prior chip in the "no human setup" wave removed a *setup* step; this
+was the one place where the work was done and simply not used.
+
+The driver had supported `preview --agent-key <file>` since chip E. What was
+missing was the instruction to run it, and the willingness to let a machine key
+price a board. Both now exist: the coordinator re-runs `preview` with the record
+it just received, and the driver picks up `predictions/<unit>/agent_key.json`
+even with no flag, so one unattended pass reaches a page.
+
+What keeps the boundary honest is the stamp, not the stop. A board priced this
+way carries `day_key_author: "agent"`; `score_day_keys.py` refuses to read such
+a config as a logged human read (the tier-3 row stays unkeyed) and scores the
+record through `--also agent`; the page says the key was written by the
+automated reader; and publication still needs a human approval and `promote.py`.
+Gate K did not move — the cost of an unattended night did.
+
+Two traps found in passing. The coordinator prompt named the file
+`day_key_agent.json` while every piece of code — `run_day_key`, the uploader,
+the scorer, the board-detection set — uses `agent_key.json`, so even a
+hand-wired run would have been scored as if the agent had never keyed the day;
+worse, the unknown name would have counted as a rendered board and made the
+stage look already previewed. The prompt now uses the canonical name and the
+driver tolerates both. And the first pass of a stage still files
+`day_key_needed`, by design: the inbox retires it automatically once a later
+run's `day_key` step succeeds.
+
+## 2026-09-17 — The last resort of a serving path is the first thing to fail in the cloud
+
+**Tag:** `acquisition`
+
+Kampioenschap van Vlaanderen 2026 had no `predictions/race/startlist.json`
+handover — FirstCycling had not published the list, and the Mac's daily
+`nightly.horizon` capture retries each morning — and no `cached_start_lists`
+row. `predict_stage_scenarios.resolve_startlist` therefore fell through to its
+third option, a live FirstCycling scrape, *inside the container*: Cloudflare
+403, `predict` exit 1, driver exit 20, and a paid ops-triage cycle to establish
+that a start list was missing (hosted task 93).
+
+The runner already had `--no-scrape`; nobody was passing it. A fallback that is
+correct on the Mac is a guaranteed failure in the cloud, and it fails late, deep
+inside a step, where it costs the most to diagnose. The driver now checks for
+the field **before** `predict` — a one-day unit, or stage 1 of a stage race,
+with neither a handover nor a cache row exits 10 with `startlist_needed`
+(`blocks_publication`) naming the horizon capture as the supply — and passes
+`--no-scrape` to every predict it launches unless an attended run asks for
+`--allow-scrape`. The inbox retires the ask when a later `predict` succeeds: the
+step that consumes the list is the proof it arrived.
+
+The general rule: when a serving helper ends in "…else fetch it", the driver
+must decide that last branch explicitly, in the open, before the step starts.
+
+## 2026-09-17 — "Is this stage due?" is a question about a clock, not a date
+
+**Tag:** `tooling`
+
+Tour of Huangshan stage 1 is dated 2026-09-18 in Asia/Shanghai. The tick fires
+at a fixed 19:45 UTC, which on 2026-09-17 was already 03:45 on the 18th in
+Shanghai, so `plan` read "race-local today = the stage's date" as "the stage has
+been ridden", listed it as settle-due, and filed an `acquisition_needed` task
+(`blocks_settlement`) for a race that started some hours later (hosted task 88).
+Campaigns have carried a `timezone` since the beginning and the planner used it
+— to get the *date*. A date is not enough: east of UTC the tick lands in the
+small hours of the next local day.
+
+Due-ness is now the local wall clock. A stage settles once its own local day is
+over — a past local date, or the local date past 18:00 local — and stays
+previewable while that day has not begun, before 09:00 local. The same 03:45
+tick that was filing an acquisition ask now previews the stage, which is exactly
+what it is: a morning read. Between the two hours the race is on the road and
+the unit is in neither list. `--today` still means that date's evening (every
+existing caller means the nightly tick); `--local-now <ISO>` is there when the
+hour is the point.
+
+One consequence worth stating: the preview horizon counts from the day being
+raced, not from the calendar date. Without that, the 03:45 tick previews today's
+stage *and* tomorrow's, and tomorrow's board would be built before today's
+result exists — no race state, and `has_boards` would stop it ever being rebuilt.
 
 ## 2026-09-16 — Bootstrap listed the artifact bucket one run at a time and fetched every version of every path
 

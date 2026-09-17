@@ -689,11 +689,18 @@ def test_a_one_day_preview_writes_its_own_config_from_the_race_s_history(
         "start_date": "2026-03-07", "end_date": "2026-03-07",
         "stages": [{"number": None, "date": "2026-03-07", "kind": "one_day"}],
         "site": {"route_slug": "strade-bianche"}}))
+    # The field is a precondition since 2026-09-17: a one-day board is built on the start list the
+    # Mac horizon capture hands over, and the driver refuses to let the runner scrape for one.
+    (camp / "predictions" / "race").mkdir(parents=True)
+    (camp / "predictions" / "race" / "startlist.json").write_text(json.dumps(
+        {"fc_race_id": "54", "year": 2026, "teams": [
+            {"name": "Team", "team_id": "1", "riders": [{"name": "Rider", "rider_id": "1"}]}]}))
 
     code = _drv_run(camp, tmp_path, "preview", "--unit", "race", today="2026-03-06", db_path=refs_db)
     out = json.loads(capsys.readouterr().out)
 
     assert code == 0, out
+    assert out["startlist"]["source"] == "handover:startlist.json"
     cfg = oneday.load_config(camp / "predictions" / "race" / "scenarios.json")
     assert out["config"]["created"] is True
     assert cfg["scenarios"]["own_history"]["refs"] == [106, 105, 104, 103, 101]

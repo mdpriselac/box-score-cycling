@@ -6,7 +6,11 @@ command beside the manual step it replaces). The driver
 is deterministic and idempotent on ``(campaign, unit, phase)``. Prospective
 judgment (day keys, scenario references, prose, route overrides) is never
 produced here — when it is missing the driver stops with exit 10 and an
-operator task.
+operator task. It may, however, *consume* judgment another agent produced: a
+day-key record left at ``predictions/<unit>/agent_key.json`` prices the board
+when no human key has been approved, stamped ``day_key_author: agent`` so the
+page and the scorer both know no person wrote it (2026-09-17). Publication
+stays gated on a human approval in ``promote.py``.
 
 Exit codes: ``0`` done · ``10`` waiting for input (``operator_task`` in the
 JSON) · ``20`` failed (``error_class``, ``step``, ``log_path``). Every run
@@ -95,9 +99,22 @@ FAKESTORE_DIRNAME = "fakestore"
 LAMBDARANK_SUM_TOL = 0.02
 COVERAGE_WARN, COVERAGE_FAIL = 0.99, 0.90
 STATE_SENTENCE_RE = re.compile(r"State through stage \d+", re.I)
+# A stage is due to settle only once its own RACE-LOCAL day is over, and it stays previewable
+# while that day has not begun.  The tick is a fixed UTC hour, so a race far east of UTC is
+# already "tomorrow" when it fires: at 19:45 UTC on 2026-09-17 it was 03:45 on the 18th in
+# Shanghai, and Tour of Huangshan stage 1 (dated the 18th) was listed as settle-due — an
+# acquisition ask for a stage nobody had ridden (hosted task 88, 2026-09-17).  Between the two
+# hours the race is on the road: neither a settle nor an honest preview.
+RACE_DAY_OVER_HOUR = 18
+RACE_DAY_START_HOUR = 9
+# The agent's own decision record, written by the day-key-reader.  ``agent_key.json`` is the
+# canonical name (``run_day_key`` writes it, ``score_day_keys --also agent`` reads it, ``upload``
+# ships it); ``day_key_agent.json`` is tolerated because the coordinator prompt asked for that
+# name until 2026-09-17.  Either one keys a board when no human key has been approved.
+AGENT_KEY_FILES = ("agent_key.json", "day_key_agent.json")
 NON_BOARD_JSON = {
     "scenarios.json", "route.json", "route_raw.json", "route.override.json",
-    "agent_key.json", "agent_key_response.json", "retro_facts.json",
+    "agent_key.json", "agent_key_response.json", "day_key_agent.json", "retro_facts.json",
     "startlist.json", "horizon_raw.json",   # Mac horizon handover files, never a rendered board (2026-09-16)
 }
 
@@ -124,6 +141,7 @@ URGENCY_BY_KIND = {
     "identity_provisional": "routine",
     "kambi_match": "blocks_publication", "scenarios_needed": "blocks_publication",
     "day_key_needed": "blocks_publication", "validate_failed": "blocks_publication",
+    "startlist_needed": "blocks_publication",
 }
 
 
@@ -337,11 +355,22 @@ class Campaign:
     def today(self, override: Optional[dt.date] = None) -> dt.date:
         if override:
             return override
+        return self.local_now().date()
+
+    def local_now(self, override: Optional[dt.datetime] = None) -> dt.datetime:
+        """The race-local wall clock — what decides whether a race day is over.
+
+        ``timezone`` may be absent (then UTC, the long-standing behaviour) or a name this
+        Python does not know; either way the fallback is UTC rather than a raised error, so a
+        campaign is never undue merely because its zone string is wrong.
+        """
+        if override is not None:
+            return override
         try:
             from zoneinfo import ZoneInfo
-            return dt.datetime.now(ZoneInfo(self.timezone)).date()
+            return dt.datetime.now(ZoneInfo(self.timezone))
         except Exception:  # noqa: BLE001 — unknown zone name
-            return dt.datetime.now(dt.timezone.utc).date()
+            return dt.datetime.now(dt.timezone.utc)
 
     def refresh_event_ids(self) -> Dict[str, str]:
         """Re-read the Kambi event ids ``capture_odds`` merged into ``campaign.json``; return the new ones.
@@ -439,7 +468,8 @@ class Driver:
                  db_path: Optional[Path] = None, agent_key: Optional[Path] = None,
                  release_tag: Optional[str] = None, acquire: bool = True, provider: str = "auto",
                  aliases_csv: Optional[Path] = None, signatures: Optional[Path] = None,
-                 identity_policy: str = uci_ingest.DEFAULT_IDENTITY_POLICY):
+                 identity_policy: str = uci_ingest.DEFAULT_IDENTITY_POLICY,
+                 local_now: Optional[dt.datetime] = None, allow_scrape: bool = False):
         self.campaign = campaign
         self.acquire_enabled = acquire            # settle may run the deterministic UCI acquisition itself
         self.provider_pref = provider              # auto | uci | pcs
@@ -451,6 +481,13 @@ class Driver:
         self.store = store
         self.dry_run = dry_run
         self.today_override = today
+        self.now_override = local_now
+        # The serving runner reaches FirstCycling for a start list it has neither on disk nor in
+        # the cache.  That works on the Mac (visible Chrome, Cloudflare cookie) and never in the
+        # cloud container, where it cost a paid triage cycle (task 93, 2026-09-17).  The driver
+        # therefore refuses the scrape by default and asks for a handover instead; an attended
+        # Mac run passes --allow-scrape.
+        self.allow_scrape = allow_scrape
         self.no_log = no_log or dry_run
         self.force = force
         self.python = python or sys.executable
@@ -471,7 +508,41 @@ class Driver:
     # -- helpers ----------------------------------------------------------------
     @property
     def today(self) -> dt.date:
-        return self.campaign.today(self.today_override) if self.campaign else (self.today_override or dt.date.today())
+        if self.today_override:
+            return self.today_override
+        if self.now_override is not None:
+            return self.now_override.date()
+        return self.campaign.today() if self.campaign else dt.date.today()
+
+    @property
+    def local_now(self) -> dt.datetime:
+        """Race-local wall clock, honouring the overrides.
+
+        ``--today`` is a date with no hour.  Every existing caller means by it "the nightly
+        tick of that date", which fires after European racing, so a bare date override reads as
+        that evening; ``--local-now`` is there for the cases where the hour is the point.
+        """
+        if self.now_override is not None:
+            return self.now_override
+        if self.today_override is not None:
+            return dt.datetime.combine(self.today_override, dt.time(RACE_DAY_OVER_HOUR, 0))
+        return self.campaign.local_now() if self.campaign else dt.datetime.now()
+
+    def _day_is_over(self, day: dt.date) -> bool:
+        """True once ``day`` has finished where the race is: a past local date, or today past
+        the finishing hour."""
+        now = self.local_now
+        if day < now.date():
+            return True
+        return day == now.date() and now.hour >= RACE_DAY_OVER_HOUR
+
+    def _day_has_started(self, day: dt.date) -> bool:
+        """True once racing on ``day`` can have begun — a preview written after this is not a
+        morning read."""
+        now = self.local_now
+        if day < now.date():
+            return True
+        return day == now.date() and now.hour >= RACE_DAY_START_HOUR
 
     def _say(self, msg: str) -> None:
         print(redact(msg), file=sys.stderr, flush=True)
@@ -670,10 +741,17 @@ class Driver:
         else:
             entries = [(None, c.stage_date(None))]
         prev_settled = True
+        # The preview window reaches ``horizon_days`` beyond the day being raced.  When the local
+        # clock is still before racing starts, the current day IS that day, so it ends the window:
+        # without this, a tick in the small hours east of UTC previews today's stage AND
+        # tomorrow's, and tomorrow's board would be built before today's result exists — no race
+        # state, and ``has_boards`` would stop it ever being rebuilt.
+        preview_window_end = today + dt.timedelta(days=horizon_days - (0 if self._day_has_started(today) else 1))
         latest_archived = c.latest_results_stage() if c.is_stage_race else None
         dated = [dt.date.fromisoformat(d) for _n, d in entries if d]
         if dated and max(dated) < today - dt.timedelta(days=FINISHED_AFTER_DAYS):
-            return {"campaign": c.slug, "today": str(today), "timezone": c.timezone, "void_stages": sorted(void),
+            return {"campaign": c.slug, "today": str(today), "timezone": c.timezone,
+                    "local_now": self.local_now.isoformat(timespec="minutes"), "void_stages": sorted(void),
                     "units": [], "settle": [], "preview": [], "finished": True,
                     "note": f"last unit {max(dated)} is more than {FINISHED_AFTER_DAYS} days ago: nothing is due"}
         for number, date_s in sorted(entries, key=lambda t: (t[0] is None, t[0] or 0)):
@@ -692,13 +770,14 @@ class Driver:
             has_capture = has_pcs or has_uci
             due: List[str] = []
             flags: List[str] = []
-            # Stage races settle on the stage date because the nightly runs
-            # after European racing.  A one-day race may be in a timezone far
-            # ahead of UTC (Binzhou was planned at 05:49 local), so its date
-            # alone does not mean the result can exist yet.  The runbook's
-            # one-day contract is preview the evening before, settle the
-            # evening after: wait until the following race-local day.
-            settle_due = d <= today if c.is_stage_race else d < today
+            # A stage settles once its own race-local day is over: a past local date, or the
+            # local date with the clock past the finishing hour.  The tick is a fixed UTC hour,
+            # so east of UTC "race-local today" can already be the morning of a stage nobody has
+            # ridden (Huangshan, 2026-09-17) — the date alone is not evidence that a result can
+            # exist.  A one-day race may start very late local (Binzhou at 05:49) and the
+            # runbook's contract for it is preview the evening before, settle the evening
+            # after, so it keeps waiting for the following race-local day.
+            settle_due = self._day_is_over(d) if c.is_stage_race else d < today
             if settle_due and not has_results:
                 # A stage below the latest archived one is a missed day: the runbook's
                 # "a missed day cannot be recovered" — it is a gap, not a due settle,
@@ -711,7 +790,12 @@ class Driver:
                         flags.append("settle_late")
                     if not has_capture:
                         flags.append("awaiting_acquisition")
-            if today < d <= today + dt.timedelta(days=horizon_days) and not has_boards:
+            # Preview a day that is still ahead of the race-local clock and inside the horizon.
+            # "Still ahead" is normally tomorrow, but for a race east of UTC the tick can land
+            # in the small hours of the race day itself — that is a genuine morning read, and
+            # the old ``today < d`` test dropped it.  Once racing can have begun, the window
+            # shuts: a board built then would not be a preview.
+            if d <= preview_window_end and not self._day_has_started(d) and not has_boards:
                 due.append("preview")
                 if not prev_settled:
                     flags.append("blocked")
@@ -720,7 +804,8 @@ class Driver:
                           "uci_competition_url": c.uci_competition_url})
             if settle_due and "gap" not in flags:
                 prev_settled = has_results
-        return {"campaign": c.slug, "today": str(today), "timezone": c.timezone, "void_stages": sorted(void), "units": units,
+        return {"campaign": c.slug, "today": str(today), "timezone": c.timezone,
+                "local_now": self.local_now.isoformat(timespec="minutes"), "void_stages": sorted(void), "units": units,
                 "settle": [u["unit"] for u in units if "settle" in u["due"]],
                 "preview": [u["unit"] for u in units if "preview" in u["due"]]}
 
@@ -774,7 +859,7 @@ class Driver:
         gc_cfg_path = c.pred_dir("gc") / "scenarios.json"
         if gc_cfg_path.exists() and stage is not None:
             out["gc_config"] = self.step("gc_config", lambda: self._template_gc_config(gc_cfg_path, stage))
-            self.script("gc_predict", [self.python, SCRIPTS["predict"], gc_cfg_path] + (["--no-log"] if self.no_log else []), lock=True)
+            self.script("gc_predict", self._predict_argv(gc_cfg_path), lock=True)
             self.script("gc_tracker", [self.python, SCRIPTS["gc_tracker"], gc_cfg_path])
         else:
             self.step("gc_config", lambda: None, skip="no predictions/gc/scenarios.json")
@@ -794,7 +879,7 @@ class Driver:
                 date=c.stage_date(stage) or c.cfg.get("start_date"),
                 label=(f"Stage {stage}" if stage is not None else c.cfg.get("name") or c.slug),
                 db_path=self.db_path, stage=stage, void_stages=c.void_stages))
-            self.script("hindsight_predict", [self.python, SCRIPTS["predict"], cfg_path, "--no-log"], lock=True)
+            self.script("hindsight_predict", self._predict_argv(cfg_path, no_log=True), lock=True)
 
         # 5. retro facts
         if stage is not None and (c.pred_dir(unit) / "scenarios.json").exists():
@@ -1190,6 +1275,14 @@ class Driver:
         out["config"] = self.step("stage_config", lambda: self._ensure_config(unit))
         cfg_path = c.pred_dir(unit) / "scenarios.json"
 
+        # 2a. the field.  Every board is built on a start list, and the serving runner will go to
+        # FirstCycling for one it cannot find — a scrape the cloud container cannot make.  Ask for
+        # the handover here, cheaply, instead of failing inside predict (task 93, 2026-09-17).
+        if stage is None or stage == 1:
+            out["startlist"] = self.step("startlist", lambda: self._require_startlist(unit))
+        else:
+            self.step("startlist", lambda: None, skip=f"stage {stage}: the field is already cached from stage 1")
+
         # 2b. the GC board's config, so the settle step has something to re-stamp
         if stage is not None and c.is_stage_race and not (c.pred_dir("gc") / "scenarios.json").exists():
             out["gc_config"] = self.step("gc_config", lambda: self._ensure_gc_config())
@@ -1221,7 +1314,7 @@ class Driver:
             self.step("scenario_refs", lambda: None, skip="every scenario already carries references")
 
         # 6. predict
-        self.script("predict", [self.python, SCRIPTS["predict"], cfg_path] + (["--no-log"] if self.no_log else []), lock=True)
+        self.script("predict", self._predict_argv(cfg_path), lock=True)
 
         # 7. validate
         out["validate"] = self.step("validate", lambda: self._validate(unit, require_boards=not self.dry_run))
@@ -1315,6 +1408,65 @@ class Driver:
         return {"path": str(cfg_path), "created": created, "filled": filled, "event_id": cfg.get("event_id"),
                 "odds_capture": cfg.get("odds_capture"), "_detail": {"created": created, "filled": filled}}
 
+    def _cached_startlist_size(self, fc_race_id: Optional[str], year: Optional[int]) -> Optional[int]:
+        """Rows in ``cached_start_lists`` for this race/year, or None when the table cannot be read.
+
+        Read straight from the serving slice rather than through ``future_race_loader`` so the
+        check costs one query and never creates the cache tables as a side effect.
+        """
+        if not fc_race_id or not year or not self.db_path.exists():
+            return None
+        try:
+            con = sqlite3.connect(f"file:{self.db_path}?mode=ro", uri=True)
+            try:
+                row = con.execute("select count(*) from cached_start_lists where fc_race_id = ? and year = ?",
+                                  (str(fc_race_id), int(year))).fetchone()
+                return int(row[0]) if row else 0
+            finally:
+                con.close()
+        except sqlite3.Error as exc:
+            self._say(f"  note: cached_start_lists unreadable ({exc})")
+            return None
+
+    def _require_startlist(self, unit: str) -> Dict[str, Any]:
+        """The field must already be here: a handover file or a cache row, never a live scrape.
+
+        ``predict_stage_scenarios.resolve_startlist`` reads ``startlist.json`` beside the config
+        first, then ``cached_start_lists``, and only then goes to the network.  In the cloud that
+        third path is a Cloudflare 403 inside the runner, which surfaces as a bare exit 20 and buys
+        a paid triage cycle instead of a one-line ask.  The Mac's daily ``nightly.horizon`` capture
+        is what supplies the missing list, usually the next morning.
+        """
+        c = self.campaign
+        handover = oneday.startlist_path(c.pred_dir(unit))
+        if handover.exists():
+            return {"source": f"handover:{handover.name}", "path": str(handover),
+                    "_detail": {"source": "handover"}}
+        cached = self._cached_startlist_size(c.fc_race_id, c.year)
+        if cached:
+            return {"source": "cache", "riders": cached, "_detail": {"source": "cache", "riders": cached}}
+        if self.allow_scrape:
+            # An attended Mac run may fetch it; say so rather than pretending the list is here.
+            self._say("  note: no start list on disk or in the cache — the runner will scrape it (--allow-scrape)")
+            return {"source": "scrape_allowed", "_detail": {"source": "scrape_allowed"}}
+        raise WaitingForInput(
+            "startlist_needed",
+            f"{c.slug} {unit}: no start list — nothing at predictions/{unit}/{oneday.STARTLIST_NAME} and no "
+            f"cached_start_lists rows for race {c.fc_race_id} {c.year}. The Mac's daily horizon capture supplies "
+            "it once FirstCycling publishes the list; the container never scrapes.",
+            {"handover": str(handover), "fc_race_id": c.fc_race_id, "year": c.year,
+             "cached_rows": cached,
+             "next_step": f"uv run python -m cycling_project.nightly.horizon --campaign {c.slug} --store auto (Mac, visible Chrome)"})
+
+    def _predict_argv(self, cfg_path: Path, *, no_log: Optional[bool] = None) -> List[str]:
+        """``predict_stage_scenarios.py`` argv with the scrape policy applied."""
+        argv = [self.python, SCRIPTS["predict"], cfg_path]
+        if (self.no_log if no_log is None else no_log):
+            argv.append("--no-log")
+        if not self.allow_scrape:
+            argv.append("--no-scrape")
+        return [str(a) for a in argv]
+
     def _route_facts(self, unit: str) -> Dict[str, Any]:
         from cycling_project.nightly.route_facts import RouteFactsError, ingest_route
         try:
@@ -1358,18 +1510,41 @@ class Driver:
                 cfg["day_key_note"] = approved["rationale"]
             _write_json(cfg_path, cfg)
             return {"source": cfg["day_key_source"], "day_key": key}
-        if self.agent_key and self.agent_key.exists():
-            record = _read_json(self.agent_key, {})
+        agent_path = self._agent_key_path(unit)
+        if agent_path is not None:
+            record = _read_json(agent_path, {})
             key = rec.normalise_key(record.get("key") or {})
             if not key:
-                raise DriverFailure("agent_key_invalid", f"{self.agent_key} carries no key")
+                raise DriverFailure("agent_key_invalid", f"{agent_path} carries no key")
             cfg["day_key"] = key
-            cfg["day_key_author"] = "agent"            # shadow: never scored as the tier-3 read
-            cfg["day_key_source"] = f"agent-shadow:{self.agent_key.name}"
+            # The board is priced from a machine-written key.  ``day_key_author`` is what keeps
+            # the two reads apart everywhere downstream: score_day_keys leaves the tier-3 card
+            # unkeyed for such a config and scores the record through --also agent, and the
+            # stage page says on its face that no person wrote this key.
+            cfg["day_key_author"] = "agent"
+            cfg["day_key_source"] = f"agent:{agent_path.name}"
+            if record.get("rationale") or record.get("reasoning"):
+                cfg.setdefault("day_key_note", str(record.get("rationale") or record.get("reasoning")))
             _write_json(cfg_path, cfg)
-            return {"source": cfg["day_key_source"], "day_key": key, "shadow": True}
-        raise WaitingForInput("day_key_needed", f"{c.slug} {unit}: day key needed (no config key, no approved day_key_decisions row)",
-                              {"path": str(cfg_path), "bundle": str(c.pred_dir(unit) / "bundle")})
+            return {"source": cfg["day_key_source"], "day_key": key, "author": "agent",
+                    "path": str(agent_path), "explicit": bool(self.agent_key)}
+        raise WaitingForInput("day_key_needed", f"{c.slug} {unit}: day key needed (no config key, no approved day_key_decisions row, "
+                                                f"no agent record at predictions/{unit}/{AGENT_KEY_FILES[0]})",
+                              {"path": str(cfg_path), "bundle": str(c.pred_dir(unit) / "bundle"),
+                               "agent_key_paths": [str(c.pred_dir(unit) / n) for n in AGENT_KEY_FILES]})
+
+    def _agent_key_path(self, unit: str) -> Optional[Path]:
+        """The agent's decision record for this unit: ``--agent-key`` if given, else the one the
+        day-key-reader leaves beside the config.
+
+        Looking for it without the flag is what lets a single unattended pass price the board:
+        the coordinator writes the record and re-runs ``preview``, and the second pass finds it
+        with no extra argument to remember (owner requirement, 2026-09-17).
+        """
+        if self.agent_key:
+            return self.agent_key if self.agent_key.exists() else None
+        pred = self.campaign.pred_dir(unit)
+        return next((p for p in (pred / n for n in AGENT_KEY_FILES) if p.exists()), None)
 
     # -- references, derived from the key ---------------------------------------
     def _scenario_refs(self, unit: str, key_result: Dict[str, Any]) -> Dict[str, Any]:
@@ -1627,9 +1802,10 @@ class Driver:
                     files += sorted(p for p in pred.glob("*.json") if p.name not in NON_BOARD_JSON)
             files += sorted(p for p in c.pred_dir("gc").glob("*.json") if p.name != "scenarios.json") if c.pred_dir("gc").is_dir() else []
         else:
-            files += [pred / "scenarios.json", pred / "route.json", pred / "agent_key.json"]
-            files += sorted(p for p in pred.glob("*.json") if p.name not in ("scenarios.json", "route.json", "agent_key.json",
-                                                                             "agent_key_response.json", "retro_facts.json"))
+            files += [pred / "scenarios.json", pred / "route.json", *(pred / n for n in AGENT_KEY_FILES)]
+            files += sorted(p for p in pred.glob("*.json") if p.name not in ("scenarios.json", "route.json",
+                                                                             *AGENT_KEY_FILES, "agent_key_response.json",
+                                                                             "retro_facts.json"))
             files += sorted(p for p in (pred / "bundle").rglob("*") if p.is_file()) if (pred / "bundle").is_dir() else []
         for f in files:
             if f.is_file():
@@ -1727,6 +1903,12 @@ def build_parser() -> argparse.ArgumentParser:
         p.add_argument("--store", choices=("auto", "supabase", "fake"), default="auto")
         p.add_argument("--store-root", type=Path, default=None)
         p.add_argument("--today", type=dt.date.fromisoformat, default=None, help="race-local date override (tests/replay)")
+        p.add_argument("--local-now", type=dt.datetime.fromisoformat, default=None,
+                       help="race-local wall-clock override, ISO datetime (tests/replay); --today alone reads as "
+                            "that date's evening, after racing")
+        p.add_argument("--allow-scrape", action="store_true",
+                       help="let the serving runner fetch a missing start list from FirstCycling (attended Mac runs "
+                            "only; the cloud container cannot pass Cloudflare)")
         p.add_argument("--no-log", action="store_true", help="pass --no-log to the runner (no prediction_log rows)")
         p.add_argument("--force", action="store_true", help="re-run a phase already completed")
         p.add_argument("--crosswalk", type=Path, default=None, help="crosswalk CSV override (default performance_eval/crosswalk)")
@@ -1753,12 +1935,16 @@ def build_parser() -> argparse.ArgumentParser:
     p = sub.add_parser("plan", help="due units for a campaign (settle / preview) as JSON")
     common(p); p.add_argument("--now", action="store_true", help="plan as of now (default)"); p.add_argument("--horizon-days", type=int, default=1)
     p = sub.add_parser("night", help="every due settle, then every due preview")
-    common(p); p.add_argument("--horizon-days", type=int, default=1); p.add_argument("--agent-key", type=Path, default=None)
+    common(p); p.add_argument("--horizon-days", type=int, default=1)
+    p.add_argument("--agent-key", type=Path, default=None, help="agent decision record for every due preview")
     identity_flag(p)
     p = sub.add_parser("settle", help="ingest → seed → GC → score → retro facts → pages → upload")
     common(p, unit=True); identity_flag(p)
     p = sub.add_parser("preview", help="odds → config → route → bundle → key gate → predict → validate → pages → upload")
-    common(p, unit=True); p.add_argument("--agent-key", type=Path, default=None, help="shadow mode: key the stage from an agent record")
+    common(p, unit=True)
+    p.add_argument("--agent-key", type=Path, default=None,
+                   help="key the stage from this agent decision record; without the flag the driver still "
+                        "picks up predictions/<unit>/agent_key.json when no human key is approved")
     p = sub.add_parser("acquire", help="run the deterministic UCI acquisition for a unit (idempotent)")
     common(p, unit=True); p.add_argument("--competition-url", default=None, help="override campaign.json uci_competition_url")
     p = sub.add_parser("ingest", help="validate the captured results (UCI, else PCS) and write the FC-shaped archive")
@@ -1818,7 +2004,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
                     release_tag=args.release_tag, acquire=not getattr(args, "no_acquire", False),
                     provider=getattr(args, "provider", "auto"), aliases_csv=getattr(args, "aliases", None),
                     signatures=getattr(args, "signatures", None),
-                    identity_policy=getattr(args, "identity_policy", uci_ingest.DEFAULT_IDENTITY_POLICY))
+                    identity_policy=getattr(args, "identity_policy", uci_ingest.DEFAULT_IDENTITY_POLICY),
+                    local_now=getattr(args, "local_now", None), allow_scrape=getattr(args, "allow_scrape", False))
 
     if args.command == "status":
         return _emit(EXIT_DONE, {"status": "ok", **driver.status()})
