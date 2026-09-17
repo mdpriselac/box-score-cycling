@@ -108,6 +108,18 @@ def test_unstructured_ops_triage_is_never_auto_reconciled(mod):
     assert "ops_triage" not in mod.TASK_SUCCESS_STEPS
 
 
+def test_a_unit_that_later_finished_ok_reconciles_its_stale_tasks(page):
+    # 2026-09-17: 13 of 24 open tasks were stale — triage reports for units that had since settled,
+    # preview asks for stages already raced, a horizon failure whose capture later succeeded
+    assert "function completedLaterResolution(t, created)" in page
+    assert 'r.state === "ok" && Date.parse(r.started_at || "") > created' in page
+    assert 'return "stage_" + String(n).padStart(2, "0");' in page          # trigger.stage → unit
+    assert 'later.find((r) => r.phase === "horizon")' in page
+    assert "has since been raced and settled" in page
+    # a human decision is never reconciled by a later success
+    assert 'new Set(["identity_provisional", "crosswalk_proposals", "uci_competition_confirm"])' in page
+
+
 def test_the_page_asks_search_engines_to_stay_away(page):
     assert 'name="robots" content="noindex, nofollow"' in page
 

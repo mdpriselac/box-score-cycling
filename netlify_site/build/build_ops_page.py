@@ -432,7 +432,47 @@ async function load() {{
 // The cloud agent stays append-only. Once an operator opens this page, only
 // ledger-proven stale alerts are resolved through the operator role.
 function taskUnit(t) {{
-  return t.detail && t.detail.unit ? String(t.detail.unit) : "";
+  const d = t.detail || {{}};
+  if (d.unit) return String(d.unit);
+  // an ops-triage report names its unit as trigger.stage (0 / absent = a one-day race)
+  const trig = d.trigger;
+  if (!trig || typeof trig !== "object") return "";
+  const n = parseInt(trig.stage, 10);
+  if (Number.isFinite(n) && n > 0) return "stage_" + String(n).padStart(2, "0");
+  return "race";
+}}
+
+function taskPhase(t) {{
+  const d = t.detail || {{}};
+  if (d.phase) return String(d.phase);
+  const m = /\b(settle|preview)\b/.exec(t.summary || "");
+  return m ? m[1] : "";
+}}
+
+// Kinds that stand for a human decision, never for a step that can simply succeed later.
+const HUMAN_DECISION_KINDS = new Set(["identity_provisional", "crosswalk_proposals", "uci_competition_confirm"]);
+
+// Ledger proof that the ask is over: the same unit later FINISHED ok in the same phase, or a
+// preview ask whose unit has since been raced and settled (nothing is left to preview), or a
+// campaign-level horizon capture that later finished ok.
+function completedLaterResolution(t, created) {{
+  if (HUMAN_DECISION_KINDS.has(t.kind)) return null;
+  const later = data.runs.filter((r) => r.campaign_slug === t.campaign_slug
+    && r.state === "ok" && Date.parse(r.started_at || "") > created);
+  if (t.kind === "horizon_failed") {{
+    const run = later.find((r) => r.phase === "horizon");
+    return run ? `Automatically reconciled: the horizon capture succeeded in later run ${{run.run_id}}.` : null;
+  }}
+  const unit = taskUnit(t);
+  const phase = taskPhase(t);
+  if (!unit || !phase) return null;
+  const same = later.find((r) => r.unit === unit && r.phase === phase);
+  if (same) return `Automatically reconciled: ${{unit}} ${{phase}} finished ok in later run ${{same.run_id}}.`;
+  if (phase === "preview") {{
+    const settled = later.find((r) => r.unit === unit && r.phase === "settle");
+    if (settled) return `Automatically reconciled: ${{unit}} has since been raced and settled (run ${{settled.run_id}}); nothing is left to preview.`;
+  }}
+  return null;
 }}
 
 function supersededTaskResolution(t) {{
@@ -449,7 +489,10 @@ function supersededTaskResolution(t) {{
   const provingStep = CFG.taskSuccessSteps[t.kind];
   const unit = taskUnit(t);
   const created = Date.parse(t.created_at || "");
-  if (!provingStep || !unit || !Number.isFinite(created)) return null;
+  if (!Number.isFinite(created)) return null;
+  const completed = completedLaterResolution(t, created);
+  if (completed) return completed;
+  if (!provingStep || !unit) return null;
 
   const newer = data.tasks.find((other) => other.id !== t.id && other.kind === t.kind
     && other.campaign_slug === t.campaign_slug && taskUnit(other) === unit
