@@ -1,0 +1,83 @@
+[
+ {
+  "stage": 1,
+  "oracle_item": "res_2",
+  "day_class": "residual",
+  "rule_type": "solo",
+  "wg_size": 1,
+  "wg_prop": 0.0076,
+  "winning_time": 13884.0,
+  "winner": "Fancellu Alessandro",
+  "winner_gc_morning": null,
+  "front5_gc_median": null,
+  "top15_shares": {
+   "sprint": 0.0,
+   "mountain": 0.4,
+   "hilly": 0.267,
+   "rolling": 0.133,
+   "breakaway": 0.133,
+   "time_trial": 0.067
+  },
+  "top15_unknown": 0.0,
+  "day_key": null,
+  "exact": null,
+  "covered": null,
+  "weight_on_true": null,
+  "key_source": null,
+  "scored_at": "2026-09-17T20:14:38.845466"
+ },
+ {
+  "stage": 2,
+  "oracle_item": "res_5",
+  "day_class": "residual",
+  "rule_type": "solo",
+  "wg_size": 1,
+  "wg_prop": 0.0078,
+  "winning_time": 12985.0,
+  "winner": "Jasch Lennart",
+  "winner_gc_morning": 11,
+  "front5_gc_median": 12.0,
+  "top15_shares": {
+   "sprint": 0.067,
+   "mountain": 0.267,
+   "hilly": 0.4,
+   "rolling": 0.0,
+   "breakaway": 0.067,
+   "time_trial": 0.133
+  },
+  "top15_unknown": 0.067,
+  "day_key": null,
+  "exact": null,
+  "covered": null,
+  "weight_on_true": null,
+  "key_source": null,
+  "scored_at": "2026-09-17T20:14:58.204164"
+ },
+ {
+  "stage": 3,
+  "oracle_item": "res_5",
+  "day_class": "residual",
+  "rule_type": "solo",
+  "wg_size": 1,
+  "wg_prop": 0.0079,
+  "winning_time": 11731.0,
+  "winner": "D'Aiuto Filippo",
+  "winner_gc_morning": 94,
+  "front5_gc_median": 49.0,
+  "top15_shares": {
+   "sprint": 0.333,
+   "mountain": 0.0,
+   "hilly": 0.267,
+   "rolling": 0.067,
+   "breakaway": 0.133,
+   "time_trial": 0.133
+  },
+  "top15_unknown": 0.067,
+  "day_key": null,
+  "exact": null,
+  "covered": null,
+  "weight_on_true": null,
+  "key_source": null,
+  "scored_at": "2026-09-17T20:15:28.091172"
+ }
+]

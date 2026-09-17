@@ -11,36 +11,36 @@
     {
       "number": 1,
       "date": "2026-09-16",
-      "towns": null,
-      "distance_km": null,
+      "towns": "Košice → Košice",
+      "distance_km": 162.6,
       "kind": null
     },
     {
       "number": 2,
       "date": "2026-09-17",
-      "towns": null,
-      "distance_km": null,
+      "towns": "Levoca → Liptovský Mikuláš",
+      "distance_km": 186.8,
       "kind": null
     },
     {
       "number": 3,
       "date": "2026-09-18",
-      "towns": null,
-      "distance_km": null,
+      "towns": "Tvrdošín → Dohnany",
+      "distance_km": 195.1,
       "kind": null
     },
     {
       "number": 4,
       "date": "2026-09-19",
-      "towns": null,
-      "distance_km": null,
+      "towns": "Beluša → Galanta",
+      "distance_km": 197.5,
       "kind": null
     },
     {
       "number": 5,
       "date": "2026-09-20",
-      "towns": null,
-      "distance_km": null,
+      "towns": "Sliac → Králová hola",
+      "distance_km": 147.4,
       "kind": null
     }
   ],
@@ -51,7 +51,7 @@
   "pcs_slug": "okolo-slovenska",
   "organiser_stage_urls": {},
   "void_stages": [],
-  "stages_provisional": true,
+  "stages_provisional": false,
   "uci_match_evidence": {
     "matcher": "uci_calendar",
     "decision": "operator_confirmed",

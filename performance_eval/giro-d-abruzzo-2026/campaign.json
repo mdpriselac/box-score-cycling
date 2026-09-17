@@ -11,29 +11,29 @@
     {
       "number": 1,
       "date": "2026-09-15",
-      "towns": null,
-      "distance_km": null,
+      "towns": "Cupello → Casalincontrada",
+      "distance_km": 156.0,
       "kind": null
     },
     {
       "number": 2,
       "date": "2026-09-16",
-      "towns": null,
-      "distance_km": null,
+      "towns": "Popoli Terme → Caramanico Terme",
+      "distance_km": 143.0,
       "kind": null
     },
     {
       "number": 3,
       "date": "2026-09-17",
-      "towns": null,
-      "distance_km": null,
+      "towns": "Oricola-Piana del Cavaliere → San Benedetto dei Marsi",
+      "distance_km": 159.0,
       "kind": null
     },
     {
       "number": 4,
       "date": "2026-09-18",
-      "towns": null,
-      "distance_km": null,
+      "towns": "Silvi → Controguerra",
+      "distance_km": 182.0,
       "kind": null
     }
   ],
@@ -44,7 +44,7 @@
   "pcs_slug": "giro-d-abruzzo",
   "organiser_stage_urls": {},
   "void_stages": [],
-  "stages_provisional": true,
+  "stages_provisional": false,
   "uci_competition_url": "https://www.uci.org/competition-details/2026/ROA/78416",
   "uci_competition_id": "78416",
   "uci_discipline": "ROA",

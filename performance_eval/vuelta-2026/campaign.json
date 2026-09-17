@@ -205,9 +205,19 @@
     "views_label": "the full race views",
     "n_stages": 21,
     "blurb": "The live campaign: day-type keys chosen each morning, stage predictions published before the flag drops, and a GC tracker updated as the race reshapes itself.",
-    "extra_links": [],
-    "hub_backlink_extra": "",
-    "extra_pages": {}
+    "extra_links": [
+      [
+        "vuelta-review.html",
+        "Post-race review"
+      ]
+    ],
+    "hub_backlink_extra": "&nbsp;·&nbsp; <a href=\"vuelta-review.html\"><b>Post-race review: how the model's Vuelta went →</b></a>",
+    "extra_pages": {
+      "review": {
+        "asset": "/vuelta-review.html",
+        "title": "Post-race review"
+      }
+    }
   },
   "provenance": {
     "written_by": "hand, 2026-09-05 (the Tour and Vuelta get hand-written campaign files; `nightly registry sync` generates the rest)",

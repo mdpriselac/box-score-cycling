@@ -1,0 +1,4365 @@
+{
+ "stages_scored": [
+  1,
+  2,
+  4,
+  5,
+  6,
+  7,
+  8,
+  9,
+  10,
+  11,
+  12,
+  14,
+  15,
+  16,
+  17,
+  20,
+  21
+ ],
+ "per_stage": [
+  {
+   "stage": 1,
+   "winner": "Pogacar Tadej",
+   "model_p_ew": 0.3670430310839038,
+   "book_p": 0.10455433993624841,
+   "delta_nats": 1.2557721564490683,
+   "best_read": "opener_gaps",
+   "best_read_p": 0.41731059125766934,
+   "official_read": "compressed_itt",
+   "official_p": 0.31677547091013825,
+   "model_rank_ew": 1.0,
+   "book_rank": 3,
+   "model_top_pick": "Pogacar Tadej",
+   "model_top_pick_place": 1,
+   "book_top_pick": "Tarling Joshua",
+   "book_top_pick_place": 3,
+   "n_reads": 2,
+   "day_key": "{\"itt\": 1.0}",
+   "overlap15_model": 10.0,
+   "overlap15_book": 11,
+   "overlap10_model": 5.5,
+   "overlap10_book": 5
+  },
+  {
+   "stage": 2,
+   "winner": "Brennan Matthew",
+   "model_p_ew": 0.23620373510510242,
+   "book_p": 0.12315801301037113,
+   "delta_nats": 0.6512265274281881,
+   "best_read": "sprint_survives",
+   "best_read_p": 0.4383511327834306,
+   "official_read": "hard_mens_sprint",
+   "official_p": 0.23820743994223756,
+   "model_rank_ew": 2.0,
+   "book_rank": 3,
+   "model_top_pick": "Brennan Matthew",
+   "model_top_pick_place": 1,
+   "book_top_pick": "Pedersen Mads",
+   "book_top_pick_place": 4,
+   "n_reads": 3,
+   "day_key": "{\"res_1\": 0.45, \"res_7\": 0.55}",
+   "overlap15_model": 7.0,
+   "overlap15_book": 7,
+   "overlap10_model": 5.0,
+   "overlap10_book": 4
+  },
+  {
+   "stage": 4,
+   "winner": "Pogacar Tadej",
+   "model_p_ew": 0.5299343554632455,
+   "book_p": 0.49152351883446543,
+   "delta_nats": 0.0752433516779879,
+   "best_read": "gc_reckoning",
+   "best_read_p": 0.6173569683111463,
+   "official_read": "gc_reckoning",
+   "official_p": 0.6173569683111463,
+   "model_rank_ew": 1.0,
+   "book_rank": 1,
+   "model_top_pick": "Pogacar Tadej",
+   "model_top_pick_place": 1,
+   "book_top_pick": "Pogacar Tadej",
+   "book_top_pick_place": 1,
+   "n_reads": 3,
+   "day_key": "{\"gc_day\": 0.6, \"res_2\": 0.4}",
+   "overlap15_model": 9.333333333333334,
+   "overlap15_book": 10,
+   "overlap10_model": 7.0,
+   "overlap10_book": 6
+  },
+  {
+   "stage": 5,
+   "winner": "Brennan Matthew",
+   "model_p_ew": 0.38278062692709014,
+   "book_p": 0.3592922301143776,
+   "delta_nats": 0.06332598061343253,
+   "best_read": "versatile_sprint",
+   "best_read_p": 0.46293009392494155,
+   "official_read": "versatile_sprint",
+   "official_p": 0.46293009392494155,
+   "model_rank_ew": 1.0,
+   "book_rank": 1,
+   "model_top_pick": "Brennan Matthew",
+   "model_top_pick_place": 1,
+   "book_top_pick": "Brennan Matthew",
+   "book_top_pick_place": 1,
+   "n_reads": 3,
+   "day_key": "{\"bunch\": 0.35, \"res_3\": 0.15, \"res_7\": 0.5}",
+   "overlap15_model": 6.0,
+   "overlap15_book": 8,
+   "overlap10_model": 5.333333333333333,
+   "overlap10_book": 5
+  },
+  {
+   "stage": 6,
+   "winner": "Pogacar Tadej",
+   "model_p_ew": 0.5225896774409631,
+   "book_p": 0.20626984559843667,
+   "delta_nats": 0.929611358908761,
+   "best_read": "gc_attack",
+   "best_read_p": 0.6364750799356667,
+   "official_read": "mountain_break",
+   "official_p": 0.4534995096385981,
+   "model_rank_ew": 1.0,
+   "book_rank": 1,
+   "model_top_pick": "Pogacar Tadej",
+   "model_top_pick_place": 1,
+   "book_top_pick": "Pogacar Tadej",
+   "book_top_pick_place": 1,
+   "n_reads": 4,
+   "day_key": "{\"gc_day\": 0.35, \"res_2\": 0.65}",
+   "overlap15_model": 8.5,
+   "overlap15_book": 4,
+   "overlap10_model": 5.5,
+   "overlap10_book": 2
+  },
+  {
+   "stage": 7,
+   "winner": "Leknessund Andreas",
+   "model_p_ew": 0.0021297479631963556,
+   "book_p": 0.0042826073332294075,
+   "delta_nats": -0.6985583685374053,
+   "best_read": "mountain_break",
+   "best_read_p": 0.0033322249308631274,
+   "official_read": "gc_summit",
+   "official_p": 0.0014876206883070063,
+   "model_rank_ew": 45.666666666666664,
+   "book_rank": 41,
+   "model_top_pick": "Pogacar Tadej",
+   "model_top_pick_place": 19,
+   "book_top_pick": "Pogacar Tadej",
+   "book_top_pick_place": 19,
+   "n_reads": 3,
+   "day_key": "{\"gc_day\": 0.6, \"res_2\": 0.4}",
+   "overlap15_model": 1.3333333333333333,
+   "overlap15_book": 3,
+   "overlap10_model": 0.6666666666666666,
+   "overlap10_book": 2
+  },
+  {
+   "stage": 8,
+   "winner": "Coquard Bryan",
+   "model_p_ew": 0.009171273821700974,
+   "book_p": 0.010063115946219475,
+   "delta_nats": -0.0928006644429642,
+   "best_read": "bunch_sprint",
+   "best_read_p": 0.01470334857754381,
+   "official_read": "bunch_sprint",
+   "official_p": 0.01470334857754381,
+   "model_rank_ew": 19.666666666666668,
+   "book_rank": 12,
+   "model_top_pick": "Brennan Matthew",
+   "model_top_pick_place": 10,
+   "book_top_pick": "Brennan Matthew",
+   "book_top_pick_place": 10,
+   "n_reads": 3,
+   "day_key": "{\"bunch\": 0.6, \"res_3\": 0.25, \"res_7\": 0.15}",
+   "overlap15_model": 6.0,
+   "overlap15_book": 8,
+   "overlap10_model": 4.333333333333333,
+   "overlap10_book": 6
+  },
+  {
+   "stage": 9,
+   "winner": "Mas Enric",
+   "model_p_ew": 0.051172295258859024,
+   "book_p": 0.0997473943810482,
+   "delta_nats": -0.6674426565673861,
+   "best_read": "aitana_shatters",
+   "best_read_p": 0.06424390529293728,
+   "official_read": "aitana_shatters",
+   "official_p": 0.06424390529293728,
+   "model_rank_ew": 5.5,
+   "book_rank": 3,
+   "model_top_pick": "Roglic Primoz",
+   "model_top_pick_place": 3,
+   "book_top_pick": "Gall Felix",
+   "book_top_pick_place": 4,
+   "n_reads": 2,
+   "day_key": "{\"gc_day\": 1.0}",
+   "overlap15_model": 8.5,
+   "overlap15_book": 9,
+   "overlap10_model": 6.0,
+   "overlap10_book": 5
+  },
+  {
+   "stage": 10,
+   "winner": "Tronchon Bastien",
+   "model_p_ew": 0.0016540160153166287,
+   "book_p": 0.006736262900662641,
+   "delta_nats": -1.4042990260404462,
+   "best_read": "bunch_sprint",
+   "best_read_p": 0.0022452306262395923,
+   "official_read": "bunch_sprint",
+   "official_p": 0.0022452306262395923,
+   "model_rank_ew": 36.0,
+   "book_rank": 22,
+   "model_top_pick": "Brennan Matthew",
+   "model_top_pick_place": 90,
+   "book_top_pick": "Brennan Matthew",
+   "book_top_pick_place": 90,
+   "n_reads": 3,
+   "day_key": "{\"bunch\": 0.5, \"res_3\": 0.3, \"res_7\": 0.2}",
+   "overlap15_model": 3.0,
+   "overlap15_book": 5,
+   "overlap10_model": 1.6666666666666667,
+   "overlap10_book": 2
+  },
+  {
+   "stage": 11,
+   "winner": "Brennan Matthew",
+   "model_p_ew": 0.5647292381244506,
+   "book_p": 0.34263622026080237,
+   "delta_nats": 0.49967708970265734,
+   "best_read": "bunch_sprint",
+   "best_read_p": 0.6304903622229772,
+   "official_read": "bunch_sprint",
+   "official_p": 0.6304903622229772,
+   "model_rank_ew": 1.0,
+   "book_rank": 1,
+   "model_top_pick": "Brennan Matthew",
+   "model_top_pick_place": 1,
+   "book_top_pick": "Brennan Matthew",
+   "book_top_pick_place": 1,
+   "n_reads": 3,
+   "day_key": "{\"bunch\": 0.65, \"res_1\": 0.15, \"res_3\": 0.2}",
+   "overlap15_model": 6.0,
+   "overlap15_book": 9,
+   "overlap10_model": 4.0,
+   "overlap10_book": 8
+  },
+  {
+   "stage": 12,
+   "winner": "Omrzel Jakob",
+   "model_p_ew": 0.010377613064768787,
+   "book_p": 0.008237436797189003,
+   "delta_nats": 0.23096166884210412,
+   "best_read": "irregular_top",
+   "best_read_p": 0.011433570904607093,
+   "official_read": "mountain_break",
+   "official_p": 0.009937637464059285,
+   "model_rank_ew": 25.0,
+   "book_rank": 22,
+   "model_top_pick": "Roglic Primoz",
+   "model_top_pick_place": 8,
+   "book_top_pick": "Gall Felix",
+   "book_top_pick_place": 7,
+   "n_reads": 3,
+   "day_key": "{\"gc_day\": 0.45, \"res_2\": 0.55}",
+   "overlap15_model": 5.666666666666667,
+   "overlap15_book": 6,
+   "overlap10_model": 4.0,
+   "overlap10_book": 4
+  },
+  {
+   "stage": 14,
+   "winner": "Brenner Marco",
+   "model_p_ew": 0.003331320531710739,
+   "book_p": 0.0032413887838850203,
+   "delta_nats": 0.027366906486875564,
+   "best_read": "mountain_break",
+   "best_read_p": 0.003887594860917602,
+   "official_read": "gc_showdown",
+   "official_p": 0.003356378876371393,
+   "model_rank_ew": 41.0,
+   "book_rank": 41,
+   "model_top_pick": "Gall Felix",
+   "model_top_pick_place": 21,
+   "book_top_pick": "Mas Enric",
+   "book_top_pick_place": 22,
+   "n_reads": 3,
+   "day_key": "{\"gc_day\": 0.6, \"res_2\": 0.4}",
+   "overlap15_model": 1.0,
+   "overlap15_book": 5,
+   "overlap10_model": 0.3333333333333333,
+   "overlap10_book": 3
+  },
+  {
+   "stage": 15,
+   "winner": "van Aert Wout",
+   "model_p_ew": 0.07163935003963344,
+   "book_p": 0.1417905105003661,
+   "delta_nats": -0.6827061855794272,
+   "best_read": "artafi_thins_it",
+   "best_read_p": 0.09485567857095097,
+   "official_read": "bunch_sprint",
+   "official_p": 0.0811317521325519,
+   "model_rank_ew": 3.3333333333333335,
+   "book_rank": 2,
+   "model_top_pick": "Brennan Matthew",
+   "model_top_pick_place": 24,
+   "book_top_pick": "Brennan Matthew",
+   "book_top_pick_place": 24,
+   "n_reads": 3,
+   "day_key": "{\"bunch\": 0.55, \"res_1\": 0.15, \"res_3\": 0.3}",
+   "overlap15_model": 2.0,
+   "overlap15_book": 6,
+   "overlap10_model": 1.3333333333333333,
+   "overlap10_book": 3
+  },
+  {
+   "stage": 16,
+   "winner": "Brennan Matthew",
+   "model_p_ew": 0.37037575766880404,
+   "book_p": 0.3630022981046293,
+   "delta_nats": 0.02010888646027864,
+   "best_read": "bunch_sprint",
+   "best_read_p": 0.6007937208462881,
+   "official_read": "bunch_sprint",
+   "official_p": 0.6007937208462881,
+   "model_rank_ew": 16.333333333333332,
+   "book_rank": 1,
+   "model_top_pick": "Brennan Matthew",
+   "model_top_pick_place": 1,
+   "book_top_pick": "Brennan Matthew",
+   "book_top_pick_place": 1,
+   "n_reads": 3,
+   "day_key": "{\"bunch\": 0.55, \"res_1\": 0.15, \"res_3\": 0.3}",
+   "overlap15_model": 6.0,
+   "overlap15_book": 7,
+   "overlap10_model": 4.333333333333333,
+   "overlap10_book": 7
+  },
+  {
+   "stage": 17,
+   "winner": "Brennan Matthew",
+   "model_p_ew": 0.5952488917196059,
+   "book_p": 0.4506360422518683,
+   "delta_nats": 0.27831961144869644,
+   "best_read": "shortened_drag_race",
+   "best_read_p": 0.6352888371557293,
+   "official_read": "pure_speed",
+   "official_p": 0.6229938330532997,
+   "model_rank_ew": 1.0,
+   "book_rank": 1,
+   "model_top_pick": "Brennan Matthew",
+   "model_top_pick_place": 1,
+   "book_top_pick": "Brennan Matthew",
+   "book_top_pick_place": 1,
+   "n_reads": 3,
+   "day_key": "{\"bunch\": 1.0}",
+   "overlap15_model": 9.333333333333334,
+   "overlap15_book": 9,
+   "overlap10_model": 6.333333333333333,
+   "overlap10_book": 5
+  },
+  {
+   "stage": 20,
+   "winner": "Landa Mikel",
+   "model_p_ew": 0.0029945768939427415,
+   "book_p": 0.008168074814724622,
+   "delta_nats": -1.0034302895276843,
+   "best_read": "mountain_break",
+   "best_read_p": 0.003411760593278825,
+   "official_read": "gc_showdown",
+   "official_p": 0.002693045379466976,
+   "model_rank_ew": 46.0,
+   "book_rank": 21,
+   "model_top_pick": "Gall Felix",
+   "model_top_pick_place": 13,
+   "book_top_pick": "Mas Enric",
+   "book_top_pick_place": 14,
+   "n_reads": 3,
+   "day_key": "{\"gc_day\": 0.4, \"res_2\": 0.45, \"res_4\": 0.15}",
+   "overlap15_model": 7.0,
+   "overlap15_book": 6,
+   "overlap10_model": 1.3333333333333333,
+   "overlap10_book": 1
+  },
+  {
+   "stage": 21,
+   "winner": "Johannessen Tobias Halland",
+   "model_p_ew": 0.02018275268866765,
+   "book_p": 0.00809280056069612,
+   "delta_nats": 0.913853565618501,
+   "best_read": "late_move",
+   "best_read_p": 0.042488305419876825,
+   "official_read": "cobbled_selection",
+   "official_p": 0.015928480362744683,
+   "model_rank_ew": 13.0,
+   "book_rank": 21,
+   "model_top_pick": "Brennan Matthew",
+   "model_top_pick_place": 4,
+   "book_top_pick": "van Aert Wout",
+   "book_top_pick_place": 65,
+   "n_reads": 3,
+   "day_key": "{\"bunch\": 0.35, \"res_1\": 0.25, \"res_7\": 0.4}",
+   "overlap15_model": 6.333333333333333,
+   "overlap15_book": 6,
+   "overlap10_model": 3.6666666666666665,
+   "overlap10_book": 3
+  }
+ ],
+ "panels": {
+  "all": {
+   "label": "all scored stages",
+   "n": 17,
+   "stages": [
+    1,
+    2,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    14,
+    15,
+    16,
+    17,
+    20,
+    21
+   ],
+   "win_ll_model_ew": 2.918590008210052,
+   "win_ll_book": 2.941897650147772,
+   "win_ll_delta": 0.023307641937719836,
+   "win_ll_model_best": 2.6359306875510984,
+   "win_ll_lambdarank_best": 2.6383819231085837,
+   "total_deficit_nats": -0.39622991294123755,
+   "podium_n": 8,
+   "podium_ll_model": 0.05202798762677384,
+   "podium_ll_book": 0.05243219180667572,
+   "overlap": {
+    "3": {
+     "model": 16.333333333333332,
+     "book": 15,
+     "of": 51,
+     "delta_pp": 2.6143790849673176
+    },
+    "5": {
+     "model": 28.749999999999996,
+     "book": 35,
+     "of": 85,
+     "delta_pp": -7.352941176470592
+    },
+    "10": {
+     "model": 66.33333333333334,
+     "book": 71,
+     "of": 170,
+     "delta_pp": -2.7450980392156805
+    },
+    "15": {
+     "model": 103.0,
+     "book": 119,
+     "of": 255,
+     "delta_pp": -6.2745098039215685
+    }
+   },
+   "spearman_model": 0.4451778281883947,
+   "spearman_book": 0.46508058888882325,
+   "reads": 50,
+   "top_pick_wins_model": 22,
+   "top_pick_wins_book": 19
+  },
+  "minus_hardman": {
+   "label": "minus hard-man {10,15,21}",
+   "n": 14,
+   "stages": [
+    1,
+    2,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    11,
+    12,
+    14,
+    16,
+    17,
+    20
+   ],
+   "win_ll_model_ew": 2.6194602499224726,
+   "win_ll_book": 2.731558932704088,
+   "win_ll_delta": 0.11209868278161528,
+   "win_ll_model_best": 2.3712821093715273,
+   "win_ll_lambdarank_best": 2.3249633268439998,
+   "total_deficit_nats": -1.5693815589426099,
+   "podium_n": 8,
+   "podium_ll_model": 0.05202798762677384,
+   "podium_ll_book": 0.05243219180667572,
+   "overlap": {
+    "3": {
+     "model": 14.999999999999998,
+     "book": 14,
+     "of": 42,
+     "delta_pp": 2.380952380952377
+    },
+    "5": {
+     "model": 25.416666666666664,
+     "book": 30,
+     "of": 70,
+     "delta_pp": -6.547619047619051
+    },
+    "10": {
+     "model": 59.66666666666668,
+     "book": 63,
+     "of": 140,
+     "delta_pp": -2.3809523809523725
+    },
+    "15": {
+     "model": 91.66666666666667,
+     "book": 102,
+     "of": 210,
+     "delta_pp": -4.920634920634918
+    }
+   },
+   "spearman_model": 0.4890987509562923,
+   "spearman_book": 0.5035713130432011,
+   "reads": 41,
+   "top_pick_wins_model": 22,
+   "top_pick_wins_book": 19
+  },
+  "minus_climber_breaks": {
+   "label": "minus climbers' breaks {7,12,14,20}",
+   "n": 13,
+   "stages": [
+    1,
+    2,
+    4,
+    5,
+    6,
+    8,
+    9,
+    10,
+    11,
+    15,
+    16,
+    17,
+    21
+   ],
+   "win_ll_model_ew": 2.1062180998101585,
+   "win_ll_book": 2.2477480994776466,
+   "win_ll_delta": 0.14152999966748814,
+   "win_ll_model_best": 1.8003856757419452,
+   "win_ll_lambdarank_best": 1.8205984842456608,
+   "total_deficit_nats": -1.8398899956773476,
+   "podium_n": 7,
+   "podium_ll_model": 0.047279685061784794,
+   "podium_ll_book": 0.04852650353951849,
+   "overlap": {
+    "3": {
+     "model": 16.333333333333332,
+     "book": 14,
+     "of": 39,
+     "delta_pp": 5.982905982905979
+    },
+    "5": {
+     "model": 27.749999999999996,
+     "book": 32,
+     "of": 65,
+     "delta_pp": -6.538461538461544
+    },
+    "10": {
+     "model": 60.0,
+     "book": 61,
+     "of": 130,
+     "delta_pp": -0.7692307692307693
+    },
+    "15": {
+     "model": 88.0,
+     "book": 99,
+     "of": 195,
+     "delta_pp": -5.641025641025641
+    }
+   },
+   "spearman_model": 0.3992518954086769,
+   "spearman_book": 0.4196362560230411,
+   "reads": 38,
+   "top_pick_wins_model": 22,
+   "top_pick_wins_book": 19
+  },
+  "minus_break_won": {
+   "label": "minus all break-won {7,12,14,15,20}",
+   "n": 12,
+   "stages": [
+    1,
+    2,
+    4,
+    5,
+    6,
+    8,
+    9,
+    10,
+    11,
+    16,
+    17,
+    21
+   ],
+   "win_ll_model_ew": 2.062060376925918,
+   "win_ll_book": 2.2722767253639824,
+   "win_ll_delta": 0.21021634843806458,
+   "win_ll_model_best": 1.7541345891010918,
+   "win_ll_lambdarank_best": 1.7802987951993352,
+   "total_deficit_nats": -2.5225961812567745,
+   "podium_n": 7,
+   "podium_ll_model": 0.047279685061784794,
+   "podium_ll_book": 0.04852650353951849,
+   "overlap": {
+    "3": {
+     "model": 15.666666666666664,
+     "book": 13,
+     "of": 36,
+     "delta_pp": 7.4074074074074
+    },
+    "5": {
+     "model": 26.749999999999996,
+     "book": 30,
+     "of": 60,
+     "delta_pp": -5.416666666666672
+    },
+    "10": {
+     "model": 58.666666666666664,
+     "book": 58,
+     "of": 120,
+     "delta_pp": 0.5555555555555536
+    },
+    "15": {
+     "model": 86.0,
+     "book": 93,
+     "of": 180,
+     "delta_pp": -3.888888888888889
+    }
+   },
+   "spearman_model": 0.41187935725725755,
+   "spearman_book": 0.42710367665692206,
+   "reads": 35,
+   "top_pick_wins_model": 22,
+   "top_pick_wins_book": 19
+  },
+  "peloton_settled": {
+   "label": "peloton / GC-settled only",
+   "n": 10,
+   "stages": [
+    1,
+    2,
+    4,
+    5,
+    6,
+    8,
+    9,
+    11,
+    16,
+    17
+   ],
+   "win_ll_model_ew": 1.4437248656875794,
+   "win_ll_book": 1.7450290298554514,
+   "win_ll_delta": 0.301304164167872,
+   "win_ll_model_best": 1.1792141627477997,
+   "win_ll_lambdarank_best": 1.1364774178163666,
+   "total_deficit_nats": -3.01304164167872,
+   "podium_n": 7,
+   "podium_ll_model": 0.047279685061784794,
+   "podium_ll_book": 0.04852650353951849,
+   "overlap": {
+    "3": {
+     "model": 14.999999999999998,
+     "book": 13,
+     "of": 30,
+     "delta_pp": 6.666666666666661
+    },
+    "5": {
+     "model": 24.416666666666664,
+     "book": 27,
+     "of": 50,
+     "delta_pp": -5.166666666666672
+    },
+    "10": {
+     "model": 53.333333333333336,
+     "book": 53,
+     "of": 100,
+     "delta_pp": 0.3333333333333357
+    },
+    "15": {
+     "model": 76.66666666666667,
+     "book": 82,
+     "of": 150,
+     "delta_pp": -3.555555555555552
+    }
+   },
+   "spearman_model": 0.4469634074498182,
+   "spearman_book": 0.45988996997943543,
+   "reads": 29,
+   "top_pick_wins_model": 22,
+   "top_pick_wins_book": 19
+  },
+  "hardman_only": {
+   "label": "hard-man only",
+   "n": 3,
+   "stages": [
+    10,
+    15,
+    21
+   ],
+   "win_ll_model_ew": 4.314528880218755,
+   "win_ll_book": 3.923478331551631,
+   "win_ll_delta": -0.3910505486671241,
+   "win_ll_model_best": 3.87095738572243,
+   "win_ll_lambdarank_best": 4.101002039009975,
+   "total_deficit_nats": 1.1731516460013725,
+   "podium_n": 0,
+   "podium_ll_model": null,
+   "podium_ll_book": null,
+   "overlap": {
+    "3": {
+     "model": 1.3333333333333333,
+     "book": 1,
+     "of": 9,
+     "delta_pp": 3.7037037037037033
+    },
+    "5": {
+     "model": 3.333333333333333,
+     "book": 5,
+     "of": 15,
+     "delta_pp": -11.111111111111112
+    },
+    "10": {
+     "model": 6.666666666666666,
+     "book": 8,
+     "of": 30,
+     "delta_pp": -4.444444444444446
+    },
+    "15": {
+     "model": 11.333333333333332,
+     "book": 17,
+     "of": 45,
+     "delta_pp": -12.592592592592593
+    }
+   },
+   "spearman_model": 0.2402135219382058,
+   "spearman_book": 0.2854572095017267,
+   "reads": 9,
+   "top_pick_wins_model": 0,
+   "top_pick_wins_book": 0
+  },
+  "break_won_only": {
+   "label": "break-won only",
+   "n": 5,
+   "stages": [
+    7,
+    12,
+    14,
+    15,
+    20
+   ],
+   "win_ll_model_ew": 4.974261123291974,
+   "win_ll_book": 4.548987869628867,
+   "win_ll_delta": -0.4252732536631072,
+   "win_ll_model_best": 4.7522413238311145,
+   "win_ll_lambdarank_best": 4.69778143009078,
+   "total_deficit_nats": 2.126366268315537,
+   "podium_n": 1,
+   "podium_ll_model": 0.08526610558169719,
+   "podium_ll_book": 0.07977200967677635,
+   "overlap": {
+    "3": {
+     "model": 0.6666666666666666,
+     "book": 2,
+     "of": 15,
+     "delta_pp": -8.88888888888889
+    },
+    "5": {
+     "model": 2.0,
+     "book": 5,
+     "of": 25,
+     "delta_pp": -12.0
+    },
+    "10": {
+     "model": 7.666666666666666,
+     "book": 13,
+     "of": 50,
+     "delta_pp": -10.666666666666668
+    },
+    "15": {
+     "model": 17.0,
+     "book": 26,
+     "of": 75,
+     "delta_pp": -12.0
+    }
+   },
+   "spearman_model": 0.5250941584231237,
+   "spearman_book": 0.5562251782453862,
+   "reads": 15,
+   "top_pick_wins_model": 0,
+   "top_pick_wins_book": 0
+  },
+  "climber_breaks_only": {
+   "label": "climbers' breaks only",
+   "n": 4,
+   "stages": [
+    7,
+    12,
+    14,
+    20
+   ],
+   "win_ll_model_ew": 5.5587987105097065,
+   "win_ll_book": 5.197883689825678,
+   "win_ll_delta": -0.36091502068402814,
+   "win_ll_model_best": 5.351451975930846,
+   "win_ll_lambdarank_best": 5.296178099413083,
+   "total_deficit_nats": 1.44366008273611,
+   "podium_n": 1,
+   "podium_ll_model": 0.08526610558169719,
+   "podium_ll_book": 0.07977200967677635,
+   "overlap": {
+    "3": {
+     "model": 0.0,
+     "book": 1,
+     "of": 12,
+     "delta_pp": -8.333333333333334
+    },
+    "5": {
+     "model": 1.0,
+     "book": 3,
+     "of": 20,
+     "delta_pp": -10.0
+    },
+    "10": {
+     "model": 6.333333333333333,
+     "book": 10,
+     "of": 40,
+     "delta_pp": -9.166666666666668
+    },
+    "15": {
+     "model": 15.0,
+     "book": 20,
+     "of": 60,
+     "delta_pp": -8.333333333333334
+    }
+   },
+   "spearman_model": 0.5944371097224774,
+   "spearman_book": 0.6127746707026152,
+   "reads": 12,
+   "top_pick_wins_model": 0,
+   "top_pick_wins_book": 0
+  }
+ },
+ "tdf_panels": {
+  "all": {
+   "label": "Tour: all",
+   "n": 20,
+   "stages": [
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21
+   ],
+   "win_ll_model_ew": 2.4068775586894486,
+   "win_ll_book": 1.9440271954613675,
+   "win_ll_delta": -0.46285036322808115,
+   "win_ll_model_best": 2.1287651053849443,
+   "win_ll_lambdarank_best": 2.1541347041692096,
+   "total_deficit_nats": 9.25700726456163,
+   "podium_n": 18,
+   "podium_ll_model": 0.05208497656721411,
+   "podium_ll_book": 0.045939055383627365,
+   "overlap": {
+    "3": {
+     "model": 25.249999999999996,
+     "book": 31,
+     "of": 60,
+     "delta_pp": -9.58333333333334
+    },
+    "5": {
+     "model": 47.083333333333336,
+     "book": 52,
+     "of": 100,
+     "delta_pp": -4.916666666666664
+    },
+    "10": {
+     "model": 102.58333333333334,
+     "book": 103,
+     "of": 200,
+     "delta_pp": -0.2083333333333286
+    },
+    "15": {
+     "model": 160.91666666666666,
+     "book": 160,
+     "of": 300,
+     "delta_pp": 0.3055555555555524
+    }
+   },
+   "spearman_model": 0.5068939734854074,
+   "spearman_book": 0.5316118224493869,
+   "reads": 57,
+   "top_pick_wins_model": 22,
+   "top_pick_wins_book": 34
+  },
+  "minus_hardman": {
+   "label": "Tour: minus hard-man",
+   "n": 15,
+   "stages": [
+    2,
+    3,
+    5,
+    6,
+    7,
+    8,
+    10,
+    11,
+    12,
+    14,
+    15,
+    16,
+    18,
+    19,
+    20
+   ],
+   "win_ll_model_ew": 2.03181797346023,
+   "win_ll_book": 1.7486670069125898,
+   "win_ll_delta": -0.28315096654764016,
+   "win_ll_model_best": 1.848355625553538,
+   "win_ll_lambdarank_best": 1.8405889666598103,
+   "total_deficit_nats": 4.247264498214602,
+   "podium_n": 13,
+   "podium_ll_model": 0.04517559020317152,
+   "podium_ll_book": 0.04084813791731993,
+   "overlap": {
+    "3": {
+     "model": 22.916666666666664,
+     "book": 25,
+     "of": 45,
+     "delta_pp": -4.629629629629635
+    },
+    "5": {
+     "model": 42.083333333333336,
+     "book": 43,
+     "of": 75,
+     "delta_pp": -1.222222222222219
+    },
+    "10": {
+     "model": 92.91666666666666,
+     "book": 89,
+     "of": 150,
+     "delta_pp": 2.611111111111105
+    },
+    "15": {
+     "model": 142.25,
+     "book": 134,
+     "of": 225,
+     "delta_pp": 3.6666666666666665
+    }
+   },
+   "spearman_model": 0.5579262969913721,
+   "spearman_book": 0.5866833864321733,
+   "reads": 42,
+   "top_pick_wins_model": 21,
+   "top_pick_wins_book": 28
+  },
+  "peloton_settled": {
+   "label": "Tour: peloton settled",
+   "n": 13,
+   "stages": [
+    2,
+    3,
+    5,
+    6,
+    7,
+    8,
+    10,
+    11,
+    12,
+    14,
+    15,
+    16,
+    19
+   ],
+   "win_ll_model_ew": 1.7218854136878978,
+   "win_ll_book": 1.754431042017014,
+   "win_ll_delta": 0.032545628329116116,
+   "win_ll_model_best": 1.5405896922950175,
+   "win_ll_lambdarank_best": 1.5408089496184738,
+   "total_deficit_nats": -0.42309316827850907,
+   "podium_n": 11,
+   "podium_ll_model": 0.040527705948846214,
+   "podium_ll_book": 0.039809556761487556,
+   "overlap": {
+    "3": {
+     "model": 21.916666666666664,
+     "book": 22,
+     "of": 39,
+     "delta_pp": -0.21367521367521974
+    },
+    "5": {
+     "model": 39.083333333333336,
+     "book": 36,
+     "of": 65,
+     "delta_pp": 4.743589743589748
+    },
+    "10": {
+     "model": 81.91666666666666,
+     "book": 78,
+     "of": 130,
+     "delta_pp": 3.0128205128205057
+    },
+    "15": {
+     "model": 122.25,
+     "book": 115,
+     "of": 195,
+     "delta_pp": 3.717948717948718
+    }
+   },
+   "spearman_model": 0.5435996830385592,
+   "spearman_book": 0.5613236660775881,
+   "reads": 36,
+   "top_pick_wins_model": 21,
+   "top_pick_wins_book": 25
+  },
+  "hardman_only": {
+   "label": "Tour: hard-man only",
+   "n": 5,
+   "stages": [
+    4,
+    9,
+    13,
+    17,
+    21
+   ],
+   "win_ll_model_ew": 3.532056314377105,
+   "win_ll_book": 2.5301077611077,
+   "win_ll_delta": -1.001948553269405,
+   "win_ll_model_best": 2.969993544879163,
+   "win_ll_lambdarank_best": 3.0947719166974075,
+   "total_deficit_nats": 5.009742766347026,
+   "podium_n": 5,
+   "podium_ll_model": 0.07004938111372484,
+   "podium_ll_book": 0.0591754407960267,
+   "overlap": {
+    "3": {
+     "model": 2.333333333333333,
+     "book": 6,
+     "of": 15,
+     "delta_pp": -24.444444444444446
+    },
+    "5": {
+     "model": 5.0,
+     "book": 9,
+     "of": 25,
+     "delta_pp": -16.0
+    },
+    "10": {
+     "model": 9.666666666666668,
+     "book": 14,
+     "of": 50,
+     "delta_pp": -8.666666666666664
+    },
+    "15": {
+     "model": 18.666666666666668,
+     "book": 26,
+     "of": 75,
+     "delta_pp": -9.777777777777777
+    }
+   },
+   "spearman_model": 0.3537970029675136,
+   "spearman_book": 0.36639713050102746,
+   "reads": 15,
+   "top_pick_wins_model": 1,
+   "top_pick_wins_book": 6
+  },
+  "break_won_only": {
+   "label": "Tour: break-won + hard-man",
+   "n": 7,
+   "stages": [
+    4,
+    9,
+    13,
+    17,
+    18,
+    20,
+    21
+   ],
+   "win_ll_model_ew": 3.6790058279780435,
+   "win_ll_book": 2.2961343375723096,
+   "win_ll_delta": -1.382871490405734,
+   "win_ll_model_best": 3.221090872551951,
+   "win_ll_lambdarank_best": 3.2931682483348617,
+   "total_deficit_nats": 9.680100432840138,
+   "podium_n": 7,
+   "podium_ll_model": 0.07024640182464938,
+   "podium_ll_book": 0.055571124646989926,
+   "overlap": {
+    "3": {
+     "model": 3.333333333333333,
+     "book": 9,
+     "of": 21,
+     "delta_pp": -26.984126984126988
+    },
+    "5": {
+     "model": 8.0,
+     "book": 16,
+     "of": 35,
+     "delta_pp": -22.857142857142858
+    },
+    "10": {
+     "model": 20.666666666666668,
+     "book": 25,
+     "of": 70,
+     "delta_pp": -6.190476190476189
+    },
+    "15": {
+     "model": 38.66666666666667,
+     "book": 45,
+     "of": 105,
+     "delta_pp": -6.031746031746026
+    }
+   },
+   "spearman_model": 0.4387262271724114,
+   "spearman_book": 0.47643268428272745,
+   "reads": 21,
+   "top_pick_wins_model": 1,
+   "top_pick_wins_book": 9
+  }
+ },
+ "tdf_per_stage": [
+  {
+   "stage": 2,
+   "winner": "del Toro Isaac",
+   "model_p_ew": 0.033483912051546875,
+   "book_p": 0.039488947093268285,
+   "delta_nats": -0.16495572611353415,
+   "best_read": "catalunya",
+   "best_read_p": 0.05946531995118114,
+   "official_read": "catalunya",
+   "official_p": 0.05946531995118114,
+   "model_rank_ew": 9.0,
+   "book_rank": 3,
+   "model_top_pick": "Pogacar Tadej",
+   "model_top_pick_place": 2,
+   "book_top_pick": "Pogacar Tadej",
+   "book_top_pick_place": 2,
+   "n_reads": 3,
+   "day_key": "",
+   "overlap15_model": 7.333333333333333,
+   "overlap15_book": 9,
+   "overlap10_model": 4.0,
+   "overlap10_book": 7
+  },
+  {
+   "stage": 3,
+   "winner": "Pogacar Tadej",
+   "model_p_ew": 0.3346847723687114,
+   "book_p": 0.2469128703507496,
+   "delta_nats": 0.3041535880434034,
+   "best_read": "tdf_mountain",
+   "best_read_p": 0.35935496666635086,
+   "official_read": "healy_carapaz",
+   "official_p": 0.3036983873035245,
+   "model_rank_ew": 1.0,
+   "book_rank": 1,
+   "model_top_pick": "Pogacar Tadej",
+   "model_top_pick_place": 1,
+   "book_top_pick": "Pogacar Tadej",
+   "book_top_pick_place": 1,
+   "n_reads": 3,
+   "day_key": "",
+   "overlap15_model": 10.0,
+   "overlap15_book": 6,
+   "overlap10_model": 8.0,
+   "overlap10_book": 4
+  },
+  {
+   "stage": 4,
+   "winner": "Pedersen Mads",
+   "model_p_ew": 0.025155563060980175,
+   "book_p": 0.14438090168737064,
+   "delta_nats": -1.7473758905755945,
+   "best_read": "reduced_sprint",
+   "best_read_p": 0.06619765810504838,
+   "official_read": "break_survives",
+   "official_p": 0.0019264978639055913,
+   "model_rank_ew": 25.333333333333332,
+   "book_rank": 1,
+   "model_top_pick": "Pogacar Tadej",
+   "model_top_pick_place": 33,
+   "book_top_pick": "Pedersen Mads",
+   "book_top_pick_place": 1,
+   "n_reads": 3,
+   "day_key": "",
+   "overlap15_model": 0.6666666666666666,
+   "overlap15_book": 4,
+   "overlap10_model": 0.3333333333333333,
+   "overlap10_book": 3
+  },
+  {
+   "stage": 5,
+   "winner": "Kooij Olav",
+   "model_p_ew": 0.2061723971512993,
+   "book_p": 0.14237440607058835,
+   "delta_nats": 0.3702524480028635,
+   "best_read": "reduced_sprint",
+   "best_read_p": 0.210972838771367,
+   "official_read": "full_sprint",
+   "official_p": 0.20137195553123166,
+   "model_rank_ew": 2.0,
+   "book_rank": 4,
+   "model_top_pick": "Merlier Tim",
+   "model_top_pick_place": 3,
+   "book_top_pick": "Merlier Tim",
+   "book_top_pick_place": 3,
+   "n_reads": 2,
+   "day_key": "",
+   "overlap15_model": 9.0,
+   "overlap15_book": 9,
+   "overlap10_model": 5.5,
+   "overlap10_book": 7
+  },
+  {
+   "stage": 6,
+   "winner": "Pogacar Tadej",
+   "model_p_ew": 0.34500118638476845,
+   "book_p": 0.48973435627939715,
+   "delta_nats": -0.35031525823512377,
+   "best_read": "select_group",
+   "best_read_p": 0.36481394481755375,
+   "official_read": "elite_selection",
+   "official_p": 0.34465549257714667,
+   "model_rank_ew": 1.0,
+   "book_rank": 1,
+   "model_top_pick": "Pogacar Tadej",
+   "model_top_pick_place": 1,
+   "book_top_pick": "Pogacar Tadej",
+   "book_top_pick_place": 1,
+   "n_reads": 4,
+   "day_key": "",
+   "overlap15_model": 9.25,
+   "overlap15_book": 8,
+   "overlap10_model": 7.75,
+   "overlap10_book": 6
+  },
+  {
+   "stage": 7,
+   "winner": "Merlier Tim",
+   "model_p_ew": 0.33302595785270656,
+   "book_p": 0.3052560405710453,
+   "delta_nats": 0.08706953672646289,
+   "best_read": "full_sprint",
+   "best_read_p": 0.33302595785270656,
+   "official_read": "full_sprint",
+   "official_p": 0.33302595785270656,
+   "model_rank_ew": 1.0,
+   "book_rank": 1,
+   "model_top_pick": "Merlier Tim",
+   "model_top_pick_place": 1,
+   "book_top_pick": "Merlier Tim",
+   "book_top_pick_place": 1,
+   "n_reads": 1,
+   "day_key": "",
+   "overlap15_model": 10.0,
+   "overlap15_book": 11,
+   "overlap10_model": 5.0,
+   "overlap10_book": 7
+  },
+  {
+   "stage": 8,
+   "winner": "Merlier Tim",
+   "model_p_ew": 0.29028990781942243,
+   "book_p": 0.41564822868199586,
+   "delta_nats": -0.358959192639558,
+   "best_read": "full_sprint",
+   "best_read_p": 0.3356655730814822,
+   "official_read": "full_sprint",
+   "official_p": 0.3356655730814822,
+   "model_rank_ew": 1.0,
+   "book_rank": 1,
+   "model_top_pick": "Merlier Tim",
+   "model_top_pick_place": 1,
+   "book_top_pick": "Merlier Tim",
+   "book_top_pick_place": 1,
+   "n_reads": 2,
+   "day_key": "",
+   "overlap15_model": 10.0,
+   "overlap15_book": 11,
+   "overlap10_model": 6.0,
+   "overlap10_book": 6
+  },
+  {
+   "stage": 9,
+   "winner": "van der Poel Mathieu",
+   "model_p_ew": 0.031887218180488335,
+   "book_p": 0.0701390913785825,
+   "delta_nats": -0.7882750447326674,
+   "best_read": "hard_mens_sprint",
+   "best_read_p": 0.06245402177205962,
+   "official_read": "break_day",
+   "official_p": 0.011822884769907166,
+   "model_rank_ew": 9.0,
+   "book_rank": 2,
+   "model_top_pick": "Pogacar Tadej",
+   "model_top_pick_place": 11,
+   "book_top_pick": "Pedersen Mads",
+   "book_top_pick_place": 6,
+   "n_reads": 3,
+   "day_key": "",
+   "overlap15_model": 6.666666666666667,
+   "overlap15_book": 4,
+   "overlap10_model": 2.6666666666666665,
+   "overlap10_book": 2
+  },
+  {
+   "stage": 10,
+   "winner": "Pogacar Tadej",
+   "model_p_ew": 0.2861768472127975,
+   "book_p": 0.4272552758287138,
+   "delta_nats": -0.40077170364043524,
+   "best_read": "full_mountain",
+   "best_read_p": 0.35193538146443676,
+   "official_read": "gc_day",
+   "official_p": 0.2744025492374538,
+   "model_rank_ew": 1.0,
+   "book_rank": 1,
+   "model_top_pick": "Pogacar Tadej",
+   "model_top_pick_place": 1,
+   "book_top_pick": "Pogacar Tadej",
+   "book_top_pick_place": 1,
+   "n_reads": 3,
+   "day_key": "",
+   "overlap15_model": 9.333333333333334,
+   "overlap15_book": 8,
+   "overlap10_model": 8.0,
+   "overlap10_book": 7
+  },
+  {
+   "stage": 11,
+   "winner": "W\u00e6renskjold S\u00f8ren",
+   "model_p_ew": 0.022598406739982993,
+   "book_p": 0.020525978685674004,
+   "delta_nats": 0.09618806874551478,
+   "best_read": "break_survives",
+   "best_read_p": 0.03806276189205697,
+   "official_read": "full_sprint",
+   "official_p": 0.014484199169947982,
+   "model_rank_ew": 8.333333333333334,
+   "book_rank": 6,
+   "model_top_pick": "Merlier Tim",
+   "model_top_pick_place": 15,
+   "book_top_pick": "Merlier Tim",
+   "book_top_pick_place": 15,
+   "n_reads": 3,
+   "day_key": "",
+   "overlap15_model": 8.666666666666666,
+   "overlap15_book": 9,
+   "overlap10_model": 5.666666666666667,
+   "overlap10_book": 4
+  },
+  {
+   "stage": 12,
+   "winner": "Merlier Tim",
+   "model_p_ew": 0.20728583045964621,
+   "book_p": 0.32503529533622005,
+   "delta_nats": -0.44983511318572567,
+   "best_read": "full_sprint",
+   "best_read_p": 0.33074743941035994,
+   "official_read": "full_sprint",
+   "official_p": 0.33074743941035994,
+   "model_rank_ew": 2.6666666666666665,
+   "book_rank": 1,
+   "model_top_pick": "Merlier Tim",
+   "model_top_pick_place": 1,
+   "book_top_pick": "Merlier Tim",
+   "book_top_pick_place": 1,
+   "n_reads": 3,
+   "day_key": "",
+   "overlap15_model": 9.0,
+   "overlap15_book": 9,
+   "overlap10_model": 6.333333333333333,
+   "overlap10_book": 6
+  },
+  {
+   "stage": 13,
+   "winner": "Schmid Mauro",
+   "model_p_ew": 0.003652367699628641,
+   "book_p": 0.012199286223932404,
+   "delta_nats": -1.2060018016735015,
+   "best_read": "break_survives",
+   "best_read_p": 0.00454885628671917,
+   "official_read": "break_survives",
+   "official_p": 0.00454885628671917,
+   "model_rank_ew": 37.0,
+   "book_rank": 22,
+   "model_top_pick": "Pogacar Tadej",
+   "model_top_pick_place": 38,
+   "book_top_pick": "Carapaz Richard",
+   "book_top_pick_place": 59,
+   "n_reads": 3,
+   "day_key": "",
+   "overlap15_model": 0.3333333333333333,
+   "overlap15_book": 4,
+   "overlap10_model": 0.0,
+   "overlap10_book": 2
+  },
+  {
+   "stage": 14,
+   "winner": "Pogacar Tadej",
+   "model_p_ew": 0.32912805724147454,
+   "book_p": 0.40539465598224894,
+   "delta_nats": -0.2084141450734468,
+   "best_read": "gc_mountain",
+   "best_read_p": 0.34182845512653737,
+   "official_read": "gc_mountain",
+   "official_p": 0.34182845512653737,
+   "model_rank_ew": 1.0,
+   "book_rank": 1,
+   "model_top_pick": "Pogacar Tadej",
+   "model_top_pick_place": 1,
+   "book_top_pick": "Pogacar Tadej",
+   "book_top_pick_place": 1,
+   "n_reads": 3,
+   "day_key": "",
+   "overlap15_model": 11.0,
+   "overlap15_book": 9,
+   "overlap10_model": 7.666666666666667,
+   "overlap10_book": 7
+  },
+  {
+   "stage": 15,
+   "winner": "Evenepoel Remco",
+   "model_p_ew": 0.09831433948983252,
+   "book_p": 0.00616493446549366,
+   "delta_nats": 2.7692923848142708,
+   "best_read": "gc_summit",
+   "best_read_p": 0.10485873442593967,
+   "official_read": "gc_summit",
+   "official_p": 0.10485873442593967,
+   "model_rank_ew": 2.3333333333333335,
+   "book_rank": 23,
+   "model_top_pick": "Pogacar Tadej",
+   "model_top_pick_place": 2,
+   "book_top_pick": "Pogacar Tadej",
+   "book_top_pick_place": 2,
+   "n_reads": 3,
+   "day_key": "",
+   "overlap15_model": 8.666666666666666,
+   "overlap15_book": 7,
+   "overlap10_model": 7.0,
+   "overlap10_book": 5
+  },
+  {
+   "stage": 16,
+   "winner": "Evenepoel Remco",
+   "model_p_ew": 0.15278971167636926,
+   "book_p": 0.5373538436094051,
+   "delta_nats": -1.257594261654369,
+   "best_read": "hills_bite",
+   "best_read_p": 0.1669577290218639,
+   "official_read": "gc_engines",
+   "official_p": 0.15061557991487073,
+   "model_rank_ew": 2.0,
+   "book_rank": 1,
+   "model_top_pick": "Pogacar Tadej",
+   "model_top_pick_place": 2,
+   "book_top_pick": "Evenepoel Remco",
+   "book_top_pick_place": 1,
+   "n_reads": 3,
+   "day_key": "",
+   "overlap15_model": 9.333333333333334,
+   "overlap15_book": 9,
+   "overlap10_model": 5.0,
+   "overlap10_book": 5
+  },
+  {
+   "stage": 17,
+   "winner": "Philipsen Jasper",
+   "model_p_ew": 0.14068627245643775,
+   "book_p": 0.09362604458247786,
+   "delta_nats": 0.4072237944437809,
+   "best_read": "full_sprint",
+   "best_read_p": 0.24551180066104558,
+   "official_read": "break_day",
+   "official_p": 0.000732063709762248,
+   "model_rank_ew": 34.0,
+   "book_rank": 2,
+   "model_top_pick": "Pogacar Tadej",
+   "model_top_pick_place": 50,
+   "book_top_pick": "Pedersen Mads",
+   "book_top_pick_place": 8,
+   "n_reads": 3,
+   "day_key": "",
+   "overlap15_model": 4.0,
+   "overlap15_book": 5,
+   "overlap10_model": 2.0,
+   "overlap10_book": 3
+  },
+  {
+   "stage": 18,
+   "winner": "Carapaz Richard",
+   "model_p_ew": 0.017942729394730017,
+   "book_p": 0.13945556227744238,
+   "delta_nats": -2.050561015298127,
+   "best_read": "gc_finish",
+   "best_read_p": 0.020796111441736168,
+   "official_read": "gc_finish",
+   "official_p": 0.020796111441736168,
+   "model_rank_ew": 10.0,
+   "book_rank": 1,
+   "model_top_pick": "Pogacar Tadej",
+   "model_top_pick_place": 13,
+   "book_top_pick": "Carapaz Richard",
+   "book_top_pick_place": 1,
+   "n_reads": 3,
+   "day_key": "",
+   "overlap15_model": 8.666666666666666,
+   "overlap15_book": 9,
+   "overlap10_model": 3.6666666666666665,
+   "overlap10_book": 4
+  },
+  {
+   "stage": 19,
+   "winner": "Pogacar Tadej",
+   "model_p_ew": 0.3718258414664255,
+   "book_p": 0.3766977094302739,
+   "delta_nats": -0.013017457511813713,
+   "best_read": "mountain_break",
+   "best_read_p": 0.4112877959995375,
+   "official_read": "gc_summit",
+   "official_p": 0.3853426784304514,
+   "model_rank_ew": 1.0,
+   "book_rank": 1,
+   "model_top_pick": "Pogacar Tadej",
+   "model_top_pick_place": 1,
+   "book_top_pick": "Pogacar Tadej",
+   "book_top_pick_place": 1,
+   "n_reads": 3,
+   "day_key": "",
+   "overlap15_model": 10.666666666666666,
+   "overlap15_book": 10,
+   "overlap10_model": 6.0,
+   "overlap10_book": 7
+  },
+  {
+   "stage": 20,
+   "winner": "Carapaz Richard",
+   "model_p_ew": 0.017040048178441777,
+   "book_p": 0.23400980120348353,
+   "delta_nats": -2.6197966511949846,
+   "best_read": "mountain_break",
+   "best_read_p": 0.02182543767109478,
+   "official_read": "gc_finale",
+   "official_p": 0.017339032485542305,
+   "model_rank_ew": 9.0,
+   "book_rank": 2,
+   "model_top_pick": "Pogacar Tadej",
+   "model_top_pick_place": 4,
+   "book_top_pick": "Pogacar Tadej",
+   "book_top_pick_place": 4,
+   "n_reads": 3,
+   "day_key": "",
+   "overlap15_model": 11.333333333333334,
+   "overlap15_book": 10,
+   "overlap10_model": 7.333333333333333,
+   "overlap10_book": 7
+  },
+  {
+   "stage": 21,
+   "winner": "van der Poel Mathieu",
+   "model_p_ew": 0.051899153236324345,
+   "book_p": 0.277165915155357,
+   "delta_nats": -1.6753138238090437,
+   "best_read": "reduced_sprint",
+   "best_read_p": 0.07697741753935027,
+   "official_read": "bunch_sprint",
+   "official_p": 0.015137666201390792,
+   "model_rank_ew": 6.0,
+   "book_rank": 1,
+   "model_top_pick": "Kooij Olav",
+   "model_top_pick_place": 5,
+   "book_top_pick": "van der Poel Mathieu",
+   "book_top_pick_place": 1,
+   "n_reads": 3,
+   "day_key": "",
+   "overlap15_model": 7.0,
+   "overlap15_book": 9,
+   "overlap10_model": 4.666666666666667,
+   "overlap10_book": 4
+  }
+ ],
+ "exante_key": {
+  "macro_majority": {
+   "label": "key put >=0.5 on a macro item",
+   "n": 11,
+   "stages": [
+    1,
+    4,
+    7,
+    8,
+    9,
+    10,
+    11,
+    14,
+    15,
+    16,
+    17
+   ],
+   "win_ll_model_ew": 2.934703099263009,
+   "win_ll_book": 2.808401381177367,
+   "win_ll_delta": -0.12630171808564228,
+   "win_ll_model_best": 2.677622070593675,
+   "win_ll_lambdarank_best": 2.7043634408183284,
+   "total_deficit_nats": 1.3893188989420648,
+   "podium_n": 6,
+   "podium_ll_model": 0.04748930749092809,
+   "podium_ll_book": 0.0452002236991079,
+   "overlap": {
+    "3": {
+     "model": 11.666666666666666,
+     "book": 12,
+     "of": 33,
+     "delta_pp": -1.010101010101012
+    },
+    "5": {
+     "model": 20.166666666666668,
+     "book": 26,
+     "of": 55,
+     "delta_pp": -10.606060606060606
+    },
+    "10": {
+     "model": 41.5,
+     "book": 52,
+     "of": 110,
+     "delta_pp": -9.545454545454545
+    },
+    "15": {
+     "model": 62.50000000000001,
+     "book": 82,
+     "of": 165,
+     "delta_pp": -11.818181818181815
+    }
+   },
+   "spearman_model": 0.4106339822610192,
+   "spearman_book": 0.4442267548310708,
+   "reads": 31,
+   "top_pick_wins_model": 13,
+   "top_pick_wins_book": 12
+  },
+  "residual_majority": {
+   "label": "key put >0.5 on residual items",
+   "n": 6,
+   "stages": [
+    2,
+    5,
+    6,
+    12,
+    20,
+    21
+   ],
+   "win_ll_model_ew": 2.8890493412796308,
+   "win_ll_book": 3.186640809926848,
+   "win_ll_delta": 0.2975914686472172,
+   "win_ll_model_best": 2.5594964853063753,
+   "win_ll_lambdarank_best": 2.5174158073073856,
+   "total_deficit_nats": -1.7855488118833023,
+   "podium_n": 2,
+   "podium_ll_model": 0.06564402803431109,
+   "podium_ll_book": 0.07412809612937919,
+   "overlap": {
+    "3": {
+     "model": 4.666666666666667,
+     "book": 3,
+     "of": 18,
+     "delta_pp": 9.25925925925926
+    },
+    "5": {
+     "model": 8.583333333333334,
+     "book": 9,
+     "of": 30,
+     "delta_pp": -1.3888888888888868
+    },
+    "10": {
+     "model": 24.833333333333332,
+     "book": 19,
+     "of": 60,
+     "delta_pp": 9.722222222222221
+    },
+    "15": {
+     "model": 40.50000000000001,
+     "book": 37,
+     "of": 90,
+     "delta_pp": 3.8888888888888964
+    }
+   },
+   "spearman_model": 0.508508212388583,
+   "spearman_book": 0.5033126179947027,
+   "reads": 19,
+   "top_pick_wins_model": 9,
+   "top_pick_wins_book": 7
+  }
+ },
+ "by_key_score": {
+  "exact": {
+   "label": "key exact",
+   "n": 8,
+   "stages": [
+    1,
+    4,
+    8,
+    9,
+    10,
+    11,
+    16,
+    17
+   ],
+   "win_ll_model_ew": 2.2236856483180136,
+   "win_ll_book": 2.219257991904,
+   "win_ll_delta": -0.004427656414013548,
+   "win_ll_model_best": 1.9805455512689258,
+   "win_ll_lambdarank_best": 2.0357368409596397,
+   "total_deficit_nats": 0.03542125131210794,
+   "podium_n": 6,
+   "podium_ll_model": 0.04748930749092809,
+   "podium_ll_book": 0.0452002236991079,
+   "overlap": {
+    "3": {
+     "model": 11.0,
+     "book": 10,
+     "of": 24,
+     "delta_pp": 4.166666666666667
+    },
+    "5": {
+     "model": 19.166666666666668,
+     "book": 22,
+     "of": 40,
+     "delta_pp": -7.08333333333333
+    },
+    "10": {
+     "model": 39.16666666666667,
+     "book": 44,
+     "of": 80,
+     "delta_pp": -6.041666666666661
+    },
+    "15": {
+     "model": 58.16666666666667,
+     "book": 68,
+     "of": 120,
+     "delta_pp": -8.19444444444444
+    }
+   },
+   "spearman_model": 0.3996559673183857,
+   "spearman_book": 0.4279389171323128,
+   "reads": 22,
+   "top_pick_wins_model": 13,
+   "top_pick_wins_book": 12
+  },
+  "covered_only": {
+   "label": "key covered, not exact",
+   "n": 7,
+   "stages": [
+    5,
+    6,
+    7,
+    12,
+    14,
+    20,
+    21
+   ],
+   "win_ll_model_ew": 3.963910516653892,
+   "win_ll_book": 4.03007206271169,
+   "win_ll_delta": 0.06616154605779778,
+   "win_ll_model_best": 3.6837605065761054,
+   "win_ll_lambdarank_best": 3.6375169867409207,
+   "total_deficit_nats": -0.4631308224045846,
+   "podium_n": 1,
+   "podium_ll_model": 0.08526610558169719,
+   "podium_ll_book": 0.07977200967677635,
+   "overlap": {
+    "3": {
+     "model": 3.3333333333333335,
+     "book": 3,
+     "of": 21,
+     "delta_pp": 1.587301587301588
+    },
+    "5": {
+     "model": 6.25,
+     "book": 8,
+     "of": 35,
+     "delta_pp": -5.0
+    },
+    "10": {
+     "model": 20.833333333333332,
+     "book": 20,
+     "of": 70,
+     "delta_pp": 1.1904761904761887
+    },
+    "15": {
+     "model": 35.833333333333336,
+     "book": 38,
+     "of": 105,
+     "delta_pp": -2.063492063492061
+    }
+   },
+   "spearman_model": 0.5151694217201438,
+   "spearman_book": 0.5260503289365074,
+   "reads": 22,
+   "top_pick_wins_model": 7,
+   "top_pick_wins_book": 7
+  },
+  "missed": {
+   "label": "key not covered",
+   "n": 2,
+   "stages": [
+    2,
+    15
+   ],
+   "win_ll_model_ew": 2.039585668224765,
+   "win_ll_book": 2.0238458391491454,
+   "win_ll_delta": -0.01573982907561966,
+   "win_ll_model_best": 1.5900668660922639,
+   "win_ll_lambdarank_best": 1.5519895289911807,
+   "total_deficit_nats": 0.0314796581512391,
+   "podium_n": 1,
+   "podium_ll_model": 0.046021950486925,
+   "podium_ll_book": 0.06848418258198204,
+   "overlap": {
+    "3": {
+     "model": 2.0,
+     "book": 2,
+     "of": 6,
+     "delta_pp": 0.0
+    },
+    "5": {
+     "model": 3.3333333333333335,
+     "book": 5,
+     "of": 10,
+     "delta_pp": -16.666666666666664
+    },
+    "10": {
+     "model": 6.333333333333333,
+     "book": 7,
+     "of": 20,
+     "delta_pp": -3.333333333333335
+    },
+    "15": {
+     "model": 9.0,
+     "book": 13,
+     "of": 30,
+     "delta_pp": -13.333333333333334
+    }
+   },
+   "spearman_model": 0.3822946943073086,
+   "spearman_book": 0.4002531857479706,
+   "reads": 6,
+   "top_pick_wins_model": 2,
+   "top_pick_wins_book": 0
+  }
+ },
+ "scorecard": {
+  "1": {
+   "oracle": "itt",
+   "key": {
+    "itt": 1.0
+   },
+   "exact": true,
+   "covered": true,
+   "w": 1.0,
+   "wg_size": 2,
+   "wg_prop": 0.0109,
+   "winner": "Pogacar Tadej",
+   "agent": {}
+  },
+  "2": {
+   "oracle": "bunch",
+   "key": {
+    "res_7": 0.55,
+    "res_1": 0.45
+   },
+   "exact": false,
+   "covered": false,
+   "w": 0.0,
+   "wg_size": 41,
+   "wg_prop": 0.224,
+   "winner": "Brennan Matthew",
+   "agent": {}
+  },
+  "4": {
+   "oracle": "gc_day",
+   "key": {
+    "gc_day": 0.6,
+    "res_2": 0.4
+   },
+   "exact": true,
+   "covered": true,
+   "w": 0.6,
+   "wg_size": 1,
+   "wg_prop": 0.0055,
+   "winner": "Pogacar Tadej",
+   "agent": {}
+  },
+  "5": {
+   "oracle": "bunch",
+   "key": {
+    "res_7": 0.5,
+    "bunch": 0.35,
+    "res_3": 0.15
+   },
+   "exact": false,
+   "covered": true,
+   "w": 0.35,
+   "wg_size": 89,
+   "wg_prop": 0.4944,
+   "winner": "Brennan Matthew",
+   "agent": {}
+  },
+  "6": {
+   "oracle": "gc_day",
+   "key": {
+    "res_2": 0.65,
+    "gc_day": 0.35
+   },
+   "exact": false,
+   "covered": true,
+   "w": 0.35,
+   "wg_size": 2,
+   "wg_prop": 0.0112,
+   "winner": "Pogacar Tadej",
+   "agent": {}
+  },
+  "7": {
+   "oracle": "res_2",
+   "key": {
+    "gc_day": 0.6,
+    "res_2": 0.4
+   },
+   "exact": false,
+   "covered": true,
+   "w": 0.4,
+   "wg_size": 1,
+   "wg_prop": 0.0056,
+   "winner": "Leknessund Andreas",
+   "agent": {}
+  },
+  "8": {
+   "oracle": "bunch",
+   "key": {
+    "bunch": 0.6,
+    "res_3": 0.25,
+    "res_7": 0.15
+   },
+   "exact": true,
+   "covered": true,
+   "w": 0.6,
+   "wg_size": 148,
+   "wg_prop": 0.8555,
+   "winner": "Coquard Bryan",
+   "agent": {}
+  },
+  "9": {
+   "oracle": "gc_day",
+   "key": {
+    "gc_day": 1.0
+   },
+   "exact": true,
+   "covered": true,
+   "w": 1.0,
+   "wg_size": 2,
+   "wg_prop": 0.0118,
+   "winner": "Mas Enric",
+   "agent": {}
+  },
+  "10": {
+   "oracle": "bunch",
+   "key": {
+    "bunch": 0.5,
+    "res_3": 0.3,
+    "res_7": 0.2
+   },
+   "exact": true,
+   "covered": true,
+   "w": 0.5,
+   "wg_size": 68,
+   "wg_prop": 0.4072,
+   "winner": "Tronchon Bastien",
+   "agent": {}
+  },
+  "11": {
+   "oracle": "bunch",
+   "key": {
+    "bunch": 0.65,
+    "res_3": 0.2,
+    "res_1": 0.15
+   },
+   "exact": true,
+   "covered": true,
+   "w": 0.65,
+   "wg_size": 96,
+   "wg_prop": 0.5783,
+   "winner": "Brennan Matthew",
+   "agent": {}
+  },
+  "12": {
+   "oracle": "gc_day",
+   "key": {
+    "res_2": 0.55,
+    "gc_day": 0.45
+   },
+   "exact": false,
+   "covered": true,
+   "w": 0.45,
+   "wg_size": 1,
+   "wg_prop": 0.0063,
+   "winner": "Omrzel Jakob",
+   "agent": {}
+  },
+  "13": {
+   "oracle": "res_2",
+   "key": null,
+   "exact": null,
+   "covered": null,
+   "w": null,
+   "wg_size": 2,
+   "wg_prop": 0.0129,
+   "winner": "van Aert Wout",
+   "agent": {}
+  },
+  "14": {
+   "oracle": "res_2",
+   "key": {
+    "gc_day": 0.6,
+    "res_2": 0.4
+   },
+   "exact": false,
+   "covered": true,
+   "w": 0.4,
+   "wg_size": 2,
+   "wg_prop": 0.0133,
+   "winner": "Brenner Marco",
+   "agent": {}
+  },
+  "15": {
+   "oracle": "res_4",
+   "key": {
+    "bunch": 0.55,
+    "res_3": 0.3,
+    "res_1": 0.15
+   },
+   "exact": false,
+   "covered": false,
+   "w": 0.0,
+   "wg_size": 3,
+   "wg_prop": 0.02,
+   "winner": "van Aert Wout",
+   "agent": {}
+  },
+  "16": {
+   "oracle": "bunch",
+   "key": {
+    "bunch": 0.55,
+    "res_3": 0.3,
+    "res_1": 0.15
+   },
+   "exact": true,
+   "covered": true,
+   "w": 0.55,
+   "wg_size": 102,
+   "wg_prop": 0.6846,
+   "winner": "Brennan Matthew",
+   "agent": {
+    "agent_key": {
+     "bunch": 0.6,
+     "res_3": 0.25,
+     "res_1": 0.15
+    },
+    "agent_exact": true,
+    "agent_covered": true,
+    "agent_weight_on_true": 0.6,
+    "agent_flagged": true,
+    "agent_self_flag": true,
+    "agent_family_covered": true,
+    "agent_confidence": 0.6,
+    "agent_replay": false,
+    "agent_scored_at": "2026-09-08T17:40:34.643390"
+   }
+  },
+  "17": {
+   "oracle": "bunch",
+   "key": {
+    "bunch": 1.0
+   },
+   "exact": true,
+   "covered": true,
+   "w": 1.0,
+   "wg_size": 103,
+   "wg_prop": 0.6959,
+   "winner": "Brennan Matthew",
+   "agent": {}
+  },
+  "18": {
+   "oracle": "itt",
+   "key": null,
+   "exact": null,
+   "covered": null,
+   "w": null,
+   "wg_size": 1,
+   "wg_prop": 0.0068,
+   "winner": "K\u00fcng Stefan",
+   "agent": {
+    "agent_key": {
+     "itt": 1.0
+    },
+    "agent_exact": true,
+    "agent_covered": true,
+    "agent_weight_on_true": 1.0,
+    "agent_flagged": false,
+    "agent_self_flag": false,
+    "agent_family_covered": true,
+    "agent_confidence": 0.97,
+    "agent_replay": false,
+    "agent_scored_at": "2026-09-11T19:36:42.205386"
+   }
+  },
+  "19": {
+   "oracle": "res_4",
+   "key": null,
+   "exact": null,
+   "covered": null,
+   "w": null,
+   "wg_size": 1,
+   "wg_prop": 0.0069,
+   "winner": "Dunbar Edward",
+   "agent": {}
+  },
+  "20": {
+   "oracle": "res_4",
+   "key": {
+    "res_2": 0.45,
+    "gc_day": 0.4,
+    "res_4": 0.15
+   },
+   "exact": false,
+   "covered": true,
+   "w": 0.15,
+   "wg_size": 1,
+   "wg_prop": 0.007,
+   "winner": "Landa Mikel",
+   "agent": {
+    "agent_key": {
+     "gc_day": 0.42,
+     "res_2": 0.35,
+     "res_4": 0.23
+    },
+    "agent_exact": false,
+    "agent_covered": true,
+    "agent_weight_on_true": 0.23,
+    "agent_flagged": true,
+    "agent_self_flag": true,
+    "agent_family_covered": true,
+    "agent_confidence": 0.42,
+    "agent_replay": false,
+    "agent_scored_at": "2026-09-12T17:59:22.754861"
+   }
+  },
+  "21": {
+   "oracle": "bunch",
+   "key": {
+    "res_7": 0.4,
+    "bunch": 0.35,
+    "res_1": 0.25
+   },
+   "exact": false,
+   "covered": true,
+   "w": 0.35,
+   "wg_size": 40,
+   "wg_prop": 0.2817,
+   "winner": "Johannessen Tobias Halland",
+   "agent": {
+    "agent_key": {
+     "res_7": 0.45,
+     "res_1": 0.3,
+     "bunch": 0.25
+    },
+    "agent_exact": false,
+    "agent_covered": true,
+    "agent_weight_on_true": 0.25,
+    "agent_flagged": true,
+    "agent_self_flag": true,
+    "agent_family_covered": true,
+    "agent_confidence": 0.4,
+    "agent_replay": false,
+    "agent_scored_at": "2026-09-13T13:44:39.058136"
+   }
+  }
+ },
+ "calibration": {
+  "win": [
+   {
+    "band": "0.00-0.05",
+    "n": 8175,
+    "stated": 0.0026599012788279057,
+    "realised": 0.0030581039755351682
+   },
+   {
+    "band": "0.05-0.10",
+    "n": 81,
+    "stated": 0.07370315261329183,
+    "realised": 0.037037037037037035
+   },
+   {
+    "band": "0.10-0.20",
+    "n": 34,
+    "stated": 0.12480766554014326,
+    "realised": 0
+   },
+   {
+    "band": "0.20-0.30",
+    "n": 6,
+    "stated": 0.23999272769189312,
+    "realised": 0.3333333333333333
+   },
+   {
+    "band": "0.30-0.50",
+    "n": 15,
+    "stated": 0.42229147616832874,
+    "realised": 0.6
+   },
+   {
+    "band": "0.50-0.75",
+    "n": 17,
+    "stated": 0.6039742674625924,
+    "realised": 0.6470588235294118
+   }
+  ],
+  "podium": [
+   {
+    "band": "0.00-0.05",
+    "n": 7520,
+    "stated": 0.005579017049609688,
+    "realised": 0.00851063829787234
+   },
+   {
+    "band": "0.05-0.10",
+    "n": 525,
+    "stated": 0.0705687241429073,
+    "realised": 0.0419047619047619
+   },
+   {
+    "band": "0.10-0.20",
+    "n": 150,
+    "stated": 0.13158961550790937,
+    "realised": 0.12
+   },
+   {
+    "band": "0.20-0.30",
+    "n": 66,
+    "stated": 0.24682277627239071,
+    "realised": 0.15151515151515152
+   },
+   {
+    "band": "0.30-0.50",
+    "n": 34,
+    "stated": 0.36316227462830797,
+    "realised": 0.4411764705882353
+   },
+   {
+    "band": "0.50-0.75",
+    "n": 22,
+    "stated": 0.6260949934494308,
+    "realised": 0.6363636363636364
+   },
+   {
+    "band": "0.75-1.00",
+    "n": 11,
+    "stated": 0.8042598962267884,
+    "realised": 0.6363636363636364
+   }
+  ],
+  "top5": [
+   {
+    "band": "0.00-0.05",
+    "n": 7098,
+    "stated": 0.007331296427188059,
+    "realised": 0.01028458720766413
+   },
+   {
+    "band": "0.05-0.10",
+    "n": 503,
+    "stated": 0.07606802402285559,
+    "realised": 0.0775347912524851
+   },
+   {
+    "band": "0.10-0.20",
+    "n": 483,
+    "stated": 0.13857989544312982,
+    "realised": 0.11801242236024845
+   },
+   {
+    "band": "0.20-0.30",
+    "n": 99,
+    "stated": 0.23859475122156398,
+    "realised": 0.1919191919191919
+   },
+   {
+    "band": "0.30-0.50",
+    "n": 104,
+    "stated": 0.3861640358269938,
+    "realised": 0.27884615384615385
+   },
+   {
+    "band": "0.50-0.75",
+    "n": 25,
+    "stated": 0.6235191488667421,
+    "realised": 0.8
+   },
+   {
+    "band": "0.75-1.00",
+    "n": 16,
+    "stated": 0.8372645974175219,
+    "realised": 0.625
+   }
+  ],
+  "top15": [
+   {
+    "band": "0.00-0.05",
+    "n": 5479,
+    "stated": 0.01441138820732763,
+    "realised": 0.014966234714363934
+   },
+   {
+    "band": "0.05-0.10",
+    "n": 863,
+    "stated": 0.07118432037588038,
+    "realised": 0.11471610660486674
+   },
+   {
+    "band": "0.10-0.20",
+    "n": 807,
+    "stated": 0.14323125623275534,
+    "realised": 0.14869888475836432
+   },
+   {
+    "band": "0.20-0.30",
+    "n": 367,
+    "stated": 0.24350700569914013,
+    "realised": 0.2452316076294278
+   },
+   {
+    "band": "0.30-0.50",
+    "n": 461,
+    "stated": 0.4001844912542402,
+    "realised": 0.3774403470715835
+   },
+   {
+    "band": "0.50-0.75",
+    "n": 299,
+    "stated": 0.5941862776130891,
+    "realised": 0.4916387959866221
+   },
+   {
+    "band": "0.75-1.00",
+    "n": 52,
+    "stated": 0.8174325611871304,
+    "realised": 0.6730769230769231
+   }
+  ],
+  "book_win": [
+   {
+    "band": "0.00-0.05",
+    "n": 2773,
+    "stated": 0.002862451448368778,
+    "realised": 0.0025243418680129825
+   },
+   {
+    "band": "0.05-0.10",
+    "n": 29,
+    "stated": 0.06945728364269023,
+    "realised": 0.034482758620689655
+   },
+   {
+    "band": "0.10-0.20",
+    "n": 20,
+    "stated": 0.13198470757006814,
+    "realised": 0.15
+   },
+   {
+    "band": "0.20-0.30",
+    "n": 5,
+    "stated": 0.23868397811103903,
+    "realised": 0.2
+   },
+   {
+    "band": "0.30-0.50",
+    "n": 8,
+    "stated": 0.40188085825985054,
+    "realised": 0.625
+   }
+  ]
+ },
+ "temperature": {
+  "all": {
+   "n": 17,
+   "raw": 2.9185900082100518,
+   "calibrated": 2.942815529065678,
+   "book": 2.941897650147772,
+   "gap_raw": 0.02330764193772028,
+   "gap_cal": -0.0009178789179058455,
+   "T_in_sample": 1.0,
+   "T_loo_median": 1.0,
+   "per_stage": {
+    "1": {
+     "raw": 1.0022761868910979,
+     "cal": 1.0022761868910979,
+     "book": 2.258048343340166,
+     "T": 1.0
+    },
+    "2": {
+     "raw": 1.4430605620284833,
+     "cal": 1.4430605620284833,
+     "book": 2.0942870894566714,
+     "T": 1.0
+    },
+    "4": {
+     "raw": 0.6350021377234755,
+     "cal": 0.6350021377234755,
+     "book": 0.7102454894014634,
+     "T": 1.0
+    },
+    "5": {
+     "raw": 0.9602932295474104,
+     "cal": 0.9602932295474104,
+     "book": 1.023619210160843,
+     "T": 1.0
+    },
+    "6": {
+     "raw": 0.648958678404208,
+     "cal": 0.648958678404208,
+     "book": 1.578570037312969,
+     "T": 1.0
+    },
+    "7": {
+     "raw": 6.151751633399873,
+     "cal": 6.352795048861963,
+     "book": 5.453193264862468,
+     "T": 1.05
+    },
+    "8": {
+     "raw": 4.691679090507144,
+     "cal": 4.691679090507144,
+     "book": 4.59887842606418,
+     "T": 1.0
+    },
+    "9": {
+     "raw": 2.9725570016139735,
+     "cal": 2.9725570016139735,
+     "book": 2.3051143450465874,
+     "T": 1.0
+    },
+    "10": {
+     "raw": 6.404548999648417,
+     "cal": 6.615339438731971,
+     "book": 5.00024997360797,
+     "T": 1.05
+    },
+    "11": {
+     "raw": 0.5714088872589781,
+     "cal": 0.5714088872589781,
+     "book": 1.0710859769616354,
+     "T": 1.0
+    },
+    "12": {
+     "raw": 4.568104382912738,
+     "cal": 4.568104382912738,
+     "book": 4.799066051754842,
+     "T": 1.0
+    },
+    "14": {
+     "raw": 5.704386497528071,
+     "cal": 5.704386497528071,
+     "book": 5.731753404014946,
+     "T": 1.0
+    },
+    "15": {
+     "raw": 2.636110774421047,
+     "cal": 2.636110774421047,
+     "book": 1.9534045888416196,
+     "T": 1.0
+    },
+    "16": {
+     "raw": 0.9932372274103002,
+     "cal": 0.9932372274103002,
+     "book": 1.0133461138705788,
+     "T": 1.0
+    },
+    "17": {
+     "raw": 0.5187756554907227,
+     "cal": 0.5187756554907227,
+     "book": 0.7970952669394191,
+     "T": 1.0
+    },
+    "20": {
+     "raw": 5.810952328198144,
+     "cal": 5.810952328198144,
+     "book": 4.807522038670459,
+     "T": 1.0
+    },
+    "21": {
+     "raw": 3.9029268665868013,
+     "cal": 3.9029268665868013,
+     "book": 4.816780432205302,
+     "T": 1.0
+    }
+   }
+  },
+  "minus_hardman": {
+   "n": 14,
+   "raw": 2.6194602499224726,
+   "calibrated": 2.7201855806148614,
+   "book": 2.731558932704088,
+   "gap_raw": 0.11209868278161528,
+   "gap_cal": 0.011373352089226518,
+   "T_in_sample": 1.05,
+   "T_loo_median": 1.05,
+   "per_stage": {
+    "1": {
+     "raw": 1.0022761868910979,
+     "cal": 0.9291910094519508,
+     "book": 2.258048343340166,
+     "T": 1.05
+    },
+    "2": {
+     "raw": 1.4430605620284833,
+     "cal": 1.3622342216397507,
+     "book": 2.0942870894566714,
+     "T": 1.05
+    },
+    "4": {
+     "raw": 0.6350021377234755,
+     "cal": 0.547084135984891,
+     "book": 0.7102454894014634,
+     "T": 1.05
+    },
+    "5": {
+     "raw": 0.9602932295474104,
+     "cal": 0.878936028538097,
+     "book": 1.023619210160843,
+     "T": 1.05
+    },
+    "6": {
+     "raw": 0.648958678404208,
+     "cal": 0.5597509370941296,
+     "book": 1.578570037312969,
+     "T": 1.05
+    },
+    "7": {
+     "raw": 6.151751633399873,
+     "cal": 7.017446490120623,
+     "book": 5.453193264862468,
+     "T": 1.2
+    },
+    "8": {
+     "raw": 4.691679090507144,
+     "cal": 5.024096413482006,
+     "book": 4.59887842606418,
+     "T": 1.15
+    },
+    "9": {
+     "raw": 2.9725570016139735,
+     "cal": 2.942068331527641,
+     "book": 2.3051143450465874,
+     "T": 1.05
+    },
+    "11": {
+     "raw": 0.5714088872589781,
+     "cal": 0.5011239526200848,
+     "book": 1.0710859769616354,
+     "T": 1.05
+    },
+    "12": {
+     "raw": 4.568104382912738,
+     "cal": 4.672589966423065,
+     "book": 4.799066051754842,
+     "T": 1.1
+    },
+    "14": {
+     "raw": 5.704386497528071,
+     "cal": 6.062092416750809,
+     "book": 5.731753404014946,
+     "T": 1.15
+    },
+    "16": {
+     "raw": 0.9932372274103002,
+     "cal": 0.9932372274103002,
+     "book": 1.0133461138705788,
+     "T": 1.0
+    },
+    "17": {
+     "raw": 0.5187756554907227,
+     "cal": 0.45953960979286995,
+     "book": 0.7970952669394191,
+     "T": 1.05
+    },
+    "20": {
+     "raw": 5.810952328198144,
+     "cal": 6.1332073877718445,
+     "book": 4.807522038670459,
+     "T": 1.15
+    }
+   }
+  },
+  "minus_break_won": {
+   "n": 12,
+   "raw": 2.062060376925918,
+   "calibrated": 2.164409010674612,
+   "book": 2.2722767253639824,
+   "gap_raw": 0.21021634843806458,
+   "gap_cal": 0.10786771468937051,
+   "T_in_sample": 1.25,
+   "T_loo_median": 1.2,
+   "per_stage": {
+    "1": {
+     "raw": 1.0022761868910979,
+     "cal": 0.7452792733241049,
+     "book": 2.258048343340166,
+     "T": 1.2
+    },
+    "2": {
+     "raw": 1.4430605620284833,
+     "cal": 1.1617298979496629,
+     "book": 2.0942870894566714,
+     "T": 1.2
+    },
+    "4": {
+     "raw": 0.6350021377234755,
+     "cal": 0.34473398970882335,
+     "book": 0.7102454894014634,
+     "T": 1.2
+    },
+    "5": {
+     "raw": 0.9602932295474104,
+     "cal": 0.6760567859242446,
+     "book": 1.023619210160843,
+     "T": 1.2
+    },
+    "6": {
+     "raw": 0.648958678404208,
+     "cal": 0.35351304453559823,
+     "book": 1.578570037312969,
+     "T": 1.2
+    },
+    "8": {
+     "raw": 4.691679090507144,
+     "cal": 5.545215147841416,
+     "book": 4.59887842606418,
+     "T": 1.35
+    },
+    "9": {
+     "raw": 2.9725570016139735,
+     "cal": 2.87581727089395,
+     "book": 2.3051143450465874,
+     "T": 1.2
+    },
+    "10": {
+     "raw": 6.404548999648417,
+     "cal": 8.809844197182036,
+     "book": 5.00024997360797,
+     "T": 1.5
+    },
+    "11": {
+     "raw": 0.5714088872589781,
+     "cal": 0.3402367244410852,
+     "book": 1.0710859769616354,
+     "T": 1.2
+    },
+    "16": {
+     "raw": 0.9932372274103002,
+     "cal": 0.7083916296132241,
+     "book": 1.0133461138705788,
+     "T": 1.15
+    },
+    "17": {
+     "raw": 0.5187756554907227,
+     "cal": 0.3226483965311902,
+     "book": 0.7970952669394191,
+     "T": 1.2
+    },
+    "21": {
+     "raw": 3.9029268665868013,
+     "cal": 4.089441770150006,
+     "book": 4.816780432205302,
+     "T": 1.25
+    }
+   }
+  },
+  "peloton_settled": {
+   "n": 10,
+   "raw": 1.4437248656875794,
+   "calibrated": 1.4947385794409878,
+   "book": 1.7450290298554514,
+   "gap_raw": 0.301304164167872,
+   "gap_cal": 0.2502904504144636,
+   "T_in_sample": 1.65,
+   "T_loo_median": 1.6,
+   "per_stage": {
+    "1": {
+     "raw": 1.0022761868910979,
+     "cal": 0.4631211002841316,
+     "book": 2.258048343340166,
+     "T": 1.55
+    },
+    "2": {
+     "raw": 1.4430605620284833,
+     "cal": 0.8641201912576288,
+     "book": 2.0942870894566714,
+     "T": 1.55
+    },
+    "4": {
+     "raw": 0.6350021377234755,
+     "cal": 0.09695945696329196,
+     "book": 0.7102454894014634,
+     "T": 1.6
+    },
+    "5": {
+     "raw": 0.9602932295474104,
+     "cal": 0.3712939809164772,
+     "book": 1.023619210160843,
+     "T": 1.55
+    },
+    "6": {
+     "raw": 0.648958678404208,
+     "cal": 0.09893586541219823,
+     "book": 1.578570037312969,
+     "T": 1.6
+    },
+    "8": {
+     "raw": 4.691679090507144,
+     "cal": 9.659523070082791,
+     "book": 4.59887842606418,
+     "T": 2.6
+    },
+    "9": {
+     "raw": 2.9725570016139735,
+     "cal": 2.8469643866003556,
+     "book": 2.3051143450465874,
+     "T": 1.65
+    },
+    "11": {
+     "raw": 0.5714088872589781,
+     "cal": 0.12838807079599263,
+     "book": 1.0710859769616354,
+     "T": 1.6
+    },
+    "16": {
+     "raw": 0.9932372274103002,
+     "cal": 0.2831576806249503,
+     "book": 1.0133461138705788,
+     "T": 1.55
+    },
+    "17": {
+     "raw": 0.5187756554907227,
+     "cal": 0.13492199147205947,
+     "book": 0.7970952669394191,
+     "T": 1.6
+    }
+   }
+  },
+  "hardman_only": {
+   "n": 3,
+   "raw": 4.314528880218755,
+   "calibrated": 4.314528880218755,
+   "book": 3.923478331551631,
+   "gap_raw": -0.3910505486671241,
+   "gap_cal": -0.3910505486671241,
+   "T_in_sample": 1.0,
+   "T_loo_median": 1.0,
+   "per_stage": {
+    "10": {
+     "raw": 6.404548999648417,
+     "cal": 6.404548999648417,
+     "book": 5.00024997360797,
+     "T": 1.0
+    },
+    "15": {
+     "raw": 2.636110774421047,
+     "cal": 2.636110774421047,
+     "book": 1.9534045888416196,
+     "T": 1.0
+    },
+    "21": {
+     "raw": 3.9029268665868013,
+     "cal": 3.9029268665868013,
+     "book": 4.816780432205302,
+     "T": 1.0
+    }
+   }
+  },
+  "break_won_only": {
+   "n": 5,
+   "raw": 4.974261123291974,
+   "calibrated": 4.974261123291974,
+   "book": 4.548987869628867,
+   "gap_raw": -0.4252732536631072,
+   "gap_cal": -0.4252732536631072,
+   "T_in_sample": 1.0,
+   "T_loo_median": 1.0,
+   "per_stage": {
+    "7": {
+     "raw": 6.151751633399873,
+     "cal": 6.151751633399873,
+     "book": 5.453193264862468,
+     "T": 1.0
+    },
+    "12": {
+     "raw": 4.568104382912738,
+     "cal": 4.568104382912738,
+     "book": 4.799066051754842,
+     "T": 1.0
+    },
+    "14": {
+     "raw": 5.704386497528071,
+     "cal": 5.704386497528071,
+     "book": 5.731753404014946,
+     "T": 1.0
+    },
+    "15": {
+     "raw": 2.636110774421047,
+     "cal": 2.636110774421047,
+     "book": 1.9534045888416196,
+     "T": 1.0
+    },
+    "20": {
+     "raw": 5.810952328198144,
+     "cal": 5.810952328198144,
+     "book": 4.807522038670459,
+     "T": 1.0
+    }
+   }
+  }
+ },
+ "ranking_channel": {
+  "per_stage": [
+   {
+    "stage": 1,
+    "board": "daymenu",
+    "n_reads": 2,
+    "pub10_ew": 4.5,
+    "prod10_ew": 5,
+    "pub10_official": 5,
+    "prod10_official": 6,
+    "pub10_best": 5,
+    "book10": 5,
+    "hind10": null,
+    "pub15_ew": 11,
+    "prod15_ew": 10,
+    "pub15_official": 11,
+    "prod15_official": 10,
+    "pub15_best": 11,
+    "book15": 11,
+    "hind15": null
+   },
+   {
+    "stage": 2,
+    "board": "daymenu",
+    "n_reads": 3,
+    "pub10_ew": 4.666666666666667,
+    "prod10_ew": 5.333333333333333,
+    "pub10_official": 5,
+    "prod10_official": 6,
+    "pub10_best": 6,
+    "book10": 4,
+    "hind10": null,
+    "pub15_ew": 6.333333333333333,
+    "prod15_ew": 7,
+    "pub15_official": 7,
+    "prod15_official": 8,
+    "pub15_best": 7,
+    "book15": 7,
+    "hind15": null
+   },
+   {
+    "stage": 4,
+    "board": "daymenu",
+    "n_reads": 3,
+    "pub10_ew": 7,
+    "prod10_ew": 7,
+    "pub10_official": 8,
+    "prod10_official": 8,
+    "pub10_best": 8,
+    "book10": 6,
+    "hind10": 8,
+    "pub15_ew": 10,
+    "prod15_ew": 9.666666666666666,
+    "pub15_official": 10,
+    "prod15_official": 10,
+    "pub15_best": 10,
+    "book15": 10,
+    "hind15": 10
+   },
+   {
+    "stage": 5,
+    "board": "daymenu",
+    "n_reads": 3,
+    "pub10_ew": 5,
+    "prod10_ew": 4.333333333333333,
+    "pub10_official": 5,
+    "prod10_official": 4,
+    "pub10_best": 5,
+    "book10": 5,
+    "hind10": 5,
+    "pub15_ew": 7.333333333333333,
+    "prod15_ew": 6.333333333333333,
+    "pub15_official": 8,
+    "prod15_official": 7,
+    "pub15_best": 8,
+    "book15": 8,
+    "hind15": 7
+   },
+   {
+    "stage": 6,
+    "board": "daymenu",
+    "n_reads": 4,
+    "pub10_ew": 4.5,
+    "prod10_ew": 5.5,
+    "pub10_official": 4,
+    "prod10_official": 5,
+    "pub10_best": 6,
+    "book10": 2,
+    "hind10": 6,
+    "pub15_ew": 8,
+    "prod15_ew": 9,
+    "pub15_official": 8,
+    "prod15_official": 9,
+    "pub15_best": 9,
+    "book15": 4,
+    "hind15": 9
+   },
+   {
+    "stage": 7,
+    "board": "daymenu",
+    "n_reads": 3,
+    "pub10_ew": 1.6666666666666667,
+    "prod10_ew": 0,
+    "pub10_official": 2,
+    "prod10_official": 0,
+    "pub10_best": 2,
+    "book10": 2,
+    "hind10": 2,
+    "pub15_ew": 2.6666666666666665,
+    "prod15_ew": 1,
+    "pub15_official": 2,
+    "prod15_official": 1,
+    "pub15_best": 4,
+    "book15": 3,
+    "hind15": 4
+   },
+   {
+    "stage": 8,
+    "board": "daymenu",
+    "n_reads": 3,
+    "pub10_ew": 4,
+    "prod10_ew": 5,
+    "pub10_official": 4,
+    "prod10_official": 5,
+    "pub10_best": 4,
+    "book10": 6,
+    "hind10": 4,
+    "pub15_ew": 6,
+    "prod15_ew": 6.333333333333333,
+    "pub15_official": 6,
+    "prod15_official": 7,
+    "pub15_best": 7,
+    "book15": 8,
+    "hind15": 6
+   },
+   {
+    "stage": 9,
+    "board": "daymenu",
+    "n_reads": 2,
+    "pub10_ew": 6.5,
+    "prod10_ew": 7,
+    "pub10_official": 7,
+    "prod10_official": 7,
+    "pub10_best": 7,
+    "book10": 5,
+    "hind10": null,
+    "pub15_ew": 10,
+    "prod15_ew": 9,
+    "pub15_official": 10,
+    "prod15_official": 9,
+    "pub15_best": 10,
+    "book15": 9,
+    "hind15": null
+   },
+   {
+    "stage": 10,
+    "board": "daymenu",
+    "n_reads": 3,
+    "pub10_ew": 2.3333333333333335,
+    "prod10_ew": 2,
+    "pub10_official": 2,
+    "prod10_official": 2,
+    "pub10_best": 3,
+    "book10": 2,
+    "hind10": 2,
+    "pub15_ew": 3.3333333333333335,
+    "prod15_ew": 3,
+    "pub15_official": 2,
+    "prod15_official": 2,
+    "pub15_best": 5,
+    "book15": 5,
+    "hind15": 4
+   },
+   {
+    "stage": 11,
+    "board": "daymenu",
+    "n_reads": 3,
+    "pub10_ew": 4.666666666666667,
+    "prod10_ew": 4.333333333333333,
+    "pub10_official": 5,
+    "prod10_official": 5,
+    "pub10_best": 5,
+    "book10": 8,
+    "hind10": 5,
+    "pub15_ew": 7.333333333333333,
+    "prod15_ew": 6.333333333333333,
+    "pub15_official": 7,
+    "prod15_official": 7,
+    "pub15_best": 8,
+    "book15": 9,
+    "hind15": 7
+   },
+   {
+    "stage": 12,
+    "board": "daymenu",
+    "n_reads": 3,
+    "pub10_ew": 3,
+    "prod10_ew": 4,
+    "pub10_official": 2,
+    "prod10_official": 4,
+    "pub10_best": 4,
+    "book10": 4,
+    "hind10": 3,
+    "pub15_ew": 6.333333333333333,
+    "prod15_ew": 6.333333333333333,
+    "pub15_official": 6,
+    "prod15_official": 6,
+    "pub15_best": 7,
+    "book15": 6,
+    "hind15": 5
+   },
+   {
+    "stage": 14,
+    "board": "daymenu",
+    "n_reads": 3,
+    "pub10_ew": 1,
+    "prod10_ew": 0,
+    "pub10_official": 0,
+    "prod10_official": 0,
+    "pub10_best": 3,
+    "book10": 3,
+    "hind10": 4,
+    "pub15_ew": 3,
+    "prod15_ew": 1.3333333333333333,
+    "pub15_official": 2,
+    "prod15_official": 1,
+    "pub15_best": 5,
+    "book15": 5,
+    "hind15": 5
+   },
+   {
+    "stage": 15,
+    "board": "daymenu",
+    "n_reads": 3,
+    "pub10_ew": 1,
+    "prod10_ew": 1.3333333333333333,
+    "pub10_official": 1,
+    "prod10_official": 2,
+    "pub10_best": 1,
+    "book10": 3,
+    "hind10": 2,
+    "pub15_ew": 1.6666666666666667,
+    "prod15_ew": 2,
+    "pub15_official": 1,
+    "prod15_official": 3,
+    "pub15_best": 3,
+    "book15": 6,
+    "hind15": 4
+   },
+   {
+    "stage": 16,
+    "board": "daymenu",
+    "n_reads": 3,
+    "pub10_ew": 3.6666666666666665,
+    "prod10_ew": 4.666666666666667,
+    "pub10_official": 5,
+    "prod10_official": 7,
+    "pub10_best": 6,
+    "book10": 7,
+    "hind10": 7,
+    "pub15_ew": 6.666666666666667,
+    "prod15_ew": 6.666666666666667,
+    "pub15_official": 10,
+    "prod15_official": 10,
+    "pub15_best": 10,
+    "book15": 7,
+    "hind15": 10
+   },
+   {
+    "stage": 17,
+    "board": "daymenu",
+    "n_reads": 3,
+    "pub10_ew": 5.333333333333333,
+    "prod10_ew": 6.666666666666667,
+    "pub10_official": 5,
+    "prod10_official": 6,
+    "pub10_best": 6,
+    "book10": 5,
+    "hind10": null,
+    "pub15_ew": 10,
+    "prod15_ew": 11,
+    "pub15_official": 10,
+    "prod15_official": 11,
+    "pub15_best": 11,
+    "book15": 9,
+    "hind15": null
+   },
+   {
+    "stage": 20,
+    "board": "daymenu",
+    "n_reads": 3,
+    "pub10_ew": 2.6666666666666665,
+    "prod10_ew": 2,
+    "pub10_official": 3,
+    "prod10_official": 2,
+    "pub10_best": 3,
+    "book10": 1,
+    "hind10": 3,
+    "pub15_ew": 8,
+    "prod15_ew": 7.333333333333333,
+    "pub15_official": 8,
+    "prod15_official": 7,
+    "pub15_best": 8,
+    "book15": 6,
+    "hind15": 7
+   },
+   {
+    "stage": 21,
+    "board": "daymenu",
+    "n_reads": 3,
+    "pub10_ew": 3.6666666666666665,
+    "prod10_ew": 4,
+    "pub10_official": 3,
+    "prod10_official": 5,
+    "pub10_best": 6,
+    "book10": 3,
+    "hind10": 4,
+    "pub15_ew": 6.666666666666667,
+    "prod15_ew": 7,
+    "pub15_official": 6,
+    "prod15_official": 6,
+    "pub15_best": 9,
+    "book15": 6,
+    "hind15": 7
+   }
+  ],
+  "totals": {
+   "10": {
+    "published": 65.16666666666667,
+    "production": 68.16666666666666,
+    "book": 71,
+    "official_pub": 66,
+    "official_prod": 74,
+    "best_branch_pub": 80,
+    "hindsight_pub": 55.0,
+    "n_hind": 13
+   },
+   "15": {
+    "published": 114.33333333333333,
+    "production": 109.33333333333333,
+    "book": 119,
+    "official_pub": 114,
+    "official_prod": 114,
+    "best_branch_pub": 132,
+    "hindsight_pub": 85.0,
+    "n_hind": 13
+   }
+  }
+ },
+ "hits": {
+  "podium_model_over_book": [
+   {
+    "stage": 2,
+    "rider": "Pogacar Tadej",
+    "place": 3,
+    "model_p": 0.18840543434972085,
+    "book_p": 0.04515793810380275,
+    "ratio": 4.172144306426055
+   },
+   {
+    "stage": 20,
+    "rider": "Debruyne Ramses",
+    "place": 3,
+    "model_p": 0.026098197437631778,
+    "book_p": 0.006550634257353411,
+    "ratio": 3.984071833706066
+   },
+   {
+    "stage": 20,
+    "rider": "Johannessen Tobias Halland",
+    "place": 2,
+    "model_p": 0.04810062304813775,
+    "book_p": 0.012972824705739107,
+    "ratio": 3.7077987361425073
+   },
+   {
+    "stage": 1,
+    "rider": "Pogacar Tadej",
+    "place": 1,
+    "model_p": 0.3670430310839038,
+    "book_p": 0.10455433993624841,
+    "ratio": 3.5105480203663166
+   },
+   {
+    "stage": 9,
+    "rider": "Roglic Primoz",
+    "place": 3,
+    "model_p": 0.13184018421404523,
+    "book_p": 0.03813870961628313,
+    "ratio": 3.4568601177255545
+   },
+   {
+    "stage": 21,
+    "rider": "Debruyne Ramses",
+    "place": 3,
+    "model_p": 0.027745098676877054,
+    "book_p": 0.0097838335136774,
+    "ratio": 2.8358105887728504
+   },
+   {
+    "stage": 6,
+    "rider": "Pogacar Tadej",
+    "place": 1,
+    "model_p": 0.5225896774409631,
+    "book_p": 0.20626984559843667,
+    "ratio": 2.533524354589054
+   },
+   {
+    "stage": 21,
+    "rider": "Johannessen Tobias Halland",
+    "place": 1,
+    "model_p": 0.02018275268866765,
+    "book_p": 0.00809280056069612,
+    "ratio": 2.493914503056972
+   },
+   {
+    "stage": 6,
+    "rider": "Mas Enric",
+    "place": 2,
+    "model_p": 0.02328840894104242,
+    "book_p": 0.010005626838730136,
+    "ratio": 2.3275312298172883
+   },
+   {
+    "stage": 4,
+    "rider": "Gall Felix",
+    "place": 3,
+    "model_p": 0.04334665502506335,
+    "book_p": 0.01922724353087762,
+    "ratio": 2.2544393820909185
+   },
+   {
+    "stage": 2,
+    "rider": "Brennan Matthew",
+    "place": 1,
+    "model_p": 0.23620373510510242,
+    "book_p": 0.12315801301037113,
+    "ratio": 1.9178917338103831
+   },
+   {
+    "stage": 5,
+    "rider": "Meeus Jordi",
+    "place": 2,
+    "model_p": 0.09803669710238291,
+    "book_p": 0.05113004813166142,
+    "ratio": 1.9173988815722498
+   }
+  ],
+  "podium_book_over_model": [
+   {
+    "stage": 15,
+    "rider": "Romele Alessandro",
+    "place": 2,
+    "model_p": 0.0007686149028905907,
+    "book_p": 0.027741621619636843,
+    "ratio": 0.027706199494355745
+   },
+   {
+    "stage": 15,
+    "rider": "Nys Thibau",
+    "place": 3,
+    "model_p": 0.0013887600170164821,
+    "book_p": 0.018766391095636686,
+    "ratio": 0.07400250852383537
+   },
+   {
+    "stage": 10,
+    "rider": "Nys Thibau",
+    "place": 3,
+    "model_p": 0.001074180559510386,
+    "book_p": 0.013340442215037778,
+    "ratio": 0.08052061110084753
+   },
+   {
+    "stage": 10,
+    "rider": "Cort Magnus",
+    "place": 2,
+    "model_p": 0.001476372354384194,
+    "book_p": 0.013340442215037778,
+    "ratio": 0.11066892165838245
+   },
+   {
+    "stage": 11,
+    "rider": "Coquard Bryan",
+    "place": 2,
+    "model_p": 0.00638060900669948,
+    "book_p": 0.054250734874627046,
+    "ratio": 0.1176133193669175
+   },
+   {
+    "stage": 6,
+    "rider": "Debruyne Ramses",
+    "place": 3,
+    "model_p": 0.0022525625976033137,
+    "book_p": 0.016350658492559005,
+    "ratio": 0.1377658642083699
+   },
+   {
+    "stage": 14,
+    "rider": "Buitrago Santiago",
+    "place": 2,
+    "model_p": 0.013995046258587178,
+    "book_p": 0.10023371470167525,
+    "ratio": 0.1396241404425698
+   },
+   {
+    "stage": 14,
+    "rider": "Rodriguez Cristian",
+    "place": 3,
+    "model_p": 0.005844603225452919,
+    "book_p": 0.034290481345309945,
+    "ratio": 0.17044389568629692
+   },
+   {
+    "stage": 17,
+    "rider": "Cort Magnus",
+    "place": 3,
+    "model_p": 0.007719695299276825,
+    "book_p": 0.03557652965146329,
+    "ratio": 0.21698842958841852
+   },
+   {
+    "stage": 16,
+    "rider": "Coquard Bryan",
+    "place": 2,
+    "model_p": 0.017002429434181593,
+    "book_p": 0.07461713905484046,
+    "ratio": 0.22786225322422937
+   },
+   {
+    "stage": 12,
+    "rider": "Buitrago Santiago",
+    "place": 3,
+    "model_p": 0.014210556574695641,
+    "book_p": 0.06065748914293721,
+    "ratio": 0.23427538421857474
+   },
+   {
+    "stage": 10,
+    "rider": "Tronchon Bastien",
+    "place": 1,
+    "model_p": 0.001654016015316629,
+    "book_p": 0.006736262900662641,
+    "ratio": 0.24553911266644965
+   }
+  ]
+ },
+ "favourites": [
+  {
+   "stage": 1,
+   "model_fav": "Pogacar Tadej",
+   "model_fav_p": 0.3670430310839038,
+   "model_fav_book_p": 0.10455433993624841,
+   "model_fav_place": 1,
+   "book_fav": "Tarling Joshua",
+   "book_fav_p": 0.42475200599100915,
+   "book_fav_model_p": 0.1700065882105831,
+   "book_fav_place": 3
+  },
+  {
+   "stage": 2,
+   "model_fav": "Brennan Matthew",
+   "model_fav_p": 0.23620373510510242,
+   "model_fav_book_p": 0.12315801301037113,
+   "model_fav_place": 1,
+   "book_fav": "Pedersen Mads",
+   "book_fav_p": 0.1935340204448689,
+   "book_fav_model_p": 0.0525312673764545,
+   "book_fav_place": 4
+  },
+  {
+   "stage": 4,
+   "model_fav": "Pogacar Tadej",
+   "model_fav_p": 0.5299343554632455,
+   "model_fav_book_p": 0.49152351883446543,
+   "model_fav_place": 1,
+   "book_fav": "Pogacar Tadej",
+   "book_fav_p": 0.49152351883446543,
+   "book_fav_model_p": 0.5299343554632455,
+   "book_fav_place": 1
+  },
+  {
+   "stage": 5,
+   "model_fav": "Brennan Matthew",
+   "model_fav_p": 0.3827806269270902,
+   "model_fav_book_p": 0.3592922301143776,
+   "model_fav_place": 1,
+   "book_fav": "Brennan Matthew",
+   "book_fav_p": 0.3592922301143776,
+   "book_fav_model_p": 0.3827806269270902,
+   "book_fav_place": 1
+  },
+  {
+   "stage": 6,
+   "model_fav": "Pogacar Tadej",
+   "model_fav_p": 0.5225896774409631,
+   "model_fav_book_p": 0.20626984559843667,
+   "model_fav_place": 1,
+   "book_fav": "Pogacar Tadej",
+   "book_fav_p": 0.20626984559843667,
+   "book_fav_model_p": 0.5225896774409631,
+   "book_fav_place": 1
+  },
+  {
+   "stage": 7,
+   "model_fav": "Pogacar Tadej",
+   "model_fav_p": 0.5880121507858594,
+   "model_fav_book_p": 0.2351540753882329,
+   "model_fav_place": 19,
+   "book_fav": "Pogacar Tadej",
+   "book_fav_p": 0.2351540753882329,
+   "book_fav_model_p": 0.5880121507858594,
+   "book_fav_place": 19
+  },
+  {
+   "stage": 8,
+   "model_fav": "Brennan Matthew",
+   "model_fav_p": 0.36426771026417004,
+   "model_fav_book_p": 0.408623495998003,
+   "model_fav_place": 10,
+   "book_fav": "Brennan Matthew",
+   "book_fav_p": 0.408623495998003,
+   "book_fav_model_p": 0.36426771026417004,
+   "book_fav_place": 10
+  },
+  {
+   "stage": 9,
+   "model_fav": "Roglic Primoz",
+   "model_fav_p": 0.13184018421404523,
+   "model_fav_book_p": 0.03813870961628313,
+   "model_fav_place": 3,
+   "book_fav": "Gall Felix",
+   "book_fav_p": 0.24936848595262048,
+   "book_fav_model_p": 0.09035992797834208,
+   "book_fav_place": 4
+  },
+  {
+   "stage": 10,
+   "model_fav": "Brennan Matthew",
+   "model_fav_p": 0.5102499320683571,
+   "model_fav_book_p": 0.24740456471524608,
+   "model_fav_place": 90,
+   "book_fav": "Brennan Matthew",
+   "book_fav_p": 0.24740456471524608,
+   "book_fav_model_p": 0.5102499320683571,
+   "book_fav_place": 90
+  },
+  {
+   "stage": 11,
+   "model_fav": "Brennan Matthew",
+   "model_fav_p": 0.5647292381244506,
+   "model_fav_book_p": 0.34263622026080237,
+   "model_fav_place": 1,
+   "book_fav": "Brennan Matthew",
+   "book_fav_p": 0.34263622026080237,
+   "book_fav_model_p": 0.5647292381244506,
+   "book_fav_place": 1
+  },
+  {
+   "stage": 12,
+   "model_fav": "Gall Felix",
+   "model_fav_p": 0.11684499499285025,
+   "model_fav_book_p": 0.10265113547266298,
+   "model_fav_place": 7,
+   "book_fav": "Gall Felix",
+   "book_fav_p": 0.10265113547266298,
+   "book_fav_model_p": 0.11684499499285025,
+   "book_fav_place": 7
+  },
+  {
+   "stage": 14,
+   "model_fav": "Roglic Primoz",
+   "model_fav_p": 0.1277216980184134,
+   "model_fav_book_p": 0.03102472121718519,
+   "model_fav_place": 24,
+   "book_fav": "Mas Enric",
+   "book_fav_p": 0.17373843881623707,
+   "book_fav_model_p": 0.06738384736806641,
+   "book_fav_place": 22
+  },
+  {
+   "stage": 15,
+   "model_fav": "Brennan Matthew",
+   "model_fav_p": 0.439823245162381,
+   "model_fav_book_p": 0.25522291890065896,
+   "model_fav_place": 24,
+   "book_fav": "Brennan Matthew",
+   "book_fav_p": 0.25522291890065896,
+   "book_fav_model_p": 0.439823245162381,
+   "book_fav_place": 24
+  },
+  {
+   "stage": 16,
+   "model_fav": "Brennan Matthew",
+   "model_fav_p": 0.37037575766880404,
+   "model_fav_book_p": 0.3630022981046293,
+   "model_fav_place": 1,
+   "book_fav": "Brennan Matthew",
+   "book_fav_p": 0.3630022981046293,
+   "book_fav_model_p": 0.37037575766880404,
+   "book_fav_place": 1
+  },
+  {
+   "stage": 17,
+   "model_fav": "Brennan Matthew",
+   "model_fav_p": 0.5952488917196059,
+   "model_fav_book_p": 0.4506360422518683,
+   "model_fav_place": 1,
+   "book_fav": "Brennan Matthew",
+   "book_fav_p": 0.4506360422518683,
+   "book_fav_model_p": 0.5952488917196059,
+   "book_fav_place": 1
+  },
+  {
+   "stage": 20,
+   "model_fav": "Gall Felix",
+   "model_fav_p": 0.09448552598989259,
+   "model_fav_book_p": 0.13232281199853888,
+   "model_fav_place": 13,
+   "book_fav": "Mas Enric",
+   "book_fav_p": 0.13232281199853888,
+   "book_fav_model_p": 0.07867589702909092,
+   "book_fav_place": 14
+  },
+  {
+   "stage": 21,
+   "model_fav": "Brennan Matthew",
+   "model_fav_p": 0.2356602572260395,
+   "model_fav_book_p": 0.11918488098479743,
+   "model_fav_place": 4,
+   "book_fav": "van Aert Wout",
+   "book_fav_p": 0.37458105452364904,
+   "book_fav_model_p": 0.09923282416804892,
+   "book_fav_place": 65
+  }
+ ],
+ "hindsight": {
+  "rows": [
+   {
+    "stage": 4,
+    "hindsight_p": 0.5925964989239535,
+    "ew_p": 0.5299343554632455,
+    "best_p": 0.6173569683111463,
+    "beat_ew": true,
+    "beat_best": false
+   },
+   {
+    "stage": 5,
+    "hindsight_p": 0.44148233757423544,
+    "ew_p": 0.38278062692709014,
+    "best_p": 0.46293009392494155,
+    "beat_ew": true,
+    "beat_best": false
+   },
+   {
+    "stage": 6,
+    "hindsight_p": 0.6076570491655292,
+    "ew_p": 0.5225896774409631,
+    "best_p": 0.6364750799356667,
+    "beat_ew": true,
+    "beat_best": false
+   },
+   {
+    "stage": 7,
+    "hindsight_p": 0.002706129784991483,
+    "ew_p": 0.0021297479631963556,
+    "best_p": 0.0033322249308631274,
+    "beat_ew": true,
+    "beat_best": false
+   },
+   {
+    "stage": 8,
+    "hindsight_p": 0.01148426698559798,
+    "ew_p": 0.009171273821700974,
+    "best_p": 0.01470334857754381,
+    "beat_ew": true,
+    "beat_best": false
+   },
+   {
+    "stage": 10,
+    "hindsight_p": 0.001243522817282273,
+    "ew_p": 0.0016540160153166287,
+    "best_p": 0.0022452306262395923,
+    "beat_ew": false,
+    "beat_best": false
+   },
+   {
+    "stage": 11,
+    "hindsight_p": 0.5977219163941573,
+    "ew_p": 0.5647292381244506,
+    "best_p": 0.6304903622229772,
+    "beat_ew": true,
+    "beat_best": false
+   },
+   {
+    "stage": 12,
+    "hindsight_p": 0.011039773801507119,
+    "ew_p": 0.010377613064768787,
+    "best_p": 0.011433570904607093,
+    "beat_ew": true,
+    "beat_best": false
+   },
+   {
+    "stage": 14,
+    "hindsight_p": 0.003391171922101078,
+    "ew_p": 0.003331320531710739,
+    "best_p": 0.003887594860917602,
+    "beat_ew": true,
+    "beat_best": false
+   },
+   {
+    "stage": 15,
+    "hindsight_p": 0.06353244258670065,
+    "ew_p": 0.07163935003963344,
+    "best_p": 0.09485567857095097,
+    "beat_ew": false,
+    "beat_best": false
+   },
+   {
+    "stage": 16,
+    "hindsight_p": 0.6066706713354288,
+    "ew_p": 0.37037575766880404,
+    "best_p": 0.6007937208462881,
+    "beat_ew": true,
+    "beat_best": true
+   },
+   {
+    "stage": 20,
+    "hindsight_p": 0.002930103212376459,
+    "ew_p": 0.0029945768939427415,
+    "best_p": 0.003411760593278825,
+    "beat_ew": false,
+    "beat_best": false
+   },
+   {
+    "stage": 21,
+    "hindsight_p": 0.01634801954036034,
+    "ew_p": 0.02018275268866765,
+    "best_p": 0.042488305419876825,
+    "beat_ew": false,
+    "beat_best": false
+   }
+  ],
+  "n": 13,
+  "beat_ew": 9,
+  "beat_best": 1
+ },
+ "gc": {
+  "boards": [
+   {
+    "through_stage": 1,
+    "date": "2026-08-22",
+    "book_date": "2026-08-22",
+    "pairing": "same-evening",
+    "winner_model_p": 0.025304124545917853,
+    "winner_book_p": 0.03468732795084115,
+    "winner_outlook_p": 0.01167133771099924,
+    "model_leader": "Pogacar Tadej",
+    "book_leader": "Pogacar Tadej",
+    "outlook_leader": "Pogacar Tadej",
+    "spearman_model": 0.6927094481784323,
+    "spearman_book": 0.5653881002718212,
+    "spearman_outlook": 0.4755244755244755,
+    "overlap15_model": 7,
+    "overlap15_book": 7,
+    "overlap15_outlook": 7,
+    "overlap5_model": 2,
+    "overlap5_book": 3,
+    "overlap5_outlook": 3,
+    "podium_ll_model": 0.04537103277699013,
+    "podium_ll_book": 0.03901082576911666,
+    "podium_ll_outlook": 0.03953637236265556,
+    "top10_ll_model": 0.12362018262134696,
+    "top10_ll_book": 0.11360008467241768
+   },
+   {
+    "through_stage": 2,
+    "date": "2026-08-24",
+    "book_date": "2026-08-24",
+    "pairing": "same-evening",
+    "winner_model_p": 0.02538579703316935,
+    "winner_book_p": 0.033130676224165184,
+    "winner_outlook_p": 0.014507637342561198,
+    "model_leader": "Pogacar Tadej",
+    "book_leader": "Pogacar Tadej",
+    "outlook_leader": "Pogacar Tadej",
+    "spearman_model": 0.6972002226122693,
+    "spearman_book": 0.5496828752642706,
+    "spearman_outlook": 0.4825174825174825,
+    "overlap15_model": 7,
+    "overlap15_book": 8,
+    "overlap15_outlook": 7,
+    "overlap5_model": 2,
+    "overlap5_book": 2,
+    "overlap5_outlook": 3,
+    "podium_ll_model": 0.045154084622476644,
+    "podium_ll_book": 0.04006541962948677,
+    "podium_ll_outlook": 0.03655411250187568,
+    "top10_ll_model": 0.12413225653862692,
+    "top10_ll_book": 0.1057823809262457
+   },
+   {
+    "through_stage": 4,
+    "date": "2026-08-25",
+    "book_date": "2026-08-25",
+    "pairing": "same-evening",
+    "winner_model_p": 0.025545191632732472,
+    "winner_book_p": 0.010773677626337397,
+    "winner_outlook_p": 0.01665473288644413,
+    "model_leader": "Pogacar Tadej",
+    "book_leader": "Pogacar Tadej",
+    "outlook_leader": "Pogacar Tadej",
+    "spearman_model": 0.6964424846954065,
+    "spearman_book": 0.6132588341890668,
+    "spearman_outlook": 0.8727272727272728,
+    "overlap15_model": 7,
+    "overlap15_book": 8,
+    "overlap15_outlook": 8,
+    "overlap5_model": 2,
+    "overlap5_book": 3,
+    "overlap5_outlook": 3,
+    "podium_ll_model": 0.04506533383428171,
+    "podium_ll_book": 0.035451578903459006,
+    "podium_ll_outlook": 0.0295408602786168,
+    "top10_ll_model": 0.12461271508148902,
+    "top10_ll_book": null
+   },
+   {
+    "through_stage": 5,
+    "date": "2026-08-26",
+    "book_date": "2026-08-26",
+    "pairing": "same-evening",
+    "winner_model_p": 0.024768252839755592,
+    "winner_book_p": 0.01060864204360707,
+    "winner_outlook_p": 0.016935854689163487,
+    "model_leader": "Pogacar Tadej",
+    "book_leader": "Pogacar Tadej",
+    "outlook_leader": "Pogacar Tadej",
+    "spearman_model": 0.699464874352498,
+    "spearman_book": 0.6196013289036545,
+    "spearman_outlook": 0.8727272727272728,
+    "overlap15_model": 7,
+    "overlap15_book": 8,
+    "overlap15_outlook": 8,
+    "overlap5_model": 2,
+    "overlap5_book": 3,
+    "overlap5_outlook": 3,
+    "podium_ll_model": 0.045683861089778316,
+    "podium_ll_book": 0.0343580543035466,
+    "podium_ll_outlook": 0.03019540326629061,
+    "top10_ll_model": 0.12344794812885132,
+    "top10_ll_book": null
+   },
+   {
+    "through_stage": 6,
+    "date": "2026-08-27",
+    "book_date": "2026-08-27",
+    "pairing": "same-evening",
+    "winner_model_p": 0.025376004284942487,
+    "winner_book_p": 0.04527816146020907,
+    "winner_outlook_p": 0.02689234811296205,
+    "model_leader": "Pogacar Tadej",
+    "book_leader": "Pogacar Tadej",
+    "outlook_leader": "Pogacar Tadej",
+    "spearman_model": 0.7009503831499636,
+    "spearman_book": 0.6917547568710359,
+    "spearman_outlook": 0.7762237762237763,
+    "overlap15_model": 7,
+    "overlap15_book": 9,
+    "overlap15_outlook": 10,
+    "overlap5_model": 2,
+    "overlap5_book": 3,
+    "overlap5_outlook": 3,
+    "podium_ll_model": 0.045868818839195816,
+    "podium_ll_book": 0.026550718578254997,
+    "podium_ll_outlook": 0.02798494705361967,
+    "top10_ll_model": 0.12397926594404483,
+    "top10_ll_book": null
+   },
+   {
+    "through_stage": 7,
+    "date": "2026-08-28",
+    "book_date": "2026-08-28",
+    "pairing": "same-evening",
+    "winner_model_p": 0.025740206217481205,
+    "winner_book_p": 0.0459718927978389,
+    "winner_outlook_p": 0.023512133686454634,
+    "model_leader": "Pogacar Tadej",
+    "book_leader": "Pogacar Tadej",
+    "outlook_leader": "Pogacar Tadej",
+    "spearman_model": 0.7017723361445267,
+    "spearman_book": 0.8547008547008547,
+    "spearman_outlook": 0.7362637362637363,
+    "overlap15_model": 7,
+    "overlap15_book": 11,
+    "overlap15_outlook": 12,
+    "overlap5_model": 2,
+    "overlap5_book": 3,
+    "overlap5_outlook": 3,
+    "podium_ll_model": 0.0458213201024454,
+    "podium_ll_book": 0.02593505487346714,
+    "podium_ll_outlook": 0.02454099856738718,
+    "top10_ll_model": 0.12392893902021652,
+    "top10_ll_book": 0.05915175100912187
+   },
+   {
+    "through_stage": 8,
+    "date": "2026-08-29",
+    "book_date": "2026-08-29",
+    "pairing": "same-evening",
+    "winner_model_p": 0.06991286785315365,
+    "winner_book_p": 0.26498690597050495,
+    "winner_outlook_p": 0.3171738076585974,
+    "model_leader": "Roglic Primoz",
+    "book_leader": "Gall Felix",
+    "outlook_leader": "Roglic Primoz",
+    "spearman_model": 0.7108095380795411,
+    "spearman_book": 0.9052173913043479,
+    "spearman_outlook": 0.7527472527472527,
+    "overlap15_model": 7,
+    "overlap15_book": 13,
+    "overlap15_outlook": 11,
+    "overlap5_model": 3,
+    "overlap5_book": 4,
+    "overlap5_outlook": 4,
+    "podium_ll_model": 0.03406282139906018,
+    "podium_ll_book": null,
+    "podium_ll_outlook": 0.01261276071527259,
+    "top10_ll_model": 0.1207642694356635,
+    "top10_ll_book": null
+   },
+   {
+    "through_stage": 9,
+    "date": "2026-08-31",
+    "book_date": "2026-08-30",
+    "pairing": "same-evening",
+    "winner_model_p": 0.07469010497890491,
+    "winner_book_p": 0.33291176753896967,
+    "winner_outlook_p": 0.44394967176157163,
+    "model_leader": "Roglic Primoz",
+    "book_leader": "Mas Enric",
+    "outlook_leader": "Mas Enric",
+    "spearman_model": 0.7089173337899739,
+    "spearman_book": 0.8921739130434783,
+    "spearman_outlook": 0.6483516483516483,
+    "overlap15_model": 7,
+    "overlap15_book": 11,
+    "overlap15_outlook": 12,
+    "overlap5_model": 3,
+    "overlap5_book": 4,
+    "overlap5_outlook": 4,
+    "podium_ll_model": 0.03381102996526316,
+    "podium_ll_book": 0.01452299676299185,
+    "podium_ll_outlook": 0.010697531535059856,
+    "top10_ll_model": 0.124045227292758,
+    "top10_ll_book": null
+   },
+   {
+    "through_stage": 10,
+    "date": "2026-09-02",
+    "book_date": "2026-09-01",
+    "pairing": "same-evening",
+    "winner_model_p": 0.07861130988906045,
+    "winner_book_p": 0.3306525973915388,
+    "winner_outlook_p": 0.5685178767243153,
+    "model_leader": "Roglic Primoz",
+    "book_leader": "Mas Enric",
+    "outlook_leader": "Mas Enric",
+    "spearman_model": 0.7104841816858598,
+    "spearman_book": 0.8921739130434783,
+    "spearman_outlook": 0.6868131868131868,
+    "overlap15_model": 7,
+    "overlap15_book": 11,
+    "overlap15_outlook": 12,
+    "overlap5_model": 3,
+    "overlap5_book": 4,
+    "overlap5_outlook": 4,
+    "podium_ll_model": 0.03457703933929794,
+    "podium_ll_book": 0.01578337052509337,
+    "podium_ll_outlook": 0.010218861393736773,
+    "top10_ll_model": 0.12555422828203833,
+    "top10_ll_book": 0.05257381698092898
+   },
+   {
+    "through_stage": 11,
+    "date": "2026-09-03",
+    "book_date": "2026-09-02",
+    "pairing": "same-evening",
+    "winner_model_p": 0.07520353108648137,
+    "winner_book_p": 0.3306525973915388,
+    "winner_outlook_p": 0.5591549346961856,
+    "model_leader": "Roglic Primoz",
+    "book_leader": "Mas Enric",
+    "outlook_leader": "Mas Enric",
+    "spearman_model": 0.709726443768997,
+    "spearman_book": 0.8921739130434783,
+    "spearman_outlook": 0.6868131868131868,
+    "overlap15_model": 7,
+    "overlap15_book": 11,
+    "overlap15_outlook": 12,
+    "overlap5_model": 3,
+    "overlap5_book": 4,
+    "overlap5_outlook": 4,
+    "podium_ll_model": 0.03405743784534946,
+    "podium_ll_book": 0.015863315671876443,
+    "podium_ll_outlook": 0.010294156125644313,
+    "top10_ll_model": 0.12664949904549488,
+    "top10_ll_book": 0.05284702231690057
+   },
+   {
+    "through_stage": 12,
+    "date": "2026-09-04",
+    "book_date": "2026-09-02",
+    "pairing": "stale",
+    "winner_model_p": 0.08132706378420047,
+    "winner_book_p": 0.3306525973915388,
+    "winner_outlook_p": 0.559071147556442,
+    "model_leader": "Roglic Primoz",
+    "book_leader": "Mas Enric",
+    "outlook_leader": "Mas Enric",
+    "spearman_model": 0.7101160152403785,
+    "spearman_book": 0.8921739130434783,
+    "spearman_outlook": 0.7582417582417582,
+    "overlap15_model": 8,
+    "overlap15_book": 11,
+    "overlap15_outlook": 12,
+    "overlap5_model": 3,
+    "overlap5_book": 4,
+    "overlap5_outlook": 4,
+    "podium_ll_model": 0.03468255593876892,
+    "podium_ll_book": 0.016337516005168078,
+    "podium_ll_outlook": 0.008229806325219448,
+    "top10_ll_model": 0.12485212280284222,
+    "top10_ll_book": 0.05431531118069349
+   },
+   {
+    "through_stage": 13,
+    "date": "2026-09-04",
+    "book_date": "2026-09-04",
+    "pairing": "next",
+    "winner_model_p": 0.08099847652255174,
+    "winner_book_p": 0.6424015900534623,
+    "winner_outlook_p": 0.47976291328733534,
+    "model_leader": "Roglic Primoz",
+    "book_leader": "Mas Enric",
+    "outlook_leader": "Mas Enric",
+    "spearman_model": 0.7125647502033478,
+    "spearman_book": 0.8824561403508772,
+    "spearman_outlook": 0.7362637362637363,
+    "overlap15_model": 8,
+    "overlap15_book": 12,
+    "overlap15_outlook": 13,
+    "overlap5_model": 3,
+    "overlap5_book": 4,
+    "overlap5_outlook": 4,
+    "podium_ll_model": 0.03513031168183509,
+    "podium_ll_book": 0.011341590603284412,
+    "podium_ll_outlook": 0.008537588308081061,
+    "top10_ll_model": 0.1272463593281675,
+    "top10_ll_book": null
+   },
+   {
+    "through_stage": 14,
+    "date": "2026-09-06",
+    "book_date": "2026-09-05",
+    "pairing": "next",
+    "winner_model_p": 0.07760629067432813,
+    "winner_book_p": 0.6953437715250069,
+    "winner_outlook_p": 0.4947952043265914,
+    "model_leader": "Roglic Primoz",
+    "book_leader": "Mas Enric",
+    "outlook_leader": "Mas Enric",
+    "spearman_model": 0.7142386232287341,
+    "spearman_book": 0.9210526315789473,
+    "spearman_outlook": 0.7802197802197802,
+    "overlap15_model": 8,
+    "overlap15_book": 13,
+    "overlap15_outlook": 12,
+    "overlap5_model": 3,
+    "overlap5_book": 4,
+    "overlap5_outlook": 4,
+    "podium_ll_model": 0.03645431918853451,
+    "podium_ll_book": null,
+    "podium_ll_outlook": 0.006883673985255063,
+    "top10_ll_model": 0.13197569158622724,
+    "top10_ll_book": null
+   },
+   {
+    "through_stage": 15,
+    "date": "2026-09-06",
+    "book_date": "2026-09-07",
+    "pairing": "next",
+    "winner_model_p": 0.07866456368809828,
+    "winner_book_p": 0.7144857170864132,
+    "winner_outlook_p": 0.527941655114113,
+    "model_leader": "Roglic Primoz",
+    "book_leader": "Mas Enric",
+    "outlook_leader": "Mas Enric",
+    "spearman_model": 0.7134038272186309,
+    "spearman_book": 0.8678571428571429,
+    "spearman_outlook": 0.7637362637362637,
+    "overlap15_model": 7,
+    "overlap15_book": 13,
+    "overlap15_outlook": 13,
+    "overlap5_model": 3,
+    "overlap5_book": 4,
+    "overlap5_outlook": 4,
+    "podium_ll_model": 0.036495951773737136,
+    "podium_ll_book": 0.008972369608921,
+    "podium_ll_outlook": 0.006341572291224447,
+    "top10_ll_model": 0.13628483073020115,
+    "top10_ll_book": 0.036090276642305304
+   },
+   {
+    "through_stage": 16,
+    "date": "2026-09-09",
+    "book_date": "2026-09-08",
+    "pairing": "same-evening",
+    "winner_model_p": 0.08274764164674088,
+    "winner_book_p": 0.7144857170864132,
+    "winner_outlook_p": 0.6252823590003317,
+    "model_leader": "Roglic Primoz",
+    "book_leader": "Mas Enric",
+    "outlook_leader": "Mas Enric",
+    "spearman_model": 0.7583372575880817,
+    "spearman_book": 0.8678571428571429,
+    "spearman_outlook": 0.7692307692307692,
+    "overlap15_model": 8,
+    "overlap15_book": 13,
+    "overlap15_outlook": 13,
+    "overlap5_model": 3,
+    "overlap5_book": 4,
+    "overlap5_outlook": 4,
+    "podium_ll_model": 0.0356764055393907,
+    "podium_ll_book": 0.009007278535401477,
+    "podium_ll_outlook": 0.003792903781936375,
+    "top10_ll_model": 0.13011378058802955,
+    "top10_ll_book": 0.036291849177488886
+   },
+   {
+    "through_stage": 17,
+    "date": "2026-09-09",
+    "book_date": "2026-09-09",
+    "pairing": "next",
+    "winner_model_p": 0.08329166996131505,
+    "winner_book_p": 0.7355214259793226,
+    "winner_outlook_p": 0.6397715172487877,
+    "model_leader": "Roglic Primoz",
+    "book_leader": "Mas Enric",
+    "outlook_leader": "Mas Enric",
+    "spearman_model": 0.7570050950121362,
+    "spearman_book": 0.8678571428571429,
+    "spearman_outlook": 0.7692307692307692,
+    "overlap15_model": 8,
+    "overlap15_book": 13,
+    "overlap15_outlook": 13,
+    "overlap5_model": 3,
+    "overlap5_book": 4,
+    "overlap5_outlook": 4,
+    "podium_ll_model": 0.03643945655133875,
+    "podium_ll_book": 0.008944544496750745,
+    "podium_ll_outlook": 0.003344145782785724,
+    "top10_ll_model": 0.13085284899428773,
+    "top10_ll_book": null
+   },
+   {
+    "through_stage": 19,
+    "date": "2026-09-12",
+    "book_date": "2026-09-11",
+    "pairing": "next",
+    "winner_model_p": 0.08639962886914775,
+    "winner_book_p": 0.8293979973254285,
+    "winner_outlook_p": 0.582386087570582,
+    "model_leader": "Roglic Primoz",
+    "book_leader": "Mas Enric",
+    "outlook_leader": "Mas Enric",
+    "spearman_model": 0.7558461437536901,
+    "spearman_book": 0.9428571428571428,
+    "spearman_outlook": 0.7802197802197802,
+    "overlap15_model": 9,
+    "overlap15_book": 13,
+    "overlap15_outlook": 13,
+    "overlap5_model": 3,
+    "overlap5_book": 4,
+    "overlap5_outlook": 4,
+    "podium_ll_model": 0.03751368182063595,
+    "podium_ll_book": null,
+    "podium_ll_outlook": 0.0032040639234565296,
+    "top10_ll_model": 0.13395843992264703,
+    "top10_ll_book": null
+   },
+   {
+    "through_stage": 20,
+    "date": "2026-09-13",
+    "book_date": "2026-09-11",
+    "pairing": "stale",
+    "winner_model_p": 0.08462348707664075,
+    "winner_book_p": 0.8293979973254285,
+    "winner_outlook_p": 0.6903742661144168,
+    "model_leader": "Roglic Primoz",
+    "book_leader": "Mas Enric",
+    "outlook_leader": "Mas Enric",
+    "spearman_model": 0.7475191574981805,
+    "spearman_book": 0.9560439560439561,
+    "spearman_outlook": 0.9571428571428572,
+    "overlap15_model": 7,
+    "overlap15_book": 13,
+    "overlap15_outlook": 15,
+    "overlap5_model": 3,
+    "overlap5_book": 4,
+    "overlap5_outlook": 5,
+    "podium_ll_model": 0.037243871062380966,
+    "podium_ll_book": null,
+    "podium_ll_outlook": 0.0027274451244677306,
+    "top10_ll_model": 0.1315560428736749,
+    "top10_ll_book": null
+   }
+  ],
+  "n_boards": 18,
+  "n_paired": 16,
+  "all_paired": {
+   "n": 16,
+   "winner_ll_model": 2.967084187925207,
+   "winner_ll_book": 1.7896187671331971,
+   "winner_ll_outlook": 1.9289560682449949,
+   "spearman_model": 0.7149920589663805,
+   "spearman_book": 0.8016289514996177,
+   "spearman_outlook": 0.7243506493506493,
+   "overlap15_model": 7.375,
+   "overlap15_book": 10.875,
+   "overlap15_outlook": 11,
+   "overlap5_model": 2.625,
+   "overlap5_book": 3.5625,
+   "overlap5_outlook": 3.625,
+   "podium_ll_model": 0.039198931648100684,
+   "podium_ll_book": 0.021985162943203882,
+   "podium_ll_outlook": 0.016517496992056138
+  },
+  "pre_abandon": {
+   "n": 6,
+   "winner_ll_model": 3.674917397000262,
+   "winner_ll_book": 3.6700112906181532,
+   "winner_ll_outlook": 4.037205765049523,
+   "spearman_model": 0.6980899581888494,
+   "spearman_book": 0.649064458366784,
+   "spearman_outlook": 0.7026640026640028,
+   "overlap15_model": 7,
+   "overlap15_book": 8.5,
+   "overlap15_outlook": 8.666666666666666,
+   "overlap5_model": 2,
+   "overlap5_book": 2.8333333333333335,
+   "overlap5_outlook": 3,
+   "podium_ll_model": 0.04549407521086134,
+   "podium_ll_book": 0.033561942009555194,
+   "podium_ll_outlook": 0.03139211567174092
+  },
+  "post_abandon": {
+   "n": 10,
+   "winner_ll_model": 2.5423842624801734,
+   "winner_ll_book": 0.6613832530422236,
+   "winner_ll_outlook": 0.6640062501622775,
+   "spearman_model": 0.7251333194328993,
+   "spearman_book": 0.8931676473793179,
+   "spearman_outlook": 0.7373626373626373,
+   "overlap15_model": 7.6,
+   "overlap15_book": 12.3,
+   "overlap15_outlook": 12.4,
+   "overlap5_model": 3,
+   "overlap5_book": 4,
+   "overlap5_outlook": 4,
+   "podium_ll_model": 0.03542184551044429,
+   "podium_ll_book": 0.0120622094577599,
+   "podium_ll_outlook": 0.007592725784245273
+  },
+  "post_abandon_all": {
+   "n": 12,
+   "winner_ll_model": 2.533555206719308,
+   "winner_ll_book": 0.6589645571402569,
+   "winner_ll_outlook": 0.6326718710706098,
+   "spearman_model": 0.725747363922296,
+   "spearman_book": 0.8983245285733844,
+   "spearman_outlook": 0.7574175824175824,
+   "overlap15_model": 7.583333333333333,
+   "overlap15_book": 12.25,
+   "overlap15_outlook": 12.583333333333334,
+   "overlap5_model": 3,
+   "overlap5_book": 4,
+   "overlap5_outlook": 4.083333333333333,
+   "podium_ll_model": 0.0355120735087994,
+   "podium_ll_book": 0.012596622776185921,
+   "podium_ll_outlook": 0.007240375774344993
+  },
+  "pogacar_pre_abandon": [
+   {
+    "through_stage": 1,
+    "model": 0.5984181411648112,
+    "book": 0.6562467450159137,
+    "outlook": 0.8025725022073651
+   },
+   {
+    "through_stage": 2,
+    "model": 0.6009747338603925,
+    "book": 0.6382974318417146,
+    "outlook": 0.807265848360696
+   },
+   {
+    "through_stage": 4,
+    "model": 0.602756413083586,
+    "book": 0.831112274031742,
+    "outlook": 0.8899371990654785
+   },
+   {
+    "through_stage": 5,
+    "model": 0.6103789123567102,
+    "book": 0.8342718500312357,
+    "outlook": 0.8871040490988411
+   },
+   {
+    "through_stage": 6,
+    "model": 0.6114273566446133,
+    "book": 0.8352282211106529,
+    "outlook": 0.8883200406583098
+   },
+   {
+    "through_stage": 7,
+    "model": 0.606225210886543,
+    "book": 0.8480252069504263,
+    "outlook": 0.8853055372423768
+   }
+  ],
+  "last_paired_board_top": [
+   {
+    "rider": "Mas Enric",
+    "final_place": 1,
+    "model": 0.08639962886914775,
+    "book": 0.8293979973254285,
+    "outlook": 0.582386087570582
+   },
+   {
+    "rider": "Roglic Primoz",
+    "final_place": 2,
+    "model": 0.21620394298635082,
+    "book": 0.072572324765975,
+    "outlook": 0.38247684433523704
+   },
+   {
+    "rider": "Gall Felix",
+    "final_place": 3,
+    "model": 0.12087587041031676,
+    "book": 0.04146989986627143,
+    "outlook": 0.010275480065146765
+   },
+   {
+    "rider": "Carapaz Richard",
+    "final_place": 4,
+    "model": 0.03550450323013631,
+    "book": 0.03349491912275769,
+    "outlook": 0.0037399440567129293
+   },
+   {
+    "rider": "Kuss Sepp",
+    "final_place": 5,
+    "model": 0.011823107495558871,
+    "book": 0.0017382592758317364,
+    "outlook": 0.0012654552028101632
+   },
+   {
+    "rider": "Onley Oscar",
+    "final_place": 6,
+    "model": 0.09839448365738329,
+    "book": 0.010751455520885184,
+    "outlook": 0.005350641871198705
+   },
+   {
+    "rider": "Omrzel Jakob",
+    "final_place": 7,
+    "model": 0.02243063253567692,
+    "book": 0.002893248827879402,
+    "outlook": 0.002997103462674531
+   },
+   {
+    "rider": "Berthet Cl\u00e9ment",
+    "final_place": 8,
+    "model": 0.010946782362309683,
+    "book": 0.0017382592758317364,
+    "outlook": 0.0014114115331722867
+   }
+  ]
+ },
+ "tdf_gc": {
+  "n": 18,
+  "winner_ll_model": 0.969061179604347,
+  "winner_ll_book": 0.20501629262384055,
+  "spearman_model": 0.770550060308016,
+  "spearman_book": 0.8789016007282261,
+  "overlap15_model": 10,
+  "overlap15_book": 11.5,
+  "podium_ll_model": 0.03429145556138361,
+  "podium_ll_book": 0.029864301486455424,
+  "podium_ll_outlook": 0.02024232449866902
+ }
+}

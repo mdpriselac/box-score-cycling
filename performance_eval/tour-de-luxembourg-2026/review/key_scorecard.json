@@ -1,0 +1,56 @@
+[
+ {
+  "stage": 1,
+  "oracle_item": "res_4",
+  "day_class": "residual",
+  "rule_type": "tiny_group",
+  "wg_size": 3,
+  "wg_prop": 0.0297,
+  "winning_time": 13542.0,
+  "winner": "van der Poel Mathieu",
+  "winner_gc_morning": null,
+  "front5_gc_median": null,
+  "top15_shares": {
+   "sprint": 0.067,
+   "mountain": 0.2,
+   "hilly": 0.2,
+   "rolling": 0.133,
+   "breakaway": 0.2,
+   "time_trial": 0.2
+  },
+  "top15_unknown": 0.0,
+  "day_key": null,
+  "exact": null,
+  "covered": null,
+  "weight_on_true": null,
+  "key_source": null,
+  "scored_at": "2026-09-17T20:14:12.598836"
+ },
+ {
+  "stage": 2,
+  "oracle_item": "bunch",
+  "day_class": "bunch",
+  "rule_type": "mass_sprint",
+  "wg_size": 48,
+  "wg_prop": 0.4752,
+  "winning_time": 13812.0,
+  "winner": "van den Berg Marijn",
+  "winner_gc_morning": 3,
+  "front5_gc_median": 3.0,
+  "top15_shares": {
+   "sprint": 0.333,
+   "mountain": 0.0,
+   "hilly": 0.133,
+   "rolling": 0.067,
+   "breakaway": 0.2,
+   "time_trial": 0.267
+  },
+  "top15_unknown": 0.0,
+  "day_key": null,
+  "exact": null,
+  "covered": null,
+  "weight_on_true": null,
+  "key_source": null,
+  "scored_at": "2026-09-17T20:14:56.621542"
+ }
+]

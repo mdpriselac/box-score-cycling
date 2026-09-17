@@ -74,7 +74,8 @@ CAMPAIGNS = [
         "blurb": ("The live campaign: day-type keys chosen each morning, "
                   "stage predictions published before the flag drops, and a "
                   "GC tracker updated as the race reshapes itself."),
-        "extra_pages": {},
+        "extra_pages": {"review": {"asset": "/vuelta-review.html",
+                                   "title": "Post-race review"}},
     },
 ]
 

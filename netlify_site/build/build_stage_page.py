@@ -767,7 +767,17 @@ def gc_card():
         return ""
     data = json.loads(max(preds, key=lambda p: p.stat().st_mtime).read_text())
     state = data.get("state") or {}
+    # state.through_stage is a COUNT of stages that fed the state, not a stage
+    # number: with a cancelled stage the two diverge. Map it back through the
+    # campaign's void_stages before naming a stage or opening its gc.csv.
     through = state.get("through_stage")
+    try:
+        void = set(json.loads((gc_dir / "scenarios.json").read_text()).get("void_stages") or [])
+    except (OSError, json.JSONDecodeError):
+        void = set()
+    if through:
+        raced = [s for s in range(1, CAMPAIGN["n_stages"] + 1) if s not in void]
+        through = raced[int(through) - 1] if 0 < int(through) <= len(raced) else through
 
     gaps = {}
     if through:
@@ -785,26 +795,31 @@ def gc_card():
         s = float(g)
         return "0:00" if s == 0 else f"+{int(s//60)}:{int(s%60):02d}"
 
-    top = sorted(data["riders"], key=lambda r: -(r.get("blend_win_p") or 0))[:6]
+    def _p(v):  # NaN = the outlook head never priced this rider
+        return v if v is not None and v == v else -1.0
+    top = sorted(data["riders"],
+                 key=lambda r: (-_p(r.get("gc_outlook_win_p")),
+                                -(r.get("blend_win_p") or 0)))[:6]
     rows = "".join(
         "<tr>"
         f"<td>{esc(r['rider_name'])}</td>"
         f"<td class='num'>{gap_for(r['rider_name'])}</td>"
+        f"<td class='num'><b>{pct(r.get('gc_outlook_win_p'))}</b></td>"
         f"<td class='num'>{pct(r.get('blend_win_p'))}</td>"
-        f"<td class='num'>{pct(r.get('gc_outlook_win_p'))}</td>"
         f"<td class='num'>{pct(r.get('book_devig'))}</td>"
         "</tr>" for r in top)
     return f"""<div class="card stage-card">
 <div class="stage-head"><h3>The GC picture</h3>
 <span class="chip">through stage {through if through else '?'}</span></div>
 <div class="tablewrap" style="margin:10px 0"><table>
-<tr><th>Rider</th><th class="num">GC gap</th><th class="num">Model win</th>
-<th class="num">Outlook head</th><th class="num">Book devig</th></tr>
+<tr><th>Rider</th><th class="num">GC gap</th><th class="num">Outlook<div class="sub">sees the race</div></th>
+<th class="num">Pre-race blend</th><th class="num">Book devig</th></tr>
 {rows}</table></div>
-<div class="note">Model win = pre-race heads with live form (book-preserving).
-The outlook head is state-aware but per-rider — its probabilities don't sum
-to one book, and {through if through else 'few'}/{CAMPAIGN['n_stages']} stages is the thinnest
-state it sees; read it as "how safe is the current position", not as odds.
+<div class="note">Ordered by the outlook head, the one head that sees the
+standings, gaps and stages left ({through if through else 'few'}/{CAMPAIGN['n_stages']} stages so far). It
+is per-rider, so its numbers don't sum to one book; read it as "how safe is
+the current position". The pre-race blend prices the GC from form and history
+only and never sees the standings, which is why it barely moves.
 <b><a href="{CAMPAIGN['prefix']}gc.html">Full stage-by-stage GC tracker →</a></b></div>
 </div>"""
 

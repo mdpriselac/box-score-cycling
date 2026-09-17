@@ -11,36 +11,36 @@
     {
       "number": 1,
       "date": "2026-09-16",
-      "towns": null,
-      "distance_km": null,
+      "towns": "Luxembourg → Fëschmaart",
+      "distance_km": 157.4,
       "kind": null
     },
     {
       "number": 2,
       "date": "2026-09-17",
-      "towns": null,
-      "distance_km": null,
+      "towns": "Differdange/Niederkorn → Junglinster",
+      "distance_km": 166.8,
       "kind": null
     },
     {
       "number": 3,
       "date": "2026-09-18",
-      "towns": null,
-      "distance_km": null,
+      "towns": "Wiltz → Diekirch",
+      "distance_km": 187.3,
       "kind": null
     },
     {
       "number": 4,
       "date": "2026-09-19",
-      "towns": null,
-      "distance_km": null,
+      "towns": "Ettelbruck → Ettelbruck",
+      "distance_km": 20.4,
       "kind": null
     },
     {
       "number": 5,
       "date": "2026-09-20",
-      "towns": null,
-      "distance_km": null,
+      "towns": "Mersch → Luxembourg-Limpertsberg",
+      "distance_km": 177.4,
       "kind": null
     }
   ],
@@ -51,7 +51,7 @@
   "pcs_slug": "tour-de-luxembourg",
   "organiser_stage_urls": {},
   "void_stages": [],
-  "stages_provisional": true,
+  "stages_provisional": false,
   "uci_match_evidence": {
     "matcher": "uci_calendar",
     "decision": "operator_confirmed",

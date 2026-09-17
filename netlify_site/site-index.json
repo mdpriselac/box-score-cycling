@@ -1,7 +1,477 @@
 {
- "generated_at": "2026-09-13 13:47",
+ "generated_at": "2026-09-17 15:24",
  "site_name": "Cycling Race Predictor",
  "races": [
+  {
+   "slug": "grand-prix-de-wallonie",
+   "year": 2026,
+   "name": "Grand Prix de Wallonie 2026",
+   "short_name": "Grand Prix de Wallonie 2026",
+   "type": "one_day",
+   "status": "settled",
+   "start_date": "2026-09-16",
+   "end_date": "2026-09-16",
+   "blurb": "Nightly model run and results record for Grand Prix de Wallonie.",
+   "campaign_dir": "performance_eval/grand-prix-de-wallonie-2026",
+   "url": "/race/grand-prix-de-wallonie/2026",
+   "pages": {},
+   "stages": [
+    {
+     "stage": null,
+     "unit": "race",
+     "kind": "race",
+     "date": "2026-09-16",
+     "label": "Grand Prix de Wallonie (no prediction made)",
+     "status": "settled",
+     "predicted": true,
+     "post_hoc": true,
+     "url": "/race/grand-prix-de-wallonie/2026/prediction",
+     "asset": "/grand-prix-de-wallonie-2026.html"
+    }
+   ],
+   "n_stages": 1,
+   "n_settled": 1,
+   "n_predicted": 1,
+   "post_hoc": true
+  },
+  {
+   "slug": "tour-de-luxembourg",
+   "year": 2026,
+   "name": "Tour de Luxembourg 2026",
+   "short_name": "Tour de Luxembourg 2026",
+   "type": "stage_race",
+   "status": "in_progress",
+   "start_date": "2026-09-16",
+   "end_date": "2026-09-20",
+   "blurb": "Nightly model run and results record for Tour de Luxembourg.",
+   "campaign_dir": "performance_eval/tour-de-luxembourg-2026",
+   "url": "/race/tour-de-luxembourg/2026",
+   "pages": {
+    "stages": {
+     "url": "/race/tour-de-luxembourg/2026/stages",
+     "asset": "/tour-de-luxembourg-2026-stages.html",
+     "title": "Stage-by-stage diary"
+    }
+   },
+   "stages": [
+    {
+     "stage": 1,
+     "unit": "stage_01",
+     "kind": "stage",
+     "date": "2026-09-16",
+     "label": "Stage 1 (no prediction made)",
+     "status": "settled",
+     "predicted": true,
+     "url": "/race/tour-de-luxembourg/2026/stage-01",
+     "asset": "/tour-de-luxembourg-2026-stage01.html",
+     "post_hoc": true
+    },
+    {
+     "stage": 2,
+     "unit": "stage_02",
+     "kind": "stage",
+     "date": "2026-09-17",
+     "label": "Stage 2 (no prediction made)",
+     "status": "settled",
+     "predicted": true,
+     "url": "/race/tour-de-luxembourg/2026/stage-02",
+     "asset": "/tour-de-luxembourg-2026-stage02.html",
+     "post_hoc": true
+    },
+    {
+     "stage": 3,
+     "unit": "stage_03",
+     "kind": "stage",
+     "date": null,
+     "label": "Stage 3",
+     "status": "upcoming",
+     "predicted": false,
+     "url": null,
+     "asset": null,
+     "post_hoc": false
+    },
+    {
+     "stage": 4,
+     "unit": "stage_04",
+     "kind": "stage",
+     "date": null,
+     "label": "Stage 4",
+     "status": "upcoming",
+     "predicted": false,
+     "url": null,
+     "asset": null,
+     "post_hoc": false
+    },
+    {
+     "stage": 5,
+     "unit": "stage_05",
+     "kind": "stage",
+     "date": null,
+     "label": "Stage 5",
+     "status": "upcoming",
+     "predicted": false,
+     "url": null,
+     "asset": null,
+     "post_hoc": false
+    }
+   ],
+   "n_stages": 5,
+   "n_settled": 2,
+   "n_predicted": 2,
+   "post_hoc": false
+  },
+  {
+   "slug": "giro-d-abruzzo",
+   "year": 2026,
+   "name": "Giro d'Abruzzo 2026",
+   "short_name": "Giro d'Abruzzo 2026",
+   "type": "stage_race",
+   "status": "in_progress",
+   "start_date": "2026-09-15",
+   "end_date": "2026-09-18",
+   "blurb": "Nightly model run and results record for Giro d'Abruzzo.",
+   "campaign_dir": "performance_eval/giro-d-abruzzo-2026",
+   "url": "/race/giro-d-abruzzo/2026",
+   "pages": {
+    "stages": {
+     "url": "/race/giro-d-abruzzo/2026/stages",
+     "asset": "/giro-d-abruzzo-2026-stages.html",
+     "title": "Stage-by-stage diary"
+    }
+   },
+   "stages": [
+    {
+     "stage": 1,
+     "unit": "stage_01",
+     "kind": "stage",
+     "date": "2026-09-15",
+     "label": "Stage 1 (no prediction made)",
+     "status": "settled",
+     "predicted": true,
+     "url": "/race/giro-d-abruzzo/2026/stage-01",
+     "asset": "/giro-d-abruzzo-2026-stage01.html",
+     "post_hoc": true
+    },
+    {
+     "stage": 2,
+     "unit": "stage_02",
+     "kind": "stage",
+     "date": "2026-09-16",
+     "label": "Stage 2 (no prediction made)",
+     "status": "settled",
+     "predicted": true,
+     "url": "/race/giro-d-abruzzo/2026/stage-02",
+     "asset": "/giro-d-abruzzo-2026-stage02.html",
+     "post_hoc": true
+    },
+    {
+     "stage": 3,
+     "unit": "stage_03",
+     "kind": "stage",
+     "date": "2026-09-17",
+     "label": "Stage 3 (no prediction made)",
+     "status": "settled",
+     "predicted": true,
+     "url": "/race/giro-d-abruzzo/2026/stage-03",
+     "asset": "/giro-d-abruzzo-2026-stage03.html",
+     "post_hoc": true
+    },
+    {
+     "stage": 4,
+     "unit": "stage_04",
+     "kind": "stage",
+     "date": null,
+     "label": "Stage 4",
+     "status": "upcoming",
+     "predicted": false,
+     "url": null,
+     "asset": null,
+     "post_hoc": false
+    }
+   ],
+   "n_stages": 4,
+   "n_settled": 3,
+   "n_predicted": 3,
+   "post_hoc": false
+  },
+  {
+   "slug": "gp-de-fourmies",
+   "year": 2026,
+   "name": "GP de Fourmies 2026",
+   "short_name": "GP de Fourmies 2026",
+   "type": "one_day",
+   "status": "settled",
+   "start_date": "2026-09-13",
+   "end_date": "2026-09-13",
+   "blurb": "Nightly model run and results record for GP de Fourmies.",
+   "campaign_dir": "performance_eval/gp-de-fourmies-2026",
+   "url": "/race/gp-de-fourmies/2026",
+   "pages": {},
+   "stages": [
+    {
+     "stage": null,
+     "unit": "race",
+     "kind": "race",
+     "date": "2026-09-13",
+     "label": "GP de Fourmies (no prediction made)",
+     "status": "settled",
+     "predicted": true,
+     "post_hoc": true,
+     "url": "/race/gp-de-fourmies/2026/prediction",
+     "asset": "/gp-de-fourmies-2026.html"
+    }
+   ],
+   "n_stages": 1,
+   "n_settled": 1,
+   "n_predicted": 1,
+   "post_hoc": true
+  },
+  {
+   "slug": "gp-montreal",
+   "year": 2026,
+   "name": "GP Montreal 2026",
+   "short_name": "GP Montreal 2026",
+   "type": "one_day",
+   "status": "settled",
+   "start_date": "2026-09-13",
+   "end_date": "2026-09-13",
+   "blurb": "Nightly model run and results record for GP Montreal.",
+   "campaign_dir": "performance_eval/gp-montreal-2026",
+   "url": "/race/gp-montreal/2026",
+   "pages": {},
+   "stages": [
+    {
+     "stage": null,
+     "unit": "race",
+     "kind": "race",
+     "date": "2026-09-13",
+     "label": "GP Montreal (no prediction made)",
+     "status": "settled",
+     "predicted": true,
+     "post_hoc": true,
+     "url": "/race/gp-montreal/2026/prediction",
+     "asset": "/gp-montreal-2026.html"
+    }
+   ],
+   "n_stages": 1,
+   "n_settled": 1,
+   "n_predicted": 1,
+   "post_hoc": true
+  },
+  {
+   "slug": "trofeo-matteotti",
+   "year": 2026,
+   "name": "Trofeo Matteotti 2026",
+   "short_name": "Trofeo Matteotti 2026",
+   "type": "one_day",
+   "status": "settled",
+   "start_date": "2026-09-13",
+   "end_date": "2026-09-13",
+   "blurb": "Nightly model run and results record for Trofeo Matteotti.",
+   "campaign_dir": "performance_eval/trofeo-matteotti-2026",
+   "url": "/race/trofeo-matteotti/2026",
+   "pages": {},
+   "stages": [
+    {
+     "stage": null,
+     "unit": "race",
+     "kind": "race",
+     "date": "2026-09-13",
+     "label": "Trofeo Matteotti (no prediction made)",
+     "status": "settled",
+     "predicted": true,
+     "post_hoc": true,
+     "url": "/race/trofeo-matteotti/2026/prediction",
+     "asset": "/trofeo-matteotti-2026.html"
+    }
+   ],
+   "n_stages": 1,
+   "n_settled": 1,
+   "n_predicted": 1,
+   "post_hoc": true
+  },
+  {
+   "slug": "memorial-pantani",
+   "year": 2026,
+   "name": "Memorial Pantani 2026",
+   "short_name": "Memorial Pantani 2026",
+   "type": "one_day",
+   "status": "settled",
+   "start_date": "2026-09-12",
+   "end_date": "2026-09-12",
+   "blurb": "Nightly model run and results record for Memorial Pantani.",
+   "campaign_dir": "performance_eval/memorial-pantani-2026",
+   "url": "/race/memorial-pantani/2026",
+   "pages": {},
+   "stages": [
+    {
+     "stage": null,
+     "unit": "race",
+     "kind": "race",
+     "date": "2026-09-12",
+     "label": "Memorial Pantani (no prediction made)",
+     "status": "settled",
+     "predicted": true,
+     "post_hoc": true,
+     "url": "/race/memorial-pantani/2026/prediction",
+     "asset": "/memorial-pantani-2026.html"
+    }
+   ],
+   "n_stages": 1,
+   "n_settled": 1,
+   "n_predicted": 1,
+   "post_hoc": true
+  },
+  {
+   "slug": "tour-of-taihu-lake",
+   "year": 2026,
+   "name": "Tour of Taihu Lake 2026",
+   "short_name": "Tour of Taihu Lake 2026",
+   "type": "stage_race",
+   "status": "settled",
+   "start_date": "2026-09-12",
+   "end_date": "2026-09-16",
+   "blurb": "Nightly model run and results record for Tour of Taihu Lake.",
+   "campaign_dir": "performance_eval/tour-of-taihu-lake-2026",
+   "url": "/race/tour-of-taihu-lake/2026",
+   "pages": {
+    "stages": {
+     "url": "/race/tour-of-taihu-lake/2026/stages",
+     "asset": "/tour-of-taihu-lake-2026-stages.html",
+     "title": "Stage-by-stage diary"
+    }
+   },
+   "stages": [
+    {
+     "stage": 1,
+     "unit": "stage_01",
+     "kind": "stage",
+     "date": "2026-09-12",
+     "label": "Stage 1 — Nanjing circuit, 96.5 km",
+     "status": "settled",
+     "predicted": false,
+     "url": null,
+     "asset": null,
+     "post_hoc": false
+    },
+    {
+     "stage": 2,
+     "unit": "stage_02",
+     "kind": "stage",
+     "date": "2026-09-13",
+     "label": "Stage 2 (no prediction made)",
+     "status": "settled",
+     "predicted": true,
+     "url": "/race/tour-of-taihu-lake/2026/stage-02",
+     "asset": "/tour-of-taihu-lake-2026-stage02.html",
+     "post_hoc": true
+    },
+    {
+     "stage": 3,
+     "unit": "stage_03",
+     "kind": "stage",
+     "date": "2026-09-14",
+     "label": "Stage 3 (no prediction made)",
+     "status": "settled",
+     "predicted": true,
+     "url": "/race/tour-of-taihu-lake/2026/stage-03",
+     "asset": "/tour-of-taihu-lake-2026-stage03.html",
+     "post_hoc": true
+    },
+    {
+     "stage": 4,
+     "unit": "stage_04",
+     "kind": "stage",
+     "date": "2026-09-15",
+     "label": "Stage 4 (no prediction made)",
+     "status": "settled",
+     "predicted": true,
+     "url": "/race/tour-of-taihu-lake/2026/stage-04",
+     "asset": "/tour-of-taihu-lake-2026-stage04.html",
+     "post_hoc": true
+    },
+    {
+     "stage": 5,
+     "unit": "stage_05",
+     "kind": "stage",
+     "date": null,
+     "label": "Stage 5",
+     "status": "upcoming",
+     "predicted": false,
+     "url": null,
+     "asset": null,
+     "post_hoc": false
+    }
+   ],
+   "n_stages": 5,
+   "n_settled": 4,
+   "n_predicted": 3,
+   "post_hoc": false
+  },
+  {
+   "slug": "gp-quebec",
+   "year": 2026,
+   "name": "GP Québec 2026",
+   "short_name": "GP Québec 2026",
+   "type": "one_day",
+   "status": "settled",
+   "start_date": "2026-09-11",
+   "end_date": "2026-09-11",
+   "blurb": "Nightly model run and results record for GP Québec.",
+   "campaign_dir": "performance_eval/gp-quebec-2026",
+   "url": "/race/gp-quebec/2026",
+   "pages": {},
+   "stages": [
+    {
+     "stage": null,
+     "unit": "race",
+     "kind": "race",
+     "date": "2026-09-11",
+     "label": "GP Québec (no prediction made)",
+     "status": "settled",
+     "predicted": true,
+     "post_hoc": true,
+     "url": "/race/gp-quebec/2026/prediction",
+     "asset": "/gp-quebec-2026.html"
+    }
+   ],
+   "n_stages": 1,
+   "n_settled": 1,
+   "n_predicted": 1,
+   "post_hoc": true
+  },
+  {
+   "slug": "coppa-sabatini",
+   "year": 2026,
+   "name": "Coppa Sabatini 2026",
+   "short_name": "Coppa Sabatini 2026",
+   "type": "one_day",
+   "status": "settled",
+   "start_date": "2026-09-10",
+   "end_date": "2026-09-10",
+   "blurb": "Nightly model run and results record for Coppa Sabatini.",
+   "campaign_dir": "performance_eval/coppa-sabatini-2026",
+   "url": "/race/coppa-sabatini/2026",
+   "pages": {},
+   "stages": [
+    {
+     "stage": null,
+     "unit": "race",
+     "kind": "race",
+     "date": "2026-09-10",
+     "label": "Coppa Sabatini 2026",
+     "status": "settled",
+     "predicted": false,
+     "post_hoc": false,
+     "url": null,
+     "asset": null
+    }
+   ],
+   "n_stages": 1,
+   "n_settled": 1,
+   "n_predicted": 0,
+   "post_hoc": false
+  },
   {
    "slug": "giro-della-toscana",
    "year": 2026,
@@ -22,7 +492,7 @@
      "kind": "race",
      "date": "2026-09-09",
      "label": "Giro della Toscana",
-     "status": "predicted",
+     "status": "settled",
      "predicted": true,
      "post_hoc": false,
      "url": "/race/giro-della-toscana/2026/prediction",
@@ -30,8 +500,40 @@
     }
    ],
    "n_stages": 1,
-   "n_settled": 0,
+   "n_settled": 1,
    "n_predicted": 1,
+   "post_hoc": false
+  },
+  {
+   "slug": "tour-of-binzhou",
+   "year": 2026,
+   "name": "Tour of Binzhou 2026",
+   "short_name": "Tour of Binzhou 2026",
+   "type": "one_day",
+   "status": "settled",
+   "start_date": "2026-09-09",
+   "end_date": "2026-09-09",
+   "blurb": "Nightly model run and results record for Tour of Binzhou.",
+   "campaign_dir": "performance_eval/tour-of-binzhou-2026",
+   "url": "/race/tour-of-binzhou/2026",
+   "pages": {},
+   "stages": [
+    {
+     "stage": null,
+     "unit": "race",
+     "kind": "race",
+     "date": "2026-09-09",
+     "label": "Tour of Binzhou 2026",
+     "status": "settled",
+     "predicted": false,
+     "post_hoc": false,
+     "url": null,
+     "asset": null
+    }
+   ],
+   "n_stages": 1,
+   "n_settled": 1,
+   "n_predicted": 0,
    "post_hoc": false
   },
   {
@@ -104,7 +606,7 @@
      "kind": "stage",
      "date": null,
      "label": "Stage 2",
-     "status": "upcoming",
+     "status": "settled",
      "predicted": false,
      "url": null,
      "asset": null,
@@ -136,7 +638,7 @@
     }
    ],
    "n_stages": 4,
-   "n_settled": 1,
+   "n_settled": 2,
    "n_predicted": 1,
    "post_hoc": false
   },
@@ -178,7 +680,7 @@
      "kind": "stage",
      "date": null,
      "label": "Stage 2",
-     "status": "upcoming",
+     "status": "settled",
      "predicted": false,
      "url": null,
      "asset": null,
@@ -190,7 +692,7 @@
      "kind": "stage",
      "date": null,
      "label": "Stage 3",
-     "status": "upcoming",
+     "status": "settled",
      "predicted": false,
      "url": null,
      "asset": null,
@@ -202,7 +704,7 @@
      "kind": "stage",
      "date": null,
      "label": "Stage 4",
-     "status": "upcoming",
+     "status": "settled",
      "predicted": false,
      "url": null,
      "asset": null,
@@ -222,7 +724,7 @@
     }
    ],
    "n_stages": 5,
-   "n_settled": 1,
+   "n_settled": 4,
    "n_predicted": 1,
    "post_hoc": false
   },
@@ -246,7 +748,7 @@
      "kind": "stage",
      "date": "2026-09-02",
      "label": "Stage 1",
-     "status": "upcoming",
+     "status": "settled",
      "predicted": false,
      "url": null,
      "asset": null,
@@ -258,7 +760,7 @@
      "kind": "stage",
      "date": null,
      "label": "Stage 2",
-     "status": "upcoming",
+     "status": "settled",
      "predicted": false,
      "url": null,
      "asset": null,
@@ -270,7 +772,7 @@
      "kind": "stage",
      "date": null,
      "label": "Stage 3",
-     "status": "upcoming",
+     "status": "settled",
      "predicted": false,
      "url": null,
      "asset": null,
@@ -282,7 +784,7 @@
      "kind": "stage",
      "date": null,
      "label": "Stage 4",
-     "status": "upcoming",
+     "status": "settled",
      "predicted": false,
      "url": null,
      "asset": null,
@@ -302,7 +804,7 @@
     }
    ],
    "n_stages": 5,
-   "n_settled": 0,
+   "n_settled": 4,
    "n_predicted": 0,
    "post_hoc": false
   },
@@ -312,7 +814,7 @@
    "name": "Vuelta a España 2026",
    "short_name": "Vuelta 2026",
    "type": "stage_race",
-   "status": "in_progress",
+   "status": "settled",
    "start_date": "2026-08-22",
    "end_date": "2026-09-13",
    "blurb": "The live campaign: day-type keys chosen each morning, stage predictions published before the flag drops, and a GC tracker updated as the race reshapes itself.",
@@ -328,6 +830,11 @@
      "url": "/race/vuelta-a-espana/2026/stages",
      "asset": "/vuelta-stages.html",
      "title": "Stage-by-stage diary"
+    },
+    "review": {
+     "url": "/race/vuelta-a-espana/2026/review",
+     "asset": "/vuelta-review.html",
+     "title": "Post-race review"
     }
    },
    "stages": [
@@ -1107,6 +1614,23 @@
  "default_month": "2026-09",
  "aliases": {
   "/index.html": "/model",
+  "/grand-prix-de-wallonie-2026.html": "/race/grand-prix-de-wallonie/2026/prediction",
+  "/tour-de-luxembourg-2026-stages.html": "/race/tour-de-luxembourg/2026/stages",
+  "/tour-de-luxembourg-2026-stage01.html": "/race/tour-de-luxembourg/2026/stage-01",
+  "/tour-de-luxembourg-2026-stage02.html": "/race/tour-de-luxembourg/2026/stage-02",
+  "/giro-d-abruzzo-2026-stages.html": "/race/giro-d-abruzzo/2026/stages",
+  "/giro-d-abruzzo-2026-stage01.html": "/race/giro-d-abruzzo/2026/stage-01",
+  "/giro-d-abruzzo-2026-stage02.html": "/race/giro-d-abruzzo/2026/stage-02",
+  "/giro-d-abruzzo-2026-stage03.html": "/race/giro-d-abruzzo/2026/stage-03",
+  "/gp-de-fourmies-2026.html": "/race/gp-de-fourmies/2026/prediction",
+  "/gp-montreal-2026.html": "/race/gp-montreal/2026/prediction",
+  "/trofeo-matteotti-2026.html": "/race/trofeo-matteotti/2026/prediction",
+  "/memorial-pantani-2026.html": "/race/memorial-pantani/2026/prediction",
+  "/tour-of-taihu-lake-2026-stages.html": "/race/tour-of-taihu-lake/2026/stages",
+  "/tour-of-taihu-lake-2026-stage02.html": "/race/tour-of-taihu-lake/2026/stage-02",
+  "/tour-of-taihu-lake-2026-stage03.html": "/race/tour-of-taihu-lake/2026/stage-03",
+  "/tour-of-taihu-lake-2026-stage04.html": "/race/tour-of-taihu-lake/2026/stage-04",
+  "/gp-quebec-2026.html": "/race/gp-quebec/2026/prediction",
   "/giro-della-toscana-2026.html": "/race/giro-della-toscana/2026/prediction",
   "/gp-industria-artigianato-2026.html": "/race/gp-industria-artigianato/2026/prediction",
   "/tour-of-istanbul-2026-stages.html": "/race/tour-of-istanbul/2026/stages",
@@ -1115,6 +1639,7 @@
   "/zlm-tour-2026-stage01.html": "/race/zlm-tour/2026/stage-01",
   "/vuelta-gc.html": "/race/vuelta-a-espana/2026/gc",
   "/vuelta-stages.html": "/race/vuelta-a-espana/2026/stages",
+  "/vuelta-review.html": "/race/vuelta-a-espana/2026/review",
   "/vuelta-stage01.html": "/race/vuelta-a-espana/2026/stage-01",
   "/vuelta-stage02.html": "/race/vuelta-a-espana/2026/stage-02",
   "/vuelta-stage03.html": "/race/vuelta-a-espana/2026/stage-03",
@@ -1172,6 +1697,138 @@
    "chrome": true,
    "active": "model"
   },
+  "/race/grand-prix-de-wallonie/2026": {
+   "asset": "/_frame/race/grand-prix-de-wallonie-2026.html"
+  },
+  "/race/grand-prix-de-wallonie/2026/prediction": {
+   "asset": "/grand-prix-de-wallonie-2026.html",
+   "base": true,
+   "chrome": true,
+   "active": "races"
+  },
+  "/race/tour-de-luxembourg/2026": {
+   "asset": "/_frame/race/tour-de-luxembourg-2026.html"
+  },
+  "/race/tour-de-luxembourg/2026/stages": {
+   "asset": "/tour-de-luxembourg-2026-stages.html",
+   "base": true,
+   "chrome": true,
+   "active": "races"
+  },
+  "/race/tour-de-luxembourg/2026/stage-01": {
+   "asset": "/tour-de-luxembourg-2026-stage01.html",
+   "base": true,
+   "chrome": true,
+   "active": "races"
+  },
+  "/race/tour-de-luxembourg/2026/stage-02": {
+   "asset": "/tour-de-luxembourg-2026-stage02.html",
+   "base": true,
+   "chrome": true,
+   "active": "races"
+  },
+  "/race/giro-d-abruzzo/2026": {
+   "asset": "/_frame/race/giro-d-abruzzo-2026.html"
+  },
+  "/race/giro-d-abruzzo/2026/stages": {
+   "asset": "/giro-d-abruzzo-2026-stages.html",
+   "base": true,
+   "chrome": true,
+   "active": "races"
+  },
+  "/race/giro-d-abruzzo/2026/stage-01": {
+   "asset": "/giro-d-abruzzo-2026-stage01.html",
+   "base": true,
+   "chrome": true,
+   "active": "races"
+  },
+  "/race/giro-d-abruzzo/2026/stage-02": {
+   "asset": "/giro-d-abruzzo-2026-stage02.html",
+   "base": true,
+   "chrome": true,
+   "active": "races"
+  },
+  "/race/giro-d-abruzzo/2026/stage-03": {
+   "asset": "/giro-d-abruzzo-2026-stage03.html",
+   "base": true,
+   "chrome": true,
+   "active": "races"
+  },
+  "/race/gp-de-fourmies/2026": {
+   "asset": "/_frame/race/gp-de-fourmies-2026.html"
+  },
+  "/race/gp-de-fourmies/2026/prediction": {
+   "asset": "/gp-de-fourmies-2026.html",
+   "base": true,
+   "chrome": true,
+   "active": "races"
+  },
+  "/race/gp-montreal/2026": {
+   "asset": "/_frame/race/gp-montreal-2026.html"
+  },
+  "/race/gp-montreal/2026/prediction": {
+   "asset": "/gp-montreal-2026.html",
+   "base": true,
+   "chrome": true,
+   "active": "races"
+  },
+  "/race/trofeo-matteotti/2026": {
+   "asset": "/_frame/race/trofeo-matteotti-2026.html"
+  },
+  "/race/trofeo-matteotti/2026/prediction": {
+   "asset": "/trofeo-matteotti-2026.html",
+   "base": true,
+   "chrome": true,
+   "active": "races"
+  },
+  "/race/memorial-pantani/2026": {
+   "asset": "/_frame/race/memorial-pantani-2026.html"
+  },
+  "/race/memorial-pantani/2026/prediction": {
+   "asset": "/memorial-pantani-2026.html",
+   "base": true,
+   "chrome": true,
+   "active": "races"
+  },
+  "/race/tour-of-taihu-lake/2026": {
+   "asset": "/_frame/race/tour-of-taihu-lake-2026.html"
+  },
+  "/race/tour-of-taihu-lake/2026/stages": {
+   "asset": "/tour-of-taihu-lake-2026-stages.html",
+   "base": true,
+   "chrome": true,
+   "active": "races"
+  },
+  "/race/tour-of-taihu-lake/2026/stage-02": {
+   "asset": "/tour-of-taihu-lake-2026-stage02.html",
+   "base": true,
+   "chrome": true,
+   "active": "races"
+  },
+  "/race/tour-of-taihu-lake/2026/stage-03": {
+   "asset": "/tour-of-taihu-lake-2026-stage03.html",
+   "base": true,
+   "chrome": true,
+   "active": "races"
+  },
+  "/race/tour-of-taihu-lake/2026/stage-04": {
+   "asset": "/tour-of-taihu-lake-2026-stage04.html",
+   "base": true,
+   "chrome": true,
+   "active": "races"
+  },
+  "/race/gp-quebec/2026": {
+   "asset": "/_frame/race/gp-quebec-2026.html"
+  },
+  "/race/gp-quebec/2026/prediction": {
+   "asset": "/gp-quebec-2026.html",
+   "base": true,
+   "chrome": true,
+   "active": "races"
+  },
+  "/race/coppa-sabatini/2026": {
+   "asset": "/_frame/race/coppa-sabatini-2026.html"
+  },
   "/race/giro-della-toscana/2026": {
    "asset": "/_frame/race/giro-della-toscana-2026.html"
   },
@@ -1180,6 +1837,9 @@
    "base": true,
    "chrome": true,
    "active": "races"
+  },
+  "/race/tour-of-binzhou/2026": {
+   "asset": "/_frame/race/tour-of-binzhou-2026.html"
   },
   "/race/gp-industria-artigianato/2026": {
    "asset": "/_frame/race/gp-industria-artigianato-2026.html"
@@ -1234,6 +1894,12 @@
   },
   "/race/vuelta-a-espana/2026/stages": {
    "asset": "/vuelta-stages.html",
+   "base": true,
+   "chrome": true,
+   "active": "races"
+  },
+  "/race/vuelta-a-espana/2026/review": {
+   "asset": "/vuelta-review.html",
    "base": true,
    "chrome": true,
    "active": "races"

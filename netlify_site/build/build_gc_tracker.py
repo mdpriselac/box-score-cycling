@@ -302,16 +302,22 @@ def build(config):
     blend_mass = sum(p for p in (r.get("blend_win_p") for r in current["riders"])
                      if p is not None and p == p) if current else 0
     if current:
+        # The outlook head is the only head that has seen the race, so it
+        # leads the board: order by it, with the pre-race blend as the
+        # tie-break for riders it never priced (NaN = not a contender).
+        def _p(v):
+            return v if v is not None and v == v else -1.0
         top = sorted(current["riders"],
-                     key=lambda r: -(r.get("blend_win_p") or 0))[:TOP_N]
+                     key=lambda r: (-_p(r.get("gc_outlook_win_p")),
+                                    -(r.get("blend_win_p") or 0)))[:TOP_N]
         for i, r in enumerate(top, 1):
             detail_rows.append(
                 "<tr>"
                 f"<td class='num'>{i}</td><td>{esc(r['rider_name'])}</td>"
                 f"<td class='muted'>{esc(r.get('team_name') or '')}</td>"
                 f"<td class='num'>{fmt_gap(gaps.get(int(r['rider_id'])))}</td>"
-                f"<td class='num'><b>{pct(r.get('blend_win_p'))}</b></td>"
-                f"<td class='num'>{pct(r.get('gc_outlook_win_p'))}</td>"
+                f"<td class='num'><b>{pct(r.get('gc_outlook_win_p'))}</b></td>"
+                f"<td class='num'>{pct(r.get('blend_win_p'))}</td>"
                 + (f"<td class='num'>{pct(r.get('book_devig'))}</td>"
                    if r.get("book_devig") is not None
                    else "<td class='num muted'>–</td>")
@@ -356,9 +362,12 @@ def build(config):
 <header>
   <div class="eyebrow">Cycling race predictor · {CAMPAIGN['race_name']}</div>
   <h1>GC tracker — the favourites, stage by stage</h1>
-  <p class="standfirst">After every stage the production stack re-prices the
-  final general classification with the race state it has seen so far. Each
-  column is one evening's logged opinion; the current board sits on top.</p>
+  <p class="standfirst">After every stage the race-aware GC outlook head
+  re-prices the final general classification from the standings, the gaps and
+  the stages left. It is the one part of the model that watches the race, so
+  it leads this page; the pre-race blend, which only knows what happened
+  before the start, is shown beside it for contrast. Each column is one
+  evening's logged opinion; the current board sits on top.</p>
   <div class="meta">
     <span>state through&nbsp;<b>stage {board_stage}</b></span>
     <span>classification through&nbsp;<b>stage {newest_stage or '–'}</b></span>
@@ -375,20 +384,22 @@ def build(config):
 <div class="tablewrap"><table>
 <tr><th class="num">#</th><th>Rider</th><th>Team</th>
 <th class="num">GC gap<div class="sub">after s{board_stage}</div></th>
-<th class="num">Model win</th><th class="num">Outlook head</th>
+<th class="num">Outlook<div class="sub">sees the race</div></th>
+<th class="num">Pre-race blend<div class="sub">form + references only</div></th>
 <th class="num">Book devig</th></tr>
 {''.join(detail_rows)}
 </table></div>
-<div class="note">Model win = the blended pre-race heads with live form and
-the DNF-adjusted active field. Read it against the book column with care:
-the blend is a set of per-rider marginals and sums to {100*blend_mass:.0f}%
-over the field, not to one book, so this is a directional comparison and not
-a like-for-like price — divide through by that total before calling anything
-an edge. Only the outlook head has seen the race: on a GC target the state
-feeds that head alone and the main heads stay pre-race, so a rider who has
-already lost an hour still carries his pre-race price in the model-win column
-while the outlook column has him at a dash. Read the outlook as "how safe is
-this position", not as odds.</div>
+<div class="note">Ordered by the <b>outlook head</b>, the one head that sees
+the race state: standings, gaps and stages remaining. It scores contenders
+only (a rider it never priced shows a dash) and its per-rider numbers do not
+sum to exactly one book, so read a row as "how safe is this position" rather
+than as a like-for-like price. The <b>pre-race blend</b> is the main heads
+with live form and the DNF-adjusted active field: it prices the final GC from
+what happened before the race and never sees the standings, which is why it
+barely moves from one evening to the next and why a rider who has already
+lost an hour can still carry his pre-race price there. It sums to
+{100*blend_mass:.0f}% over the field, so compare it with the book column
+directionally only.</div>
 </section>
 
 <section>
@@ -402,29 +413,29 @@ Every rider who has held a top-10 place, ordered by the current standing;
 </section>
 
 <section>
-<h2>How the board moved</h2>
+<h2>How the race-aware board moved</h2>
+{evolution_table(checks, "outlook", standings)}
+<div class="note">The GC outlook head at each checkpoint — every rider who
+has appeared in its top-10, ordered by the current board. <b>Bold</b> =
+inside that evening's top-10; "out" = no longer in the race when that opinion
+was logged. 🟡 names the actual race leader at each checkpoint. Columns are
+labelled by the stage the road had reached, which is what the state was built
+from. This head sees the standings, the gaps and the stages remaining, so it
+is the row that should move when the race does; it scores contenders only,
+so a rider it never priced shows a dash.{lag_note}</div>
+</section>
+
+<section>
+<h2>The pre-race view, for contrast</h2>
 {evolution_table(checks, "blend", standings)}
 <div class="note">Model GC win probability (blend) at each checkpoint — every
 rider who has appeared in a top-10, ordered by the current board.
 <b>Bold</b> = inside that evening's top-10; "out" = no longer in the race when
 that opinion was logged. 🟡 names the actual race leader at each checkpoint.
-Columns are labelled by the stage the road had reached, which is what the
-state was built from. The row is close to flat by construction — these heads
-price the final GC from form and the reference editions, and never see the
-standings — so treat this table as the baseline the state-aware head below
-is moving against.{lag_note}</div>
-</section>
-
-<section>
-<h2>What the state-aware head thought</h2>
-{evolution_table(checks, "outlook", standings)}
-<div class="note">The GC outlook head only — the one head that sees the race
-state (standings, gaps, stages remaining) rather than pricing the race from
-its pre-race form. It scores contenders only, so a rider it never priced
-shows a dash, and its per-rider probabilities do not sum to one book: read a
-row as "how safe does this position look", and read it against the blend
-above to see where the state has pulled the model away from its pre-race
-opinion.</div>
+The row is close to flat by construction — these heads price the final GC
+from form and the reference editions, and never see the standings — so treat
+this table as the baseline the race-aware head above is moving against, not
+as a forecast of the race as it stands.</div>
 </section>
 
 <div class="footer">Opinions logged pre-stage to prediction_log

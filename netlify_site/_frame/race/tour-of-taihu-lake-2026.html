@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tour of Taihu Lake 2026 · Cycling Race Predictor</title>
+<meta name="description" content="Tour of Taihu Lake 2026: stage predictions, GC tracker, and retrospectives.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚴</text></svg>">
+<style>
+  *,*::before,*::after{box-sizing:border-box}
+  :root{
+    --ink:#22272F; --paper:#FBFAF7; --slate:#5C6470; --line:#E5E3DB;
+    --yellow:#F5C518; --yellow-soft:#FBF0C4; --blue:#3E6B8F;
+    --blue-soft:#E7EEF4; --green:#47705A; --green-soft:#E6EEE9;
+    --red:#9A4A3B; --card:#FFFFFF;
+    --mono:ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,monospace;
+    --sans:"Avenir Next","Avenir","Segoe UI",-apple-system,BlinkMacSystemFont,"Helvetica Neue",sans-serif;
+    --serif:"Charter","Iowan Old Style","Palatino Linotype",Georgia,serif;
+  }
+  body{background:var(--paper);color:var(--ink);font-family:var(--serif);
+       font-size:17px;line-height:1.65;margin:0}
+  .wrap{max-width:1020px;margin:0 auto;padding:0 24px 96px}
+  .topnav{font-family:var(--sans);font-size:13px;display:flex;flex-wrap:wrap;
+    align-items:baseline;gap:8px 20px;padding:16px 0 14px;border-bottom:1px solid var(--line)}
+  .topnav .brand{font-weight:700;font-size:14px;letter-spacing:-.01em;color:var(--ink);
+    text-decoration:none;margin-right:auto}
+  .topnav .brand::before{content:"";display:inline-block;width:18px;height:7px;
+    background:var(--yellow);margin-right:9px;vertical-align:baseline}
+  .topnav a{color:var(--blue);text-decoration:none;border-bottom:1px solid transparent}
+  .topnav a:hover{border-bottom-color:var(--blue-soft)}
+  .topnav a.here{color:var(--ink);font-weight:600;border-bottom:2px solid var(--yellow)}
+  header{padding:44px 0 8px}
+  .eyebrow{font-family:var(--sans);font-size:12px;font-weight:600;
+    letter-spacing:.14em;text-transform:uppercase;color:var(--slate);
+    display:flex;align-items:center;gap:10px}
+  .eyebrow::before{content:"";display:inline-block;width:26px;height:8px;background:var(--yellow)}
+  h1{font-family:var(--sans);font-weight:700;font-size:clamp(28px,4.5vw,42px);
+     line-height:1.08;letter-spacing:-.015em;margin:.5em 0 .35em;text-wrap:balance}
+  .standfirst{font-size:19px;line-height:1.55;color:var(--slate);max-width:680px;margin:0 0 20px}
+  .meta{font-family:var(--sans);font-size:13px;color:var(--slate);
+    display:flex;flex-wrap:wrap;gap:6px 22px;padding:14px 0;
+    border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+  .meta b{color:var(--ink);font-weight:600;font-variant-numeric:tabular-nums}
+  section{margin-top:56px}
+  .kicker{font-family:var(--sans);font-size:12px;font-weight:600;
+    letter-spacing:.14em;text-transform:uppercase;color:var(--blue);margin:0 0 6px}
+  h2{font-family:var(--sans);font-weight:700;font-size:26px;letter-spacing:-.01em;
+     line-height:1.15;margin:0 0 14px;text-wrap:balance}
+  h3{font-family:var(--sans);font-weight:600;font-size:17px;margin:24px 0 8px}
+  p{margin:0 0 16px;max-width:680px}
+  a{color:var(--blue)}
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:16px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:16px 18px}
+  .card h3{margin:0 0 4px;font-size:16px}
+  .card h3 a{color:var(--ink);text-decoration:none}
+  .card h3 a:hover{color:var(--blue)}
+  .card .note{font-size:13.5px;color:var(--slate);line-height:1.5;margin:8px 0 0;font-family:var(--sans)}
+  .card .go{font-family:var(--sans);font-size:13px;margin-top:10px}
+  .card .go a{text-decoration:none;border-bottom:1px solid var(--blue-soft);font-weight:600}
+  table{border-collapse:collapse;width:100%;font-family:var(--sans);font-size:14px}
+  th{font-size:11.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;
+     color:var(--slate);text-align:left;padding:8px 10px;border-bottom:2px solid var(--ink)}
+  td{padding:7px 10px;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums}
+  td a{text-decoration:none;border-bottom:1px solid var(--blue-soft)}
+  .muted{color:var(--slate)}
+  .tablewrap{overflow-x:auto;background:var(--card);border:1px solid var(--line);
+             border-radius:8px;padding:6px 12px 10px;margin:18px 0}
+  .chip{font-family:var(--sans);font-size:11.5px;font-weight:600;letter-spacing:.05em;
+        text-transform:uppercase;padding:2px 9px;border-radius:99px;
+        border:1px solid var(--line);color:var(--slate);white-space:nowrap}
+  .chip.settled{background:var(--green-soft);color:var(--green);border-color:var(--green-soft)}
+  .chip.predicted{background:var(--yellow-soft);border-color:var(--yellow-soft);color:#7a6410}
+  .chip.cancelled{background:#ece9e4;border-color:#ddd8d1;color:#6b6259;
+    text-decoration:line-through;text-decoration-thickness:1px}
+  .chip.live{background:var(--blue-soft);color:var(--blue);border-color:var(--blue-soft)}
+  .chip.archive{background:transparent}
+  .chip.post_hoc{background:#ece9e4;border-color:#ddd8d1;color:#6b6259}
+  .mono{font-family:var(--mono);font-size:12.5px}
+  .entry{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;padding:9px 0;
+         border-bottom:1px solid var(--line);font-family:var(--sans);font-size:14.5px}
+  .entry:last-child{border-bottom:none}
+  .entry .d{color:var(--slate);font-variant-numeric:tabular-nums;width:88px;flex:none;font-size:13px}
+  .entry .race{color:var(--slate);font-size:12.5px;font-weight:600;
+    letter-spacing:.04em;text-transform:uppercase;width:110px;flex:none}
+  .entry a{text-decoration:none;border-bottom:1px solid var(--blue-soft);font-weight:600;color:var(--ink)}
+  .entry a:hover{color:var(--blue)}
+  .listbox{background:var(--card);border:1px solid var(--line);border-radius:8px;
+           padding:6px 18px;margin:18px 0}
+  .stage-strip{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0 6px}
+  .stage-strip a,.stage-strip span{font-family:var(--sans);font-size:13px;font-weight:600;
+    padding:5px 0;width:40px;text-align:center;border-radius:6px;border:1px solid var(--line);
+    color:var(--slate);text-decoration:none;background:var(--card);font-variant-numeric:tabular-nums}
+  .stage-strip a.settled{background:var(--green-soft);color:var(--green);border-color:#cfe0d6}
+  .stage-strip a.predicted{background:var(--yellow-soft);color:#7a6410;border-color:#eedf9e}
+  .stage-strip a.cancelled,.stage-strip span.cancelled{text-decoration:line-through;background:#ece9e4;color:#6b6259}
+  .stage-strip span.settled{background:var(--green-soft);color:var(--green);border-color:#cfe0d6;opacity:.55}
+  .stage-strip span.predicted{background:var(--yellow-soft);color:#7a6410;border-color:#eedf9e;opacity:.55}
+  .stage-strip a:hover{border-color:var(--blue)}
+  .progress{height:9px;background:var(--card);border:1px solid var(--line);
+            border-radius:5px;overflow:hidden;margin:10px 0 4px}
+  .progress i{display:block;height:100%;background:var(--green)}
+  .filters{font-family:var(--sans);font-size:13px;display:flex;flex-wrap:wrap;gap:8px;
+           align-items:center;margin:6px 0 18px}
+  .filters .lbl{color:var(--slate);font-size:11.5px;font-weight:600;
+    letter-spacing:.08em;text-transform:uppercase;margin-right:2px}
+  .filters button{font-family:var(--sans);font-size:12.5px;font-weight:600;cursor:pointer;
+    padding:4px 12px;border-radius:99px;border:1px solid var(--line);
+    background:var(--card);color:var(--slate)}
+  .filters button.on{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+  .cal{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;font-family:var(--sans)}
+  .cal .dow{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;
+            color:var(--slate);text-align:center;padding:4px 0}
+  .cal .day{background:var(--card);border:1px solid var(--line);border-radius:6px;
+            min-height:74px;padding:6px 7px;font-size:12px}
+  .cal .day.blank{background:transparent;border-color:transparent}
+  .cal .day.today{border-color:var(--yellow);box-shadow:0 0 0 1px var(--yellow)}
+  .cal .num{color:var(--slate);font-variant-numeric:tabular-nums;font-weight:600;font-size:11.5px}
+  .cal .ev{display:block;margin-top:5px;padding:2px 6px;border-radius:4px;font-weight:600;
+           font-size:11.5px;line-height:1.35;text-decoration:none;color:var(--slate);
+           border:1px solid var(--line);background:var(--paper)}
+  .cal .ev.settled{background:var(--green-soft);color:var(--green);border-color:#cfe0d6}
+  .cal .ev.predicted{background:var(--yellow-soft);color:#7a6410;border-color:#eedf9e}
+  .cal .ev.cancelled{background:#ece9e4;color:#6b6259;text-decoration:line-through}
+  .cal .ev[href]:hover{border-color:var(--blue)}
+  .cal-nav{font-family:var(--sans);font-size:13.5px;display:flex;gap:18px;margin:0 0 16px}
+  .cal-nav a{text-decoration:none;border-bottom:1px solid var(--blue-soft);font-weight:600}
+  .cal-nav .now{color:var(--slate)}
+  @media (max-width:640px){
+    .cal{gap:3px}.cal .day{min-height:52px;padding:4px 5px}
+    .entry .race{width:auto}
+  }
+  .footer{margin-top:80px;padding-top:16px;border-top:1px solid var(--line);
+          font-family:var(--sans);font-size:12.5px;color:var(--slate)}
+</style>
+</head>
+<body>
+<div class="wrap">
+<nav class="topnav"><a class="brand" href="/">Cycling Race Predictor</a><a href="/races" class="here">Races</a><a href="/calendar">Calendar</a><a href="/model">How the model works</a></nav>
+
+<header>
+<div class="eyebrow">Stage race · 2026</div>
+<h1>Tour of Taihu Lake 2026 <span class="chip settled">settled</span></h1>
+<p class="standfirst">Nightly model run and results record for Tour of Taihu Lake.</p>
+<div class="meta">
+<span>Dates <b>12 Sep 2026 – 16 Sep 2026</b></span>
+<span>Status <b>Complete</b></span>
+<span>Settled <b>4/5</b></span>
+<span>Predicted <b>3</b></span>
+</div>
+</header>
+<section>
+<p class="kicker">Stages</p>
+<h2>Jump to a stage</h2>
+<div class="stage-strip"><span class="settled" title="Stage 1 — Nanjing circuit, 96.5 km · Sat 12 Sep">1</span><a class="settled" href="/race/tour-of-taihu-lake/2026/stage-02" title="Stage 2 (no prediction made) · Sun 13 Sep">2</a><a class="settled" href="/race/tour-of-taihu-lake/2026/stage-03" title="Stage 3 (no prediction made) · Mon 14 Sep">3</a><a class="settled" href="/race/tour-of-taihu-lake/2026/stage-04" title="Stage 4 (no prediction made) · Tue 15 Sep">4</a><span class="" title="Stage 5">5</span></div>
+<p class="note muted" style="font-family:var(--sans);font-size:12.5px">
+Green settled · yellow predicted · struck-through cancelled · plain upcoming.</p>
+</section>
+<section>
+<p class="kicker">Race views</p>
+<h2>The full picture</h2>
+<div class="cards">
+<div class="card"><h3><a href="/race/tour-of-taihu-lake/2026/stages">Stage-by-stage diary</a></h3>
+<p class="note">The full diary: every stage card with its scenarios, prediction boards, and morning-after reflections in one place.</p>
+<p class="go"><a href="/race/tour-of-taihu-lake/2026/stages">Open →</a></p></div>
+<div class="card"><h3><a href="/model">How the model works</a></h3>
+<p class="note">The architecture behind these pages: pricing heads, the pricing layer,
+and the day-type retrieval channel.</p>
+<p class="go"><a href="/model">Read the article →</a></p></div></div>
+</section>
+<section>
+<p class="kicker">Stage log</p>
+<h2>Every stage, in order</h2>
+<div class="tablewrap"><table>
+<thead><tr><th>St</th><th>Date</th><th>Route</th><th>Day key</th><th>Status</th><th>Page</th></tr></thead>
+<tbody><tr><td>1</td><td>Sat 12 Sep</td><td>Nanjing circuit, 96.5 km</td><td class="mono" style="font-size:11.5px">—</td><td><span class="chip settled">settled</span></td><td><span class="muted">settled, not predicted</span></td></tr><tr><td>2</td><td>Sun 13 Sep</td><td>Stage 2 (no prediction made)</td><td class="mono" style="font-size:11.5px">—</td><td><span class="chip settled">settled</span></td><td><a href="/race/tour-of-taihu-lake/2026/stage-02">prediction</a></td></tr><tr><td>3</td><td>Mon 14 Sep</td><td>Stage 3 (no prediction made)</td><td class="mono" style="font-size:11.5px">—</td><td><span class="chip settled">settled</span></td><td><a href="/race/tour-of-taihu-lake/2026/stage-03">prediction</a></td></tr><tr><td>4</td><td>Tue 15 Sep</td><td>Stage 4 (no prediction made)</td><td class="mono" style="font-size:11.5px">—</td><td><span class="chip settled">settled</span></td><td><a href="/race/tour-of-taihu-lake/2026/stage-04">prediction</a></td></tr><tr><td>5</td><td><span class=muted>TBC</span></td><td><span class="muted">—</span></td><td class="mono" style="font-size:11.5px">—</td><td><span class="chip upcoming">upcoming</span></td><td><span class="muted">—</span></td></tr></tbody>
+</table></div>
+<p class="note muted" style="font-family:var(--sans);font-size:13px">
+The day key is the morning read of how the stage would unfold — the retrieval channel's
+menu item and weight, frozen before the start.</p>
+</section>
+<div class="footer">Frame generated from <span class="mono">site-index.json</span>
+ by <span class="mono">build_site_frame.py</span>.
+ Market probabilities appear on these pages as a benchmark — a measure of how
+ much real information the model captures — not as betting guidance.</div>
+</div>
+</body>
+</html>
