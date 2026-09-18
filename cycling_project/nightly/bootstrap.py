@@ -279,18 +279,32 @@ def overlay_artifacts(store: Any, tag: str, dest: Path, manifest_files: Optional
     return [o["key"] for o in applied]
 
 
+# Plain, non-secret connection settings a fresh shell needs to reach the hosted store.  Never a
+# key that grants a role: SUPABASE_NIGHTLY_KEY stays a vault placeholder in the process env only.
+PLAIN_STORE_ENV = ("SUPABASE_URL", "SUPABASE_PUBLISHABLE_KEY", "SUPABASE_PROJECT_REF")
+
+
 def write_env(dest: Path, slice_path: Path, release_tag: str) -> None:
+    """Persist what every later shell in the container needs.
+
+    2026-09-17/18: campaign threads start a fresh shell and source ``nightly_env.sh`` alone;
+    it carried only the DB path and the release tag, so ``--store auto`` found no
+    ``SUPABASE_URL`` there and silently fell back to a local FakeStore — runs, staged pages
+    and prediction_log rows were lost with the container (hosted tasks 95, 103).  The plain
+    connection settings now ride along in both files (``load_local_env`` reads ``.env``).
+    """
     os.environ[DB_ENV_VAR] = str(slice_path)
     os.environ["NIGHTLY_RELEASE_TAG"] = release_tag
+    values = {DB_ENV_VAR: str(slice_path), "NIGHTLY_RELEASE_TAG": release_tag}
+    values.update({n: os.environ[n] for n in PLAIN_STORE_ENV if os.environ.get(n)})
     env_file = dest / ".env"
     lines = []
     if env_file.exists():
         lines = [ln for ln in env_file.read_text().splitlines()
-                 if not ln.startswith((f"{DB_ENV_VAR}=", "NIGHTLY_RELEASE_TAG="))]
-    lines.extend((f"{DB_ENV_VAR}={slice_path}", f"NIGHTLY_RELEASE_TAG={release_tag}"))
+                 if not ln.startswith(tuple(f"{n}=" for n in values))]
+    lines.extend(f"{n}={v}" for n, v in values.items())
     env_file.write_text("\n".join(lines) + "\n")
-    (dest / ENV_SCRIPT).write_text(
-        f"export {DB_ENV_VAR}={slice_path}\nexport NIGHTLY_RELEASE_TAG={release_tag}\n")
+    (dest / ENV_SCRIPT).write_text("".join(f"export {n}={v}\n" for n, v in values.items()))
 
 
 # ---------------------------------------------------------------------------

@@ -423,6 +423,14 @@ def resolve_store(kind: str, root: Optional[Path], *, dry_run: bool, campaign: O
         if not have:
             raise DriverFailure("credentials", "SUPABASE_URL and SUPABASE_NIGHTLY_KEY are required for --store supabase")
         return _store.SupabaseStore(role="agent")
+    if os.environ.get("NIGHTLY_RELEASE_TAG"):
+        # A hydrated container (bootstrap sets the tag) must never fall back silently: a FakeStore
+        # there means the night's runs, pages and prediction_log rows die with the container
+        # (2026-09-17/18, hosted tasks 95 and 103).  Fail loudly; `--store fake` stays available.
+        missing = [n for n in ("SUPABASE_URL", "SUPABASE_NIGHTLY_KEY") if not os.environ.get(n)]
+        raise DriverFailure("credentials", f"{', '.join(missing)} not set in this shell inside release "
+                            f"{os.environ['NIGHTLY_RELEASE_TAG']}: source nightly_env.sh / export the store "
+                            "settings, or pass --store fake explicitly")
     base = root or (campaign.runs_dir() / FAKESTORE_DIRNAME if campaign else PERF_EVAL / "runs" / FAKESTORE_DIRNAME)
     logger.info("no Supabase credentials; using FakeStore at %s", base)
     return _store.FakeStore(Path(base), role="agent")

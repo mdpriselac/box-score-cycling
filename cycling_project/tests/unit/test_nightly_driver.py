@@ -204,6 +204,24 @@ def test_settle_without_pcs_pages_exits_10_with_operator_task(campaign, tmp_path
     assert not (campaign / "runs" / "2026-09-05").exists()
 
 
+def test_a_hydrated_container_never_falls_back_to_a_fake_store(campaign, tmp_path, capsys, monkeypatch):
+    # 2026-09-17/18: a campaign thread's shell lacked SUPABASE_URL, --store auto quietly used a
+    # FakeStore, and the night's runs, pages and prediction_log rows died with the container
+    monkeypatch.setattr(drv, "load_local_env", lambda **kw: {})
+    monkeypatch.delenv("SUPABASE_URL", raising=False)
+    monkeypatch.delenv("SUPABASE_NIGHTLY_KEY", raising=False)
+    monkeypatch.setenv("NIGHTLY_RELEASE_TAG", "data-2026-09-18")
+    base = ["--campaign", str(campaign), "--crosswalk", str(campaign / "rider_crosswalk.csv"), "--today", "2026-09-05"]
+    assert drv.main(["status", *base, "--store", "auto"]) == drv.EXIT_FAILED
+    out = _out(capsys)
+    assert out["error_class"] == "credentials" and "SUPABASE_URL" in out["message"]
+    # an explicit fake store is still allowed there, and a plain Mac shell still falls back
+    assert drv.main(["status", *base, "--store", "fake", "--store-root", str(tmp_path / "store")]) == 0
+    capsys.readouterr()
+    monkeypatch.delenv("NIGHTLY_RELEASE_TAG")
+    assert drv.main(["status", *base, "--store", "auto", "--store-root", str(tmp_path / "store")]) == 0
+
+
 def test_same_ask_is_not_filed_twice(campaign, tmp_path, capsys):
     shutil.rmtree(campaign / "results" / "stage_14")
     assert _run(campaign, tmp_path, "night", "--dry-run") == 10

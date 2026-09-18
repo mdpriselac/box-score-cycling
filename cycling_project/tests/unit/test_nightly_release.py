@@ -352,6 +352,10 @@ def test_bootstrap_hydrates_from_fake_store_and_fails_closed(fake_project, tmp_p
     store = FakeStore(tmp_path / "store")
     upload_bundle(store, out, manifest)
     monkeypatch.delenv(db_path_mod.ENV_VAR, raising=False)
+    monkeypatch.setenv("NIGHTLY_RELEASE_TAG", "")          # bootstrap sets it; restore after the test
+    monkeypatch.setenv("SUPABASE_URL", "https://example.supabase.co")
+    monkeypatch.setenv("SUPABASE_PUBLISHABLE_KEY", "sb_publishable_test")
+    monkeypatch.setenv("SUPABASE_NIGHTLY_KEY", "role-jwt-must-never-be-written")
 
     # not approved yet -> refused
     with pytest.raises(BootstrapError, match="approved"):
@@ -385,6 +389,11 @@ def test_bootstrap_hydrates_from_fake_store_and_fails_closed(fake_project, tmp_p
     env_script = (dest / bootstrap_mod.ENV_SCRIPT).read_text()
     assert env_script.startswith("export CYCLING_DB_PATH=")
     assert "export NIGHTLY_RELEASE_TAG=data-2026-09-05" in env_script
+    # a fresh campaign-thread shell that sources this file alone must still reach the hosted store
+    for text in (env_script, (dest / ".env").read_text()):
+        assert "SUPABASE_URL=https://example.supabase.co" in text
+        assert "SUPABASE_PUBLISHABLE_KEY=sb_publishable_test" in text
+        assert "role-jwt-must-never-be-written" not in text and "SUPABASE_NIGHTLY_KEY" not in text
 
     # second run: everything already present, nothing downloaded
     again = bootstrap(dest, store, skip_uv_sync=True)
