@@ -23,7 +23,7 @@ from __future__ import annotations
 import json
 import sqlite3
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Sequence
+from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 from cycling_project.nightly.uci_acquire import ONE_DAY_UNITS, is_one_day_unit  # noqa: F401  (re-export)
 
@@ -241,6 +241,27 @@ def strip_stage_keys(config: Dict[str, Any]) -> Dict[str, Any]:
 
 def startlist_path(config_dir: str | Path) -> Path:
     return Path(config_dir) / STARTLIST_NAME
+
+
+def find_startlist(config_dir: str | Path) -> Optional[Tuple[Path, str]]:
+    """The handover file serving should read for the unit at ``config_dir``, and its label.
+
+    ``startlist.json`` beside the config wins (``handover:startlist.json``).  Otherwise the
+    newest ``startlist.json`` beside any sibling unit of the same campaign
+    (``predictions/*/startlist.json``) is the field: a stage race has one start list, and the
+    Mac's horizon capture may have written it only into the units it thought were due
+    (Tour of Huangshan stage 2, 2026-09-18).  The label then names the unit it came from
+    (``handover:stage_03/startlist.json``).  ``None`` when the campaign holds no list.
+    """
+    config_dir = Path(config_dir)
+    own = startlist_path(config_dir)
+    if own.exists():
+        return own, f"handover:{own.name}"
+    siblings = [p for p in config_dir.parent.glob(f"*/{STARTLIST_NAME}") if p.is_file()]
+    if not siblings:
+        return None
+    newest = max(siblings, key=lambda p: (p.stat().st_mtime, p.parent.name))
+    return newest, f"handover:{newest.parent.name}/{newest.name}"
 
 
 def load_startlist_file(path: str | Path) -> List[Any]:

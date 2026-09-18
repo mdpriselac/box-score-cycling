@@ -203,6 +203,8 @@ def resolve_startlist(config, config_path, db_path, allow_scrape=True):
 
     Order: a ``startlist.json`` beside the config (what the cloud acquisition
     thread hands over, since the container cannot reach FirstCycling), then the
+    newest ``startlist.json`` beside a sibling unit of the same campaign (one
+    race, one field — source ``handover:<unit>/startlist.json``), then the
     ``cached_start_lists`` cache, then a rate-limited scrape through the project
     WebClient (SCRAPER_USE_BROWSER=1 opens the visible Chrome window the
     Cloudflare challenge needs). ``allow_scrape=False`` refuses the scrape and
@@ -210,8 +212,9 @@ def resolve_startlist(config, config_path, db_path, allow_scrape=True):
     """
     fc_race_id, year = int(config["fc_race_id"]), int(config["year"])
     handover = oneday.startlist_path(config_path.parent)
-    if handover.exists():
-        return oneday.load_startlist_file(handover), f"handover:{handover.name}"
+    found = oneday.find_startlist(config_path.parent)
+    if found is not None:
+        return oneday.load_startlist_file(found[0]), found[1]
     from cycling_project.prediction_tools.future_race_loader import get_cached_start_list
 
     cached = get_cached_start_list(fc_race_id, year, db_path)
@@ -219,7 +222,7 @@ def resolve_startlist(config, config_path, db_path, allow_scrape=True):
         return cached, "cache"
     if not allow_scrape:
         sys.exit(f"No cached start list for race {fc_race_id} {year} and no "
-                 f"{handover.name} beside the config (--no-scrape given)")
+                 f"{handover.name} beside the config or any sibling unit (--no-scrape given)")
     # SCRAPER_USE_BROWSER lives in the repo .env (absent in a worktree) and in
     # ~/.config/cycling-project/env; an exported value still wins.
     from cycling_project.nightly.secrets import load_local_env

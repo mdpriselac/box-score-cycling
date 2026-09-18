@@ -107,6 +107,24 @@ STATE_SENTENCE_RE = re.compile(r"State through stage \d+", re.I)
 # hours the race is on the road: neither a settle nor an honest preview.
 RACE_DAY_OVER_HOUR = 18
 RACE_DAY_START_HOUR = 9
+
+
+def day_is_over(day: dt.date, now: dt.datetime) -> bool:
+    """True once ``day`` has finished on the race-local clock ``now``: a past local date, or
+    today past the finishing hour.  Module-level so ``nightly.horizon`` shares the rule."""
+    if day < now.date():
+        return True
+    return day == now.date() and now.hour >= RACE_DAY_OVER_HOUR
+
+
+def day_has_started(day: dt.date, now: dt.datetime) -> bool:
+    """True once racing on ``day`` can have begun on the race-local clock ``now`` — a preview
+    written after this is not a morning read."""
+    if day < now.date():
+        return True
+    return day == now.date() and now.hour >= RACE_DAY_START_HOUR
+
+
 # The agent's own decision record, written by the day-key-reader.  ``agent_key.json`` is the
 # canonical name (``run_day_key`` writes it, ``score_day_keys --also agent`` reads it, ``upload``
 # ships it); ``day_key_agent.json`` is tolerated because the coordinator prompt asked for that
@@ -531,18 +549,12 @@ class Driver:
     def _day_is_over(self, day: dt.date) -> bool:
         """True once ``day`` has finished where the race is: a past local date, or today past
         the finishing hour."""
-        now = self.local_now
-        if day < now.date():
-            return True
-        return day == now.date() and now.hour >= RACE_DAY_OVER_HOUR
+        return day_is_over(day, self.local_now)
 
     def _day_has_started(self, day: dt.date) -> bool:
         """True once racing on ``day`` can have begun — a preview written after this is not a
         morning read."""
-        now = self.local_now
-        if day < now.date():
-            return True
-        return day == now.date() and now.hour >= RACE_DAY_START_HOUR
+        return day_has_started(day, self.local_now)
 
     def _say(self, msg: str) -> None:
         print(redact(msg), file=sys.stderr, flush=True)
@@ -1278,10 +1290,10 @@ class Driver:
         # 2a. the field.  Every board is built on a start list, and the serving runner will go to
         # FirstCycling for one it cannot find — a scrape the cloud container cannot make.  Ask for
         # the handover here, cheaply, instead of failing inside predict (task 93, 2026-09-17).
-        if stage is None or stage == 1:
-            out["startlist"] = self.step("startlist", lambda: self._require_startlist(unit))
-        else:
-            self.step("startlist", lambda: None, skip=f"stage {stage}: the field is already cached from stage 1")
+        # Every unit is checked, not only the opening one: the serving slice's cache is frozen at
+        # release time, so a mid-race stage of a race the release never saw has no field either
+        # (Tour of Huangshan stage 2, 2026-09-18 — a failed predict and a paid triage).
+        out["startlist"] = self.step("startlist", lambda: self._require_startlist(unit))
 
         # 2b. the GC board's config, so the settle step has something to re-stamp
         if stage is not None and c.is_stage_race and not (c.pred_dir("gc") / "scenarios.json").exists():
@@ -1306,7 +1318,10 @@ class Driver:
         # 5. the key (approved, else agent shadow, else exit 10)
         out["key"] = self.step("day_key", lambda: self._resolve_key(unit))
 
-        # 5b. references, derived from the key that was just resolved
+        # 5b. references, derived from the key that was just resolved.  References a config
+        # already carries are checked first: one the serving DB cannot profile would otherwise
+        # surface as a traceback tail inside predict (Tour de Luxembourg stage 4, 2026-09-18).
+        out["refs_check"] = self.step("refs_check", lambda: self._check_refs(unit))
         missing = autoconfig.scenarios_missing_refs(_read_json(cfg_path, {}) or {})
         if missing:
             out["refs"] = self.step("scenario_refs", lambda: self._scenario_refs(unit, out.get("key") or {}))
@@ -1439,9 +1454,10 @@ class Driver:
         """
         c = self.campaign
         handover = oneday.startlist_path(c.pred_dir(unit))
-        if handover.exists():
-            return {"source": f"handover:{handover.name}", "path": str(handover),
-                    "_detail": {"source": "handover"}}
+        found = oneday.find_startlist(c.pred_dir(unit))     # beside the config, else a sibling unit's
+        if found is not None:
+            path, label = found
+            return {"source": label, "path": str(path), "_detail": {"source": label}}
         cached = self._cached_startlist_size(c.fc_race_id, c.year)
         if cached:
             return {"source": "cache", "riders": cached, "_detail": {"source": "cache", "riders": cached}}
@@ -1451,7 +1467,8 @@ class Driver:
             return {"source": "scrape_allowed", "_detail": {"source": "scrape_allowed"}}
         raise WaitingForInput(
             "startlist_needed",
-            f"{c.slug} {unit}: no start list — nothing at predictions/{unit}/{oneday.STARTLIST_NAME} and no "
+            f"{c.slug} {unit}: no start list — nothing at predictions/{unit}/{oneday.STARTLIST_NAME}, none beside "
+            f"any other unit of the campaign, and no "
             f"cached_start_lists rows for race {c.fc_race_id} {c.year}. The Mac's daily horizon capture supplies "
             "it once FirstCycling publishes the list; the container never scrapes.",
             {"handover": str(handover), "fc_race_id": c.fc_race_id, "year": c.year,
@@ -1589,6 +1606,33 @@ class Driver:
                   "archetypes": {k: v["archetype"] for k, v in report["filled"].items()}}
         return {**detail, "source": autoconfig.REFS_SOURCE, "day_key": key, "_detail": detail}
 
+    def _check_refs(self, unit: str) -> Dict[str, Any]:
+        """Every reference must have a ``competition_field_features`` row in the serving DB.
+
+        A machine-written set with a bad id is emptied (``scenario_refs`` rewrites it next); a
+        human-written one is never edited, so it waits with the ids named.
+        """
+        c = self.campaign
+        cfg_path = c.pred_dir(unit) / "scenarios.json"
+        cfg = _read_json(cfg_path, {}) or {}
+        if not self.db_path.exists():
+            return {"checked": False, "reason": "no serving DB", "_detail": {"checked": False}}
+        healed, blocking = autoconfig.drop_unservable_auto_refs(cfg, self.db_path)
+        if blocking:
+            named = "; ".join(f"{k}: {', '.join(str(i) for i in v)}" for k, v in sorted(blocking.items()))
+            raise WaitingForInput(
+                "scenarios_needed",
+                f"{c.slug} {unit}: reference competition id(s) with no competition_field_features row in the "
+                f"serving DB, so no profile can be built — {named}. Replace them in {cfg_path.name} "
+                "(`python -m cycling_project.nightly.refs` lists candidates) or cut a release that carries them.",
+                {"path": str(cfg_path), "unservable_refs": blocking})
+        if healed and not self.dry_run:
+            _write_json(cfg_path, cfg)
+        if healed:
+            self._say("  note: dropped machine-written reference set(s) holding unservable ids: "
+                      + "; ".join(f"{k}: {v}" for k, v in sorted(healed.items())))
+        return {"checked": True, "healed": healed, "_detail": {"checked": True, "healed": sorted(healed)}}
+
     def _ensure_gc_config(self) -> Dict[str, Any]:
         """Create ``predictions/gc/scenarios.json`` for a stage race that has none.
 
@@ -1722,8 +1766,20 @@ class Driver:
         # crosswalk coverage of the current field
         coverage = self._crosswalk_coverage(stage)
         if coverage is not None:
-            if coverage < COVERAGE_FAIL:
+            if coverage < COVERAGE_FAIL and self.identity_policy == "strict":
                 problems.append(f"crosswalk coverage {coverage:.3f} < {COVERAGE_FAIL}")
+            elif coverage < COVERAGE_FAIL:
+                # The bar was set for the Vuelta, whose crosswalk was seeded by hand: it protects the
+                # SETTLE, where a result row is tied to a FirstCycling id through the crosswalk.  It
+                # says nothing about the board, which is built from FirstCycling ids throughout.
+                # Under ``identity_policy=provisional`` (owner's ruling, 2026-09-16) an unresolved
+                # rider settles under a provisional ``uci:`` id with a caveat, so a new race's thin
+                # crosswalk must not stop its preview (Okolo Slovenska stage 4, 2026-09-18).
+                warnings.append(
+                    f"crosswalk coverage {coverage:.3f} < {COVERAGE_FAIL} (identity_policy=provisional: not blocking). "
+                    "The board is unaffected. At the settle, riders the roster name bridge cannot resolve will be "
+                    "archived under provisional uci: ids and will not join to their board rows in scoring until the "
+                    "weekly crosswalk reconcile confirms them; --identity-policy strict makes this a blocking problem.")
             elif coverage < COVERAGE_WARN:
                 warnings.append(f"crosswalk coverage {coverage:.3f} < {COVERAGE_WARN}")
         result = {"ok": not problems, "problems": problems, "warnings": warnings, "crosswalk_coverage": coverage,
@@ -1941,7 +1997,7 @@ def build_parser() -> argparse.ArgumentParser:
     p = sub.add_parser("settle", help="ingest → seed → GC → score → retro facts → pages → upload")
     common(p, unit=True); identity_flag(p)
     p = sub.add_parser("preview", help="odds → config → route → bundle → key gate → predict → validate → pages → upload")
-    common(p, unit=True)
+    common(p, unit=True); identity_flag(p)      # validate's crosswalk bar follows the policy (2026-09-18)
     p.add_argument("--agent-key", type=Path, default=None,
                    help="key the stage from this agent decision record; without the flag the driver still "
                         "picks up predictions/<unit>/agent_key.json when no human key is approved")
@@ -1952,7 +2008,7 @@ def build_parser() -> argparse.ArgumentParser:
     p = sub.add_parser("bundle", help="freeze predictions/<unit>/bundle/")
     common(p, unit=True)
     p = sub.add_parser("validate", help="schema / NaN / lambdarank sum / post_hoc / void_stages / key weights / crosswalk")
-    common(p, unit=True)
+    common(p, unit=True); identity_flag(p)
     p = sub.add_parser("upload", help="insert artifacts, pages and rows for a unit")
     common(p, unit=True); p.add_argument("--phase", choices=("settle", "preview"), required=True)
     p = sub.add_parser("status", help="ledger view")

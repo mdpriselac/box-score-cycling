@@ -29,6 +29,10 @@ claim the original did not make.
 
 | Date | Tag | Lesson |
 |---|---|---|
+| 2026-09-18 | `acquisition` | One race has one field: a start list belongs to the campaign, not to the unit someone guessed was due |
+| 2026-09-18 | `tooling` | A reference the serving DB cannot profile is not a reference; filter where it is chosen |
+| 2026-09-18 | `scoring` | A gate tuned on one race is a wall for the next: crosswalk coverage warns under `provisional` |
+| 2026-09-18 | `publishing` | Promote compares run time to run time; and the hub reads `campaign.json`, not only configs |
 | 2026-09-17 | `keying` | A key nobody uses is not a key: the agent's read has to price the board |
 | 2026-09-17 | `acquisition` | The last resort of a serving path is the first thing to fail in the cloud |
 | 2026-09-17 | `tooling` | "Is this stage due?" is a question about a clock, not a date |
@@ -79,6 +83,109 @@ claim the original did not make.
 | 2026-07-05 | `acquisition` | A truncated FirstCycling results page is fixed by rerunning |
 
 ---
+
+## 2026-09-18 — One race has one field: a start list belongs to the campaign, not to the unit someone guessed was due
+
+**Tag:** `acquisition`
+
+The 2026-09-18 tick (session `sesn_01EXAMPLE81DA169BF6CC85B`, release
+`data-2026-09-18`, coordinator v5) was the first where the agent's key priced the
+preview. Giro del Lazio reached a board with no human. Tour of Huangshan stage 2
+did not: `predict` exit 1, `No cached start list for race 20780 2026 and no
+startlist.json beside the config`. Three independent assumptions lined up. The
+runner looked only beside **that unit's** config, then in a cache frozen at
+release time. The Mac's horizon had written the list into the units *it*
+thought were due — and at 17:30 UTC it was already 01:30 on the 18th in
+Shanghai, so its `today < d` rule skipped the stage dated the 18th and captured
+`stage_03`, while the cloud tick two hours later (race-local clock, chip U)
+wanted `stage_02`. And chip U's `startlist` pre-check covered only one-day units
+and stage 1, on the theory that "from stage 2 the cache already holds it" —
+true for the Vuelta, false for any race the release never saw.
+
+All three sides are fixed. `resolve_startlist` falls back to the newest
+`startlist.json` beside any sibling unit (`handover:<unit>/startlist.json`);
+the driver's pre-check runs for **every** preview unit with the same resolution
+(`oneday.find_startlist`), so a missing field is exit 10 `startlist_needed`,
+never a failed predict and a paid triage; horizon writes the list to every
+not-yet-settled unit (same document, no extra request) and chooses due units
+with the driver's own `day_has_started` helper (`--local-now` works there too).
+A bare `--today` still reads as that evening in both.
+
+The rule: a fact about the race lives at the race; a per-unit copy is a cache,
+and two schedulers on two clocks will not agree on which unit is next.
+
+## 2026-09-18 — A reference the serving DB cannot profile is not a reference; filter where it is chosen
+
+**Tag:** `tooling`
+
+Tour de Luxembourg stage 4 (an ITT) died in `predict` with `ValueError: No
+competition_field_features found for competition_id=9878`. `autoconfig.pick_refs`
+took ids from the signature table, which is built from the full database and
+knows nothing about which competitions carry a `competition_field_features` row
+in the serving slice. `hindsight.py` already filtered exactly this way for its
+own refs; the filter now lives in `refs.usable_reference_ids` and every
+machine-chosen stage reference passes through it (the GC paths already joined
+the table). The top-up still reaches five and still prefers own editions, then
+the campaign's tier; when it cannot, the scenario records `short` and the
+`refs_note` says so. With no DB (unit tests) nothing is filtered.
+
+The driver also checks references a config already carries (`refs_check`, before
+`scenario_refs`): a machine-written set holding a bad id is emptied and
+rewritten — the machine repairs its own mistake, which also heals the
+Luxembourg config written on the 18th — while a human's set is never edited and
+waits as `scenarios_needed` naming the ids.
+
+Root cause, for the record: the signature table is `selection_signatures_20260611`,
+and competition ids **change when a race is re-migrated** — 9878 (Tour of Türkiye
+2025) and 9686 (Vuelta a España 2025, healed by delete + re-scrape in August) no
+longer exist under those ids. The filter makes this harmless; rebuilding the
+signature table at release time would make it correct.
+
+Worth knowing: `itt_like` in the signature table means "time-separated front",
+not "time trial" — 9878 was a Tour of Türkiye mountain stage, and only 42 of the
+182 `itt_like` days have a top-15 time-trial share ≥ 0.4. Servable is not the
+same as apt; a TT-specific reference rule is an open follow-up.
+
+## 2026-09-18 — A gate tuned on one race is a wall for the next: crosswalk coverage warns under `provisional`
+
+**Tag:** `scoring`
+
+Okolo Slovenska stage 4 built its board and was then refused by `validate`:
+`crosswalk coverage 0.016 < 0.9`. The bar dates from the Vuelta, whose crosswalk
+was seeded by hand, and it protects the **settle** — tying a result row to a
+FirstCycling id — not the board, which is FirstCycling ids end to end. Since the
+owner's 2026-09-16 ruling (`identity_policy = provisional`) an unresolved rider
+settles under a provisional `uci:` id with a caveat, so the bar no longer guards
+anything a preview should wait for. Under `provisional` it is now a warning that
+says what it means (those riders will not join to their board rows in scoring
+until the weekly reconcile confirms them); under `--identity-policy strict`
+(attended Mac runs) it still blocks. `preview` and `validate` accept the flag.
+
+Same night, hosted task 96 listed "SMIT Willem Jakobus (place 13), SMIT Willem
+Jakobus (place 15)". Not a UCI error, not two riders, not a parser bug:
+`provisional_top` concatenated the stage top-15 gate and the GC top-20 gate and
+de-duplicated on whole-dict equality, so one rider 13th on the stage and 15th on
+GC appeared twice. Entries now merge on the rider id and carry
+`classification` / `gc_place`.
+
+## 2026-09-18 — Promote compares run time to run time; and the hub reads `campaign.json`, not only configs
+
+**Tag:** `publishing`
+
+Late promotion of old approved runs on 2026-09-17 rolled `vuelta-gc.html` and
+`vuelta-stage20.html` back to older staged copies. The tempting guard — "skip
+when the local file is newer than the run" — is wrong: a local page's mtime or
+commit time is when it was *promoted*, which is later than every run that was
+waiting at that moment, so a morning batch of two nights would skip the second
+night. `promote.copy_into_site` instead keeps
+`performance_eval/runs/promoted_pages.json` (path → run id and run time of the
+newest run promoted onto it) and skips a staged page only when a newer **run**
+already wrote that path (`stale_skipped`). `_frame/` is exempt — it is rebuilt.
+
+The race hub showed "TBC" and a blank route for stages horizon had already
+filled in `campaign.json`: `build_site_index.build_stage_entries` read date and
+label only from `predictions/stage_NN/scenarios.json`, which does not exist
+until the stage is previewed. It now falls back to the campaign's own stage row.
 
 ## 2026-09-17 — A key nobody uses is not a key: the agent's read has to price the board
 

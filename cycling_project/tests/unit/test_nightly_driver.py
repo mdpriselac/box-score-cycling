@@ -151,10 +151,10 @@ def test_night_dry_run_replays_stage_14_to_15(campaign, tmp_path, capsys):
                             ("stage_page", "skipped"), ("site_index", "skipped"), ("site_frame", "skipped"),
                             ("upload", "ok"), ("finish", "ok")]
     preview_steps = [(s["step"], s["state"]) for s in steps if s["run_id"] == runs[1]["run_id"]]
-    assert preview_steps == [("capture_odds", "skipped"), ("stage_config", "ok"), ("startlist", "skipped"),
+    assert preview_steps == [("capture_odds", "skipped"), ("stage_config", "ok"), ("startlist", "ok"),
                              ("gc_config", "skipped"),
-                             ("route_facts", "ok"), ("bundle", "ok"), ("day_key", "ok"), ("scenario_refs", "skipped"),
-                             ("predict", "skipped"), ("validate", "ok"), ("stage_page", "skipped"),
+                             ("route_facts", "ok"), ("bundle", "ok"), ("day_key", "ok"), ("refs_check", "ok"),
+                             ("scenario_refs", "skipped"), ("predict", "skipped"), ("validate", "ok"), ("stage_page", "skipped"),
                              ("site_index", "skipped"), ("site_frame", "skipped"), ("upload", "ok"), ("finish", "ok")]
     # the runner is never allowed to reach FirstCycling from the driver unless asked
     assert "--no-scrape" in next(s for s in steps if s["step"] == "predict")["detail"]["argv"]
@@ -624,14 +624,26 @@ def test_allow_scrape_reaches_the_runner_and_skips_the_gate(tmp_path, capsys):
     assert "--no-scrape" not in predict["detail"]["argv"]
 
 
-def test_stage_one_is_gated_on_the_field_but_later_stages_are_not(campaign, tmp_path, capsys):
-    """Stage 1 is where the start list is first needed; from stage 2 the cache already holds it."""
+def test_a_mid_race_stage_waits_for_the_field_instead_of_failing_predict(campaign, tmp_path, capsys):
+    """Chip V (Tour of Huangshan stage 2, 2026-09-18): the release slice's cache never saw the race
+    and horizon wrote the list elsewhere, so predict died with exit 1.  Every unit is pre-checked."""
+    assert _run(campaign, tmp_path, "preview", "--unit", "stage_15", "--dry-run",
+                "--db-path", str(tmp_path / "nonexistent.db")) == 10
+    out = _out(capsys)
+    assert out["operator_task"]["kind"] == "startlist_needed", out
+    steps = [(s["step"], s["state"]) for s in _ledger(tmp_path, "run_steps")]
+    assert ("startlist", "waiting") in steps and not any(n == "predict" for n, _ in steps)
+
+
+def test_a_sibling_units_start_list_is_the_field(campaign, tmp_path, capsys):
+    """One race, one field: the list horizon left beside stage 16 serves stage 15."""
+    sib = campaign / "predictions/stage_16"
+    sib.mkdir(parents=True, exist_ok=True)
+    (sib / "startlist.json").write_text(json.dumps(
+        {"teams": [{"name": "T", "team_id": "1", "riders": [{"name": "R", "rider_id": "9"}]}]}))
     assert _run(campaign, tmp_path, "preview", "--unit", "stage_15", "--dry-run",
                 "--db-path", str(tmp_path / "nonexistent.db")) == 0
-    out = _out(capsys)
-    assert out["config"] and "startlist" not in out
-    skipped = next(s for s in _ledger(tmp_path, "run_steps") if s["step"] == "startlist")
-    assert skipped["state"] == "skipped" and "stage 15" in skipped["detail"]["reason"]
+    assert _out(capsys)["startlist"]["source"] == "handover:stage_16/startlist.json"
 
 
 # ---------------------------------------------------------------------------
@@ -687,3 +699,31 @@ def test_a_date_only_override_still_means_that_evening(campaign, tmp_path, capsy
     plan = _out(capsys)
     assert plan["settle"] == ["stage_14"] and plan["preview"] == ["stage_15"]
     assert drv.RACE_DAY_START_HOUR < drv.RACE_DAY_OVER_HOUR
+
+
+# ---------------------------------------------------------------------------
+# chip V (2026-09-18) — a thin crosswalk warns under provisional, blocks under strict
+# ---------------------------------------------------------------------------
+
+def _validate_with_thin_crosswalk(campaign, tmp_path, capsys, *extra):
+    thin = tmp_path / "thin_crosswalk.csv"
+    header = (campaign / "rider_crosswalk.csv").read_text().splitlines()[0]
+    thin.write_text(header + "\n")                                   # a new race: nobody seeded it
+    shutil.copytree(campaign / "predictions/stage_14", campaign / "predictions/stage_15", dirs_exist_ok=True)
+    code = drv.main(["validate", "--campaign", str(campaign), "--store-root", str(tmp_path / "store"),
+                     "--crosswalk", str(thin), "--today", "2026-09-05", "--unit", "stage_14", "--dry-run", *extra])
+    return code, _out(capsys)
+
+
+def test_low_crosswalk_coverage_is_a_warning_under_provisional(campaign, tmp_path, capsys):
+    """Okolo Slovenska stage 4 (2026-09-18): the board was built, then ``crosswalk coverage 0.016 < 0.9``
+    stopped it.  The owner's 2026-09-16 ruling is provisional identities, so this only warns."""
+    code, out = _validate_with_thin_crosswalk(campaign, tmp_path, capsys)
+    assert not any("crosswalk" in p for p in (out.get("operator_task") or {}).get("detail", {}).get("problems", [])), out
+    warnings = (out.get("validate") or {}).get("warnings") or (out.get("operator_task") or {}).get("detail", {}).get("warnings", [])
+    assert any("crosswalk coverage" in w and "provisional" in w and "settle" in w for w in warnings), out
+
+
+def test_low_crosswalk_coverage_still_blocks_under_strict(campaign, tmp_path, capsys):
+    code, out = _validate_with_thin_crosswalk(campaign, tmp_path, capsys, "--identity-policy", "strict")
+    assert code == 10 and any("crosswalk coverage" in p for p in out["operator_task"]["detail"]["problems"]), out

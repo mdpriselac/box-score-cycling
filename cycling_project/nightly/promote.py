@@ -52,6 +52,7 @@ SITE_BUILD = SITE_DIR / "build"
 LAUNCH_JSON = PROJECT_ROOT / ".claude" / "launch.json"
 WRANGLER_CONFIG = SITE_DIR / "wrangler.jsonc"
 PUBLISHED_CAMPAIGNS = SITE_DIR / "published-campaigns.json"
+PROMOTED_MANIFEST = "promoted_pages.json"
 TRUNK = "webscrape-refactor"
 
 EXIT_OK = 0
@@ -189,8 +190,44 @@ def fetch_pages(store: Any, run_id: str, dest: Path) -> List[Dict[str, Any]]:
     return out
 
 
-def copy_into_site(staged: Path, pages: List[Dict[str, Any]], *, apply: bool) -> Dict[str, List[str]]:
-    added, changed, same = [], [], []
+def _parse_time(value: Any) -> Optional[dt.datetime]:
+    try:
+        out = dt.datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+    except (TypeError, ValueError):
+        return None
+    return out if out.tzinfo else out.replace(tzinfo=dt.timezone.utc)
+
+
+def manifest_path() -> Path:
+    """``promoted_pages.json``: per site path, the run that last wrote it.  Beside the site dir's
+    parent rather than inside it, so it is never deployed."""
+    return SITE_DIR.parent / "performance_eval" / "runs" / PROMOTED_MANIFEST
+
+
+def read_manifest() -> Dict[str, Dict[str, Any]]:
+    try:
+        data = json.loads(manifest_path().read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+def copy_into_site(staged: Path, pages: List[Dict[str, Any]], *, apply: bool,
+                   run_time: Optional[dt.datetime] = None, run_id: Optional[str] = None) -> Dict[str, List[str]]:
+    """Copy staged pages into ``netlify_site/``.
+
+    ``run_time`` is when the promoted run produced them, and ``promoted_pages.json`` remembers,
+    per path, the run time of the newest run ever promoted onto it.  A staged page from an
+    OLDER run than that is an old approval promoted late, and copying it would roll the site
+    back (2026-09-17: stale ``vuelta-gc.html`` / ``vuelta-stage20.html``): it is reported under
+    ``stale_skipped`` and left alone.  The comparison is run time against run time — never
+    the local file's mtime or commit time, which is when the page was PROMOTED and is later
+    than any run that was waiting at that moment.  ``_frame/`` pages are exempt (rebuilt from
+    the index right after the copy), and a path the manifest has never seen is always copied.
+    """
+    added, changed, same, stale = [], [], [], []
+    manifest = read_manifest() if run_time is not None else {}
+    touched = False
     for page in pages:
         rel = page.get("path")
         if not rel:
@@ -201,12 +238,25 @@ def copy_into_site(staged: Path, pages: List[Dict[str, Any]], *, apply: bool) ->
         elif filecmp.cmp(src, dst, shallow=False):
             same.append(rel)
             continue
+        elif (run_time is not None and Path(rel).parts[0] != "_frame"
+              and (_parse_time((manifest.get(rel) or {}).get("run_time")) or run_time) > run_time):
+            logger.warning("not overwriting %s: run %s (newer) already promoted it", rel,
+                           (manifest.get(rel) or {}).get("run_id"))
+            stale.append(rel)
+            continue
         else:
             changed.append(rel)
         if apply:
             dst.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(src, dst)
-    return {"added": sorted(added), "changed": sorted(changed), "unchanged": sorted(same)}
+            if run_time is not None and Path(rel).parts[0] != "_frame":
+                manifest[rel] = {"run_id": run_id, "run_time": run_time.isoformat()}
+                touched = True
+    if touched:
+        manifest_path().parent.mkdir(parents=True, exist_ok=True)
+        manifest_path().write_text(json.dumps(manifest, indent=1, sort_keys=True) + "\n", encoding="utf-8")
+    return {"added": sorted(added), "changed": sorted(changed), "unchanged": sorted(same),
+            "stale_skipped": sorted(stale)}
 
 
 def register_campaign(campaign: str, *, apply: bool) -> Dict[str, Any]:
@@ -292,6 +342,8 @@ def commit(message: str, paths: Sequence[str] = ()) -> Dict[str, Any]:
     targets = [str(site / "site-index.json"), str(site / "_frame")]
     targets.append(str(site / "published-campaigns.json"))
     targets += [str(site / rel) for rel in paths]
+    if manifest_path().exists():
+        targets.append(str(manifest_path()))
     git("add", "--", *targets)
     staged = git("diff", "--cached", "--name-only").stdout.split()
     if not staged:
@@ -384,7 +436,8 @@ def promote(store: Any, *, run_id: Optional[str] = None, campaign: Optional[str]
         staged = Path(tmp)
         pages = fetch_pages(store, rid, staged)
         result["objects"] = pages
-        counts = copy_into_site(staged, pages, apply=not dry_run)
+        counts = copy_into_site(staged, pages, apply=not dry_run,
+                                run_time=_parse_time(run.get("finished_at") or run.get("started_at")), run_id=rid)
         result["pages"] = counts
         result["campaign_registration"] = register_campaign(
             str(run.get("campaign_slug")), apply=not dry_run)

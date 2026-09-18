@@ -140,6 +140,44 @@ def used_refs(campaign_dir: Optional[Path]) -> Set[int]:
     return used
 
 
+def usable_reference_ids(db_path: Optional[Path]) -> Optional[Set[int]]:
+    """Competition ids the serving DB can turn into a profile, or ``None`` when it cannot say.
+
+    ``future_race_loader.get_reference_race_profile`` needs a ``competition_field_features``
+    row; the signature table is built from the full DB and knows nothing about that, so a
+    reference taken from it blind can kill ``predict`` (Tour de Luxembourg stage 4, 2026-09-18:
+    ``No competition_field_features found for competition_id=9878``).  ``None`` — no DB, or no
+    such table (unit tests) — means "do not filter".
+    """
+    if not db_path or not Path(db_path).exists():
+        return None
+    try:
+        con = sqlite3.connect(f"file:{Path(db_path)}?mode=ro", uri=True)
+    except sqlite3.Error:
+        return None
+    try:
+        return {int(r[0]) for r in con.execute("SELECT competition_id FROM competition_field_features")}
+    except sqlite3.Error:
+        return None
+    finally:
+        con.close()
+
+
+def unusable_refs(comp_ids: Iterable[Any], db_path: Optional[Path]) -> List[int]:
+    """The ids among ``comp_ids`` that ``usable_reference_ids`` rules out (empty when it cannot say)."""
+    usable = usable_reference_ids(db_path)
+    if usable is None:
+        return []
+    out = []
+    for c in comp_ids:
+        try:
+            if int(c) not in usable:
+                out.append(int(c))
+        except (TypeError, ValueError):
+            continue
+    return out
+
+
 def winners_for(comp_ids: Iterable[int], db_path: Optional[Path] = None) -> Dict[int, Dict[str, Any]]:
     """``comp_id → {name, date, winner, second}`` from the serving DB (best effort)."""
     ids = [int(c) for c in comp_ids]

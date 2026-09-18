@@ -70,7 +70,8 @@ from cycling_project.db_path import default_db_path
 from cycling_project.nightly import registry, route_facts
 from cycling_project.nightly.crosswalk import build_operator_task
 from cycling_project.nightly.driver import (
-    FINISHED_AFTER_DAYS, ONE_DAY_UNIT, Campaign, _has_scenario_boards, find_open_duplicate,
+    FINISHED_AFTER_DAYS, ONE_DAY_UNIT, RACE_DAY_OVER_HOUR, Campaign, _has_scenario_boards,
+    day_has_started, find_open_duplicate,
 )
 from cycling_project.nightly.secrets import load_local_env
 from cycling_project.webscrape_tools.logging_config import get_logger
@@ -234,8 +235,20 @@ def has_boards(pred_dir: Path) -> bool:
 
 
 def preview_due(campaign: Campaign, *, days: int, today: dt.date,
-                void: Optional[Sequence[int]] = None) -> List[str]:
-    """Units whose preview falls inside the horizon (the driver's rule)."""
+                void: Optional[Sequence[int]] = None,
+                local_now: Optional[dt.datetime] = None) -> List[str]:
+    """Units whose preview falls inside the horizon (the driver's rule).
+
+    "Still ahead" is the driver's race-local clock (``driver.day_has_started``), not
+    ``today < d``: at 17:30 UTC it is already the small hours of the next day in
+    Asia/Shanghai, and the cloud tick two hours later previews THAT day's stage — the
+    date test skipped it and captured the day after (Tour of Huangshan, 2026-09-18).
+    A bare ``today`` with no clock reads as that evening, as it does in the driver.
+    The window is deliberately not shortened the way the driver's is: capturing one
+    unit more than the tick previews costs nothing.
+    """
+    if local_now is None:
+        local_now = dt.datetime.combine(today, dt.time(RACE_DAY_OVER_HOUR, 0))
     void_set = set(campaign.void_stages) | {int(v) for v in (void or [])}
     if campaign.is_stage_race:
         entries = [(int(s["number"]), s.get("date")) for s in campaign.stages]
@@ -250,14 +263,16 @@ def preview_due(campaign: Campaign, *, days: int, today: dt.date,
             continue
         d = dt.date.fromisoformat(date_s)
         unit = campaign.unit_for(number)
-        if today < d <= today + dt.timedelta(days=days) and not has_boards(campaign.pred_dir(unit)):
+        if (not day_has_started(d, local_now) and d <= today + dt.timedelta(days=days)
+                and not has_boards(campaign.pred_dir(unit))):
             due.append(unit)
     return due
 
 
 def select_units(perf_eval: Path, store: Any, *, days: int = DEFAULT_DAYS,
                  today: Optional[dt.date] = None,
-                 only: Optional[Sequence[str]] = None) -> List[Due]:
+                 only: Optional[Sequence[str]] = None,
+                 local_now: Optional[dt.datetime] = None) -> List[Due]:
     """Campaigns with a preview due inside ``days``, in date order.
 
     The same units the cloud is about to preview: the first stage or the
@@ -279,7 +294,10 @@ def select_units(perf_eval: Path, store: Any, *, days: int = DEFAULT_DAYS,
             continue
         if not campaign.fc_race_id or not campaign.year:
             continue
-        day = today or campaign.today()
+        # The race-local clock, as the driver reads it: ``--local-now`` wins, a bare ``--today``
+        # is that evening, else the campaign's own zone.
+        clock = local_now or (None if today else campaign.local_now())
+        day = today or (clock.date() if clock else campaign.today())
         store_void = []
         try:
             for row in store.stages(campaign.slug) or []:
@@ -288,10 +306,11 @@ def select_units(perf_eval: Path, store: Any, *, days: int = DEFAULT_DAYS,
                     store_void.append(number)
         except Exception:  # noqa: BLE001 — the registry is an optimisation here
             pass
-        units = preview_due(campaign, days=days, today=day, void=store_void)
+        units = preview_due(campaign, days=days, today=day, void=store_void, local_now=clock)
         if units:
             out.append(Due(campaign=campaign, units=units,
-                           plan={"today": str(day), "preview": units}))
+                           plan={"today": str(day), "preview": units,
+                                 "local_now": clock.isoformat(timespec="minutes") if clock else None}))
     return sorted(out, key=lambda d: d.campaign.stage_date(Campaign.stage_of(d.units[0])) or "")
 
 
@@ -355,14 +374,23 @@ def capture_startlist(campaign: Campaign, units: Sequence[str], *, db_path: Opti
 
 
 def _startlist_units(campaign: Campaign, units: Sequence[str]) -> List[str]:
-    """Where the handover goes: every due unit, plus the race's opening unit.
+    """Where the handover goes: every due unit, plus every unit not yet settled.
 
-    ``resolve_startlist`` reads the file beside the config of the unit being
-    served, so a mid-race preview needs its own copy; stage 1 (or ``race``)
-    gets one too because that is the unit a fresh campaign previews first.
+    It is one list for the whole race and writing it costs no request, so every
+    stage that has no ``results.csv`` yet (and is not void) gets a copy — which
+    unit the cloud previews next is the driver's decision, made hours later on a
+    clock this capture cannot see (2026-09-18: the list sat in ``stage_03`` while
+    the tick wanted ``stage_02``).  ``resolve_startlist`` also falls back to a
+    sibling unit's copy, so this is belt and braces.
     """
-    opening = campaign.unit_for(1) if campaign.is_stage_race else ONE_DAY_UNIT
-    ordered = list(dict.fromkeys([*units, opening]))
+    if campaign.is_stage_race:
+        void = set(campaign.void_stages)
+        unsettled = [campaign.unit_for(int(s["number"])) for s in campaign.stages
+                     if int(s["number"]) not in void
+                     and not (campaign.results_dir(campaign.unit_for(int(s["number"]))) / "results.csv").exists()]
+    else:
+        unsettled = [] if (campaign.results_dir(ONE_DAY_UNIT) / "results.csv").exists() else [ONE_DAY_UNIT]
+    ordered = list(dict.fromkeys([*units, *unsettled]))
     return [u for u in ordered if u != "gc"]
 
 
@@ -807,11 +835,12 @@ def run_horizon(*, days: int = DEFAULT_DAYS, store: Any = None, perf_eval: Optio
                 max_backfill: int = DEFAULT_MAX_BACKFILL, backfill: bool = True,
                 dry_run: bool = False, today: Optional[dt.date] = None,
                 now: Optional[dt.datetime] = None, only: Optional[Sequence[str]] = None,
+                local_now: Optional[dt.datetime] = None,
                 client_factory: Optional[Callable[[], Any]] = None,
                 quiet: bool = False) -> Dict[str, Any]:
     """Select, capture, upload — the whole daily pass.  Returns the summary."""
     perf_eval = Path(perf_eval or PERF_EVAL)
-    due = select_units(perf_eval, store, days=days, today=today, only=only)
+    due = select_units(perf_eval, store, days=days, today=today, only=only, local_now=local_now)
     fetcher = Fetcher(factory=client_factory)
     summary: Dict[str, Any] = {
         "capturer": f"horizon {__version__}", "as_of": _utcnow(),
@@ -854,6 +883,8 @@ def build_parser() -> argparse.ArgumentParser:
                    help="select and report; fetch nothing, write nothing, fake store")
     p.add_argument("--today", type=dt.date.fromisoformat, default=None,
                    help="date override for replay (YYYY-MM-DD)")
+    p.add_argument("--local-now", type=dt.datetime.fromisoformat, default=None,
+                   help="race-local wall-clock override, ISO datetime (replay); the driver's flag, same meaning")
     p.add_argument("--db-path", type=Path, default=None, help="SQLite database (start-list cache)")
     p.add_argument("--no-backfill", action="store_true",
                    help="only fetch pages for due units, never for stages never seen")
@@ -878,7 +909,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         days=args.days, store=store, perf_eval=args.performance_eval,
         db_path=args.db_path or default_db_path(), max_age_hours=args.max_age_hours,
         max_backfill=args.max_backfill, backfill=not args.no_backfill, dry_run=args.dry_run,
-        today=args.today, only=args.campaign, quiet=args.quiet)
+        today=args.today, local_now=args.local_now, only=args.campaign, quiet=args.quiet)
     print(json.dumps(summary, indent=1, ensure_ascii=False, default=str))
     # Exit 0 even when a unit failed: the failure is an operator task, and the
     # scheduler must not treat one bad race as a broken nightly handover.

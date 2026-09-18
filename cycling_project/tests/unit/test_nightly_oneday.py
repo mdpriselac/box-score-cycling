@@ -768,3 +768,63 @@ def test_the_service_re_ages_form_to_the_request_date_not_today():
     assert len(calls) == 2, "expected the board and the GC-outlook call"
     for m in calls:
         assert "asof_date=request.asof_date" in m.group(1), m.group(0)[:200]
+
+
+# ---------------------------------------------------------------------------
+# chip V (2026-09-18) — one race, one field: a sibling unit's start list serves
+# ---------------------------------------------------------------------------
+
+def _startlist_doc():
+    return {"teams": [{"name": "T", "team_id": "1", "riders": [{"name": "R", "rider_id": "9", "number": "1"}]}]}
+
+
+def test_find_startlist_prefers_the_units_own_file_then_the_newest_sibling(tmp_path):
+    import os
+
+    pred = tmp_path / "camp" / "predictions"
+    for unit in ("stage_02", "stage_03", "stage_04"):
+        (pred / unit).mkdir(parents=True)
+    assert oneday.find_startlist(pred / "stage_02") is None
+    for i, unit in enumerate(("stage_03", "stage_04")):
+        p = pred / unit / "startlist.json"
+        p.write_text(json.dumps(_startlist_doc()))
+        os.utime(p, (1_000_000 + i, 1_000_000 + i))
+    path, label = oneday.find_startlist(pred / "stage_02")
+    assert path == pred / "stage_04" / "startlist.json" and label == "handover:stage_04/startlist.json"
+    (pred / "stage_02" / "startlist.json").write_text(json.dumps(_startlist_doc()))
+    assert oneday.find_startlist(pred / "stage_02")[1] == "handover:startlist.json"
+
+
+def test_the_serving_runner_reads_a_sibling_units_start_list(tmp_path):
+    """Tour of Huangshan stage 2 (2026-09-18): the list sat beside stage 3 and predict exited 1."""
+    spec = importlib.util.spec_from_file_location(
+        "predict_stage_scenarios_v", Path(__file__).resolve().parents[3] / "netlify_site/build/predict_stage_scenarios.py")
+    mod = importlib.util.module_from_spec(spec)
+    sys.path.insert(0, str(Path(spec.origin).parent))
+    try:
+        spec.loader.exec_module(mod)
+    finally:
+        sys.path.pop(0)
+    pred = tmp_path / "camp" / "predictions"
+    (pred / "stage_02").mkdir(parents=True)
+    (pred / "stage_03").mkdir()
+    (pred / "stage_03" / "startlist.json").write_text(json.dumps(_startlist_doc()))
+    teams, source = mod.resolve_startlist({"fc_race_id": "20780", "year": 2026}, pred / "stage_02" / "scenarios.json",
+                                          str(tmp_path / "none.db"), allow_scrape=False)
+    assert source == "handover:stage_03/startlist.json" and teams[0].riders[0].rider_id == "9"
+
+
+def test_an_unconfigured_stage_shows_the_campaigns_own_route_and_date(index_mod):
+    """2026-09-18: horizon had filled campaign.json's stage rows, but the hub read only
+    scenarios.json, so a stage nobody had configured yet showed "TBC" and a blank route."""
+    mod, site, perf = index_mod
+    d = perf / "huangshan-2026"
+    d.mkdir()
+    (d / "campaign.json").write_text(json.dumps({"stages": [
+        {"number": 1, "date": "2026-09-18", "towns": "A → B", "distance_km": 121.0},
+        {"number": 2, "date": "2026-09-19", "towns": None, "distance_km": None}]}))
+    camp = {"dir": "huangshan-2026", "slug": "huangshan", "year": 2026, "prefix": "huangshan-", "n_stages": 2,
+            "start_date": "2026-09-18", "type": "stage_race"}
+    st1, st2 = mod.build_stage_entries(camp, None)
+    assert st1["date"] == "2026-09-18" and st1["label"] == "Stage 1 — A → B, 121 km"
+    assert st2["date"] == "2026-09-19" and st2["label"] == "Stage 2"
