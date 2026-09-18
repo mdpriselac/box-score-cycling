@@ -122,6 +122,19 @@ def test_a_unit_that_later_finished_ok_reconciles_its_stale_tasks(page):
     assert 'new Set(["identity_provisional", "crosswalk_proposals", "uci_competition_confirm"])' in page
 
 
+def test_a_pre_race_ask_goes_moot_once_the_race_is_over(page):
+    # 2026-09-18: preview and start-list asks for Wallonie and Kampioenschap van Vlaanderen sat open
+    # after both races — a one-day race with no preview never yields a later success to prove it
+    assert "function racedResolution(t)" in page and "function unitDate(slug, unit)" in page
+    assert 'sb.from("stages").select("campaign_slug,unit,date")' in page
+    assert 'sb.from("campaigns").select("campaign_slug,start_date,end_date")' in page
+    assert 'new Set(["horizon_failed", "startlist_needed"])' in page
+    assert 'PRE_RACE_KINDS.has(t.kind) || taskPhase(t) === "preview"' in page
+    assert "dates.some((d) => !d || d >= today)" in page          # unknown date or race not over → stays open
+    # a settle ask is still owed after the race, and a human decision is never auto-cleared
+    assert page.index("if (HUMAN_DECISION_KINDS.has(t.kind)) return null;") < page.index("const preRace =")
+
+
 def test_the_page_asks_search_engines_to_stay_away(page):
     assert 'name="robots" content="noindex, nofollow"' in page
 

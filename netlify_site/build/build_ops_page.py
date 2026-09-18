@@ -412,11 +412,13 @@ async function load() {{
     sb.from("crosswalk_proposals").select("*").eq("status", "proposed").order("created_at", {{ ascending: false }}),
     sb.from("run_status").select("*").gte("started_at", since()).order("started_at", {{ ascending: false }}),
     sb.from("approvals").select("*").order("created_at", {{ ascending: false }}).limit(500),
+    sb.from("campaigns").select("campaign_slug,start_date,end_date"),
+    sb.from("stages").select("campaign_slug,unit,date"),
   ];
   const res = await Promise.all(q);
   const bad = res.find((r) => r.error);
   if (bad) {{ toast("Query failed: " + bad.error.message, true); $("loaded").textContent = ""; return; }}
-  const [tasks, keys, proposals, runs, approvals] = res.map((r) => r.data || []);
+  const [tasks, keys, proposals, runs, approvals, campaigns, stages] = res.map((r) => r.data || []);
 
   let steps = [];
   if (runs.length) {{
@@ -425,7 +427,7 @@ async function load() {{
     if (s.error) toast("run_steps: " + s.error.message, true);
     steps = s.data || [];
   }}
-  data = {{ tasks, keys, proposals, runs, approvals, steps }};
+  data = {{ tasks, keys, proposals, runs, approvals, steps, campaigns, stages }};
   const reconciled = await reconcileTasks();
   render();
   if (reconciled) toast(`Reconciled ${{reconciled}} superseded task${{reconciled === 1 ? "" : "s"}}.`);
@@ -458,6 +460,42 @@ const HUMAN_DECISION_KINDS = new Set(["identity_provisional", "crosswalk_proposa
 // Ledger proof that the ask is over: the same unit later FINISHED ok in the same phase, or a
 // preview ask whose unit has since been raced and settled (nothing is left to preview), or a
 // campaign-level horizon capture that later finished ok.
+// The race-local date a unit is raced on, from the registry: the stage row, else (one-day
+// races) the campaign's start date. "" when the registry does not know.
+function unitDate(slug, unit) {{
+  const names = unit === "race" ? ["race", "one_day"] : [unit];
+  const row = (data.stages || []).find((s) => s.campaign_slug === slug && names.includes(s.unit) && s.date);
+  if (row) return String(row.date);
+  if (unit === "race") {{
+    const c = (data.campaigns || []).find((x) => x.campaign_slug === slug);
+    if (c && c.start_date) return String(c.start_date);
+  }}
+  return "";
+}}
+
+// Asks that only make sense BEFORE the unit is raced: a preview that did not run, a start list
+// or a field nobody supplied. Once the unit's date is behind us there is nothing left to do —
+// a one-day race that ended without a preview never produces a "later success" to prove it
+// (2026-09-18: Wallonie and Kampioenschap van Vlaanderen asks sat open after both races).
+// A settle ask is never moot by date: the results are still owed.
+const PRE_RACE_KINDS = new Set(["horizon_failed", "startlist_needed"]);
+
+function racedResolution(t) {{
+  if (HUMAN_DECISION_KINDS.has(t.kind)) return null;
+  const today = new Date().toISOString().slice(0, 10);      // UTC; strictly-before keeps a live race open
+  const preRace = PRE_RACE_KINDS.has(t.kind) || taskPhase(t) === "preview";
+  if (!preRace) return null;
+  let units = [];
+  const unit = taskUnit(t);
+  if (unit) units = [unit];
+  else if (Array.isArray((t.detail || {{}}).units)) units = t.detail.units.map(String);
+  if (!units.length) return null;
+  const dates = units.map((u) => unitDate(t.campaign_slug, u));
+  if (dates.some((d) => !d || d >= today)) return null;
+  const last = dates.slice().sort().pop();
+  return `Automatically reconciled: ${{units.join(", ")}} was raced on ${{last}}; a pre-race ask is moot once the race is over.`;
+}}
+
 function completedLaterResolution(t, created) {{
   if (HUMAN_DECISION_KINDS.has(t.kind)) return null;
   const later = data.runs.filter((r) => r.campaign_slug === t.campaign_slug
@@ -495,6 +533,8 @@ function supersededTaskResolution(t) {{
   if (!Number.isFinite(created)) return null;
   const completed = completedLaterResolution(t, created);
   if (completed) return completed;
+  const raced = racedResolution(t);
+  if (raced) return raced;
   if (!provingStep || !unit) return null;
 
   const newer = data.tasks.find((other) => other.id !== t.id && other.kind === t.kind
