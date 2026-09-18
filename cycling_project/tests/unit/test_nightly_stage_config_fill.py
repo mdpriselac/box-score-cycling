@@ -39,6 +39,10 @@ def campaign(tmp_path):
     day.mkdir(parents=True)
     (day / "markets_1558.json").write_text(json.dumps({EVENT_ID: src["1028797735"], "1028635359": src["1028635359"]}))
     (day / "markets_1900.json").write_text(json.dumps({"1028635359": src["1028635359"]}))
+    # the field, as horizon hands it over — since chip V every preview unit is gated on it
+    (dst / "predictions" / UNIT).mkdir(parents=True, exist_ok=True)
+    (dst / "predictions" / UNIT / "startlist.json").write_text(json.dumps(
+        {"teams": [{"name": "T", "team_id": "1", "riders": [{"name": "R", "rider_id": "9"}]}]}))
     return dst
 
 

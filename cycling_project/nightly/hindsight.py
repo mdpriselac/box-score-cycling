@@ -17,7 +17,7 @@ from typing import Any, Dict, Iterable, List, Optional
 import numpy as np
 
 from cycling_project.nightly import oneday
-from cycling_project.nightly.refs import load_signatures, newest_signature_table
+from cycling_project.nightly.refs import load_signatures, newest_signature_table, usable_reference_ids
 
 ARCH = ["sprint", "mountain", "hilly", "rolling", "breakaway", "time_trial"]
 
@@ -101,16 +101,9 @@ def result_signature(result: Dict[str, Any], db_path: Path) -> Dict[str, Any]:
     }
 
 
-def _usable_reference_ids(db_path: Path) -> Optional[set[int]]:
-    if not db_path.exists():
-        return None
-    con = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)
-    try:
-        return {int(r[0]) for r in con.execute("SELECT competition_id FROM competition_field_features")}
-    except sqlite3.Error:
-        return None
-    finally:
-        con.close()
+# Shared with ``autoconfig`` since 2026-09-18 (chip V): every machine-chosen reference is
+# filtered the same way.  The old private name stays importable.
+_usable_reference_ids = usable_reference_ids
 
 
 def nearest_refs(signature: Dict[str, Any], *, competition_type: str, before: str,

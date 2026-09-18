@@ -226,6 +226,20 @@ def named_asset(camp, base):
     return f"/{name}" if (SITE_DIR / name).exists() else None
 
 
+def registry_stage_label(n, row):
+    """'Stage 2 — A → B, 101 km' from a campaign.json stage row (autoconfig.stage_label's shape)."""
+    tail = []
+    towns = row.get("towns")
+    if isinstance(towns, str) and towns.strip():
+        tail.append(towns.strip())
+    try:
+        if row.get("distance_km") not in (None, ""):
+            tail.append(f"{float(row['distance_km']):g} km")
+    except (TypeError, ValueError):
+        pass
+    return f"Stage {n} — " + ", ".join(tail) if tail else f"Stage {n}"
+
+
 def build_stage_entries(camp, today):
     pred_root = PERF_ROOT / camp["dir"] / "predictions"
     res_root = PERF_ROOT / camp["dir"] / "results"
@@ -237,9 +251,17 @@ def build_stage_entries(camp, today):
         cfg = load_json(cfg_path) or {}
         void.update(cfg.get("void_stages") or [])
 
+    # campaign.json's own stage rows (horizon fills towns / distance / date): the stage log's
+    # source for a stage nobody has configured yet.  Until 2026-09-18 only scenarios.json was
+    # read, so such a stage showed "TBC" and a blank route on the hub.
+    registry = load_json(PERF_ROOT / camp["dir"] / "campaign.json") or {}
+    rows = {int(s["number"]): s for s in registry.get("stages") or []
+            if isinstance(s, dict) and s.get("number") is not None}
+
     stages = []
     for n in range(1, camp["n_stages"] + 1):
         cfg = load_json(pred_root / f"stage_{n:02d}" / "scenarios.json") or {}
+        row = rows.get(n) or {}
         pred_dir = pred_root / f"stage_{n:02d}"
         non_boards = {"scenarios.json", "startlist.json", "route.json", "route_raw.json",
                       "route.override.json", "agent_key.json", "agent_key_response.json",
@@ -250,7 +272,7 @@ def build_stage_entries(camp, today):
         settled = (res_root / f"stage_{n:02d}" / "results.csv").exists()
         asset = stage_asset(camp, n)
 
-        stage_date = cfg.get("date")
+        stage_date = cfg.get("date") or row.get("date")
         if stage_date is None and n == 1:
             stage_date = camp["start_date"]
 
@@ -263,7 +285,7 @@ def build_stage_entries(camp, today):
         else:
             status = "upcoming"
 
-        label = cfg.get("label") or f"Stage {n}"
+        label = cfg.get("label") or registry_stage_label(n, row)
         entry = {
             "stage": n,
             "unit": f"stage_{n:02d}",

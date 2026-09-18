@@ -583,7 +583,16 @@ def ingest(campaign_dir: Path, unit: str, *, crosswalk_csv: Optional[Path] = Non
 
     top_stage_unres = unresolved_of(classified[:TOP_STAGE])
     top_gc_unres = [] if one_day else unresolved_of(gc_rows[:TOP_GC])
-    top_unres = top_stage_unres + [u for u in top_gc_unres if u not in top_stage_unres]
+    # One rider can sit inside both gates (stage 13th, GC 15th).  Listing him twice read as two
+    # riders sharing a name (hosted task 96, Tour of Huangshan stage 1, 2026-09-18): merge on the
+    # rider id and say which classification each place belongs to.
+    top_unres = [dict(u, classification="stage") for u in top_stage_unres]
+    in_stage = {u["rider_id"]: u for u in top_unres}
+    for u in top_gc_unres:
+        if u["rider_id"] in in_stage:
+            in_stage[u["rider_id"]]["gc_place"] = u["place"]
+        else:
+            top_unres.append(dict(u, classification="gc"))
     # Operator ruling 2026-09-16 (supersedes the strict-gate half of the 2026-09-08 ruling for
     # UNATTENDED runs): ``strict`` keeps the old behaviour — an unresolved rider inside the top-15
     # stage / top-20 GC gate refuses the capture and asks a human.  ``provisional`` (the default,
@@ -608,7 +617,8 @@ def ingest(campaign_dir: Path, unit: str, *, crosswalk_csv: Optional[Path] = Non
     report.proposals = [res.to_proposal(campaign.get("slug")) for res in by_key.values() if not res.accepted]  # type: ignore[attr-defined]
     # Outside the top gate a rider with no FirstCycling identity (typically a .1-race back-marker with
     # no FC history at all) has been archived under a provisional ``uci:<key>`` id since 2026-09-08.
-    outside = [u for u in all_unres if u not in top_unres]
+    top_ids = {u["rider_id"] for u in top_unres}
+    outside = [u for u in all_unres if u["rider_id"] not in top_ids]
     provisional = outside if strict else all_unres
     report.provisional_top = [] if strict else list(top_unres)
     if outside:
@@ -618,7 +628,9 @@ def ingest(campaign_dir: Path, unit: str, *, crosswalk_csv: Optional[Path] = Non
         report.warnings.append(
             f"{len(report.provisional_top)} rider(s) INSIDE the top gate carry provisional uci: ids "
             f"(identity_policy=provisional): "
-            + ", ".join(f"{u['uci_name']} (place {u['place']})" for u in report.provisional_top[:8])
+            + ", ".join(f"{u['uci_name']} ({u.get('classification') or 'stage'} place {u['place']}"
+                        + (f", GC place {u['gc_place']}" if u.get("gc_place") else "") + ")"
+                        for u in report.provisional_top[:8])
             + (" …" if len(report.provisional_top) > 8 else ""))
     checks.append(Check("crosswalk_all_rows", True,
                         {"unresolved": all_unres, "provisional": [u["uci_name"] for u in provisional],
@@ -686,6 +698,7 @@ def ingest(campaign_dir: Path, unit: str, *, crosswalk_csv: Optional[Path] = Non
         "provisional_identities": [
             {"place": u["place"], "name": u["uci_name"], "team": u["team"], "age": u["age"],
              "rider_id": u["rider_id"],
+             "classification": u.get("classification"), "gc_place": u.get("gc_place"),
              "best_candidate": (u.get("best") or {}).get("fc_name"),
              "best_confidence": (u.get("best") or {}).get("confidence")}
             for u in report.provisional_top],

@@ -399,3 +399,51 @@ def test_an_incomplete_start_list_is_rejected(perf, store, db_path):
     assert summary["campaigns"][0]["status"] == "failed"
     assert "start list" in summary["campaigns"][0]["error"].lower()
     assert [t["kind"] for t in store.open_tasks()] == ["horizon_failed"]
+
+
+# ---------------------------------------------------------------------------
+# chip V (2026-09-18) — the race-local clock, and one list for the whole race
+# ---------------------------------------------------------------------------
+
+def _huangshan(perf):
+    cfg = stage_race_config("huangshan-2026", start=dt.date(2026, 9, 17), stages=4)
+    cfg["timezone"] = "Asia/Shanghai"
+    return write_campaign(perf, "huangshan-2026", cfg)
+
+
+def test_horizon_and_driver_pick_the_same_unit_east_of_utc(perf, store, tmp_path, capsys):
+    """17:30 UTC on the 17th is 01:30 on the 18th in Shanghai: the tick that night previews the
+    stage dated the 18th.  The old ``today < d`` rule skipped it and captured the 19th's."""
+    from cycling_project.nightly import driver as drv
+
+    d = _huangshan(perf)
+    (d / "results" / "stage_01").mkdir(parents=True)
+    (d / "results" / "stage_01" / "results.csv").write_text("place,name\n1,x\n")
+    local = dt.datetime(2026, 9, 18, 1, 30)
+    due = horizon.select_units(perf, store, days=1, local_now=local)
+    assert due[0].units[0] == "stage_02"
+
+    assert drv.main(["plan", "--campaign", str(d), "--dry-run", "--store-root", str(tmp_path / "s"),
+                     "--local-now", "2026-09-18T03:45"]) == 0
+    plan = json.loads(capsys.readouterr().out)
+    assert plan["preview"] == ["stage_02"]
+    assert plan["preview"][0] in due[0].units
+
+
+def test_a_bare_today_still_means_that_evening(perf, store):
+    _huangshan(perf)
+    due = horizon.select_units(perf, store, days=1, today=dt.date(2026, 9, 18))
+    assert due[0].units == ["stage_03"]
+
+
+def test_the_start_list_goes_to_every_unsettled_unit(perf, store, db_path):
+    cfg = stage_race_config(stages=3)
+    cfg["void_stages"] = []
+    d = write_campaign(perf, "giro-test-2026", cfg)
+    (d / "results" / "stage_01").mkdir(parents=True)
+    (d / "results" / "stage_01" / "results.csv").write_text("place,name\n1,x\n")
+    summary = run(perf, store, Client(), db_path, days=1, today=dt.date(2026, 9, 17))
+    assert summary["campaigns"][0]["units"] == ["stage_02"]
+    assert not (d / "predictions" / "stage_01" / "startlist.json").exists()     # settled
+    for unit in ("stage_02", "stage_03"):
+        assert (d / "predictions" / unit / "startlist.json").exists(), unit

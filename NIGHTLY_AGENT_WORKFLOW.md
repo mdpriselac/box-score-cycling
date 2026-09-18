@@ -172,7 +172,11 @@ uses for `preview`), `horizon` captures through the project's rate-limited
 - the **start list** → `cached_start_lists` *and*
   `predictions/<unit>/startlist.json`, the handover shape
   `oneday.load_startlist_file` reads and `resolve_startlist` prefers; the
-  existing completeness check rejects a preliminary FirstCycling shell;
+  existing completeness check rejects a preliminary FirstCycling shell. Since
+  2026-09-18 the file is written to **every not-yet-settled unit** of the
+  campaign (one list, no extra request), and due units are chosen on the
+  driver's race-local clock (`driver.day_has_started`, `--local-now`), so a
+  race east of UTC gets the unit the cloud tick will actually preview;
 - the **FirstCycling stage page**, verbatim, → `results/<unit>/stage_page_<date>.html`
   (plus a `horizon_raw.json` index with url, time and sha256), then
   `route_facts.ingest_route` → `predictions/<unit>/route.json`;
@@ -214,11 +218,11 @@ and a real key on the Mac).
 | `plan [--now]` | Due units from `campaigns`/`stages` + local state, on the **race-local clock**: `settle` once the unit's own local day is over (a past local date, or the local date past 18:00 local), `preview` while that day has not begun (before 09:00 local) and it is inside the horizon; flags `settle_late`, `blocked`. The fixed 19:45 UTC tick is already tomorrow east of UTC, which made Huangshan stage 1 settle-due before it was ridden (2026-09-17). `--local-now <ISO>` overrides the clock; `--today` alone reads as that date's evening. |
 | `night --campaign <slug>` | Every due `settle`, then every due `preview`, in order. |
 | `settle` | `ingest` → `seed_state_cache.py` → GC config templated → GC predict → `build_gc_tracker.py` → `score_day_keys.py` (always) → `retro_facts.json` → `build_stage_page.py` → site index + frame → `upload` (results files, facts, pages, `prediction_log` rows). |
-| `preview` | Kambi capture → stage config (template if the campaign ships one, else written from `campaign.json`) → GC config when absent → route facts (from the acquisition thread's `route_raw`) → **`startlist`** (a handover or a cache row, else exit 10 `startlist_needed`; one-day and stage 1 only) → `bundle` → **exit 10 unless** a key exists: config key, then an approved `day_key_decisions` row, then the agent's own record (`--agent-key <path>`, or `predictions/<unit>/agent_key.json` found without a flag) → `scenario_refs` (references derived from that key) → `predict_stage_scenarios.py` (`--no-scrape` unless `--allow-scrape`) → `validate` → `build_stage_page.py` → site index + frame → `upload`. One-day races skip the key and reference their own editions. |
+| `preview` | Kambi capture → stage config (template if the campaign ships one, else written from `campaign.json`) → GC config when absent → route facts (from the acquisition thread's `route_raw`) → **`startlist`** (a handover beside the config or beside any sibling unit, or a cache row, else exit 10 `startlist_needed`; every unit since 2026-09-18) → `bundle` → **exit 10 unless** a key exists: config key, then an approved `day_key_decisions` row, then the agent's own record (`--agent-key <path>`, or `predictions/<unit>/agent_key.json` found without a flag) → `refs_check` (every reference a config carries must have a `competition_field_features` row: a machine-written bad set is emptied and rewritten, a human's waits as `scenarios_needed` naming the id) → `scenario_refs` (references derived from that key, servable ones only) → `predict_stage_scenarios.py` (`--no-scrape` unless `--allow-scrape`) → `validate` → `build_stage_page.py` → site index + frame → `upload`. One-day races skip the key and reference their own editions. |
 | `ingest` | Reads `results/<unit>/pcs_raw.json`; validates (§2.8); writes the FC-shaped files or exits 10 with the failing checks. |
 | `bundle` | Freezes `predictions/<unit>/bundle/` + `manifest.json` (odds, latest `gc.csv`, startlist + withdrawals, settled-stage ledger, `route.json`, `day_menu_v1_reference.md`, scorecard). |
 | `refs --archetype <name>` | Signature-table query for named archetypes, excluding refs already used in the campaign. Since 2026-09-16 `preview` runs the same query itself (`nightly/autoconfig.py`, step `scenario_refs`): a stage race needs no `TEMPLATE_scenarios.json`, no hand-written references and no hand-written GC config. |
-| `validate` | Schemas, NaNs, `lambdarank_win_p` sum ≈ 1, `post_hoc` on late configs, `void_stages` consistent, key weights sum to 1, crosswalk coverage. |
+| `validate` | Schemas, NaNs, `lambdarank_win_p` sum ≈ 1, `post_hoc` on late configs, `void_stages` consistent, key weights sum to 1, crosswalk coverage (a warning under `identity_policy=provisional`, blocking under `strict`). |
 | `upload` | Insert artifacts under `nightly-artifacts/<run_id>/<campaign>/…` and pages under `site-staging/<run_id>/…`; insert `predictions`, `prediction_log`, `pcs_raw`, `operator_tasks` rows. Never overwrites. |
 | `status` | Ledger view from `runs`. |
 
@@ -305,8 +309,10 @@ registry has loaded.
   scrape is the last resort in `resolve_startlist`, and in the container it is
   a Cloudflare 403 *inside* the runner: Kampioenschap van Vlaanderen 2026 had
   no handover, missed the cache, and turned a missing start list into exit 20
-  and a paid ops-triage cycle (hosted task 93). A one-day preview — and stage 1
-  of a stage race — with neither a handover nor a `cached_start_lists` row for
+  and a paid ops-triage cycle (hosted task 93). Any preview unit (2026-09-18;
+  before that only one-day and stage 1, which let Tour of Huangshan stage 2
+  fail inside `predict`) with no handover beside its config or any sibling
+  unit's, and no `cached_start_lists` row for
   (`fc_race_id`, `year`) now exits 10 with `startlist_needed`
   (`blocks_publication`), naming the Mac's daily `nightly.horizon` capture as
   the supply. The driver also passes `--no-scrape` to the runner by default, on

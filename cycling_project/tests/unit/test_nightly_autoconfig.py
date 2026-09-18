@@ -78,6 +78,10 @@ def campaign(tmp_path):
                    {"number": 3, "date": "2026-09-17", "towns": None, "distance_km": None}],
     }, indent=1))
     (d / "rider_crosswalk.csv").write_text("fc_rider_id,internal_rider_id,name\n")
+    # the field, as horizon hands it over — since chip V every preview unit is gated on it
+    (d / "predictions" / "stage_01").mkdir(parents=True)
+    (d / "predictions" / "stage_01" / "startlist.json").write_text(json.dumps(
+        {"teams": [{"name": "T", "team_id": "1", "riders": [{"name": "R", "rider_id": "9"}]}]}))
     return d
 
 
@@ -214,6 +218,9 @@ def _db_with_editions(path: Path, fc_race_id="700", years=(2023, 2024, 2025)) ->
         con.execute("INSERT INTO races VALUES (?,?,?,?)", (i + 1, fc_race_id, y, "Okolo Slovenska"))
         con.execute("INSERT INTO competitions VALUES (?,?,?,?,?)", (500 + i, i + 1, "gc", f"{y}-09-19", "GC"))
         con.execute("INSERT INTO competition_field_features VALUES (?)", (500 + i,))
+    # every day in the ``signatures`` fixture is servable (chip V filters on this table)
+    con.executemany("INSERT INTO competition_field_features VALUES (?)",
+                    [(b + i,) for b in (1000, 2000, 4000) for i in range(6)])
     con.commit()
     con.close()
     return path
@@ -281,3 +288,88 @@ def test_a_second_preview_leaves_the_written_config_alone(campaign, tmp_path, si
     assert _config(campaign) == before
     assert next(s for s in _steps(tmp_path) if s["step"] == "scenario_refs" and s["state"] == "skipped")
     assert out["validate"]["ok"]
+
+
+# ---------------------------------------------------------------------------
+# chip V (2026-09-18) — a machine-chosen reference must be servable
+# ---------------------------------------------------------------------------
+
+def _itt_signatures(tmp_path):
+    """Three time-separated days (one of them with no feature row) plus a pool of ordinary stages."""
+    rows = []
+    for cid, cat, year in ((9878, "pro", 2025), (9001, "wt", 2024), (9002, "pro", 2023)):
+        r = _row(cid, kind="mass_sprint", year=year, category=cat)
+        r.update({"rule_type": "itt_like", "wg_size": 1, "top15_sprint": 0, "top15_time_trial": 0.6})
+        rows.append(r)
+    rows += [_row(1000 + i, kind="mass_sprint", year=2025 - i) for i in range(4)]
+    rows += [_row(4000 + i, kind="mass_sprint", year=2024 - i, category="pro") for i in range(3)]
+    buf = io.StringIO()
+    w = csv.DictWriter(buf, fieldnames=SIG_COLS)
+    w.writeheader()
+    w.writerows(rows)
+    path = tmp_path / "selection_signatures_20260918_000000.csv.gz"
+    with gzip.open(path, "wt") as fh:
+        fh.write(buf.getvalue())
+    return path
+
+
+def _feature_db(path: Path, ids) -> Path:
+    con = sqlite3.connect(path)
+    con.execute("CREATE TABLE competition_field_features (competition_id INTEGER)")
+    con.executemany("INSERT INTO competition_field_features VALUES (?)", [(i,) for i in ids])
+    con.commit(); con.close()
+    return path
+
+
+def test_a_reference_the_serving_db_cannot_profile_is_never_chosen(campaign, tmp_path):
+    """Tour de Luxembourg stage 4 (2026-09-18): 9878 came from the signature table, had no
+    competition_field_features row, and predict died.  An ITT still gets five, same tier first."""
+    sig = _itt_signatures(tmp_path)
+    db = _feature_db(tmp_path / "serving.db", [9001, 9002, 1000, 1001, 1002, 4000, 4001])
+    ids, meta = autoconfig.pick_refs("itt_like", campaign_dir=campaign, signatures=sig, db_path=db, category="pro")
+    assert 9878 not in ids and meta["unusable_dropped"] and 9878 in meta["unusable_dropped"]
+    assert len(ids) == 5 and meta["short"] == 0
+    assert ids[:2] == [9002, 9001]                     # the archetype's own days, campaign tier first
+    assert ids[2:4] == [4000, 4001]                    # the top-up prefers the campaign tier too
+    assert meta["topped_up"] == 3 and all(i in {9001, 9002, 1000, 1001, 1002, 4000, 4001} for i in ids)
+
+
+def test_a_short_reference_set_is_recorded(campaign, tmp_path):
+    sig = _itt_signatures(tmp_path)
+    db = _feature_db(tmp_path / "serving.db", [9001, 1000])
+    ids, meta = autoconfig.pick_refs("itt_like", campaign_dir=campaign, signatures=sig, db_path=db)
+    assert sorted(ids) == [1000, 9001] and meta["short"] == 3
+    assert "servable" in autoconfig.refs_note("itt", meta)
+
+
+def test_without_a_database_nothing_is_filtered(campaign, tmp_path):
+    ids, meta = autoconfig.pick_refs("itt_like", campaign_dir=campaign, signatures=_itt_signatures(tmp_path))
+    assert 9878 in ids and meta["unusable_dropped"] == []
+
+
+def test_the_driver_heals_a_machine_written_bad_ref_and_names_a_humans(campaign, tmp_path, capsys):
+    sig = _itt_signatures(tmp_path)
+    db = _feature_db(tmp_path / "serving.db", [9001, 9002, 1000, 1001, 1002, 1003, 4000, 4001, 4002])
+    cfg = autoconfig.build_stage_skeleton(slug="okolo-slovenska-2026", stage=2, fc_race_id="700", year=2026,
+                                          date=STAGE_DATE, label="Stage 2")
+    cfg["scenarios"][autoconfig.MAIN_SCENARIO].update({"refs": [9878, 9001], "refs_source": autoconfig.REFS_SOURCE})
+    pred = campaign / "predictions" / UNIT
+    pred.mkdir(parents=True)
+    (pred / "scenarios.json").write_text(json.dumps(cfg))
+    healed, blocking = autoconfig.drop_unservable_auto_refs(cfg, db)
+    assert healed == {autoconfig.MAIN_SCENARIO: [9878]} and not blocking
+    assert cfg["scenarios"][autoconfig.MAIN_SCENARIO]["refs"] == []
+
+    # a human's set is never edited: the preview waits and names the id
+    cfg["scenarios"]["hand"] = {"label": "Human", "short": "H", "tag": "x_h", "refs": [9878, 1000]}
+    (pred / "scenarios.json").write_text(json.dumps(cfg))
+    rec_path = tmp_path / "agent_key.json"
+    rec_path.write_text(json.dumps({"key": {"itt": 1.0}}))
+    code = drv.main(["preview", "--unit", UNIT, "--campaign", str(campaign), "--store", "fake",
+                     "--store-root", str(tmp_path / "store"), "--crosswalk", str(campaign / "rider_crosswalk.csv"),
+                     "--today", TODAY, "--db-path", str(db), "--signatures", str(sig),
+                     "--agent-key", str(rec_path), "--dry-run"])
+    out = json.loads(capsys.readouterr().out)
+    assert code == drv.EXIT_WAITING, out
+    assert out["operator_task"]["kind"] == "scenarios_needed" and "9878" in out["operator_task"]["summary"]
+    assert cfg["scenarios"]["hand"]["refs"] == [9878, 1000]

@@ -36,7 +36,7 @@ from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Set, Tuple
 
 from cycling_project.nightly import day_key_record as rec
-from cycling_project.nightly.refs import ARCHETYPES, query_refs, used_refs
+from cycling_project.nightly.refs import ARCHETYPES, query_refs, unusable_refs, usable_reference_ids, used_refs
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 MENU_PATH = PROJECT_ROOT / "models" / "production" / "day_menu_v1.json"
@@ -243,9 +243,21 @@ def pick_refs(archetype: str, *, campaign_dir: Optional[Path] = None, db_path: O
     """
     exclude = set(exclude or ())
     own = set(own_ids or ())
+    # Only a competition with a ``competition_field_features`` row can be averaged into a
+    # profile; the signature table does not know which those are (2026-09-18, chip V).  No DB
+    # (unit tests) → no filter, the long-standing behaviour.
+    usable = usable_reference_ids(db_path)
+    dropped: List[int] = []
+
+    def servable(found: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        if usable is None:
+            return found
+        dropped.extend(int(r["comp_id"]) for r in found if int(r["comp_id"]) not in usable)
+        return [r for r in found if int(r["comp_id"]) in usable]
+
     rows = _candidates(archetype=archetype, where=[], campaign_dir=campaign_dir,
                        signatures=signatures, db_path=db_path)
-    rows = [r for r in rows if int(r["comp_id"]) not in exclude]
+    rows = servable([r for r in rows if int(r["comp_id"]) not in exclude])
     cat = str(category or "").lower()
 
     def rank(row: Dict[str, Any]) -> Tuple[int, int]:
@@ -259,7 +271,7 @@ def pick_refs(archetype: str, *, campaign_dir: Optional[Path] = None, db_path: O
         have = {int(r["comp_id"]) for r in chosen}
         extra = _candidates(archetype=None, where=[f"competition_type=={competition_type}"],
                             campaign_dir=campaign_dir, signatures=signatures, db_path=db_path)
-        extra = [r for r in extra if int(r["comp_id"]) not in exclude and int(r["comp_id"]) not in have]
+        extra = servable([r for r in extra if int(r["comp_id"]) not in exclude and int(r["comp_id"]) not in have])
         extra.sort(key=rank)
         topped_up = min(count - len(chosen), len(extra))
         chosen = chosen + extra[:count - len(chosen)]
@@ -271,6 +283,8 @@ def pick_refs(archetype: str, *, campaign_dir: Optional[Path] = None, db_path: O
         "category": cat or None,
         "n_same_category": sum(1 for r in chosen if cat and str(r.get("category") or "").lower() == cat),
         "topped_up": topped_up,
+        "unusable_dropped": sorted(set(dropped)),
+        "short": max(0, count - len(ids)),      # could not reach ``count`` even after the top-up
         "rows": [{k: r.get(k) for k in ("comp_id", "race_name", "year", "date", "stage_number",
                                         "category", "rule_type", "winner")} for r in chosen],
     }
@@ -295,6 +309,9 @@ def refs_note(item: str, meta: Dict[str, Any]) -> str:
     if meta.get("topped_up"):
         bits.append(f"{meta['topped_up']} had to be topped up from outside the archetype filter "
                     "(too few unspent matching days).")
+    if meta.get("short"):
+        bits.append(f"Only {len(meta.get('rows') or [])} servable reference days could be found "
+                    f"({meta['short']} short of the usual set).")
     if names:
         bits.append(f"Reference days: {names}.")
     return " ".join(bits)
@@ -388,6 +405,38 @@ def scenarios_missing_refs(config: Dict[str, Any]) -> List[str]:
     return out
 
 
+def unservable_refs(config: Dict[str, Any], db_path: Optional[Path]) -> Dict[str, List[int]]:
+    """``scenario → [competition ids with no competition_field_features row]`` (empty = all servable)."""
+    out: Dict[str, List[int]] = {}
+    for skey, spec in (config.get("scenarios") or {}).items():
+        if not isinstance(spec, dict):
+            continue
+        bad = unusable_refs([x for x in (spec.get("refs") or spec.get("base_refs") or []) if _positive(x)], db_path)
+        if bad:
+            out[skey] = bad
+    return out
+
+
+def drop_unservable_auto_refs(config: Dict[str, Any], db_path: Optional[Path]) -> Tuple[Dict[str, List[int]], Dict[str, List[int]]]:
+    """Clear machine-written reference sets that hold an unservable id; leave human ones alone.
+
+    Returns ``(healed, blocking)``.  A scenario whose refs the driver wrote
+    (``refs_source == REFS_SOURCE``) is emptied so ``fill_scenario_refs`` rewrites it — the
+    machine made the mistake, the machine repairs it.  A human's reference set is judgment and
+    is never edited: it comes back in ``blocking`` for the caller to raise.
+    """
+    healed: Dict[str, List[int]] = {}
+    blocking: Dict[str, List[int]] = {}
+    for skey, bad in unservable_refs(config, db_path).items():
+        spec = config["scenarios"][skey]
+        if spec.get("refs_source") == REFS_SOURCE and not spec.get("base_refs"):
+            spec["refs"] = []
+            healed[skey] = bad
+        else:
+            blocking[skey] = bad
+    return healed, blocking
+
+
 def _positive(x: Any) -> bool:
     try:
         return int(x) > 0
@@ -431,7 +480,8 @@ def fill_scenario_refs(config: Dict[str, Any], *, key: Optional[Dict[str, float]
         spec["refs_item"] = item
         spec["refs_note"] = refs_note(item, meta)
         filled[skey] = {"archetype": archetype, "item": item, "refs": ids,
-                        "own_editions": meta["own_editions"], "topped_up": meta["topped_up"]}
+                        "own_editions": meta["own_editions"], "topped_up": meta["topped_up"],
+                        "unusable_dropped": meta["unusable_dropped"], "short": meta["short"]}
     if filled:
         config["refs_source"] = REFS_SOURCE
     return {"filled": filled, "scenarios": sorted(filled), "slug": slug}

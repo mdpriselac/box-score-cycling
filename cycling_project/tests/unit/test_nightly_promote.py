@@ -287,3 +287,29 @@ def test_commit_stages_only_what_it_published(store, site, monkeypatch):
     added = next(a for a in calls if a[0] == "add")
     assert [Path(x).name for x in added[2:]] == [
         "site-index.json", "_frame", "published-campaigns.json", "vuelta-stage15.html"]
+
+
+def test_an_old_run_promoted_late_never_rolls_a_newer_page_back(store, site):
+    """2026-09-17: late promotion of old approved runs overwrote newer vuelta-gc.html / vuelta-stage20.html."""
+    import datetime as dt
+
+    staged = site.parent / "staged"
+    staged.mkdir()
+    t_old = dt.datetime(2026, 9, 10, 20, 0, tzinfo=dt.timezone.utc)
+    t_new = t_old + dt.timedelta(days=3)
+    pages = [{"path": "vuelta-gc.html"}, {"path": "_frame/home.html"}]
+    (staged / "_frame").mkdir()
+    for rel in ("vuelta-gc.html", "_frame/home.html"):
+        (staged / rel).write_text("new")
+    out = P.copy_into_site(staged, pages, apply=True, run_time=t_new, run_id="run-new")
+    assert out["added"] == ["_frame/home.html", "vuelta-gc.html"]
+    for rel in ("vuelta-gc.html", "_frame/home.html"):
+        (staged / rel).write_text("old")
+    out = P.copy_into_site(staged, pages, apply=True, run_time=t_old, run_id="run-old")
+    assert out["stale_skipped"] == ["vuelta-gc.html"] and (site / "vuelta-gc.html").read_text() == "new"
+    assert out["changed"] == ["_frame/home.html"]                # the frame is rebuilt anyway
+    # a still newer run does overwrite, however late the older one was promoted
+    (staged / "vuelta-gc.html").write_text("newest")
+    out = P.copy_into_site(staged, pages, apply=True, run_time=t_new + dt.timedelta(days=1), run_id="run-newest")
+    assert "vuelta-gc.html" in out["changed"] and (site / "vuelta-gc.html").read_text() == "newest"
+    assert json.loads(P.manifest_path().read_text())["vuelta-gc.html"]["run_id"] == "run-newest"

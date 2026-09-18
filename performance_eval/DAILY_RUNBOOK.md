@@ -673,7 +673,11 @@ uv run python -m cycling_project.nightly validate --campaign <campaign> --unit s
 
 Checks schemas and NaNs, that `lambdarank_win_p` sums to about 1,
 `post_hoc` on late configs, `void_stages` consistency, day-key weights
-summing to 1, and crosswalk coverage of the field. The driver runs it as step
+summing to 1, and crosswalk coverage of the field. Coverage below 0.90 is a
+**warning** under the default `--identity-policy provisional` (2026-09-18: a new
+race's crosswalk is nearly empty, and unresolved riders settle under provisional
+`uci:` ids anyway) and a blocking problem only under `--identity-policy strict`.
+The driver runs it as step
 7 of `preview`, between the model run and the page build; by hand it is worth
 running whenever a config has been edited late.
 
@@ -719,11 +723,14 @@ What changes:
   (`cycling_project/nightly/oneday.py`). Alternates use archetype references
   from `nightly refs --archetype …`.
 - **The field** comes from a `startlist.json` beside the config (what the
-  cloud acquisition thread hands over), else the `cached_start_lists` cache,
+  cloud acquisition thread hands over), else the newest `startlist.json` beside
+  any sibling unit of the campaign (2026-09-18: one race, one field — source
+  `handover:<unit>/startlist.json`), else the `cached_start_lists` cache,
   else a rate-limited FirstCycling scrape; `--no-scrape` refuses the last.
   **The driver checks for the field before `predict` and refuses the scrape by
-  default** (2026-09-17): a one-day preview — and stage 1 of a stage race —
-  with neither a handover nor a cache row exits 10 with `startlist_needed`
+  default** (2026-09-17; every preview unit since 2026-09-18, not only one-day
+  and stage 1): a preview with no handover anywhere in the campaign and no
+  cache row exits 10 with `startlist_needed`
   (`blocks_publication`) and names the Mac's `nightly.horizon` capture as the
   supply. Nothing is fetched, no triage is spent, and the unit comes back
   tomorrow. An attended Mac run that *wants* the scrape passes `--allow-scrape`,
