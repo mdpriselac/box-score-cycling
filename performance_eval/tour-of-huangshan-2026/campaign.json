@@ -11,22 +11,22 @@
     {
       "number": 1,
       "date": "2026-09-18",
-      "towns": null,
-      "distance_km": null,
+      "towns": "Huizhou District Sports Center → Huangshan District Government Square",
+      "distance_km": 121.0,
       "kind": null
     },
     {
       "number": 2,
       "date": "2026-09-19",
-      "towns": null,
-      "distance_km": null,
+      "towns": "Huangshan District Government Square → Yixian",
+      "distance_km": 101.0,
       "kind": null
     },
     {
       "number": 3,
       "date": "2026-09-20",
-      "towns": null,
-      "distance_km": null,
+      "towns": "Huangshan → Huangshan",
+      "distance_km": 140.0,
       "kind": null
     }
   ],
@@ -37,7 +37,7 @@
   "pcs_slug": "tour-of-huangshan",
   "organiser_stage_urls": {},
   "void_stages": [],
-  "stages_provisional": true,
+  "stages_provisional": false,
   "uci_competition_url": "https://www.uci.org/competition-details/2026/ROA/78428",
   "uci_competition_id": "78428",
   "uci_discipline": "ROA",
