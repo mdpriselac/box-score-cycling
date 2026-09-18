@@ -1,0 +1,131 @@
+{
+  "slug": "paris-chauny-2026",
+  "name": "Paris-Chauny",
+  "fc_race_id": "949",
+  "uci_competition_url": "https://www.uci.org/competition-details/2026/ROA/78440",
+  "uci_competition_id": "78440",
+  "uci_discipline": "ROA",
+  "year": 2026,
+  "category": "d1",
+  "is_stage_race": false,
+  "start_date": "2026-09-27",
+  "end_date": "2026-09-27",
+  "stages": [
+    {
+      "number": null,
+      "date": "2026-09-27",
+      "towns": null,
+      "distance_km": null,
+      "kind": "one_day"
+    }
+  ],
+  "timezone": "Europe/Paris",
+  "kambi_match": "paris-chauny",
+  "kambi_localised_name": null,
+  "kambi_event_ids": {},
+  "pcs_slug": "paris-chauny",
+  "organiser_stage_urls": {},
+  "void_stages": [],
+  "uci_match_evidence": {
+    "matcher": "uci_calendar 1.0.0",
+    "matched_at": "2026-09-18T21:47:49+00:00",
+    "decision": "auto_accepted",
+    "existing_url_conflict": false,
+    "auto_accept_rule": "exact date range AND name similarity >= 0.90 AND no other exact-date candidate at that bar",
+    "score": 1.0,
+    "fields_compared": {
+      "dates": {
+        "campaign": "2026-09-27..2026-09-27",
+        "uci": "2026-09-27..2026-09-27",
+        "uci_text": "27 Sep 2026",
+        "verdict": "exact"
+      },
+      "name": {
+        "campaign": "Paris-Chauny",
+        "uci": "Paris-Chauny",
+        "campaign_normalised": "paris chauny",
+        "uci_normalised": "paris chauny",
+        "variant": "full~full",
+        "similarity": 1.0,
+        "token_containment": 1.0
+      },
+      "country": {
+        "campaign": null,
+        "uci": "FRA",
+        "verdict": "not_compared",
+        "note": "the FirstCycling calendar rows and campaign files carry no country, so the listing's country is recorded but not used as a discriminator"
+      }
+    },
+    "candidate": {
+      "competition_id": "78440",
+      "discipline": "ROA",
+      "url": "https://www.uci.org/competition-details/2026/ROA/78440",
+      "name": "Paris-Chauny",
+      "country": "FRA",
+      "dates_text": "27 Sep 2026",
+      "start_date": "2026-09-27",
+      "end_date": "2026-09-27",
+      "listing": "upcoming"
+    },
+    "alternates": [
+      {
+        "competition_id": "77169",
+        "discipline": "ROA",
+        "url": "https://www.uci.org/competition-details/2026/ROA/77169",
+        "name": "2026 UCI Road World Championships",
+        "country": "CAN",
+        "dates_text": "20 Sep - 27 Sep 2026",
+        "start_date": "2026-09-20",
+        "end_date": "2026-09-27",
+        "listing": "upcoming",
+        "similarity": 0.35,
+        "dates_verdict": "overlap"
+      },
+      {
+        "competition_id": "78441",
+        "discipline": "ROA",
+        "url": "https://www.uci.org/competition-details/2026/ROA/78441",
+        "name": "Petronas Le Tour de Langkawi",
+        "country": "MAS",
+        "dates_text": "27 Sep - 04 Oct 2026",
+        "start_date": "2026-09-27",
+        "end_date": "2026-10-04",
+        "listing": "upcoming",
+        "similarity": 0.3,
+        "dates_verdict": "overlap"
+      },
+      {
+        "competition_id": "78425",
+        "discipline": "ROA",
+        "url": "https://www.uci.org/competition-details/2026/ROA/78425",
+        "name": "Tour of Poyang Lake",
+        "country": "CHN",
+        "dates_text": "20 Sep - 29 Sep 2026",
+        "start_date": "2026-09-20",
+        "end_date": "2026-09-29",
+        "listing": "upcoming",
+        "similarity": 0.2581,
+        "dates_verdict": "overlap"
+      }
+    ],
+    "reasons": [
+      "exact date range and name similarity 1.000 (variant full~full) — unique at the bar"
+    ],
+    "snapshot": {
+      "captured_at": "2026-09-07T16:05:23+00:00",
+      "capturer": "uci_calendar 1.0.0",
+      "listings": {
+        "upcoming": {
+          "source_url": "https://www.uci.org/api/calendar/upcoming?discipline=ROA",
+          "sha256": "05074b45fbc5336e3c60b05c69b1e4677e77c3fd850ffe95c334a10b7b4c5556",
+          "competitions": 176
+        },
+        "past": {
+          "source_url": "https://www.uci.org/api/calendar/past?discipline=ROA",
+          "sha256": "5e0732365cb4c347099d3cf6acb259cfaf2c60281ae20b2ab5fbd14a33417bcd",
+          "competitions": 845
+        }
+      }
+    }
+  }
+}
