@@ -14,43 +14,43 @@
     {
       "number": 1,
       "date": "2026-09-22",
-      "towns": null,
-      "distance_km": null,
+      "towns": "Split → Seget Donji",
+      "distance_km": 167.0,
       "kind": null
     },
     {
       "number": 2,
       "date": "2026-09-23",
-      "towns": null,
-      "distance_km": null,
+      "towns": "Biograd na Moru → Novalja",
+      "distance_km": 114.5,
       "kind": null
     },
     {
       "number": 3,
       "date": "2026-09-24",
-      "towns": null,
-      "distance_km": null,
+      "towns": "Krk → Labin",
+      "distance_km": 174.5,
       "kind": null
     },
     {
       "number": 4,
       "date": "2026-09-25",
-      "towns": null,
-      "distance_km": null,
+      "towns": "Pula → Rijeka",
+      "distance_km": 160.0,
       "kind": null
     },
     {
       "number": 5,
       "date": "2026-09-26",
-      "towns": null,
-      "distance_km": null,
+      "towns": "Karlovac → Sveta Nedelja",
+      "distance_km": 164.5,
       "kind": null
     },
     {
       "number": 6,
       "date": "2026-09-27",
-      "towns": null,
-      "distance_km": null,
+      "towns": "Samobor → Zagreb",
+      "distance_km": 159.5,
       "kind": null
     }
   ],
@@ -61,7 +61,7 @@
   "pcs_slug": "cro-race",
   "organiser_stage_urls": {},
   "void_stages": [],
-  "stages_provisional": true,
+  "stages_provisional": false,
   "uci_match_evidence": {
     "matcher": "uci_calendar 1.0.0",
     "matched_at": "2026-09-12T21:14:29+00:00",
