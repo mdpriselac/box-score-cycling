@@ -121,6 +121,11 @@ def _strip_none(row: Dict[str, Any]) -> Dict[str, Any]:
     return {k: v for k, v in row.items() if v is not None}
 
 
+#: Columns a not-yet-pushed migration may be missing; dropped and retried once, with a
+#: log note (campaigns.automated arrives with 0008_campaign_automation.sql, chip Y).
+_OPTIONAL_COLUMNS = {"campaigns": ("automated",)}
+
+
 def _normalise(table: str, row: Dict[str, Any]) -> Dict[str, Any]:
     """Map the JSONL-mirror shapes (store_local / crosswalk / reconcile) onto columns."""
     out = dict(row)
@@ -633,16 +638,43 @@ class SupabaseStore:
         return out
 
     def sync_campaign(self, row: Dict[str, Any]) -> Dict[str, Any]:
-        """Insert one campaign or fill only fields that were previously absent."""
+        """Insert one campaign or fill only fields that were previously absent.
+
+        ``automated`` (migration 0008, chip Y 2026-09-22) is written when the column
+        exists and dropped when it does not, so a registry sync against a database
+        that has not had ``supabase db push`` run keeps working exactly as before.
+        """
         self._require_operator("campaign sync")
         payload = _normalise("campaigns", row)
         slug = payload["campaign_slug"]
         found = self._select("campaigns", {"campaign_slug": f"eq.{slug}", "limit": "1"})
         if not found:
-            return self._insert("campaigns", [payload])[0]
+            return self._without_unknown_columns(
+                "campaigns", payload, lambda p: self._insert("campaigns", [p])[0])
+        # `automated` is a fact about the config, not a field a human fills in later:
+        # an existing row must follow campaign.json, so it is patched even when set.
         additions = _fill_absent(found[0], payload)
-        changed = self._patch("campaigns", {"campaign_slug": f"eq.{slug}"}, additions)
+        if ("automated" in payload and "automated" in found[0]
+                and bool(found[0]["automated"]) != bool(payload["automated"])):
+            additions["automated"] = payload["automated"]
+        changed = self._without_unknown_columns(
+            "campaigns", additions,
+            lambda p: self._patch("campaigns", {"campaign_slug": f"eq.{slug}"}, p))
         return changed[0] if changed else found[0]
+
+    def _without_unknown_columns(self, table: str, payload: Dict[str, Any], call):
+        """Run ``call(payload)``; on "column does not exist", drop the optional keys and retry."""
+        try:
+            return call(payload)
+        except StoreError as exc:
+            optional = [k for k in _OPTIONAL_COLUMNS.get(table, ()) if k in payload]
+            text = str(exc).lower()
+            if not optional or not any(k.lower() in text for k in optional) or (
+                    "column" not in text and "schema cache" not in text):
+                raise
+            logger.info("%s: %s not in the hosted schema (migration not pushed); syncing without it",
+                        table, ", ".join(optional))
+            return call({k: v for k, v in payload.items() if k not in optional})
 
     def sync_stages(self, rows: Iterable[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """Insert stage rows or fill only fields that were previously absent."""

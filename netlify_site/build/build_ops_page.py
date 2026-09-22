@@ -419,7 +419,7 @@ async function load() {{
     sb.from("crosswalk_proposals").select("*").eq("status", "proposed").order("created_at", {{ ascending: false }}),
     sb.from("run_status").select("*").gte("started_at", since()).order("started_at", {{ ascending: false }}),
     sb.from("approvals").select("*").order("created_at", {{ ascending: false }}).limit(500),
-    sb.from("campaigns").select("campaign_slug,start_date,end_date"),
+    sb.from("campaigns").select("campaign_slug,start_date,end_date,category,automation:config->>automation"),
     sb.from("stages").select("campaign_slug,unit,date"),
   ];
   const res = await Promise.all(q);
@@ -602,9 +602,38 @@ function block(title, html) {{
   return html ? `<h3 style="margin-top:26px">${{esc(title)}}</h3>${{html}}` : "";
 }}
 
+// Which campaigns the unattended nightly covers (owner rule 2026-09-22; the
+// rule itself is cycling_project/nightly/tiers.py). A `.1` race is registered
+// and runnable by hand, so its open tasks are attended work, not an automation
+// failure — they render under a collapsed section instead of the main list.
+// Derived from `category` + campaign.json's `automation` override, NOT from
+// campaigns.automated: migration 0008 may not be pushed yet.
+const AUTOMATION_TIERS = ["wt", "pro"];
+const AUTOMATION_ON = ["on", "yes", "true", "1", "always"];
+const AUTOMATION_OFF = ["off", "no", "false", "0", "never"];
+
+function isAutomated(slug) {{
+  if (!slug) return true;                       // no campaign: general ops work
+  const c = (data.campaigns || []).find((x) => x.campaign_slug === slug);
+  if (!c) return true;                          // unknown: never hide it
+  const override = String(c.automation || "").trim().toLowerCase();
+  if (AUTOMATION_ON.includes(override)) return true;
+  if (AUTOMATION_OFF.includes(override)) return false;
+  const cat = String(c.category || "").trim().toLowerCase();
+  if (!cat) return false;                       // no category: a human decides
+  return AUTOMATION_TIERS.includes(cat);
+}}
+
+function attendedBlock(title, html, n) {{
+  return html ? `<details style="margin-top:26px"><summary>${{esc(title)}} — ` +
+    `${{n}} open item${{n === 1 ? "" : "s"}}</summary>` +
+    `<p class="note">Not covered by the nightly tick: these races are run by hand ` +
+    `on the Mac, so an open item here is a queue, not a failure.</p>${{html}}</details>` : "";
+}}
+
 // -- operator_tasks
 function renderTasks() {{
-  const rows = data.tasks.map((t) => {{
+  const card = (t) => {{
     const cls = t.urgency === "urgent" ? "urgent"
       : (t.urgency || "").startsWith("blocks") ? "blocks" : "";
     return `<div class="item ${{cls}}">
@@ -618,8 +647,11 @@ function renderTasks() {{
         <input id="res-${{t.id}}" placeholder="how you resolved it (optional)">
         <button data-task="${{t.id}}">Mark resolved</button>
       </div></div>`;
-  }}).join("");
-  $("tasks").innerHTML = block("Flagged by the run", rows);
+  }};
+  const automated = data.tasks.filter((t) => isAutomated(t.campaign_slug));
+  const attended = data.tasks.filter((t) => !isAutomated(t.campaign_slug));
+  $("tasks").innerHTML = block("Flagged by the run", automated.map(card).join(""))
+    + attendedBlock("Attended (.1) campaigns", attended.map(card).join(""), attended.length);
   $("tasks").querySelectorAll("button[data-task]").forEach((b) => {{
     b.onclick = () => resolveTask(Number(b.dataset.task));
   }});

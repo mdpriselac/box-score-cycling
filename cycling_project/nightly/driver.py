@@ -54,7 +54,7 @@ from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Tupl
 
 from cycling_project.db_path import ENV_VAR as DB_ENV_VAR, default_db_path
 from cycling_project.nightly import day_key_record as rec
-from cycling_project.nightly import autoconfig, hindsight, oneday, pcs_ingest, site_paths, uci_acquire, uci_identity, uci_ingest
+from cycling_project.nightly import autoconfig, hindsight, oneday, pcs_ingest, site_paths, tiers, uci_acquire, uci_identity, uci_ingest
 from cycling_project.nightly.crosswalk import CROSSWALK_CSV, build_operator_task, read_crosswalk_csv
 from cycling_project.nightly.secrets import load_local_env, redact
 from cycling_project.webscrape_tools.logging_config import get_logger
@@ -315,6 +315,15 @@ class Campaign:
         return bool(self.cfg.get("is_stage_race", True))
 
     @property
+    def category(self) -> Optional[str]:
+        """Race tier as the registry writes it: wt | pro | d1 (None when absent)."""
+        return tiers.category_of(self.cfg)
+
+    def is_automated(self, covered: Optional[Sequence[str]] = None) -> bool:
+        """Whether the unattended nightly covers this campaign (owner rule, 2026-09-22)."""
+        return tiers.is_automated(self.cfg, tiers=covered)
+
+    @property
     def uci_competition_url(self) -> Optional[str]:
         """Operator-confirmed UCI competition page (registry field); None → UCI cannot be used."""
         v = self.cfg.get("uci_competition_url")
@@ -514,8 +523,14 @@ class Driver:
                  release_tag: Optional[str] = None, acquire: bool = True, provider: str = "auto",
                  aliases_csv: Optional[Path] = None, signatures: Optional[Path] = None,
                  identity_policy: str = uci_ingest.DEFAULT_IDENTITY_POLICY,
-                 local_now: Optional[dt.datetime] = None, allow_scrape: bool = False):
+                 local_now: Optional[dt.datetime] = None, allow_scrape: bool = False,
+                 automation_tiers: Optional[Sequence[str]] = None):
         self.campaign = campaign
+        # Which race tiers this invocation treats as automated (owner rule, 2026-09-22:
+        # WorldTour and .Pro).  None = the default set; `--all-tiers` / `--include-tier`
+        # widen it for an attended Mac run.  Only `plan`/`night` consult it — an explicit
+        # `settle --unit` / `preview --unit` on a `.1` race still runs.
+        self.automation_tiers = tuple(automation_tiers) if automation_tiers is not None else None
         self.acquire_enabled = acquire            # settle may run the deterministic UCI acquisition itself
         self.provider_pref = provider              # auto | uci | pcs
         self.aliases_csv = Path(aliases_csv) if aliases_csv else None
@@ -764,6 +779,24 @@ class Driver:
     def plan(self, horizon_days: int = 1) -> Dict[str, Any]:
         c = self.campaign
         today = self.today
+        # Scope gate (owner rule, 2026-09-22): the unattended nightly covers WorldTour and
+        # .Pro.  A `.1` race is registered, bundled and runnable by hand, but nothing is due
+        # for it unless campaign.json opts it in or the Mac passes --all-tiers/--include-tier.
+        # The reason travels in the plan JSON so the coordinator's per-campaign `plan` call
+        # shows why the night is empty; no coordinator prompt change is needed.
+        # No log line here on purpose: the shared logger writes to stdout, which is the
+        # plan's JSON channel — `skipped` in the payload IS the record.
+        skipped = tiers.skip_reason(c.cfg, tiers=self.automation_tiers)
+        note = tiers.override_note(c.cfg)
+        if skipped:
+            out = {"campaign": c.slug, "today": str(today), "timezone": c.timezone,
+                   "local_now": self.local_now.isoformat(timespec="minutes"),
+                   "category": c.category, "automated": False, "skipped": skipped,
+                   "void_stages": sorted(set(c.void_stages)), "units": [],
+                   "settle": [], "preview": []}
+            if note:
+                out["automation_note"] = note
+            return out
         store_void: set = set()
         try:
             for s in self.store.stages(c.slug) or []:
@@ -791,6 +824,7 @@ class Driver:
         if dated and max(dated) < today - dt.timedelta(days=FINISHED_AFTER_DAYS):
             return {"campaign": c.slug, "today": str(today), "timezone": c.timezone,
                     "local_now": self.local_now.isoformat(timespec="minutes"), "void_stages": sorted(void),
+                    "category": c.category, "automated": True,
                     "units": [], "settle": [], "preview": [], "finished": True,
                     "note": f"last unit {max(dated)} is more than {FINISHED_AFTER_DAYS} days ago: nothing is due"}
         for number, date_s in sorted(entries, key=lambda t: (t[0] is None, t[0] or 0)):
@@ -844,12 +878,18 @@ class Driver:
             if settle_due and "gap" not in flags:
                 prev_settled = has_results
         return {"campaign": c.slug, "today": str(today), "timezone": c.timezone,
-                "local_now": self.local_now.isoformat(timespec="minutes"), "void_stages": sorted(void), "units": units,
+                "local_now": self.local_now.isoformat(timespec="minutes"),
+                "category": c.category, "automated": True,
+                **({"automation_note": note} if note else {}),
+                "void_stages": sorted(void), "units": units,
                 "settle": [u["unit"] for u in units if "settle" in u["due"]],
                 "preview": [u["unit"] for u in units if "preview" in u["due"]]}
 
     def night(self, horizon_days: int = 1) -> Tuple[int, Dict[str, Any]]:
         plan = self.plan(horizon_days)
+        if plan.get("skipped"):
+            return EXIT_DONE, {"campaign": self.campaign.slug, "status": "skipped",
+                               "skipped": plan["skipped"], "plan": plan, "runs": []}
         results: List[Dict[str, Any]] = []
         worst = EXIT_DONE
         for unit in plan["settle"]:
@@ -2103,10 +2143,11 @@ def build_parser() -> argparse.ArgumentParser:
                    add_help=False)
     p = sub.add_parser("plan", help="due units for a campaign (settle / preview) as JSON")
     common(p); p.add_argument("--now", action="store_true", help="plan as of now (default)"); p.add_argument("--horizon-days", type=int, default=1)
+    tiers.add_tier_flags(p)
     p = sub.add_parser("night", help="every due settle, then every due preview")
     common(p); p.add_argument("--horizon-days", type=int, default=1)
     p.add_argument("--agent-key", type=Path, default=None, help="agent decision record for every due preview")
-    identity_flag(p)
+    identity_flag(p); tiers.add_tier_flags(p)
     p = sub.add_parser("settle", help="ingest → seed → GC → score → retro facts → pages → upload")
     common(p, unit=True); identity_flag(p)
     p = sub.add_parser("preview", help="odds → config → route → bundle → key gate → predict → validate → pages → upload")
@@ -2174,7 +2215,9 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
                     provider=getattr(args, "provider", "auto"), aliases_csv=getattr(args, "aliases", None),
                     signatures=getattr(args, "signatures", None),
                     identity_policy=getattr(args, "identity_policy", uci_ingest.DEFAULT_IDENTITY_POLICY),
-                    local_now=getattr(args, "local_now", None), allow_scrape=getattr(args, "allow_scrape", False))
+                    local_now=getattr(args, "local_now", None), allow_scrape=getattr(args, "allow_scrape", False),
+                    automation_tiers=(tiers.tiers_from_args(args)
+                                      if hasattr(args, "all_tiers") else None))
 
     if args.command == "status":
         return _emit(EXIT_DONE, {"status": "ok", **driver.status()})

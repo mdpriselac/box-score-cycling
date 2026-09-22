@@ -32,7 +32,8 @@ the slug already carries the year (`vuelta-2026`, `tour-de-france-2026`,
 | Field | Used by | Notes |
 |---|---|---|
 | `fc_race_id`, `year` | results capture, state seeding, one-day reference lookup | FirstCycling race id as a string. |
-| `slug`, `name`, `category` | ledger rows, page titles, whether a missing market blocks a preview | `category: "wt"` is the only one that waits on Kambi. |
+| `slug`, `name`, `category` | ledger rows, page titles, whether a missing market blocks a preview, **whether the nightly covers the race at all** | `category: "wt"` is the only one that waits on Kambi; `wt` and `pro` are the tiers the unattended nightly runs (§1a). |
+| `automation` (optional) | the nightly's scope gate | `"on"` covers a `.1` race, `"off"` takes a WT/.Pro race out; absent = the category decides. |
 | `is_stage_race` | which variant of this runbook applies | `false` → §6, the one-day path. |
 | `start_date`, `end_date`, `stages[]` | the driver's due-work planner | one `{number, date}` per stage. |
 | `void_stages` | every config, the GC tracker, the key scorer | cancelled stages; `[]` for a clean race. |
@@ -40,6 +41,34 @@ the slug already carries the year (`vuelta-2026`, `tour-de-france-2026`,
 | `uci_competition_url` | UCI acquisition | set by `nightly registry sync` / `uci_calendar resolve`, **never** by guessing. |
 | `timezone` | "is tomorrow's stage due?" | race-local, not UTC. |
 | `site.prefix`, `site.marker`, `site.route_slug` | page and hub names | the Tour's prefix is empty, the Vuelta's is `vuelta-`. |
+
+### 1a. Which races the nightly covers (owner decision, 2026-09-22)
+
+The unattended nightly runs **WorldTour and .Pro** races. A `.1` race
+(`category: "d1"`) is registered, bundled and run **by hand on this Mac** —
+`nightly plan` and `nightly night` find nothing due for it and say so
+(`"skipped": "not_automated: category d1"`). The reason is the first
+unattended week: of eleven troublesome races, eight were `.1`, and every one
+of those failed on the outside world — no start list published, no earlier
+edition in the database, no UCI calendar row, riders nobody can identify.
+
+What this means when you are at the keyboard:
+
+```bash
+# a .1 race, run by hand — an explicit unit always runs
+uv run python -m cycling_project.nightly settle  --campaign giro-della-toscana-2026 --unit race
+uv run python -m cycling_project.nightly preview --campaign giro-della-toscana-2026 --unit race
+
+# plan / night / horizon for one: widen the tiers for this invocation
+uv run python -m cycling_project.nightly night --campaign okolo-slovenska-2026 --all-tiers
+uv run python -m cycling_project.nightly.horizon --campaign okolo-slovenska-2026 --all-tiers
+```
+
+`--campaign` narrows a sweep; it does **not** widen the coverage — one rule
+(`cycling_project/nightly/tiers.py`), one place. To cover a `.1` race every
+night, add `"automation": "on"` to its `campaign.json` (and `"off"` takes a
+WT/.Pro race out); the flag then travels to the hosted `campaigns` row and
+the release, and no other file changes.
 
 Directory layout, identical for every campaign:
 
@@ -789,7 +818,15 @@ uv run python -m cycling_project.nightly.horizon --dry-run --days 4
 # one campaign, or a wider horizon
 uv run python -m cycling_project.nightly.horizon --campaign giro-d-abruzzo-2026
 uv run python -m cycling_project.nightly.horizon --days 5 --max-age-hours 12
+
+# a .1 race: outside the nightly's coverage, so capture it explicitly (§1a)
+uv run python -m cycling_project.nightly.horizon --campaign giro-d-abruzzo-2026 --all-tiers
 ```
+
+The capture covers exactly what the tick will ask for — WorldTour and .Pro
+(§1a) — because a start list handed to a race nobody plans is a wasted
+FirstCycling fetch. `--all-tiers` / `--include-tier d1` restores a `.1` race
+for this run.
 
 For every unit due to be previewed inside `--days` (default 3) it writes:
 
@@ -833,7 +870,9 @@ for this runbook:
    the bundle plus every artifact inserted since. It fails closed on any
    mismatch.
 2. **`plan`** lists the due units; **`night`** runs every due settle, then
-   every due preview, for one campaign.
+   every due preview, for one campaign. A campaign outside the nightly's
+   coverage (§1a) returns no due units and `"skipped": "not_automated: …"` —
+   that is the answer, not a failure, and nothing is filed for it.
 3. **Acquisition is the UCI, and only the UCI** (§4.1): the `uci-acquirer`
    thread runs the deterministic command, and the deterministic `ingest`
    validates the capture before anything downstream reads a row. **An agent

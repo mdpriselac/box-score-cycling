@@ -144,12 +144,40 @@ def test_a_pre_race_ask_goes_moot_once_the_race_is_over(page):
     # after both races — a one-day race with no preview never yields a later success to prove it
     assert "function racedResolution(t)" in page and "function unitDate(slug, unit)" in page
     assert 'sb.from("stages").select("campaign_slug,unit,date")' in page
-    assert 'sb.from("campaigns").select("campaign_slug,start_date,end_date")' in page
+    assert 'sb.from("campaigns").select("campaign_slug,start_date,end_date' in page
     assert 'new Set(["horizon_failed", "startlist_needed"])' in page
     assert 'PRE_RACE_KINDS.has(t.kind) || taskPhase(t) === "preview"' in page
     assert "dates.some((d) => !d || d >= today)" in page          # unknown date or race not over → stays open
     # a settle ask is still owed after the race, and a human decision is never auto-cleared
     assert page.index("if (HUMAN_DECISION_KINDS.has(t.kind)) return null;") < page.index("const preRace =")
+
+
+# ---------------------------------------------------------------------------
+# attended (.1) campaigns — owner rule 2026-09-22 (chip Y)
+# ---------------------------------------------------------------------------
+
+def test_open_tasks_for_attended_campaigns_group_under_a_collapsed_section(page):
+    """A `.1` race is run by hand, so its open items are a queue, not a failure."""
+    assert "function isAutomated(slug)" in page and "function attendedBlock(" in page
+    assert '<details style="margin-top:26px"><summary>' in page
+    assert 'attendedBlock("Attended (.1) campaigns"' in page
+    assert "const attended = data.tasks.filter((t) => !isAutomated(t.campaign_slug));" in page
+
+
+def test_the_page_derives_automation_the_way_tiers_py_does(page):
+    """Same tiers and same override vocabulary — and never from campaigns.automated,
+    because migration 0008 may not be pushed."""
+    from cycling_project.nightly import tiers
+
+    assert f'const AUTOMATION_TIERS = {list(tiers.AUTOMATION_TIERS)!r}'.replace("'", '"') in page
+    assert "automation:config->>automation" in page
+    assert '.select("campaign_slug,start_date,end_date,category,' in page
+    assert "automated" not in page.split('sb.from("campaigns")')[1].split(")")[0]
+
+
+def test_an_unknown_or_campaign_less_task_is_never_hidden(page):
+    assert 'if (!slug) return true;' in page and 'if (!c) return true;' in page
+    assert 'if (!cat) return false;' in page          # a config with no category asks a human
 
 
 def test_the_page_asks_search_engines_to_stay_away(page):
