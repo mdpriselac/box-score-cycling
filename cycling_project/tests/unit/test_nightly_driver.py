@@ -289,6 +289,21 @@ def test_a_hydrated_container_never_falls_back_to_a_fake_store(campaign, tmp_pat
     assert drv.main(["status", *base, "--store", "auto", "--store-root", str(tmp_path / "store")]) == 0
 
 
+def test_an_agent_key_saved_in_the_readers_raw_shape_still_prices(campaign, tmp_path, capsys):
+    # 2026-09-22 (task 116): the coordinator saved the reader's raw `key_items` list instead of the
+    # folded `key` mapping; the driver saw no key, failed, and a paid retry fixed it — most nights
+    cfg_path = campaign / "predictions/stage_15/scenarios.json"
+    cfg = json.loads(cfg_path.read_text()); cfg.pop("day_key"); cfg_path.write_text(json.dumps(cfg))
+    raw = campaign / "predictions/stage_15/agent_key.json"
+    raw.write_text(json.dumps({"key_items": [{"item": "bunch", "weight": 0.65}, {"item": "res_3", "weight": 0.2},
+                                             {"item": "res_7", "weight": 0.15}], "family": "macro"}))
+    code = _run(campaign, tmp_path, "preview", "--unit", "stage_15", "--dry-run", "--agent-key", str(raw))
+    out = _out(capsys)
+    assert code == 0, out
+    assert json.loads(cfg_path.read_text())["day_key"] == {"bunch": 0.65, "res_3": 0.2, "res_7": 0.15}
+    assert out["key"]["day_key"] == {"bunch": 0.65, "res_3": 0.2, "res_7": 0.15}
+
+
 def test_same_ask_is_not_filed_twice(campaign, tmp_path, capsys):
     shutil.rmtree(campaign / "results" / "stage_14")
     assert _run(campaign, tmp_path, "night", "--dry-run") == 10

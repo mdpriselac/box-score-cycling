@@ -1650,9 +1650,13 @@ class Driver:
         agent_path = self._agent_key_path(unit)
         if agent_path is not None:
             record = _read_json(agent_path, {})
-            key = rec.normalise_key(record.get("key") or {})
+            # The reader answers in the model-facing shape (`key_items`, a list); run_day_key folds it
+            # into the §5.1 `key` mapping before writing. When the coordinator saves the raw answer
+            # instead, the fold never ran (2026-09-22, CRO Race st2, task 116; the same "carries no
+            # key" retry on 09-18/19/21). Accept either shape: normalise_key folds the list itself.
+            key = rec.normalise_key(record.get("key") or record.get("key_items") or {})
             if not key:
-                raise DriverFailure("agent_key_invalid", f"{agent_path} carries no key")
+                raise DriverFailure("agent_key_invalid", f"{agent_path} carries no key (neither `key` nor `key_items`)")
             cfg["day_key"] = key
             # The board is priced from a machine-written key.  ``day_key_author`` is what keeps
             # the two reads apart everywhere downstream: score_day_keys leaves the tier-3 card
