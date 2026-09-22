@@ -54,7 +54,7 @@ from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Tupl
 
 from cycling_project.db_path import ENV_VAR as DB_ENV_VAR, default_db_path
 from cycling_project.nightly import day_key_record as rec
-from cycling_project.nightly import autoconfig, hindsight, oneday, pcs_ingest, uci_acquire, uci_identity, uci_ingest
+from cycling_project.nightly import autoconfig, hindsight, oneday, pcs_ingest, site_paths, uci_acquire, uci_identity, uci_ingest
 from cycling_project.nightly.crosswalk import CROSSWALK_CSV, build_operator_task, read_crosswalk_csv
 from cycling_project.nightly.secrets import load_local_env, redact
 from cycling_project.webscrape_tools.logging_config import get_logger
@@ -327,22 +327,36 @@ class Campaign:
     def stages(self) -> List[Dict[str, Any]]:
         return [s for s in (self.cfg.get("stages") or []) if s.get("number") is not None]
 
+    # ---- public page names: one rule, shared with the builders (site_paths, chip W 2026-09-22).
+    # Before this the driver fell back to "" — the Tour's prefix — for every campaign
+    # without a `site.prefix`, and staged the Tour's stage05.html under Okolo Slovenska's
+    # run (hosted task 113).  `site.prefix` in campaign.json still wins when present.
     @property
     def site_prefix(self) -> str:
-        return str(((self.cfg.get("site") or {}).get("prefix")) or "")
+        return site_paths.site_prefix(self.dir.name, self.cfg, is_stage_race=self.is_stage_race)
+
+    def stage_page_name(self, stage: int) -> str:
+        return site_paths.stage_page_name(self.site_prefix, stage)
+
+    def stages_index_name(self) -> str:
+        return site_paths.stages_index_name(self.site_prefix)
+
+    def gc_page_name(self) -> str:
+        return site_paths.gc_tracker_name(self.site_prefix)
+
+    def oneday_page_name(self) -> str:
+        """netlify_site/<route slug>-<year>.html — the same rule build_oneday_page.py applies."""
+        return site_paths.oneday_page_name(self.dir.name, self.cfg, year=self.year or 0)
+
+    def own_page_names(self, unit: str) -> List[str]:
+        """Every netlify_site/ page this campaign may stage for ``unit`` (frame pages excluded)."""
+        stage = self.stage_of(unit)
+        if stage is not None:
+            return [self.stage_page_name(stage), self.stages_index_name(), self.gc_page_name()]
+        return [self.oneday_page_name()]
 
     def unit_for(self, stage: Optional[int]) -> str:
         return f"stage_{int(stage):02d}" if stage is not None else ONE_DAY_UNIT
-
-    def oneday_page_name(self) -> str:
-        """netlify_site/<route slug>-<year>.html — mirrors build_oneday_page.py."""
-        site = self.cfg.get("site") or {}
-        slug = site.get("route_slug")
-        if not slug:
-            slug = self.slug
-            if self.year and slug.endswith(f"-{self.year}"):
-                slug = slug[: -len(f"-{self.year}")]
-        return f"{slug}-{self.year}.html"
 
     @staticmethod
     def stage_of(unit: str) -> Optional[int]:
@@ -1246,22 +1260,37 @@ class Driver:
             else:
                 r = self.script("stage_page", [self.python, SCRIPTS["stage_page"], cfg])
                 if not r.get("skipped"):
-                    self.built_pages.append(SITE_DIR / f"{c.site_prefix}stage{c.stage_of(unit):02d}.html")
+                    self._expect_page(SITE_DIR / c.stage_page_name(c.stage_of(unit)), "stage_page")
         elif cfg.exists() and oneday.is_one_day_unit(unit):
             r = self.script("oneday_page", [self.python, SCRIPTS["oneday_page"], cfg])
             if not r.get("skipped"):
-                self.built_pages.append(SITE_DIR / c.oneday_page_name())
+                self._expect_page(SITE_DIR / c.oneday_page_name(), "oneday_page")
         else:
             self.step("stage_page", lambda: None, skip="no scenario config for this unit")
         r = self.script("site_index", [self.python, SCRIPTS["site_index"]])
         if not r.get("skipped"):
-            self.built_pages.append(SITE_DIR / "site-index.json")
+            self._expect_page(SITE_DIR / site_paths.SITE_INDEX_NAME, "site_index")
         r = self.script("site_frame", [self.python, SCRIPTS["site_frame"]])
         if not r.get("skipped"):
-            self.built_pages.append(SITE_DIR / "_frame")
-        gc_page = SITE_DIR / f"{c.site_prefix}gc.html"
-        if self.record.get("phase") == "settle" and gc_page.exists() and any(s["step"] == "gc_tracker" and s["state"] == "ok" for s in self.record["steps"]):
-            self.built_pages.append(gc_page)
+            self._expect_page(SITE_DIR / site_paths.FRAME_DIR, "site_frame")
+        # The tracker either writes its page or exits non-zero, so after an ok
+        # gc_tracker step the page's absence is a failure, not a quiet omission.
+        if self.record.get("phase") == "settle" and any(s["step"] == "gc_tracker" and s["state"] == "ok" for s in self.record["steps"]):
+            self._expect_page(SITE_DIR / c.gc_page_name(), "gc_tracker")
+
+    def _expect_page(self, path: Path, built_by: str) -> None:
+        """Record a page a builder reported building — or fail the run when it is not there.
+
+        The builder subprocess exited 0, so this is the only place a page it did not
+        write can be caught (2026-09-21: CRO Race stage_01 staged nothing and exited 0).
+        A directory counts when it holds at least one file.
+        """
+        present = path.is_file() or (path.is_dir() and any(p.is_file() for p in path.rglob("*")))
+        if not present:
+            raise DriverFailure("page_missing", f"{built_by} reported ok but {path} was not written",
+                                detail={"path": str(path), "built_by": built_by,
+                                        "expected_pages": self.campaign.own_page_names(self.record.get("unit") or "")})
+        self.built_pages.append(path)
 
     # ------------------------------------------------------------------------
     # preview
@@ -1839,6 +1868,14 @@ class Driver:
         return rows
 
     def _upload_file(self, path: Path, key_path: str, *, bucket: Optional[str] = None) -> Optional[str]:
+        """Upload one file; ``None`` when it does not exist.
+
+        The None-on-missing is for the OPTIONAL artifacts of a unit — results files a
+        one-day race never writes (``gc.csv``, ``classifications.json``), a ``pcs/`` or
+        ``uci/`` capture the other provider made, scorecards, the GC boards, a post-hoc
+        start list, an agent key record.  Pages are never optional: ``_build_pages`` and
+        ``_upload`` raise ``page_missing`` for them before this is reached.
+        """
         from cycling_project.nightly.store import ARTIFACTS_BUCKET, StoreConflictError
         if not path.is_file():
             return None
@@ -1848,10 +1885,36 @@ class Driver:
         except StoreConflictError:
             return f"{key_path} (exists)"
 
+    def _staging_set(self, unit: str) -> List[Tuple[Path, str]]:
+        """``(file, netlify_site-relative key)`` for every built page — checked as a set before
+        a single object is uploaded, so a bad set stages nothing rather than half of itself.
+
+        * a built page that has gone missing since ``_build_pages`` → ``page_missing``;
+        * a page that is neither a frame page nor one of this campaign's own pages for the
+          unit → ``page_foreign`` (2026-09-21: Okolo Slovenska stage_05 staged the Tour's
+          ``stage05.html`` + ``gc.html`` under its own run — task 113).
+        """
+        c = self.campaign
+        own = set(c.own_page_names(unit))
+        out: List[Tuple[Path, str]] = []
+        for p in self.built_pages:
+            targets = sorted(x for x in p.rglob("*") if x.is_file()) if p.is_dir() else ([p] if p.is_file() else [])
+            if not targets:
+                raise DriverFailure("page_missing", f"built page {p} is missing at upload time",
+                                    detail={"path": str(p), "expected_pages": sorted(own)})
+            for t in targets:
+                rel = t.relative_to(SITE_DIR).as_posix()
+                if not site_paths.is_frame_path(rel) and rel not in own:
+                    raise DriverFailure("page_foreign", f"{rel} is not one of {c.slug}'s pages for {unit}",
+                                        detail={"path": rel, "expected_pages": sorted(own), "prefix": c.site_prefix})
+                out.append((t, rel))
+        return out
+
     def _upload(self, unit: str, phase: str) -> Dict[str, Any]:
         from cycling_project.nightly.store import STAGING_BUCKET
         c = self.campaign
         uploaded: List[str] = []
+        staging_set = self._staging_set(unit)      # fails the whole upload before any object lands
         pred, res = c.pred_dir(unit), c.results_dir(unit)
         files: List[Path] = []
         if phase == "settle":
@@ -1878,12 +1941,10 @@ class Driver:
                 if k:
                     uploaded.append(k)
         pages: List[str] = []
-        for p in self.built_pages:
-            targets = sorted(x for x in p.rglob("*") if x.is_file()) if p.is_dir() else [p]
-            for t in targets:
-                k = self._upload_file(t, t.relative_to(SITE_DIR).as_posix(), bucket=STAGING_BUCKET)
-                if k:
-                    pages.append(k)
+        for t, rel in staging_set:
+            k = self._upload_file(t, rel, bucket=STAGING_BUCKET)
+            if k:
+                pages.append(k)
         # predictions rows: one per board
         boards = 0
         cfg = _read_json(pred / "scenarios.json", {}) or {}

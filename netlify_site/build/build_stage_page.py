@@ -29,6 +29,9 @@ from pathlib import Path
 HERE = Path(__file__).parent
 SITE_DIR = HERE.parent
 PROJECT_ROOT = SITE_DIR.parent
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+from cycling_project.nightly import site_paths  # noqa: E402  (one rule for page names, chip W)
 # Campaign archives — rebound in main() from the config's own campaign
 # directory (<campaign>/predictions/stage_NN/scenarios.json), so the builder
 # reads the right race's data. These defaults keep the TdF paths for any
@@ -88,6 +91,9 @@ def resolve_campaign(campaign_dir_name, config):
     # A per-stage override remains supported for old configs, but identity now
     # normally lives once in campaign.json.
     base.update(config.get("site") or {})
+    # The filename prefix is never derived here: site_paths is the one rule the
+    # driver, the site index and every builder share (2026-09-22, task 113).
+    base["prefix"] = site_paths.site_prefix(campaign_dir_name, registry, config)
     return base
 SOURCE_HTML = HERE / "predictor-architecture.html"
 
@@ -669,18 +675,18 @@ def stage_strip():
     for cfg in sorted(PREDICTIONS_ROOT.glob("stage_*/scenarios.json")):
         c = json.loads(cfg.read_text())
         n = int(c["stage"])
-        pfx = CAMPAIGN["prefix"]
-        page = SITE_DIR / f"{pfx}stage{n:02d}.html"
+        name = site_paths.stage_page_name(CAMPAIGN["prefix"], n)
+        page = SITE_DIR / name
         if page.exists():
             results = RESULTS_ROOT / f"stage_{n:02d}" / "results.json"
             mark = ' <span class="done">✓</span>' if results.exists() else ""
-            items.append(f'<a href="{pfx}stage{n:02d}.html">Stage {n}</a>{mark}')
+            items.append(f'<a href="{name}">Stage {n}</a>{mark}')
     if not items:
         return ""
     pfx = CAMPAIGN["prefix"]
-    lead = (f'<a href="{pfx}stages.html"><b>Stage-by-stage predictions '
+    lead = (f'<a href="{site_paths.stages_index_name(pfx)}"><b>Stage-by-stage predictions '
             '&amp; reflections →</b></a> · '
-            f'<a href="{pfx}gc.html"><b>GC tracker</b></a>')
+            f'<a href="{site_paths.gc_tracker_name(pfx)}"><b>GC tracker</b></a>')
     for href, label in CAMPAIGN.get("extra_links") or []:
         lead += f' · <a href="{href}"><b>{label}</b></a>'
     return (STRIP_CSS + '\n<div class="stage-strip"><b style="color:var(--ink)">'
@@ -730,7 +736,7 @@ def hub_card(config, scen, results):
                      "".join(f"<p>{esc(p)}</p>" for p in paras) + "</div>")
 
     return f"""<div class="card stage-card">
-<div class="stage-head"><h3><a href="{CAMPAIGN['prefix']}stage{n:02d}.html">Stage {n} — {esc(config.get('date', ''))}</a></h3>{status}</div>
+<div class="stage-head"><h3><a href="{site_paths.stage_page_name(CAMPAIGN['prefix'], n)}">Stage {n} — {esc(config.get('date', ''))}</a></h3>{status}</div>
 {"".join(picks)}
 {fav_html}
 {refl_html}
@@ -820,7 +826,7 @@ standings, gaps and stages left ({through if through else 'few'}/{CAMPAIGN['n_st
 is per-rider, so its numbers don't sum to one book; read it as "how safe is
 the current position". The pre-race blend prices the GC from form and history
 only and never sees the standings, which is why it barely moves.
-<b><a href="{CAMPAIGN['prefix']}gc.html">Full stage-by-stage GC tracker →</a></b></div>
+<b><a href="{site_paths.gc_tracker_name(CAMPAIGN['prefix'])}">Full stage-by-stage GC tracker →</a></b></div>
 </div>"""
 
 
@@ -864,7 +870,7 @@ Kambi (Unibet) archive; results from FirstCycling. Full methodology on the
 </body>
 </html>
 """
-    out = SITE_DIR / f"{CAMPAIGN['prefix']}stages.html"
+    out = SITE_DIR / site_paths.stages_index_name(CAMPAIGN["prefix"])
     out.write_text(page)
     print(f"Wrote {out} ({out.stat().st_size/1024:.0f} KB)")
 
@@ -963,7 +969,7 @@ odds archive {esc(book_note)} · all runs logged to prediction_log for settlemen
 </body>
 </html>
 """
-    out = SITE_DIR / f"{CAMPAIGN['prefix']}stage{n:02d}.html"
+    out = SITE_DIR / site_paths.stage_page_name(CAMPAIGN["prefix"], n)
     out.write_text(page)
     print(f"Wrote {out} ({out.stat().st_size/1024:.0f} KB)")
 

@@ -35,7 +35,10 @@ HERE = Path(__file__).parent
 SITE_DIR = HERE.parent
 PROJECT_ROOT = SITE_DIR.parent
 sys.path.insert(0, str(HERE))
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
 from build_stage_page import provisional_note  # noqa: E402  (sibling script, same directory)
+from cycling_project.nightly import site_paths  # noqa: E402  (one rule for page names, chip W)
 
 # CYCLING_DB_PATH redirects serving at a slim slice (see cycling_project/db_path.py);
 # resolved inline because this script runs without the package on sys.path.
@@ -162,18 +165,14 @@ def campaign_identity(campaign_root, config):
     site = dict(registry.get("site") or {})
     site.update(config.get("site") or {})
     year = int(config.get("year") or registry.get("year") or 0)
-    slug = site.get("route_slug")
-    if not slug:
-        slug = str(registry.get("slug") or campaign_root.name)
-        if year and slug.endswith(f"-{year}"):
-            slug = slug[: -len(f"-{year}")]
+    slug = site_paths.route_slug(campaign_root.name, registry, config)
     race_name = site.get("race_name") or registry.get("name") or config.get("label") or slug
     return {
         "slug": slug,
         "year": year,
         "race_name": race_name,
         "short_name": site.get("short_name") or f"{race_name} {year}".strip(),
-        "page": f"{slug}-{year}.html",
+        "page": site_paths.oneday_page_name(campaign_root.name, registry, config, year=year),
         "hub_url": f"/race/{slug}/{year}",
         "category": registry.get("category"),
     }

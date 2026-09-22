@@ -29,6 +29,7 @@ claim the original did not make.
 
 | Date | Tag | Lesson |
 |---|---|---|
+| 2026-09-22 | `tooling` | A page name derived in two places is two names: the driver staged the Tour's stage05.html under Okolo Slovenska |
 | 2026-09-18 | `acquisition` | One race has one field: a start list belongs to the campaign, not to the unit someone guessed was due |
 | 2026-09-18 | `tooling` | A reference the serving DB cannot profile is not a reference; filter where it is chosen |
 | 2026-09-18 | `scoring` | A gate tuned on one race is a wall for the next: crosswalk coverage warns under `provisional` |
@@ -83,6 +84,40 @@ claim the original did not make.
 | 2026-07-05 | `acquisition` | A truncated FirstCycling results page is fixed by rerunning |
 
 ---
+
+## 2026-09-22 — A page name derived in two places is two names: the driver staged the Tour's stage05.html under Okolo Slovenska
+
+**Tag:** `tooling` · hosted operator task 113 (coordinator, 2026-09-21; verified 2026-09-22)
+
+The page builders (`build_stage_page.py`, `build_gc_tracker.py`,
+`build_site_index.py`) derived a campaign's filename prefix themselves: the
+Tour `""`, the Vuelta `"vuelta-"`, everyone else `<campaign dir>-`. The
+driver had its own copy of the rule: `campaign.json` `site.prefix`, and `""`
+when absent. Only the Tour and the Vuelta carry a `site.prefix`, so for every
+other stage race the builder wrote `okolo-slovenska-2026-stage05.html` while
+the driver looked for `stage05.html` — the Tour's page — and staged it under
+Okolo Slovenska's run (9ce931f9). CRO Race stage_01 (5e7f468a) looked for
+`stage01.html`, which the container does not have, and staged nothing.
+Neither run failed: `_upload_file` returns `None` for a missing path, and
+the builder step itself had exited 0. Promotion is human-gated, so nothing
+was published.
+
+**This is the 2026-09-12 `tooling` lesson's family — a shared builder pinned
+to one campaign produced a plausible artefact for the wrong race and no
+error. The general form: a rule that lives in two places is two rules, and
+the one with the Tour as its default will quietly serve the Tour.**
+
+Fixed (chip W) by making `cycling_project/nightly/site_paths.py` the one
+place the prefix and every page name (stage page, stages hub, GC tracker,
+one-day page) come from; the builders, the site index and the driver all
+import it, an explicit `site.prefix` still wins, and the Tour/Vuelta names
+are pinned so nothing published moves. The driver now raises
+`page_missing` when a builder reported ok but its page is not on disk, and
+`page_foreign` when the staging set holds a page that is not one of the
+campaign's own for that unit — checked as a set before any object is
+uploaded, so a bad night stages nothing rather than half of itself.
+Tests: `test_site_paths.py` (every real campaign's three derivations agree)
+and the `page names` block in `test_nightly_driver.py`.
 
 ## 2026-09-18 — One race has one field: a start list belongs to the campaign, not to the unit someone guessed was due
 

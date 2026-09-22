@@ -745,3 +745,165 @@ def test_low_crosswalk_coverage_is_a_warning_under_provisional(campaign, tmp_pat
 def test_low_crosswalk_coverage_still_blocks_under_strict(campaign, tmp_path, capsys):
     code, out = _validate_with_thin_crosswalk(campaign, tmp_path, capsys, "--identity-policy", "strict")
     assert code == 10 and any("crosswalk coverage" in p for p in out["operator_task"]["detail"]["problems"]), out
+
+
+# ---------------------------------------------------------------------------
+# page names: one rule for the driver and the builders (chip W, task 113)
+# ---------------------------------------------------------------------------
+
+def _stage_race_campaign(tmp_path, dirname, *, site=None):
+    """A minimal stage-race campaign dir with no `site.prefix` (every non-Tour/Vuelta race)."""
+    d = tmp_path / dirname
+    (d / "predictions" / "stage_01").mkdir(parents=True)
+    cfg = {"slug": dirname, "name": "Some Race", "year": 2026, "is_stage_race": True,
+           "fc_race_id": "999", "start_date": "2026-09-20",
+           "stages": [{"number": 1, "date": "2026-09-20"}]}
+    if site is not None:
+        cfg["site"] = site
+    (d / "campaign.json").write_text(json.dumps(cfg))
+    return d
+
+
+def _builder_resolve_campaign():
+    import runpy
+    import sys
+    build = Path(drv.PROJECT_ROOT) / "netlify_site" / "build"
+    sys.path.insert(0, str(build))
+    try:
+        return runpy.run_path(str(build / "build_stage_page.py"), run_name="_page_for_tests")["resolve_campaign"]
+    finally:
+        sys.path.remove(str(build))
+
+
+def test_a_stage_race_without_a_site_prefix_is_namespaced_by_its_directory(tmp_path):
+    c = drv.Campaign.load(_stage_race_campaign(tmp_path, "cro-race-2026"))
+    assert c.site_prefix == "cro-race-2026-"
+    assert c.stage_page_name(1) == "cro-race-2026-stage01.html"
+    assert c.gc_page_name() == "cro-race-2026-gc.html"
+    assert c.stages_index_name() == "cro-race-2026-stages.html"
+    assert c.own_page_names("stage_01") == ["cro-race-2026-stage01.html", "cro-race-2026-stages.html",
+                                            "cro-race-2026-gc.html"]
+
+
+def test_an_explicit_site_prefix_still_wins(tmp_path):
+    c = drv.Campaign.load(_stage_race_campaign(tmp_path, "cro-race-2026", site={"prefix": "cro-"}))
+    assert c.stage_page_name(1) == "cro-stage01.html" and c.gc_page_name() == "cro-gc.html"
+    empty = drv.Campaign.load(_stage_race_campaign(tmp_path, "other-2026", site={"prefix": ""}))
+    assert empty.stage_page_name(1) == "stage01.html"        # "" is a choice, not an absence
+
+
+def test_the_tour_and_the_vuelta_keep_their_published_names(campaign):
+    vuelta = drv.Campaign.load(campaign)                      # fixture carries site.prefix "vuelta-"
+    assert vuelta.stage_page_name(14) == "vuelta-stage14.html" and vuelta.gc_page_name() == "vuelta-gc.html"
+    for d in ("tour-de-france-2026", "vuelta-2026"):
+        c = drv.Campaign.load(d)                              # the real registry files
+        assert c.stage_page_name(5) == {"tour-de-france-2026": "stage05.html", "vuelta-2026": "vuelta-stage05.html"}[d]
+        assert c.gc_page_name() == {"tour-de-france-2026": "gc.html", "vuelta-2026": "vuelta-gc.html"}[d]
+    # the historical rule survives a registry with no `site` block at all (an old archive)
+    bare = drv.Campaign(dir=Path("/nowhere/vuelta-2026"), cfg={"slug": "vuelta-2026", "year": 2026})
+    assert bare.stage_page_name(1) == "vuelta-stage01.html"
+
+
+@pytest.mark.parametrize("dirname", ["tour-de-france-2026", "vuelta-2026", "cro-race-2026", "okolo-slovenska-2026"])
+def test_the_driver_names_pages_exactly_as_build_stage_page_writes_them(tmp_path, dirname):
+    """Import both sides and compare; the rule itself is not restated here."""
+    resolve_campaign = _builder_resolve_campaign()
+    real = Path(drv.PERF_EVAL) / dirname
+    c = drv.Campaign.load(real) if (real / "campaign.json").exists() else drv.Campaign.load(_stage_race_campaign(tmp_path, dirname))
+    branding = resolve_campaign(dirname, {})
+    for n in (1, 5, 21):
+        assert c.stage_page_name(n) == f"{branding['prefix']}stage{n:02d}.html"
+    assert c.gc_page_name() == f"{branding['prefix']}gc.html"
+    assert c.stages_index_name() == f"{branding['prefix']}stages.html"
+
+
+def _settle_with_fake_scripts(campaign, tmp_path, monkeypatch, *, write_pages):
+    """Run a stage-14 settle with every script faked; `write_pages(argv)` decides what a builder leaves behind."""
+    site = tmp_path / "site"
+    site.mkdir()
+    monkeypatch.setattr(drv, "SITE_DIR", site)
+
+    def fake_run(argv, **kw):
+        write_pages([str(a) for a in argv], site)
+        return subprocess.CompletedProcess(argv, 0, stdout="fake ok\n", stderr="")
+
+    monkeypatch.setattr(drv.subprocess, "run", fake_run)
+    monkeypatch.setattr(drv, "sqlite_lock", lambda *a, **k: __import__("contextlib").nullcontext())
+    code = drv.main(["settle", "--campaign", str(campaign), "--unit", "stage_14", "--store", "fake",
+                     "--store-root", str(tmp_path / "store"), "--crosswalk", str(campaign / "rider_crosswalk.csv"),
+                     "--today", "2026-09-05", "--no-log", "--db-path", str(tmp_path / "nonexistent.db")])
+    return code, site
+
+
+def _honest_builders(argv, site):
+    """What the real builders do: each writes exactly its own campaign's page."""
+    script = Path(argv[1]).name
+    if script == "build_stage_page.py":
+        (site / "vuelta-stage14.html").write_text("<html>stage 14</html>")
+        (site / "vuelta-stages.html").write_text("<html>hub</html>")
+    elif script == "build_gc_tracker.py":
+        (site / "vuelta-gc.html").write_text("<html>gc</html>")
+    elif script == "build_site_index.py":
+        (site / "site-index.json").write_text("{}")
+    elif script == "build_site_frame.py":
+        (site / "_frame").mkdir(exist_ok=True)
+        (site / "_frame" / "home.html").write_text("<html>home</html>")
+
+
+def test_pages_the_builders_wrote_are_staged(campaign, tmp_path, capsys, monkeypatch):
+    code, _ = _settle_with_fake_scripts(campaign, tmp_path, monkeypatch, write_pages=_honest_builders)
+    out = _out(capsys)
+    assert code == 0, out
+    staged = sorted(p for p in (tmp_path / "store" / "site-staging").rglob("*") if p.is_file())
+    names = sorted(p.relative_to(p.parents[len(p.parts) - p.parts.index("site-staging") - 3]).as_posix() for p in staged)
+    assert names == ["_frame/home.html", "site-index.json", "vuelta-gc.html", "vuelta-stage14.html"], names
+
+
+def test_a_page_the_builder_did_not_write_fails_the_run_as_page_missing(campaign, tmp_path, capsys, monkeypatch):
+    """2026-09-21: CRO Race stage_01 'built' its page, staged nothing and exited 0."""
+    def builders_that_forget_the_stage_page(argv, site):
+        if Path(argv[1]).name != "build_stage_page.py":
+            _honest_builders(argv, site)
+
+    code, _ = _settle_with_fake_scripts(campaign, tmp_path, monkeypatch, write_pages=builders_that_forget_the_stage_page)
+    out = _out(capsys)
+    assert code == drv.EXIT_FAILED, out
+    assert out["error_class"] == "page_missing"
+    assert "vuelta-stage14.html" in out["message"]
+    steps = {s["step"]: s["state"] for s in _ledger(tmp_path, "run_steps")}
+    assert steps["stage_page"] == "ok"                        # the builder itself reported fine
+    assert not (tmp_path / "store" / "site-staging").exists() # nothing reached staging
+
+
+def test_a_gc_page_missing_after_an_ok_tracker_step_is_page_missing(campaign, tmp_path, capsys, monkeypatch):
+    def builders_that_forget_the_tracker(argv, site):
+        if Path(argv[1]).name != "build_gc_tracker.py":
+            _honest_builders(argv, site)
+
+    code, _ = _settle_with_fake_scripts(campaign, tmp_path, monkeypatch, write_pages=builders_that_forget_the_tracker)
+    out = _out(capsys)
+    assert code == drv.EXIT_FAILED and out["error_class"] == "page_missing", out
+    assert "vuelta-gc.html" in out["message"]
+
+
+def test_another_campaigns_page_in_the_staging_set_is_page_foreign(campaign, tmp_path, capsys, monkeypatch):
+    """2026-09-21: Okolo Slovenska stage_05 staged the Tour's stage05.html + gc.html under its own run."""
+    def honest(argv, site):
+        _honest_builders(argv, site)
+        (site / "stage05.html").write_text("<html>the Tour's</html>")
+
+    real_build_pages = drv.Driver._build_pages
+
+    def build_pages_with_the_old_fallback(self, unit):
+        real_build_pages(self, unit)
+        self.built_pages.append(drv.SITE_DIR / "stage05.html")     # what the "" fallback produced
+
+    monkeypatch.setattr(drv.Driver, "_build_pages", build_pages_with_the_old_fallback)
+    code, _ = _settle_with_fake_scripts(campaign, tmp_path, monkeypatch, write_pages=honest)
+    out = _out(capsys)
+    assert code == drv.EXIT_FAILED, out
+    assert out["error_class"] == "page_foreign"
+    assert "stage05.html" in out["message"] and "vuelta-2026" in out["message"]
+    assert not (tmp_path / "store" / "site-staging").exists()   # the honest pages did not go up either
+    artifacts = tmp_path / "store" / "nightly-artifacts"           # nor the unit's artifacts
+    assert not any(p.is_file() for p in artifacts.rglob("*")) if artifacts.exists() else True

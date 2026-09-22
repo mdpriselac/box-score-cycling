@@ -31,12 +31,16 @@ never published pages; they appear in /races as archive entries only.
 
 import json
 import re
+import sys
 from datetime import date, datetime
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 SITE_DIR = HERE.parent
 PROJECT_ROOT = SITE_DIR.parent
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+from cycling_project.nightly import site_paths  # noqa: E402  (one rule for page names, chip W)
 PERF_ROOT = PROJECT_ROOT / "performance_eval"
 OUT_PATH = SITE_DIR / "site-index.json"
 PUBLISHED_PATH = SITE_DIR / "published-campaigns.json"
@@ -87,10 +91,7 @@ def registry_campaign(dirname):
         raise ValueError(f"published campaign {dirname!r} has no campaign.json")
     year = int(registry.get("year") or str(registry.get("start_date", ""))[:4])
     site = registry.get("site") or {}
-    slug = str(site.get("route_slug") or registry.get("slug") or dirname)
-    suffix = f"-{year}"
-    if slug.endswith(suffix):
-        slug = slug[:-len(suffix)]
+    slug = site_paths.route_slug(dirname, {**registry, "year": year})
     is_stage = bool(registry.get("is_stage_race"))
     name = str(registry.get("name") or dirname.replace("-", " ").title())
     short_name = str(site.get("short_name") or name)
@@ -103,8 +104,7 @@ def registry_campaign(dirname):
         "name": name if str(year) in name else f"{name} {year}",
         "short_name": short_name,
         "type": "stage_race" if is_stage else "one_day",
-        "prefix": str(site.get("prefix") if site.get("prefix") is not None else
-                      (f"{dirname}-" if is_stage else "")),
+        "prefix": site_paths.site_prefix(dirname, registry, is_stage_race=is_stage),
         "n_stages": len(registry.get("stages") or []) or 1,
         "start_date": registry["start_date"],
         "end_date": registry.get("end_date") or registry["start_date"],
@@ -168,6 +168,9 @@ def load_campaign(camp):
     for source, target in aliases.items():
         if source in site:
             out[target] = site[source]
+    # The legacy table above and campaign.json agree today; site_paths is the
+    # rule of record either way (chip W, 2026-09-22).
+    out["prefix"] = site_paths.site_prefix(camp["dir"], registry, is_stage_race=out["type"] == "stage_race")
     return out
 
 
@@ -180,13 +183,13 @@ def is_one_day(camp):
 
 
 def stage_asset(camp, n):
-    name = f"{camp['prefix']}stage{n:02d}.html"
+    name = site_paths.stage_page_name(camp["prefix"], n)
     return f"/{name}" if (SITE_DIR / name).exists() else None
 
 
 def race_asset(camp):
     """The one-day race's own page, netlify_site/<slug>-<year>.html."""
-    name = f"{camp['slug']}-{camp['year']}.html"
+    name = site_paths.oneday_page_name(camp["dir"], {"site": {"route_slug": camp["slug"]}}, year=camp["year"])
     return f"/{name}" if (SITE_DIR / name).exists() else None
 
 
@@ -221,8 +224,8 @@ def build_race_entry(camp):
     }
 
 
-def named_asset(camp, base):
-    name = f"{camp['prefix']}{base}.html"
+def named_asset(camp, name):
+    """``/<name>`` when netlify_site/<name> exists; ``name`` already carries the prefix."""
     return f"/{name}" if (SITE_DIR / name).exists() else None
 
 
@@ -322,11 +325,11 @@ def build_campaign(camp, today):
     # A one-day race has neither: an empty `prefix` would otherwise match the
     # Tour's own gc.html / stages.html and steal their aliases.
     if not is_one_day(camp):
-        gc_asset = named_asset(camp, "gc")
+        gc_asset = named_asset(camp, site_paths.gc_tracker_name(camp["prefix"]))
         if gc_asset:
             pages["gc"] = {"url": f"{race_url(camp)}/gc", "asset": gc_asset,
                            "title": "GC tracker"}
-        stages_asset = named_asset(camp, "stages")
+        stages_asset = named_asset(camp, site_paths.stages_index_name(camp["prefix"]))
         if stages_asset:
             pages["stages"] = {"url": f"{race_url(camp)}/stages",
                                "asset": stages_asset,

@@ -4,9 +4,10 @@ Generate a campaign's stage-by-stage GC tracker page.
     python3 netlify_site/build/build_gc_tracker.py \
         performance_eval/vuelta-2026/predictions/gc/scenarios.json
 
-Writes netlify_site/[prefix]gc.html — the prefix comes from the campaign
-branding in build_stage_page.py, so a second race publishes alongside the
-first instead of overwriting it. With no argument the TdF GC config is used,
+Writes netlify_site/[prefix]gc.html — the prefix comes from
+cycling_project/nightly/site_paths.py (the one rule the builders and the
+driver share), so a second race publishes alongside the first instead of
+overwriting it. With no argument the TdF GC config is used,
 which keeps the Tour's `gc.html` building exactly as before.
 
 Every evening run of the GC config logs one opinion per rider to
@@ -36,6 +37,7 @@ from build_stage_page import (
     CSS, DB_PATH, PROJECT_ROOT, SITE_DIR,
     esc, pct, provisional_note, resolve_campaign, _fc_to_internal_ids,
 )
+from cycling_project.nightly import site_paths  # noqa: E402  (build_stage_page put PROJECT_ROOT on sys.path)
 
 # Campaign archives — rebound in main() from the config's own campaign
 # directory (<campaign>/predictions/gc/scenarios.json), mirroring
@@ -375,7 +377,7 @@ def build(config):
     <span><b>{len(checks)}</b>&nbsp;checkpoints logged</span>
     <span>updated&nbsp;<b>{datetime.now().strftime('%Y-%m-%d')}</b></span>
   </div>
-  <p class="backlink"><a href="{pfx}stages.html">← {esc(CAMPAIGN['hub_title'])}</a> ·
+  <p class="backlink"><a href="{site_paths.stages_index_name(pfx)}">← {esc(CAMPAIGN['hub_title'])}</a> ·
   <a href="index.html">system overview</a></p>
 </header>
 
@@ -447,7 +449,7 @@ odds from the Kambi (Unibet) capture. Full methodology on the
 </body>
 </html>
 """
-    out = SITE_DIR / f"{pfx}gc.html"
+    out = SITE_DIR / site_paths.gc_tracker_name(pfx)
     out.write_text(page)
     print(f"Wrote {out} ({out.stat().st_size/1024:.0f} KB) — "
           f"{len(checks)} checkpoints through stage {board_stage}, "
