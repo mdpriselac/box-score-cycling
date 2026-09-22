@@ -25,12 +25,36 @@ from cycling_project.nightly.secrets import load_local_env  # noqa: E402
 RUNS_DIR = HERE.parent.parent / "performance_eval" / "runs"
 
 
+def restage_message(specs: list[str]) -> str:
+    lines = []
+    for spec in specs:
+        try:
+            slug, unit, phase = spec.split(":")
+        except ValueError:
+            raise SystemExit(f"--restage wants SLUG:UNIT:PHASE, got {spec!r}")
+        if phase not in ("settle", "preview"):
+            raise SystemExit(f"--restage phase must be settle or preview, got {phase!r}")
+        lines.append(f"uv run python -m cycling_project.nightly {phase} --campaign {slug} --unit {unit} --force")
+    cmds = "\n".join(lines)
+    return (
+        "OPERATOR RE-STAGE INSTRUCTION (after the nightly cycle you were started with has finished).\n"
+        "An earlier release staged the wrong or no site pages for the units below; the current release "
+        "carries the fix. For each line, run exactly that command from /workspace/cycling (the --force "
+        "flag makes the driver ignore the unit's completed marker), then report its JSON status and exit "
+        "code. Do not edit any file, config, result or prediction; do not delegate for these; if a command "
+        "exits 20, report it and continue with the next.\n\n" + cmds + "\n"
+    )
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--api-key", action="store_true", help="authenticate with ANTHROPIC_API_KEY (the cycling-nightly workspace)")
     ap.add_argument("--session-id", default=None, help="re-collect an existing session instead of firing a run")
     ap.add_argument("--max-minutes", type=float, default=90.0)
     ap.add_argument("--yes", action="store_true", help="skip the paid-run confirmation")
+    ap.add_argument("--restage", action="append", default=[], metavar="SLUG:UNIT:PHASE",
+                    help="after the normal cycle, re-run this unit's phase with --force so its staged pages are "
+                         "rebuilt on the current release (repeatable), e.g. okolo-slovenska-2026:stage_05:settle")
     args = ap.parse_args(argv)
 
     # Match provision.py: load the cycling-nightly credential before creating
@@ -64,6 +88,13 @@ def main(argv=None) -> int:
             raise SystemExit(f"deployment run failed: {run.error}")
         sid = run.session_id
         print(f"fired: run {getattr(run, 'id', '?')} → session {sid}")
+        if args.restage:
+            # Queued behind the deployment's own "Run the nightly cycle." message: the coordinator
+            # reads it once the cycle is done. A completed unit is never due again, so this is the
+            # only way to rebuild staging that an earlier release got wrong (chip W, 2026-09-22).
+            client.beta.sessions.events.send(session_id=sid, events=[
+                {"type": "user.message", "content": [{"type": "text", "text": restage_message(args.restage)}]}])
+            print(f"queued re-stage instruction for {len(args.restage)} unit(s)")
         print(f"console: https://platform.claude.com/workspaces/{ws}/sessions/{sid}", flush=True)
         st.stream_until_idle(client, sid, max_minutes=args.max_minutes)
 
