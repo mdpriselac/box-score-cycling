@@ -1,0 +1,43 @@
+[
+ {
+  "agent_key": {
+   "bunch": 0.6,
+   "res_3": 0.25,
+   "res_7": 0.15
+  },
+  "agent_exact": true,
+  "agent_covered": true,
+  "agent_weight_on_true": 0.6,
+  "agent_flagged": true,
+  "agent_self_flag": true,
+  "agent_family_covered": true,
+  "agent_confidence": 0.6,
+  "agent_replay": false,
+  "agent_scored_at": "2026-09-22T16:49:25.721527",
+  "stage": 1,
+  "oracle_item": "bunch",
+  "day_class": "bunch",
+  "rule_type": "mass_sprint",
+  "wg_size": 83,
+  "wg_prop": 0.6975,
+  "winning_time": 14286.0,
+  "winner": "Molano Sebastian",
+  "winner_gc_morning": null,
+  "front5_gc_median": null,
+  "top15_shares": {
+   "sprint": 0.8,
+   "mountain": 0.0,
+   "hilly": 0.067,
+   "rolling": 0.0,
+   "breakaway": 0.067,
+   "time_trial": 0.067
+  },
+  "top15_unknown": 0.0,
+  "day_key": null,
+  "exact": null,
+  "covered": null,
+  "weight_on_true": null,
+  "key_source": null,
+  "scored_at": "2026-09-22T16:49:25.720254"
+ }
+]

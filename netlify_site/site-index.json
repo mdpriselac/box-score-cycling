@@ -1,7 +1,420 @@
 {
- "generated_at": "2026-09-17 15:24",
+ "generated_at": "2026-09-22 16:41",
  "site_name": "Cycling Race Predictor",
  "races": [
+  {
+   "slug": "omloop-van-het-houtland",
+   "year": 2026,
+   "name": "Omloop van het Houtland 2026",
+   "short_name": "Omloop van het Houtland 2026",
+   "type": "one_day",
+   "status": "upcoming",
+   "automated": false,
+   "start_date": "2026-09-23",
+   "end_date": "2026-09-23",
+   "blurb": "Nightly model run and results record for Omloop van het Houtland.",
+   "campaign_dir": "performance_eval/omloop-van-het-houtland-2026",
+   "url": "/race/omloop-van-het-houtland/2026",
+   "pages": {},
+   "stages": [
+    {
+     "stage": null,
+     "unit": "race",
+     "kind": "race",
+     "date": "2026-09-23",
+     "label": "Omloop van het Houtland",
+     "status": "predicted",
+     "predicted": true,
+     "post_hoc": false,
+     "url": "/race/omloop-van-het-houtland/2026/prediction",
+     "asset": "/omloop-van-het-houtland-2026.html"
+    }
+   ],
+   "n_stages": 1,
+   "n_settled": 0,
+   "n_predicted": 1,
+   "post_hoc": false
+  },
+  {
+   "slug": "cro-race",
+   "year": 2026,
+   "name": "CRO Race 2026",
+   "short_name": "CRO Race 2026",
+   "type": "stage_race",
+   "status": "in_progress",
+   "automated": true,
+   "start_date": "2026-09-22",
+   "end_date": "2026-09-27",
+   "blurb": "Nightly model run and results record for CRO Race.",
+   "campaign_dir": "performance_eval/cro-race-2026",
+   "url": "/race/cro-race/2026",
+   "pages": {
+    "gc": {
+     "url": "/race/cro-race/2026/gc",
+     "asset": "/cro-race-2026-gc.html",
+     "title": "GC tracker"
+    },
+    "stages": {
+     "url": "/race/cro-race/2026/stages",
+     "asset": "/cro-race-2026-stages.html",
+     "title": "Stage-by-stage diary"
+    }
+   },
+   "stages": [
+    {
+     "stage": 1,
+     "unit": "stage_01",
+     "kind": "stage",
+     "date": "2026-09-22",
+     "label": "Stage 1 — Split → Seget Donji, 167 km",
+     "status": "settled",
+     "predicted": true,
+     "url": "/race/cro-race/2026/stage-01",
+     "asset": "/cro-race-2026-stage01.html",
+     "post_hoc": false,
+     "day_key": {
+      "bunch": 0.6,
+      "res_3": 0.25,
+      "res_7": 0.15
+     }
+    },
+    {
+     "stage": 2,
+     "unit": "stage_02",
+     "kind": "stage",
+     "date": "2026-09-23",
+     "label": "Stage 2 — Biograd na Moru → Novalja, 114.5 km",
+     "status": "predicted",
+     "predicted": true,
+     "url": "/race/cro-race/2026/stage-02",
+     "asset": "/cro-race-2026-stage02.html",
+     "post_hoc": false,
+     "day_key": {
+      "bunch": 0.7,
+      "res_3": 0.2,
+      "res_7": 0.1
+     }
+    },
+    {
+     "stage": 3,
+     "unit": "stage_03",
+     "kind": "stage",
+     "date": "2026-09-24",
+     "label": "Stage 3 — Krk → Labin, 174.5 km",
+     "status": "upcoming",
+     "predicted": false,
+     "url": null,
+     "asset": null,
+     "post_hoc": false
+    },
+    {
+     "stage": 4,
+     "unit": "stage_04",
+     "kind": "stage",
+     "date": "2026-09-25",
+     "label": "Stage 4 — Pula → Rijeka, 160 km",
+     "status": "upcoming",
+     "predicted": false,
+     "url": null,
+     "asset": null,
+     "post_hoc": false
+    },
+    {
+     "stage": 5,
+     "unit": "stage_05",
+     "kind": "stage",
+     "date": "2026-09-26",
+     "label": "Stage 5 — Karlovac → Sveta Nedelja, 164.5 km",
+     "status": "upcoming",
+     "predicted": false,
+     "url": null,
+     "asset": null,
+     "post_hoc": false
+    },
+    {
+     "stage": 6,
+     "unit": "stage_06",
+     "kind": "stage",
+     "date": "2026-09-27",
+     "label": "Stage 6 — Samobor → Zagreb, 159.5 km",
+     "status": "upcoming",
+     "predicted": false,
+     "url": null,
+     "asset": null,
+     "post_hoc": false
+    }
+   ],
+   "n_stages": 6,
+   "n_settled": 1,
+   "n_predicted": 2,
+   "post_hoc": false
+  },
+  {
+   "slug": "gp-d-isbergues",
+   "year": 2026,
+   "name": "GP d'Isbergues 2026",
+   "short_name": "GP d'Isbergues 2026",
+   "type": "one_day",
+   "status": "settled",
+   "automated": false,
+   "start_date": "2026-09-20",
+   "end_date": "2026-09-20",
+   "blurb": "Nightly model run and results record for GP d'Isbergues.",
+   "campaign_dir": "performance_eval/gp-d-isbergues-2026",
+   "url": "/race/gp-d-isbergues/2026",
+   "pages": {},
+   "stages": [
+    {
+     "stage": null,
+     "unit": "race",
+     "kind": "race",
+     "date": "2026-09-20",
+     "label": "GP d'Isbergues",
+     "status": "settled",
+     "predicted": true,
+     "post_hoc": false,
+     "url": "/race/gp-d-isbergues/2026/prediction",
+     "asset": "/gp-d-isbergues-2026.html"
+    }
+   ],
+   "n_stages": 1,
+   "n_settled": 1,
+   "n_predicted": 1,
+   "post_hoc": false
+  },
+  {
+   "slug": "gooikse-pijl",
+   "year": 2026,
+   "name": "Gooikse Pijl 2026",
+   "short_name": "Gooikse Pijl 2026",
+   "type": "one_day",
+   "status": "settled",
+   "automated": false,
+   "start_date": "2026-09-20",
+   "end_date": "2026-09-20",
+   "blurb": "Nightly model run and results record for Gooikse Pijl.",
+   "campaign_dir": "performance_eval/gooikse-pijl-2026",
+   "url": "/race/gooikse-pijl/2026",
+   "pages": {},
+   "stages": [
+    {
+     "stage": null,
+     "unit": "race",
+     "kind": "race",
+     "date": "2026-09-20",
+     "label": "Gooikse Pijl",
+     "status": "settled",
+     "predicted": true,
+     "post_hoc": false,
+     "url": "/race/gooikse-pijl/2026/prediction",
+     "asset": "/gooikse-pijl-2026.html"
+    }
+   ],
+   "n_stages": 1,
+   "n_settled": 1,
+   "n_predicted": 1,
+   "post_hoc": false
+  },
+  {
+   "slug": "giro-di-campania",
+   "year": 2026,
+   "name": "Giro di Campania 2026",
+   "short_name": "Giro di Campania 2026",
+   "type": "one_day",
+   "status": "settled",
+   "automated": false,
+   "start_date": "2026-09-20",
+   "end_date": "2026-09-20",
+   "blurb": "Nightly model run and results record for Giro di Campania.",
+   "campaign_dir": "performance_eval/giro-di-campania-2026",
+   "url": "/race/giro-di-campania/2026",
+   "pages": {},
+   "stages": [
+    {
+     "stage": null,
+     "unit": "race",
+     "kind": "race",
+     "date": "2026-09-20",
+     "label": "Giro di Campania (no prediction made)",
+     "status": "settled",
+     "predicted": true,
+     "post_hoc": true,
+     "url": "/race/giro-di-campania/2026/prediction",
+     "asset": "/giro-di-campania-2026.html"
+    }
+   ],
+   "n_stages": 1,
+   "n_settled": 1,
+   "n_predicted": 1,
+   "post_hoc": true
+  },
+  {
+   "slug": "giro-del-lazio",
+   "year": 2026,
+   "name": "Giro del Lazio 2026",
+   "short_name": "Giro del Lazio 2026",
+   "type": "one_day",
+   "status": "settled",
+   "automated": false,
+   "start_date": "2026-09-19",
+   "end_date": "2026-09-19",
+   "blurb": "Nightly model run and results record for Giro del Lazio.",
+   "campaign_dir": "performance_eval/giro-del-lazio-2026",
+   "url": "/race/giro-del-lazio/2026",
+   "pages": {},
+   "stages": [
+    {
+     "stage": null,
+     "unit": "race",
+     "kind": "race",
+     "date": "2026-09-19",
+     "label": "Giro del Lazio",
+     "status": "settled",
+     "predicted": true,
+     "post_hoc": false,
+     "url": "/race/giro-del-lazio/2026/prediction",
+     "asset": "/giro-del-lazio-2026.html"
+    }
+   ],
+   "n_stages": 1,
+   "n_settled": 1,
+   "n_predicted": 1,
+   "post_hoc": false
+  },
+  {
+   "slug": "flandrien-0-0-classic",
+   "year": 2026,
+   "name": "Flandrien 0.0 Classic 2026",
+   "short_name": "Flandrien 0.0 Classic 2026",
+   "type": "one_day",
+   "status": "settled",
+   "automated": true,
+   "start_date": "2026-09-19",
+   "end_date": "2026-09-19",
+   "blurb": "Nightly model run and results record for Flandrien 0.0 Classic.",
+   "campaign_dir": "performance_eval/flandrien-0-0-classic-2026",
+   "url": "/race/flandrien-0-0-classic/2026",
+   "pages": {},
+   "stages": [
+    {
+     "stage": null,
+     "unit": "race",
+     "kind": "race",
+     "date": "2026-09-19",
+     "label": "Flandrien 0.0 Classic",
+     "status": "settled",
+     "predicted": true,
+     "post_hoc": false,
+     "url": "/race/flandrien-0-0-classic/2026/prediction",
+     "asset": "/flandrien-0-0-classic-2026.html"
+    }
+   ],
+   "n_stages": 1,
+   "n_settled": 1,
+   "n_predicted": 1,
+   "post_hoc": false
+  },
+  {
+   "slug": "kamp-van-vlaanderen",
+   "year": 2026,
+   "name": "Kamp. van Vlaanderen 2026",
+   "short_name": "Kamp. van Vlaanderen 2026",
+   "type": "one_day",
+   "status": "settled",
+   "automated": false,
+   "start_date": "2026-09-18",
+   "end_date": "2026-09-18",
+   "blurb": "Nightly model run and results record for Kamp. van Vlaanderen.",
+   "campaign_dir": "performance_eval/kamp-van-vlaanderen-2026",
+   "url": "/race/kamp-van-vlaanderen/2026",
+   "pages": {},
+   "stages": [
+    {
+     "stage": null,
+     "unit": "race",
+     "kind": "race",
+     "date": "2026-09-18",
+     "label": "Kamp. van Vlaanderen (no prediction made)",
+     "status": "settled",
+     "predicted": true,
+     "post_hoc": true,
+     "url": "/race/kamp-van-vlaanderen/2026/prediction",
+     "asset": "/kamp-van-vlaanderen-2026.html"
+    }
+   ],
+   "n_stages": 1,
+   "n_settled": 1,
+   "n_predicted": 1,
+   "post_hoc": true
+  },
+  {
+   "slug": "tour-of-huangshan",
+   "year": 2026,
+   "name": "Tour of Huangshan 2026",
+   "short_name": "Tour of Huangshan 2026",
+   "type": "stage_race",
+   "status": "settled",
+   "automated": false,
+   "start_date": "2026-09-18",
+   "end_date": "2026-09-20",
+   "blurb": "Nightly model run and results record for Tour of Huangshan.",
+   "campaign_dir": "performance_eval/tour-of-huangshan-2026",
+   "url": "/race/tour-of-huangshan/2026",
+   "pages": {
+    "stages": {
+     "url": "/race/tour-of-huangshan/2026/stages",
+     "asset": "/tour-of-huangshan-2026-stages.html",
+     "title": "Stage-by-stage diary"
+    }
+   },
+   "stages": [
+    {
+     "stage": 1,
+     "unit": "stage_01",
+     "kind": "stage",
+     "date": "2026-09-18",
+     "label": "Stage 1 (no prediction made)",
+     "status": "settled",
+     "predicted": true,
+     "url": "/race/tour-of-huangshan/2026/stage-01",
+     "asset": "/tour-of-huangshan-2026-stage01.html",
+     "post_hoc": true
+    },
+    {
+     "stage": 2,
+     "unit": "stage_02",
+     "kind": "stage",
+     "date": "2026-09-19",
+     "label": "Stage 2 (no prediction made)",
+     "status": "settled",
+     "predicted": true,
+     "url": "/race/tour-of-huangshan/2026/stage-02",
+     "asset": "/tour-of-huangshan-2026-stage02.html",
+     "post_hoc": true
+    },
+    {
+     "stage": 3,
+     "unit": "stage_03",
+     "kind": "stage",
+     "date": "2026-09-20",
+     "label": "Stage 3 — Huangshan → Huangshan, 140 km",
+     "status": "settled",
+     "predicted": true,
+     "url": "/race/tour-of-huangshan/2026/stage-03",
+     "asset": "/tour-of-huangshan-2026-stage03.html",
+     "post_hoc": false,
+     "day_key": {
+      "bunch": 0.6,
+      "res_3": 0.25,
+      "gc_day": 0.15
+     }
+    }
+   ],
+   "n_stages": 3,
+   "n_settled": 3,
+   "n_predicted": 3,
+   "post_hoc": false
+  },
   {
    "slug": "grand-prix-de-wallonie",
    "year": 2026,
@@ -9,6 +422,7 @@
    "short_name": "Grand Prix de Wallonie 2026",
    "type": "one_day",
    "status": "settled",
+   "automated": true,
    "start_date": "2026-09-16",
    "end_date": "2026-09-16",
    "blurb": "Nightly model run and results record for Grand Prix de Wallonie.",
@@ -40,7 +454,8 @@
    "name": "Tour de Luxembourg 2026",
    "short_name": "Tour de Luxembourg 2026",
    "type": "stage_race",
-   "status": "in_progress",
+   "status": "settled",
+   "automated": true,
    "start_date": "2026-09-16",
    "end_date": "2026-09-20",
    "blurb": "Nightly model run and results record for Tour de Luxembourg.",
@@ -82,43 +497,140 @@
      "stage": 3,
      "unit": "stage_03",
      "kind": "stage",
-     "date": null,
-     "label": "Stage 3",
-     "status": "upcoming",
-     "predicted": false,
-     "url": null,
-     "asset": null,
-     "post_hoc": false
+     "date": "2026-09-18",
+     "label": "Stage 3 (no prediction made)",
+     "status": "settled",
+     "predicted": true,
+     "url": "/race/tour-de-luxembourg/2026/stage-03",
+     "asset": "/tour-de-luxembourg-2026-stage03.html",
+     "post_hoc": true
     },
     {
      "stage": 4,
      "unit": "stage_04",
      "kind": "stage",
-     "date": null,
-     "label": "Stage 4",
-     "status": "upcoming",
-     "predicted": false,
-     "url": null,
-     "asset": null,
-     "post_hoc": false
+     "date": "2026-09-19",
+     "label": "Stage 4 (no prediction made)",
+     "status": "settled",
+     "predicted": true,
+     "url": "/race/tour-de-luxembourg/2026/stage-04",
+     "asset": "/tour-de-luxembourg-2026-stage04.html",
+     "post_hoc": true
     },
     {
      "stage": 5,
      "unit": "stage_05",
      "kind": "stage",
-     "date": null,
-     "label": "Stage 5",
-     "status": "upcoming",
-     "predicted": false,
-     "url": null,
-     "asset": null,
-     "post_hoc": false
+     "date": "2026-09-20",
+     "label": "Stage 5 — Mersch → Luxembourg-Limpertsberg, 177.4 km",
+     "status": "settled",
+     "predicted": true,
+     "url": "/race/tour-de-luxembourg/2026/stage-05",
+     "asset": "/tour-de-luxembourg-2026-stage05.html",
+     "post_hoc": false,
+     "day_key": {
+      "gc_day": 0.45,
+      "res_4": 0.35,
+      "res_6": 0.2
+     }
     }
    ],
    "n_stages": 5,
-   "n_settled": 2,
-   "n_predicted": 2,
+   "n_settled": 5,
+   "n_predicted": 5,
    "post_hoc": false
+  },
+  {
+   "slug": "okolo-slovenska",
+   "year": 2026,
+   "name": "Okolo Slovenska 2026",
+   "short_name": "Okolo Slovenska 2026",
+   "type": "stage_race",
+   "status": "settled",
+   "automated": false,
+   "start_date": "2026-09-16",
+   "end_date": "2026-09-20",
+   "blurb": "Nightly model run and results record for Okolo Slovenska.",
+   "campaign_dir": "performance_eval/okolo-slovenska-2026",
+   "url": "/race/okolo-slovenska/2026",
+   "pages": {
+    "gc": {
+     "url": "/race/okolo-slovenska/2026/gc",
+     "asset": "/okolo-slovenska-2026-gc.html",
+     "title": "GC tracker"
+    },
+    "stages": {
+     "url": "/race/okolo-slovenska/2026/stages",
+     "asset": "/okolo-slovenska-2026-stages.html",
+     "title": "Stage-by-stage diary"
+    }
+   },
+   "stages": [
+    {
+     "stage": 1,
+     "unit": "stage_01",
+     "kind": "stage",
+     "date": "2026-09-16",
+     "label": "Stage 1 (no prediction made)",
+     "status": "settled",
+     "predicted": true,
+     "url": "/race/okolo-slovenska/2026/stage-01",
+     "asset": "/okolo-slovenska-2026-stage01.html",
+     "post_hoc": true
+    },
+    {
+     "stage": 2,
+     "unit": "stage_02",
+     "kind": "stage",
+     "date": "2026-09-17",
+     "label": "Stage 2 (no prediction made)",
+     "status": "settled",
+     "predicted": true,
+     "url": "/race/okolo-slovenska/2026/stage-02",
+     "asset": "/okolo-slovenska-2026-stage02.html",
+     "post_hoc": true
+    },
+    {
+     "stage": 3,
+     "unit": "stage_03",
+     "kind": "stage",
+     "date": "2026-09-18",
+     "label": "Stage 3 (no prediction made)",
+     "status": "settled",
+     "predicted": true,
+     "url": "/race/okolo-slovenska/2026/stage-03",
+     "asset": "/okolo-slovenska-2026-stage03.html",
+     "post_hoc": true
+    },
+    {
+     "stage": 4,
+     "unit": "stage_04",
+     "kind": "stage",
+     "date": "2026-09-19",
+     "label": "Stage 4 (no prediction made)",
+     "status": "settled",
+     "predicted": true,
+     "url": "/race/okolo-slovenska/2026/stage-04",
+     "asset": "/okolo-slovenska-2026-stage04.html",
+     "post_hoc": true
+    },
+    {
+     "stage": 5,
+     "unit": "stage_05",
+     "kind": "stage",
+     "date": "2026-09-20",
+     "label": "Stage 5 (no prediction made)",
+     "status": "settled",
+     "predicted": true,
+     "url": "/race/okolo-slovenska/2026/stage-05",
+     "asset": "/okolo-slovenska-2026-stage05.html",
+     "post_hoc": true
+    }
+   ],
+   "n_stages": 5,
+   "n_settled": 5,
+   "n_predicted": 5,
+   "post_hoc": true
   },
   {
    "slug": "giro-d-abruzzo",
@@ -126,7 +638,8 @@
    "name": "Giro d'Abruzzo 2026",
    "short_name": "Giro d'Abruzzo 2026",
    "type": "stage_race",
-   "status": "in_progress",
+   "status": "settled",
+   "automated": false,
    "start_date": "2026-09-15",
    "end_date": "2026-09-18",
    "blurb": "Nightly model run and results record for Giro d'Abruzzo.",
@@ -180,19 +693,19 @@
      "stage": 4,
      "unit": "stage_04",
      "kind": "stage",
-     "date": null,
-     "label": "Stage 4",
-     "status": "upcoming",
-     "predicted": false,
-     "url": null,
-     "asset": null,
-     "post_hoc": false
+     "date": "2026-09-18",
+     "label": "Stage 4 (no prediction made)",
+     "status": "settled",
+     "predicted": true,
+     "url": "/race/giro-d-abruzzo/2026/stage-04",
+     "asset": "/giro-d-abruzzo-2026-stage04.html",
+     "post_hoc": true
     }
    ],
    "n_stages": 4,
-   "n_settled": 3,
-   "n_predicted": 3,
-   "post_hoc": false
+   "n_settled": 4,
+   "n_predicted": 4,
+   "post_hoc": true
   },
   {
    "slug": "gp-de-fourmies",
@@ -201,6 +714,7 @@
    "short_name": "GP de Fourmies 2026",
    "type": "one_day",
    "status": "settled",
+   "automated": true,
    "start_date": "2026-09-13",
    "end_date": "2026-09-13",
    "blurb": "Nightly model run and results record for GP de Fourmies.",
@@ -233,6 +747,7 @@
    "short_name": "GP Montreal 2026",
    "type": "one_day",
    "status": "settled",
+   "automated": true,
    "start_date": "2026-09-13",
    "end_date": "2026-09-13",
    "blurb": "Nightly model run and results record for GP Montreal.",
@@ -265,6 +780,7 @@
    "short_name": "Trofeo Matteotti 2026",
    "type": "one_day",
    "status": "settled",
+   "automated": false,
    "start_date": "2026-09-13",
    "end_date": "2026-09-13",
    "blurb": "Nightly model run and results record for Trofeo Matteotti.",
@@ -297,6 +813,7 @@
    "short_name": "Memorial Pantani 2026",
    "type": "one_day",
    "status": "settled",
+   "automated": false,
    "start_date": "2026-09-12",
    "end_date": "2026-09-12",
    "blurb": "Nightly model run and results record for Memorial Pantani.",
@@ -329,6 +846,7 @@
    "short_name": "Tour of Taihu Lake 2026",
    "type": "stage_race",
    "status": "settled",
+   "automated": false,
    "start_date": "2026-09-12",
    "end_date": "2026-09-16",
    "blurb": "Nightly model run and results record for Tour of Taihu Lake.",
@@ -394,7 +912,7 @@
      "stage": 5,
      "unit": "stage_05",
      "kind": "stage",
-     "date": null,
+     "date": "2026-09-16",
      "label": "Stage 5",
      "status": "upcoming",
      "predicted": false,
@@ -415,6 +933,7 @@
    "short_name": "GP Québec 2026",
    "type": "one_day",
    "status": "settled",
+   "automated": true,
    "start_date": "2026-09-11",
    "end_date": "2026-09-11",
    "blurb": "Nightly model run and results record for GP Québec.",
@@ -447,6 +966,7 @@
    "short_name": "Coppa Sabatini 2026",
    "type": "one_day",
    "status": "settled",
+   "automated": true,
    "start_date": "2026-09-10",
    "end_date": "2026-09-10",
    "blurb": "Nightly model run and results record for Coppa Sabatini.",
@@ -479,6 +999,7 @@
    "short_name": "Giro della Toscana 2026",
    "type": "one_day",
    "status": "settled",
+   "automated": false,
    "start_date": "2026-09-09",
    "end_date": "2026-09-09",
    "blurb": "Nightly model run and results record for Giro della Toscana.",
@@ -510,7 +1031,8 @@
    "name": "Tour of Binzhou 2026",
    "short_name": "Tour of Binzhou 2026",
    "type": "one_day",
-   "status": "settled",
+   "status": "not_covered",
+   "automated": false,
    "start_date": "2026-09-09",
    "end_date": "2026-09-09",
    "blurb": "Nightly model run and results record for Tour of Binzhou.",
@@ -543,6 +1065,7 @@
    "short_name": "GP Industria & Artigianato 2026",
    "type": "one_day",
    "status": "settled",
+   "automated": true,
    "start_date": "2026-09-06",
    "end_date": "2026-09-06",
    "blurb": "Nightly model run and results record for GP Industria & Artigianato.",
@@ -575,6 +1098,7 @@
    "short_name": "Tour of Istanbul 2026",
    "type": "stage_race",
    "status": "settled",
+   "automated": false,
    "start_date": "2026-09-03",
    "end_date": "2026-09-06",
    "blurb": "Nightly model run and results record for Tour of Istanbul.",
@@ -604,7 +1128,7 @@
      "stage": 2,
      "unit": "stage_02",
      "kind": "stage",
-     "date": null,
+     "date": "2026-09-04",
      "label": "Stage 2",
      "status": "settled",
      "predicted": false,
@@ -616,7 +1140,7 @@
      "stage": 3,
      "unit": "stage_03",
      "kind": "stage",
-     "date": null,
+     "date": "2026-09-05",
      "label": "Stage 3",
      "status": "upcoming",
      "predicted": false,
@@ -628,7 +1152,7 @@
      "stage": 4,
      "unit": "stage_04",
      "kind": "stage",
-     "date": null,
+     "date": "2026-09-06",
      "label": "Stage 4",
      "status": "upcoming",
      "predicted": false,
@@ -649,6 +1173,7 @@
    "short_name": "ZLM Tour 2026",
    "type": "stage_race",
    "status": "settled",
+   "automated": false,
    "start_date": "2026-09-02",
    "end_date": "2026-09-06",
    "blurb": "Nightly model run and results record for ZLM Tour.",
@@ -678,7 +1203,7 @@
      "stage": 2,
      "unit": "stage_02",
      "kind": "stage",
-     "date": null,
+     "date": "2026-09-03",
      "label": "Stage 2",
      "status": "settled",
      "predicted": false,
@@ -690,7 +1215,7 @@
      "stage": 3,
      "unit": "stage_03",
      "kind": "stage",
-     "date": null,
+     "date": "2026-09-04",
      "label": "Stage 3",
      "status": "settled",
      "predicted": false,
@@ -702,7 +1227,7 @@
      "stage": 4,
      "unit": "stage_04",
      "kind": "stage",
-     "date": null,
+     "date": "2026-09-05",
      "label": "Stage 4",
      "status": "settled",
      "predicted": false,
@@ -714,7 +1239,7 @@
      "stage": 5,
      "unit": "stage_05",
      "kind": "stage",
-     "date": null,
+     "date": "2026-09-06",
      "label": "Stage 5",
      "status": "upcoming",
      "predicted": false,
@@ -735,6 +1260,7 @@
    "short_name": "Tour of Britain 2026",
    "type": "stage_race",
    "status": "settled",
+   "automated": true,
    "start_date": "2026-09-02",
    "end_date": "2026-09-06",
    "blurb": "Nightly model run and results record for Tour of Britain.",
@@ -758,7 +1284,7 @@
      "stage": 2,
      "unit": "stage_02",
      "kind": "stage",
-     "date": null,
+     "date": "2026-09-03",
      "label": "Stage 2",
      "status": "settled",
      "predicted": false,
@@ -770,7 +1296,7 @@
      "stage": 3,
      "unit": "stage_03",
      "kind": "stage",
-     "date": null,
+     "date": "2026-09-04",
      "label": "Stage 3",
      "status": "settled",
      "predicted": false,
@@ -782,7 +1308,7 @@
      "stage": 4,
      "unit": "stage_04",
      "kind": "stage",
-     "date": null,
+     "date": "2026-09-05",
      "label": "Stage 4",
      "status": "settled",
      "predicted": false,
@@ -794,7 +1320,7 @@
      "stage": 5,
      "unit": "stage_05",
      "kind": "stage",
-     "date": null,
+     "date": "2026-09-06",
      "label": "Stage 5",
      "status": "upcoming",
      "predicted": false,
@@ -815,6 +1341,7 @@
    "short_name": "Vuelta 2026",
    "type": "stage_race",
    "status": "settled",
+   "automated": true,
    "start_date": "2026-08-22",
    "end_date": "2026-09-13",
    "blurb": "The live campaign: day-type keys chosen each morning, stage predictions published before the flag drops, and a GC tracker updated as the race reshapes itself.",
@@ -1180,6 +1707,7 @@
    "short_name": "TdF 2026",
    "type": "stage_race",
    "status": "settled",
+   "automated": true,
    "start_date": "2026-07-04",
    "end_date": "2026-07-26",
    "blurb": "Twenty-one stages predicted the evening before and settled the evening after — the model's first full grand tour in public, benchmarked against the market throughout.",
@@ -1614,14 +2142,40 @@
  "default_month": "2026-09",
  "aliases": {
   "/index.html": "/model",
+  "/omloop-van-het-houtland-2026.html": "/race/omloop-van-het-houtland/2026/prediction",
+  "/cro-race-2026-gc.html": "/race/cro-race/2026/gc",
+  "/cro-race-2026-stages.html": "/race/cro-race/2026/stages",
+  "/cro-race-2026-stage01.html": "/race/cro-race/2026/stage-01",
+  "/cro-race-2026-stage02.html": "/race/cro-race/2026/stage-02",
+  "/gp-d-isbergues-2026.html": "/race/gp-d-isbergues/2026/prediction",
+  "/gooikse-pijl-2026.html": "/race/gooikse-pijl/2026/prediction",
+  "/giro-di-campania-2026.html": "/race/giro-di-campania/2026/prediction",
+  "/giro-del-lazio-2026.html": "/race/giro-del-lazio/2026/prediction",
+  "/flandrien-0-0-classic-2026.html": "/race/flandrien-0-0-classic/2026/prediction",
+  "/kamp-van-vlaanderen-2026.html": "/race/kamp-van-vlaanderen/2026/prediction",
+  "/tour-of-huangshan-2026-stages.html": "/race/tour-of-huangshan/2026/stages",
+  "/tour-of-huangshan-2026-stage01.html": "/race/tour-of-huangshan/2026/stage-01",
+  "/tour-of-huangshan-2026-stage02.html": "/race/tour-of-huangshan/2026/stage-02",
+  "/tour-of-huangshan-2026-stage03.html": "/race/tour-of-huangshan/2026/stage-03",
   "/grand-prix-de-wallonie-2026.html": "/race/grand-prix-de-wallonie/2026/prediction",
   "/tour-de-luxembourg-2026-stages.html": "/race/tour-de-luxembourg/2026/stages",
   "/tour-de-luxembourg-2026-stage01.html": "/race/tour-de-luxembourg/2026/stage-01",
   "/tour-de-luxembourg-2026-stage02.html": "/race/tour-de-luxembourg/2026/stage-02",
+  "/tour-de-luxembourg-2026-stage03.html": "/race/tour-de-luxembourg/2026/stage-03",
+  "/tour-de-luxembourg-2026-stage04.html": "/race/tour-de-luxembourg/2026/stage-04",
+  "/tour-de-luxembourg-2026-stage05.html": "/race/tour-de-luxembourg/2026/stage-05",
+  "/okolo-slovenska-2026-gc.html": "/race/okolo-slovenska/2026/gc",
+  "/okolo-slovenska-2026-stages.html": "/race/okolo-slovenska/2026/stages",
+  "/okolo-slovenska-2026-stage01.html": "/race/okolo-slovenska/2026/stage-01",
+  "/okolo-slovenska-2026-stage02.html": "/race/okolo-slovenska/2026/stage-02",
+  "/okolo-slovenska-2026-stage03.html": "/race/okolo-slovenska/2026/stage-03",
+  "/okolo-slovenska-2026-stage04.html": "/race/okolo-slovenska/2026/stage-04",
+  "/okolo-slovenska-2026-stage05.html": "/race/okolo-slovenska/2026/stage-05",
   "/giro-d-abruzzo-2026-stages.html": "/race/giro-d-abruzzo/2026/stages",
   "/giro-d-abruzzo-2026-stage01.html": "/race/giro-d-abruzzo/2026/stage-01",
   "/giro-d-abruzzo-2026-stage02.html": "/race/giro-d-abruzzo/2026/stage-02",
   "/giro-d-abruzzo-2026-stage03.html": "/race/giro-d-abruzzo/2026/stage-03",
+  "/giro-d-abruzzo-2026-stage04.html": "/race/giro-d-abruzzo/2026/stage-04",
   "/gp-de-fourmies-2026.html": "/race/gp-de-fourmies/2026/prediction",
   "/gp-montreal-2026.html": "/race/gp-montreal/2026/prediction",
   "/trofeo-matteotti-2026.html": "/race/trofeo-matteotti/2026/prediction",
@@ -1697,6 +2251,123 @@
    "chrome": true,
    "active": "model"
   },
+  "/race/omloop-van-het-houtland/2026": {
+   "asset": "/_frame/race/omloop-van-het-houtland-2026.html"
+  },
+  "/race/omloop-van-het-houtland/2026/prediction": {
+   "asset": "/omloop-van-het-houtland-2026.html",
+   "base": true,
+   "chrome": true,
+   "active": "races"
+  },
+  "/race/cro-race/2026": {
+   "asset": "/_frame/race/cro-race-2026.html"
+  },
+  "/race/cro-race/2026/gc": {
+   "asset": "/cro-race-2026-gc.html",
+   "base": true,
+   "chrome": true,
+   "active": "races"
+  },
+  "/race/cro-race/2026/stages": {
+   "asset": "/cro-race-2026-stages.html",
+   "base": true,
+   "chrome": true,
+   "active": "races"
+  },
+  "/race/cro-race/2026/stage-01": {
+   "asset": "/cro-race-2026-stage01.html",
+   "base": true,
+   "chrome": true,
+   "active": "races"
+  },
+  "/race/cro-race/2026/stage-02": {
+   "asset": "/cro-race-2026-stage02.html",
+   "base": true,
+   "chrome": true,
+   "active": "races"
+  },
+  "/race/gp-d-isbergues/2026": {
+   "asset": "/_frame/race/gp-d-isbergues-2026.html"
+  },
+  "/race/gp-d-isbergues/2026/prediction": {
+   "asset": "/gp-d-isbergues-2026.html",
+   "base": true,
+   "chrome": true,
+   "active": "races"
+  },
+  "/race/gooikse-pijl/2026": {
+   "asset": "/_frame/race/gooikse-pijl-2026.html"
+  },
+  "/race/gooikse-pijl/2026/prediction": {
+   "asset": "/gooikse-pijl-2026.html",
+   "base": true,
+   "chrome": true,
+   "active": "races"
+  },
+  "/race/giro-di-campania/2026": {
+   "asset": "/_frame/race/giro-di-campania-2026.html"
+  },
+  "/race/giro-di-campania/2026/prediction": {
+   "asset": "/giro-di-campania-2026.html",
+   "base": true,
+   "chrome": true,
+   "active": "races"
+  },
+  "/race/giro-del-lazio/2026": {
+   "asset": "/_frame/race/giro-del-lazio-2026.html"
+  },
+  "/race/giro-del-lazio/2026/prediction": {
+   "asset": "/giro-del-lazio-2026.html",
+   "base": true,
+   "chrome": true,
+   "active": "races"
+  },
+  "/race/flandrien-0-0-classic/2026": {
+   "asset": "/_frame/race/flandrien-0-0-classic-2026.html"
+  },
+  "/race/flandrien-0-0-classic/2026/prediction": {
+   "asset": "/flandrien-0-0-classic-2026.html",
+   "base": true,
+   "chrome": true,
+   "active": "races"
+  },
+  "/race/kamp-van-vlaanderen/2026": {
+   "asset": "/_frame/race/kamp-van-vlaanderen-2026.html"
+  },
+  "/race/kamp-van-vlaanderen/2026/prediction": {
+   "asset": "/kamp-van-vlaanderen-2026.html",
+   "base": true,
+   "chrome": true,
+   "active": "races"
+  },
+  "/race/tour-of-huangshan/2026": {
+   "asset": "/_frame/race/tour-of-huangshan-2026.html"
+  },
+  "/race/tour-of-huangshan/2026/stages": {
+   "asset": "/tour-of-huangshan-2026-stages.html",
+   "base": true,
+   "chrome": true,
+   "active": "races"
+  },
+  "/race/tour-of-huangshan/2026/stage-01": {
+   "asset": "/tour-of-huangshan-2026-stage01.html",
+   "base": true,
+   "chrome": true,
+   "active": "races"
+  },
+  "/race/tour-of-huangshan/2026/stage-02": {
+   "asset": "/tour-of-huangshan-2026-stage02.html",
+   "base": true,
+   "chrome": true,
+   "active": "races"
+  },
+  "/race/tour-of-huangshan/2026/stage-03": {
+   "asset": "/tour-of-huangshan-2026-stage03.html",
+   "base": true,
+   "chrome": true,
+   "active": "races"
+  },
   "/race/grand-prix-de-wallonie/2026": {
    "asset": "/_frame/race/grand-prix-de-wallonie-2026.html"
   },
@@ -1727,6 +2398,69 @@
    "chrome": true,
    "active": "races"
   },
+  "/race/tour-de-luxembourg/2026/stage-03": {
+   "asset": "/tour-de-luxembourg-2026-stage03.html",
+   "base": true,
+   "chrome": true,
+   "active": "races"
+  },
+  "/race/tour-de-luxembourg/2026/stage-04": {
+   "asset": "/tour-de-luxembourg-2026-stage04.html",
+   "base": true,
+   "chrome": true,
+   "active": "races"
+  },
+  "/race/tour-de-luxembourg/2026/stage-05": {
+   "asset": "/tour-de-luxembourg-2026-stage05.html",
+   "base": true,
+   "chrome": true,
+   "active": "races"
+  },
+  "/race/okolo-slovenska/2026": {
+   "asset": "/_frame/race/okolo-slovenska-2026.html"
+  },
+  "/race/okolo-slovenska/2026/gc": {
+   "asset": "/okolo-slovenska-2026-gc.html",
+   "base": true,
+   "chrome": true,
+   "active": "races"
+  },
+  "/race/okolo-slovenska/2026/stages": {
+   "asset": "/okolo-slovenska-2026-stages.html",
+   "base": true,
+   "chrome": true,
+   "active": "races"
+  },
+  "/race/okolo-slovenska/2026/stage-01": {
+   "asset": "/okolo-slovenska-2026-stage01.html",
+   "base": true,
+   "chrome": true,
+   "active": "races"
+  },
+  "/race/okolo-slovenska/2026/stage-02": {
+   "asset": "/okolo-slovenska-2026-stage02.html",
+   "base": true,
+   "chrome": true,
+   "active": "races"
+  },
+  "/race/okolo-slovenska/2026/stage-03": {
+   "asset": "/okolo-slovenska-2026-stage03.html",
+   "base": true,
+   "chrome": true,
+   "active": "races"
+  },
+  "/race/okolo-slovenska/2026/stage-04": {
+   "asset": "/okolo-slovenska-2026-stage04.html",
+   "base": true,
+   "chrome": true,
+   "active": "races"
+  },
+  "/race/okolo-slovenska/2026/stage-05": {
+   "asset": "/okolo-slovenska-2026-stage05.html",
+   "base": true,
+   "chrome": true,
+   "active": "races"
+  },
   "/race/giro-d-abruzzo/2026": {
    "asset": "/_frame/race/giro-d-abruzzo-2026.html"
   },
@@ -1750,6 +2484,12 @@
   },
   "/race/giro-d-abruzzo/2026/stage-03": {
    "asset": "/giro-d-abruzzo-2026-stage03.html",
+   "base": true,
+   "chrome": true,
+   "active": "races"
+  },
+  "/race/giro-d-abruzzo/2026/stage-04": {
+   "asset": "/giro-d-abruzzo-2026-stage04.html",
    "base": true,
    "chrome": true,
    "active": "races"
