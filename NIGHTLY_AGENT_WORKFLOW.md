@@ -1,4 +1,4 @@
-# Nightly managed-agent workflow — every WT / .Pro / .1 race
+# Nightly managed-agent workflow — every WT / .Pro race (.1 by opt-in)
 
 **Status:** decision record + build plan, 2026-09-05 (rev 4, night).
 Written after running the Vuelta daily runbook by hand for stage 14 → 15
@@ -92,6 +92,47 @@ the nightly runs.
 **Why one deployment, not one per race.** Races come and go weekly. One
 nightly session runs `nightly plan`, then delegates one thread per due race;
 threads share the container; the driver's lock serialises SQLite writes.
+
+### 1b. Scope — WorldTour and .Pro (owner decision, 2026-09-22)
+
+The unattended nightly covers **`wt` and `pro`**. A `.1` race (`category:
+d1`) is still registered, still bundled into the release and still runnable
+by hand on the Mac — it is simply never *due* for the tick.
+
+The evidence is the first week of unattended running: of the eleven races
+that caused trouble, eight were `.1`, and every `.1` failure was about the
+outside world, not the code — FirstCycling never published a start list (Giro
+della Romagna, Kampioenschap van Vlaanderen), no earlier edition existed in
+the database (Giro di Campania), no UCI calendar listing (Romagna), riders
+nobody could identify (Matteotti, Okolo Slovenska, Huangshan). `.1` races are
+18 of the 31 campaigns on disk and 9 of October's 20 calendar rows, so the
+rule roughly halves the nightly workload and the cloud spend.
+
+One rule, one place: `cycling_project/nightly/tiers.py`
+(`AUTOMATION_TIERS = ("wt", "pro")`, `is_automated(campaign_cfg)`).
+
+| Surface | Behaviour |
+|---|---|
+| `nightly plan` / `night` | nothing due; the payload carries `"automated": false` and `"skipped": "not_automated: category d1"`, so the coordinator's per-campaign `plan` call says why (**no coordinator prompt change**) |
+| `nightly settle --unit` / `preview --unit` | runs as before — attended use is the point |
+| `nightly.horizon` | captures only covered campaigns; `--campaign` narrows, it does not widen |
+| `registry sync`, `weekly_release` | unchanged: every campaign is registered and bundled |
+| `campaigns.automated` (hosted) | mirrored by `registry sync` when migration `0008_campaign_automation.sql` is pushed; the write is dropped and retried without it when it is not |
+| operator inbox | open tasks for uncovered campaigns sit under a collapsed "Attended (.1) campaigns" section |
+| public hub | an uncovered campaign with no page reads `not_covered`, never "in progress" |
+
+**Opting one race in or out** — in its `campaign.json`:
+
+```json
+"automation": "on"     // cover this .1 race
+"automation": "off"    // leave this WT/.Pro race to a human
+```
+
+An unreadable value is ignored (the category decides) and reported as
+`automation_note` in the plan. A campaign with **no** `category` is not
+automated: the registry always writes one, so its absence means a human
+should look. The Mac can widen a single invocation with `--all-tiers` or
+`--include-tier d1` on `plan`, `night` and `horizon`.
 
 ### 1a. Trust boundary — what the agent can and cannot do
 

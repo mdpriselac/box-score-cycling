@@ -15,7 +15,7 @@ from pathlib import Path
 
 import pytest
 
-from cycling_project.nightly import horizon, oneday
+from cycling_project.nightly import horizon, oneday, tiers
 from cycling_project.nightly.store import FakeStore
 from cycling_project.tests.utils.mock_responses import MockResponse, MockWebClient
 
@@ -58,10 +58,12 @@ def write_campaign(root: Path, slug: str, cfg: dict) -> Path:
 
 
 def stage_race_config(slug="giro-test-2026", *, start=dt.date(2026, 9, 17), stages=3,
-                      provisional=True, fc_race_id=FC_RACE_ID) -> dict:
+                      provisional=True, fc_race_id=FC_RACE_ID, category="pro") -> dict:
     return {
+        # ".Pro" so the campaign is inside the nightly's default coverage (chip Y,
+        # 2026-09-22); the tier rule has its own tests further down.
         "slug": slug, "name": "Giro Test", "fc_race_id": fc_race_id, "year": YEAR,
-        "category": "d1", "is_stage_race": True,
+        "category": category, "is_stage_race": True,
         "start_date": str(start), "end_date": str(start + dt.timedelta(days=stages - 1)),
         "stages": [{"number": n, "date": str(start + dt.timedelta(days=n - 1)),
                     "towns": None, "distance_km": None, "kind": None}
@@ -447,3 +449,67 @@ def test_the_start_list_goes_to_every_unsettled_unit(perf, store, db_path):
     assert not (d / "predictions" / "stage_01" / "startlist.json").exists()     # settled
     for unit in ("stage_02", "stage_03"):
         assert (d / "predictions" / unit / "startlist.json").exists(), unit
+
+
+# ---------------------------------------------------------------------------
+# chip Y — the capture covers what the tick will actually ask for (2026-09-22)
+# ---------------------------------------------------------------------------
+
+def test_a_d1_campaign_is_not_captured_by_default(perf, store):
+    """No point handing a start list to a tick that will never ask for it."""
+    write_campaign(perf, "d1-2026", stage_race_config("d1-2026", category="d1"))
+    assert horizon.select_units(perf, store, today=TODAY) == []
+
+
+def test_all_tiers_restores_the_d1_capture(perf, store):
+    write_campaign(perf, "d1-2026", stage_race_config("d1-2026", category="d1"))
+    due = horizon.select_units(perf, store, today=TODAY,
+                               automation_tiers=tiers.KNOWN_TIERS)
+    assert [d.slug for d in due] == ["d1-2026"]
+    due = horizon.select_units(perf, store, today=TODAY,
+                               automation_tiers=tiers.resolve_tiers(include=["d1"]))
+    assert [d.slug for d in due] == ["d1-2026"]
+
+
+def test_an_explicit_campaign_does_not_bypass_the_tier(perf, store):
+    """One rule: --campaign narrows the sweep, it does not widen the coverage."""
+    write_campaign(perf, "d1-2026", stage_race_config("d1-2026", category="d1"))
+    assert horizon.select_units(perf, store, today=TODAY, only=["d1-2026"]) == []
+
+
+def test_campaign_json_can_opt_a_d1_race_in(perf, store):
+    cfg = stage_race_config("d1-2026", category="d1")
+    cfg["automation"] = "on"
+    write_campaign(perf, "d1-2026", cfg)
+    assert [d.slug for d in horizon.select_units(perf, store, today=TODAY)] == ["d1-2026"]
+
+
+def test_a_campaign_with_no_category_is_not_captured(perf, store):
+    cfg = stage_race_config("mystery-2026")
+    cfg.pop("category")
+    write_campaign(perf, "mystery-2026", cfg)
+    assert horizon.select_units(perf, store, today=TODAY) == []
+
+
+def test_the_capture_and_the_driver_agree_on_the_tier(perf, store, tmp_path, capsys):
+    """The horizon must not capture what the driver will not plan, and vice versa."""
+    from cycling_project.nightly import driver as drv
+
+    for category, automated in (("wt", True), ("pro", True), ("d1", False)):
+        slug = f"{category}-2026"
+        write_campaign(perf, slug, stage_race_config(slug, category=category))
+        captured = [d.slug for d in horizon.select_units(perf, store, today=TODAY)]
+        assert drv.main(["plan", "--campaign", str(perf / slug), "--dry-run",
+                         "--store-root", str(tmp_path / f"store-{category}"),
+                         "--today", str(TODAY)]) == 0
+        plan = json.loads(capsys.readouterr().out)
+        assert plan["automated"] is automated
+        assert (slug in captured) is automated
+        assert bool(plan["preview"]) is automated
+        (perf / slug / "campaign.json").unlink()
+
+
+def test_the_summary_records_the_covered_tiers(perf, store, db_path):
+    write_campaign(perf, "pro-2026", stage_race_config("pro-2026"))
+    summary = run(perf, store, Client(), db_path, dry_run=True)
+    assert summary["automation_tiers"] == ["wt", "pro"]

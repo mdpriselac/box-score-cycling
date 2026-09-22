@@ -40,7 +40,7 @@ SITE_DIR = HERE.parent
 PROJECT_ROOT = SITE_DIR.parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
-from cycling_project.nightly import site_paths  # noqa: E402  (one rule for page names, chip W)
+from cycling_project.nightly import site_paths, tiers  # noqa: E402  (page names: chip W; automation tiers: chip Y)
 PERF_ROOT = PROJECT_ROOT / "performance_eval"
 OUT_PATH = SITE_DIR / "site-index.json"
 PUBLISHED_PATH = SITE_DIR / "published-campaigns.json"
@@ -111,6 +111,7 @@ def registry_campaign(dirname):
         "blurb": str(site.get("blurb") or
                      f"Nightly model run and results record for {name}."),
         "extra_pages": dict(site.get("extra_pages") or {}),
+        "automated": tiers.is_automated(registry),
     }
 
 
@@ -309,17 +310,36 @@ def build_stage_entries(camp, today):
     return stages
 
 
+def campaign_is_automated(camp):
+    """Whether the nightly covers this race (tiers.is_automated on its campaign.json).
+
+    A legacy CAMPAIGNS entry has no registry file; those are the Tour and the
+    Vuelta, both covered.
+    """
+    if "automated" in camp:
+        return bool(camp["automated"])
+    registry = load_json(PERF_ROOT / camp["dir"] / "campaign.json") or {}
+    return tiers.is_automated(registry) if registry else True
+
+
 def build_campaign(camp, today):
     stages = [build_race_entry(camp)] if is_one_day(camp) else build_stage_entries(camp, today)
 
     start = date.fromisoformat(camp["start_date"])
     end = date.fromisoformat(camp["end_date"])
+    automated = campaign_is_automated(camp)
     if today > end:
         status = "settled"
     elif today >= start:
         status = "in_progress"
     else:
         status = "upcoming"
+    # Honest status for a race the nightly does not cover (owner rule, 2026-09-22).
+    # Its dates say "in progress" whether or not anything was ever published, and a hub
+    # entry with no page behind it reads as an automation that is running and silent.
+    # With no page at all the truth is simply: not covered.
+    if not automated and not any(s["asset"] for s in stages):
+        status = "not_covered"
 
     pages = {}
     # A one-day race has neither: an empty `prefix` would otherwise match the
@@ -351,6 +371,7 @@ def build_campaign(camp, today):
         "short_name": camp["short_name"],
         "type": camp["type"],
         "status": status,
+        "automated": automated,
         "start_date": camp["start_date"],
         "end_date": camp["end_date"],
         "blurb": camp["blurb"],

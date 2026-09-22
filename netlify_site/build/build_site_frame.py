@@ -162,11 +162,12 @@ CSS = """
 CHIP_TEXT = {"settled": "settled", "predicted": "predicted",
              "upcoming": "upcoming", "cancelled": "cancelled",
              "in_progress": "in progress", "archive": "archive",
-             "post_hoc": "post-hoc"}
+             "not_covered": "not covered", "post_hoc": "post-hoc"}
 
 STATUS_BLURB = {"settled": "Predictions published, results in, scored.",
                 "predicted": "Prediction published; awaiting the result.",
-                "upcoming": "On the calendar; nothing published yet."}
+                "upcoming": "On the calendar; nothing published yet.",
+                "not_covered": "Outside the nightly's coverage; nothing published."}
 
 
 def esc(s):
@@ -602,15 +603,21 @@ def render_one_day_hub(race):
     date, and the link, and says plainly when the boards are a reconstruction.
     """
     entry = (race.get("stages") or [{}])[0]
+    # A race the nightly does not cover, with no board at all, is "not covered" at the
+    # unit level too: its unit says "settled" only because a result was archived, and
+    # "settled" on a hub promises boards scored against that result (chip Y, 2026-09-22).
+    unit_status = ("not_covered" if race.get("status") == "not_covered"
+                   else entry.get("status"))
     status_note = {"settled": "The race has been run and the boards are scored against the result.",
                    "predicted": "The board is published; the result is not in yet.",
-                   "upcoming": "Nothing published yet — the board is cut before the start."}.get(
-                       entry.get("status"), "")
+                   "upcoming": "Nothing published yet — the board is cut before the start.",
+                   "not_covered": "This race is outside the nightly's coverage: nothing was "
+                                  "published for it."}.get(unit_status, "")
     if entry.get("url"):
         page_card = f"""
 <div class="card"><h3><a href="{entry['url']}">Prediction board</a></h3>
 <p class="note">The whole field priced under every course reading, with the market line
-alongside as the information benchmark{' and the result scored against it' if entry.get('status') == 'settled' else ''}.</p>
+alongside as the information benchmark{' and the result scored against it' if unit_status == 'settled' else ''}.</p>
 <p class="go"><a href="{entry['url']}">Open the board →</a></p></div>"""
     else:
         page_card = """
@@ -624,11 +631,11 @@ the start, then scored once the result is archived.</p></div>"""
     body = f"""
 <header>
 <div class="eyebrow">One-day race · {race['year']}</div>
-<h1>{esc(race['name'])} {chip(entry.get('status', race['status']))}{post_hoc_chip(race)}</h1>
+<h1>{esc(race['name'])} {chip(unit_status or race['status'])}{post_hoc_chip(race)}</h1>
 <p class="standfirst">{esc(race['blurb'])}</p>
 <div class="meta">
 <span>Raced <b>{fmt_date(race['start_date'], True)}</b></span>
-<span>Status <b>{esc(CHIP_TEXT.get(entry.get('status'), entry.get('status') or '—'))}</b></span>
+<span>Status <b>{esc(CHIP_TEXT.get(unit_status, unit_status or '—'))}</b></span>
 <span>Board <b>{'published' if entry.get('url') else 'not published'}</b></span>
 </div>
 {post_hoc_note}
@@ -716,8 +723,11 @@ and the day-type retrieval channel.</p>
                  f'<td>{chip(s["status"])}</td>'
                  f'<td>{link}</td></tr>')
 
+    # `.get` rather than `[...]`: a race the nightly does not cover carries
+    # `not_covered` (chip Y, 2026-09-22) and a KeyError would break the whole frame.
     status_line = {"in_progress": "In progress", "settled": "Complete",
-                   "upcoming": "Upcoming"}[race["status"]]
+                   "upcoming": "Upcoming",
+                   "not_covered": "Not covered"}.get(race["status"], "Not covered")
     body = f"""
 <header>
 <div class="eyebrow">{'Stage race' if race['type'] == 'stage_race' else 'One-day race'} · {race['year']}</div>

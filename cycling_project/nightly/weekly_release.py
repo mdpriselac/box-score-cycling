@@ -156,6 +156,11 @@ def current_campaigns(
     A campaign is any ``performance_eval/<dir>`` with a ``campaign.json`` or
     ``predictions/*/scenarios.json``.  Finished campaigns (Tour 2026 in
     September) stay in git, not in the bundle.
+
+    Tier is deliberately NOT a filter here (owner rule, 2026-09-22): a `.1`
+    campaign is bundled like any other, so the same release can be run by hand
+    on the Mac or opted in with ``"automation": "on"``.  What the rule changes
+    is what the nightly finds *due* (``tiers.is_automated``), not what ships.
     """
     today = today or dt.date.today()
     cutoff = (today - dt.timedelta(days=grace_days)).isoformat()

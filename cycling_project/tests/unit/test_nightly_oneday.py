@@ -284,6 +284,8 @@ def uci_campaign(tmp_path):
     (camp / "campaign.json").write_text(json.dumps({
         "slug": "gp-industria-artigianato-2026", "name": "GP Industria & Artigianato",
         "fc_race_id": "263", "year": 2026, "is_stage_race": False,
+        # ".Pro", as the real campaign.json says: inside the nightly's coverage (chip Y).
+        "category": "pro",
         "start_date": "2026-09-06", "end_date": "2026-09-06",
         "stages": [{"number": None, "date": "2026-09-06", "kind": "one_day"}]}))
 

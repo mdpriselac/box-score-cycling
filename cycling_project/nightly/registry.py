@@ -15,6 +15,7 @@ from datetime import date, timedelta
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Sequence
 
+from cycling_project.nightly import tiers
 from cycling_project.nightly.secrets import load_local_env
 from cycling_project.webscrape_tools.logging_config import get_logger
 
@@ -258,6 +259,12 @@ def _campaign_row(config: Dict[str, Any]) -> Dict[str, Any]:
         "timezone": config.get("timezone"),
         "pcs_slug": config.get("pcs_slug"),
         "config": config,
+        # Owner rule 2026-09-22: the unattended nightly covers WT/.Pro; a `.1` race is
+        # still registered and bundled, it is simply not due.  The effective flag is
+        # mirrored here for the inbox and the hosted views; `campaign.json` stays the
+        # source of truth (`category` + an optional `"automation": "on"|"off"`).
+        # Tolerated absence: until migration 0008 is pushed, the store drops this key.
+        "automated": tiers.is_automated(config),
         "active": True,
     }
 

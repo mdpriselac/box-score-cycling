@@ -29,6 +29,7 @@ claim the original did not make.
 
 | Date | Tag | Lesson |
 |---|---|---|
+| 2026-09-22 | `tooling` | The automation covers WorldTour and .Pro: every `.1` failure was the outside world, not the code |
 | 2026-09-22 | `tooling` | A page name derived in two places is two names: the driver staged the Tour's stage05.html under Okolo Slovenska |
 | 2026-09-18 | `acquisition` | One race has one field: a start list belongs to the campaign, not to the unit someone guessed was due |
 | 2026-09-18 | `tooling` | A reference the serving DB cannot profile is not a reference; filter where it is chosen |
@@ -84,6 +85,50 @@ claim the original did not make.
 | 2026-07-05 | `acquisition` | A truncated FirstCycling results page is fixed by rerunning |
 
 ---
+
+## 2026-09-22 — The automation covers WorldTour and .Pro: every `.1` failure was the outside world, not the code
+
+**Tag:** `tooling` · owner decision after the first week of unattended running
+
+Eleven races caused trouble in the first unattended week. **Eight of them
+were `.1`** (`category: d1`), and not one of those eight failed on something
+the code could fix:
+
+| Race | What was missing |
+|---|---|
+| Giro della Romagna | FirstCycling never published a start list; no UCI calendar listing either |
+| Kampioenschap van Vlaanderen | FirstCycling never published a start list |
+| Giro di Campania | no earlier edition in the database to draw references from |
+| Trofeo Matteotti, Okolo Slovenska, Tour of Huangshan | riders nobody — no source — could identify |
+
+**The general form: automation can retry a fetch, but it cannot make a
+source publish. A tier whose races are routinely unlisted, unstaffed and
+unidentifiable is not a tier an unattended nightly can serve; running it
+anyway converts absent data into operator tasks, and an inbox of tasks
+nobody can act on teaches you to ignore the inbox.**
+
+`.1` races are 18 of the 31 campaigns on disk and 9 of October's 20 calendar
+rows, so the rule roughly halves the nightly workload and the cloud spend.
+
+Decided (chip Y): the unattended nightly covers **`wt` and `pro`**. A `.1`
+race stays registered by `registry sync`, stays in the weekly release bundle
+and stays runnable by hand on the Mac — it is simply never *due*. One rule,
+one place: `cycling_project/nightly/tiers.py`. `plan` and `night` return
+nothing with `"automated": false` and `"skipped": "not_automated: category
+d1"` (the coordinator reads `plan`, so its prompt did not change); an
+explicit `settle --unit` / `preview --unit` still runs; `--all-tiers` /
+`--include-tier d1` restores a race for one attended invocation; the horizon
+capture follows the same rule, because a start list handed to a race nobody
+plans is a wasted FirstCycling fetch. Per race, `campaign.json`
+`"automation": "on" | "off"` overrules the tier in either direction. A
+campaign with no `category` at all is not automated: the registry always
+writes one, so its absence means a human should look.
+
+Downstream, the honesty matters as much as the saving: open tasks for
+uncovered campaigns now sit under a collapsed "Attended (.1) campaigns"
+section in the inbox instead of reading as automation failures, and an
+uncovered campaign with no published page shows `not covered` on the public
+hub rather than "in progress".
 
 ## 2026-09-22 — A page name derived in two places is two names: the driver staged the Tour's stage05.html under Okolo Slovenska
 

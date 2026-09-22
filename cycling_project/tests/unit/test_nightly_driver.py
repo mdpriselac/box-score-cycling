@@ -678,9 +678,11 @@ def _huangshan(tmp_path):
     return d
 
 
-def _plan(camp, tmp_path, capsys, local_now):
+def _plan(camp, tmp_path, capsys, local_now, *, extra=("--all-tiers",)):
+    """--all-tiers by default: Huangshan is a `.1` race and the chip U tests are about the
+    race-local clock, not about the coverage rule (chip Y, 2026-09-22)."""
     assert drv.main(["plan", "--campaign", str(camp), "--dry-run", "--store-root", str(tmp_path / "store"),
-                     "--local-now", local_now]) == 0
+                     "--local-now", local_now, *extra]) == 0
     return _out(capsys)
 
 
@@ -907,3 +909,94 @@ def test_another_campaigns_page_in_the_staging_set_is_page_foreign(campaign, tmp
     assert not (tmp_path / "store" / "site-staging").exists()   # the honest pages did not go up either
     artifacts = tmp_path / "store" / "nightly-artifacts"           # nor the unit's artifacts
     assert not any(p.is_file() for p in artifacts.rglob("*")) if artifacts.exists() else True
+
+
+# ---------------------------------------------------------------------------
+# chip Y — the unattended nightly covers WorldTour and .Pro (owner, 2026-09-22)
+# ---------------------------------------------------------------------------
+
+def _tiered_campaign(tmp_path, *, category="d1", automation=None, slug="tier-test-2026"):
+    """A two-stage race, both stages in the past, so something IS due but for the tier."""
+    d = tmp_path / slug
+    d.mkdir()
+    cfg = {"slug": slug, "name": "Tier Test", "fc_race_id": "900", "year": 2026,
+           "is_stage_race": True, "category": category, "timezone": "Europe/Rome",
+           "start_date": "2026-09-18", "end_date": "2026-09-19",
+           "stages": [{"number": 1, "date": "2026-09-18"}, {"number": 2, "date": "2026-09-19"}]}
+    if automation is not None:
+        cfg["automation"] = automation
+    if category is None:
+        cfg.pop("category")
+    (d / "campaign.json").write_text(json.dumps(cfg))
+    return d
+
+
+def _tier_plan(camp, tmp_path, capsys, *flags, local_now="2026-09-19T21:00"):
+    assert drv.main(["plan", "--campaign", str(camp), "--dry-run",
+                     "--store-root", str(tmp_path / "store"), "--local-now", local_now,
+                     *flags]) == 0
+    return _out(capsys)
+
+
+def test_nothing_is_due_for_a_d1_campaign(tmp_path, capsys):
+    """Eight of the eleven troublesome races in the first unattended week were `.1`."""
+    plan = _tier_plan(_tiered_campaign(tmp_path), tmp_path, capsys)
+    assert plan["settle"] == [] and plan["preview"] == [] and plan["units"] == []
+    assert plan["automated"] is False
+    assert plan["skipped"] == "not_automated: category d1"
+    assert plan["category"] == "d1"
+
+
+def test_a_worldtour_campaign_is_due_as_before(tmp_path, capsys):
+    plan = _tier_plan(_tiered_campaign(tmp_path, category="wt"), tmp_path, capsys)
+    assert plan["settle"] == ["stage_01", "stage_02"]
+    assert plan["automated"] is True and "skipped" not in plan
+
+
+def test_automation_on_makes_a_d1_campaign_due(tmp_path, capsys):
+    plan = _tier_plan(_tiered_campaign(tmp_path, automation="on"), tmp_path, capsys)
+    assert plan["settle"] == ["stage_01", "stage_02"]
+    assert plan["automated"] is True
+
+
+def test_automation_off_takes_a_worldtour_campaign_out(tmp_path, capsys):
+    plan = _tier_plan(_tiered_campaign(tmp_path, category="wt", automation="off"), tmp_path, capsys)
+    assert plan["settle"] == []
+    assert plan["skipped"] == "not_automated: automation off in campaign.json"
+
+
+def test_a_campaign_with_no_category_is_never_automated(tmp_path, capsys):
+    plan = _tier_plan(_tiered_campaign(tmp_path, category=None), tmp_path, capsys)
+    assert plan["skipped"] == "not_automated: campaign.json has no category"
+    assert plan["category"] is None
+
+
+def test_all_tiers_restores_the_plan_for_the_mac(tmp_path, capsys):
+    camp = _tiered_campaign(tmp_path)
+    assert _tier_plan(camp, tmp_path, capsys, "--all-tiers")["settle"] == ["stage_01", "stage_02"]
+    assert _tier_plan(camp, tmp_path, capsys, "--include-tier", "d1")["settle"] == \
+        ["stage_01", "stage_02"]
+
+
+def test_night_stops_at_the_scope_gate_and_says_why(tmp_path, capsys):
+    camp = _tiered_campaign(tmp_path)
+    code = drv.main(["night", "--campaign", str(camp), "--dry-run",
+                     "--store-root", str(tmp_path / "store"), "--local-now", "2026-09-19T21:00"])
+    out = _out(capsys)
+    assert code == 0 and out["status"] == "skipped"
+    assert out["runs"] == [] and out["skipped"] == "not_automated: category d1"
+    assert not _ledger(tmp_path, "runs"), "a skipped campaign opens no run"
+
+
+def test_an_explicit_unit_still_runs_on_an_attended_campaign(tmp_path, capsys):
+    """The `.1` races stay runnable by hand: only plan/night consult the tier."""
+    camp = _oneday_campaign(tmp_path, slug="attended-2026")
+    cfg = json.loads((camp / "campaign.json").read_text())
+    cfg["category"] = "d1"
+    (camp / "campaign.json").write_text(json.dumps(cfg))
+    code = drv.main(["preview", "--campaign", str(camp), "--unit", "race", "--dry-run",
+                     "--store-root", str(tmp_path / "store"), "--today", "2026-09-18",
+                     "--db-path", str(tmp_path / "nonexistent.db")])
+    out = _out(capsys)
+    # It reaches the start-list gate — i.e. the phase ran — rather than being skipped.
+    assert code == 10 and out["operator_task"]["kind"] == "startlist_needed"

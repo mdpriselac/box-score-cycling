@@ -67,7 +67,7 @@ from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Sequence
 
 from cycling_project.db_path import default_db_path
-from cycling_project.nightly import registry, route_facts
+from cycling_project.nightly import registry, route_facts, tiers
 from cycling_project.nightly.crosswalk import build_operator_task
 from cycling_project.nightly.driver import (
     FINISHED_AFTER_DAYS, ONE_DAY_UNIT, RACE_DAY_OVER_HOUR, Campaign, _has_scenario_boards,
@@ -272,7 +272,8 @@ def preview_due(campaign: Campaign, *, days: int, today: dt.date,
 def select_units(perf_eval: Path, store: Any, *, days: int = DEFAULT_DAYS,
                  today: Optional[dt.date] = None,
                  only: Optional[Sequence[str]] = None,
-                 local_now: Optional[dt.datetime] = None) -> List[Due]:
+                 local_now: Optional[dt.datetime] = None,
+                 automation_tiers: Optional[Sequence[str]] = None) -> List[Due]:
     """Campaigns with a preview due inside ``days``, in date order.
 
     The same units the cloud is about to preview: the first stage or the
@@ -280,6 +281,12 @@ def select_units(perf_eval: Path, store: Any, *, days: int = DEFAULT_DAYS,
     in progress.  Void stages (both the config's and the hosted registry's),
     units that already have boards and campaigns whose last unit is long past
     are all excluded.
+
+    A campaign the unattended nightly does not cover is skipped too (owner rule,
+    2026-09-22: WorldTour and .Pro).  There is nothing to hand over to a tick
+    that will never ask.  ``automation_tiers`` — from ``--all-tiers`` /
+    ``--include-tier`` — widens the set for an attended Mac capture; an explicit
+    ``--campaign`` does not, so the rule stays one rule.
     """
     out: List[Due] = []
     wanted = {str(s) for s in only} if only else None
@@ -293,6 +300,10 @@ def select_units(perf_eval: Path, store: Any, *, days: int = DEFAULT_DAYS,
             logger.warning("skipping %s: %s", slug, exc)
             continue
         if not campaign.fc_race_id or not campaign.year:
+            continue
+        skipped = tiers.skip_reason(campaign.cfg, tiers=automation_tiers)
+        if skipped:
+            logger.info("skipping %s: %s", campaign.slug, skipped)
             continue
         # The race-local clock, as the driver reads it: ``--local-now`` wins, a bare ``--today``
         # is that evening, else the campaign's own zone.
@@ -836,15 +847,19 @@ def run_horizon(*, days: int = DEFAULT_DAYS, store: Any = None, perf_eval: Optio
                 dry_run: bool = False, today: Optional[dt.date] = None,
                 now: Optional[dt.datetime] = None, only: Optional[Sequence[str]] = None,
                 local_now: Optional[dt.datetime] = None,
+                automation_tiers: Optional[Sequence[str]] = None,
                 client_factory: Optional[Callable[[], Any]] = None,
                 quiet: bool = False) -> Dict[str, Any]:
     """Select, capture, upload — the whole daily pass.  Returns the summary."""
     perf_eval = Path(perf_eval or PERF_EVAL)
-    due = select_units(perf_eval, store, days=days, today=today, only=only, local_now=local_now)
+    due = select_units(perf_eval, store, days=days, today=today, only=only, local_now=local_now,
+                       automation_tiers=automation_tiers)
     fetcher = Fetcher(factory=client_factory)
     summary: Dict[str, Any] = {
         "capturer": f"horizon {__version__}", "as_of": _utcnow(),
         "today": str(today or dt.date.today()), "days": days, "dry_run": dry_run,
+        "automation_tiers": list(automation_tiers if automation_tiers is not None
+                                 else tiers.AUTOMATION_TIERS),
         "store": type(store).__name__, "campaigns": [],
     }
     if not quiet:
@@ -892,6 +907,7 @@ def build_parser() -> argparse.ArgumentParser:
                    help=f"cap on never-seen stage pages per campaign (default {DEFAULT_MAX_BACKFILL})")
     p.add_argument("--performance-eval", type=Path, default=PERF_EVAL)
     p.add_argument("--quiet", action="store_true", help="JSON summary only")
+    tiers.add_tier_flags(p)
     return p
 
 
@@ -909,7 +925,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         days=args.days, store=store, perf_eval=args.performance_eval,
         db_path=args.db_path or default_db_path(), max_age_hours=args.max_age_hours,
         max_backfill=args.max_backfill, backfill=not args.no_backfill, dry_run=args.dry_run,
-        today=args.today, local_now=args.local_now, only=args.campaign, quiet=args.quiet)
+        today=args.today, local_now=args.local_now, only=args.campaign, quiet=args.quiet,
+        automation_tiers=tiers.tiers_from_args(args))
     print(json.dumps(summary, indent=1, ensure_ascii=False, default=str))
     # Exit 0 even when a unit failed: the failure is an operator task, and the
     # scheduler must not treat one bad race as a broken nightly handover.
