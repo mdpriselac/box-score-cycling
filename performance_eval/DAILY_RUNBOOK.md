@@ -239,9 +239,14 @@ uv run python -m cycling_project.nightly acquire --campaign <campaign> --unit st
 uv run python -m cycling_project.nightly ingest  --campaign <campaign> --unit stage_NN
 ```
 
-Provider selection is automatic: UCI when its capture is complete, the
-ProCyclingStats fallback otherwise, with the reason recorded. Force one with
-`--provider uci|pcs`; `--no-acquire` disables the in-process fetch.
+Provider selection is automatic and it means **UCI only** (chip X, 2026-09-22):
+`--provider auto` picks `uci` when the capture is complete and picks nothing
+otherwise — there is no fallback, and a campaign whose `campaign.json` has no
+`uci_competition_url` exits 10 with `uci_url_needed`, carrying the
+`uci_match_evidence` candidates so the operator can confirm the competition page
+in the inbox. `--provider pcs`, named explicitly, is the attended-Mac path over
+pages a human has already saved under `results/<unit>/pcs/`; the cloud never
+reaches it. `--no-acquire` disables the in-process fetch.
 
 **Identity policy (operator ruling 2026-09-16).** `--identity-policy
 {strict,provisional}` on `ingest`, `settle` and `night` decides what an
@@ -737,7 +742,7 @@ What changes:
   which also drops `--no-scrape` from the runner's argv.
 - **UCI ingest reads the single "General Classification" document as the race
   result** and writes **no `gc.csv`** — a one-day race has no standing. The
-  ProCyclingStats fallback is still stage-shaped and refuses a one-day
+  attended-Mac `--provider pcs` path is still stage-shaped and refuses a one-day
   capture at `pages_present` rather than half-writing it.
 
 The cycle is preview the evening before, settle the evening after:
@@ -829,12 +834,16 @@ for this runbook:
    mismatch.
 2. **`plan`** lists the due units; **`night`** runs every due settle, then
    every due preview, for one campaign.
-3. **Acquisition is UCI first** (§4.1), with a ProCyclingStats transcription
-   as the fallback: the acquirer thread fetches the page verbatim into
-   `pcs_raw.json` and the deterministic `ingest` validates it before anything
-   downstream reads a row. **An agent never transcribes, repairs, reorders or
-   invents a result.** As of 2026-09-06 the PCS wall also refuses Anthropic's
-   `web_fetch`, so this path is dormant — do not probe PCS.
+3. **Acquisition is the UCI, and only the UCI** (§4.1): the `uci-acquirer`
+   thread runs the deterministic command, and the deterministic `ingest`
+   validates the capture before anything downstream reads a row. **An agent
+   never transcribes, repairs, reorders or invents a result.** There is no
+   second source: a unit the UCI has not published waits for tomorrow, and a
+   race with no `uci_competition_url` waits for the operator
+   (`uci_url_needed`). The ProCyclingStats fallback was retired from the cloud
+   on 2026-09-22 (chip X) — PCS has 403ed Anthropic's `web_fetch` since
+   2026-09-06, and describing a dead path as live cost the coordinator ten tool
+   calls hunting for a way to use it. Do not probe PCS.
 4. **The judgment gates hold.** No approved day key → exit 10 and an
    operator task, and the campaign stops there for the night. Prose-less
    previews are allowed; prose-less retrospectives are not.

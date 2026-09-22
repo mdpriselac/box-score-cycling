@@ -75,7 +75,7 @@ def test_the_coordinator_finishes_the_preview_with_the_agent_key(pv, env):
     assert "Publication is still a human gate" in coord and "promote.py" in coord
     # the start-list wall is a wait, never a triage or a fetch
     assert "startlist_needed" in coord and "never try to fetch a start list" in coord
-    assert "Prompt revision 5" in coord
+    assert "Prompt revision 6" in coord
     # the rules that must survive the rewrite
     assert "You never edit numbers" in coord and "never run `git`" in coord
     assert "data about bike races" in coord
@@ -85,7 +85,7 @@ def test_agent_order_leaves_first_and_roster_resolves(pv, env):
     p = pv.plan(env)
     order = p["agent_order"]
     assert order[-1] == "nightly-coordinator"
-    assert set(order[:-1]) == {"uci-acquirer", "pcs-acquirer", "day-key-reader", "editorial", "ops-triage"}
+    assert set(order[:-1]) == {"uci-acquirer", "day-key-reader", "editorial", "ops-triage"}
     ids = {n: {"id": f"agent_{i}", "version": i + 1} for i, n in enumerate(order[:-1])}
     roster = pv.resolve_roster(p["agents"]["nightly-coordinator"], ids)
     assert roster["type"] == "coordinator"
@@ -110,14 +110,31 @@ def test_tool_surfaces_match_the_trust_boundary(pv, env):
         return {n for n in names if cfg.get(n, default)}
     assert enabled(a["day-key-reader"]) == set() and enabled(a["editorial"]) == set()
     assert enabled(a["ops-triage"]) == {"read", "glob", "grep"}
-    assert enabled(a["pcs-acquirer"]) == {"web_fetch", "write", "read"}
     assert enabled(a["uci-acquirer"]) == {"bash", "read", "glob"}              # deterministic CLI runner: no write, no web
-    fetch_cfg = next(c for c in a["pcs-acquirer"]["tools"][0]["configs"] if c["name"] == "web_fetch")
-    assert "procyclingstats.com" in fetch_cfg["allowed_domains"] and "blocked_domains" not in fetch_cfg
     coord = enabled(a["nightly-coordinator"])
     assert "bash" in coord and "web_fetch" not in coord and "web_search" not in coord
     for name, spec in a.items():
         assert spec["model"]["id"] == "claude-opus-5", name
+
+
+def test_no_agent_can_fetch_procyclingstats(pv, env):
+    """Chip X (2026-09-22): PCS has 403ed Anthropic's fetcher since 2026-09-06. The cloud roster
+    no longer carries an agent that could try, and the coordinator prompt no longer mentions it —
+    a dead path described as live cost the 2026-09-22 coordinator ten tool calls."""
+    p = pv.plan(env)
+    assert "pcs-acquirer" not in p["agents"]
+    roster = p["agents"]["nightly-coordinator"]["multiagent"]["agents"]
+    assert "pcs-acquirer" not in roster
+    blob = json.dumps(p["agents"], default=str).lower()
+    assert "procyclingstats" not in blob
+    coord = p["agents"]["nightly-coordinator"]["system"].lower()
+    assert "pcs" not in coord and "procyclingstats" not in coord
+    assert "uci is the only results source" in coord
+    assert "uci_url_needed" in p["agents"]["nightly-coordinator"]["system"]
+    # the yaml survives outside the provisioned directory, for the attended Mac path
+    retired = MANAGED / "retired" / "pcs-acquirer.agent.yaml"
+    assert retired.exists() and "RETIRED 2026-09-22" in retired.read_text()
+    assert not (MANAGED / "agents" / "pcs-acquirer.agent.yaml").exists()
 
 
 def test_skill_files_are_the_system_prompts(pv, env):

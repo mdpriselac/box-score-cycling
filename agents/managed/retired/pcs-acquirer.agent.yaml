@@ -1,3 +1,11 @@
+# RETIRED 2026-09-22 (chip X). Retained on disk for the attended Mac path and for history.
+# This file lives OUTSIDE agents/managed/agents/, so provision.py no longer globs it and the
+# nightly-coordinator's roster no longer names it: the cloud has nothing to delegate a PCS fetch
+# to. ProCyclingStats has 403ed Anthropic's web_fetch since 2026-09-06 (LESSONS 2026-09-06), so
+# the path was dead while still being described as live -- and the coordinator burned ten tool
+# calls on 2026-09-22 trying to work out how to use it. `cycling_project/nightly/pcs_ingest.py`
+# and `--provider pcs` still work on the Mac, by hand.
+#
 # FALLBACK acquisition thread (NIGHTLY_AGENT_WORKFLOW.md §2.8) — UCI (uci-acquirer) is primary since 2026-09-06;
 # PCS is used only when UCI has no published result, the race has no UCI mapping, or UCI validation failed. Derived from the user's August test agent
 # agent_01EXAMPLE466A1EFA1DEDA25 "Procycling Stats Extractor" (kept: web_fetch-only fetching rules,
@@ -12,7 +20,7 @@ description: >-
 model:
   id: claude-opus-5
   effort: low
-system_file: ../prompts/pcs-acquirer.md
+system_file: ./pcs-acquirer.md
 tools:
   - type: agent_toolset_20260401
     default_config:

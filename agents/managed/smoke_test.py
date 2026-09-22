@@ -11,7 +11,9 @@ What the session is asked to do (see SMOKE_MESSAGE):
   (b) run stage 0 → `bootstrap --manifest-only` if an approved release exists, else list the
       `releases` bucket;
   (c) delegate to pcs-acquirer a fetch of the Vuelta 2026 stage 14 result page, saved as HTML into
-      /mnt/session/outputs/stage14.html plus its pcs_raw.json index;
+      /mnt/session/outputs/stage14.html plus its pcs_raw.json index -- RETIRED as the default on
+      2026-09-22 (chip X): the default is now the UCI check, and (c) runs only under `--pcs`, which
+      needs a pcs-acquirer agent that provision.py no longer manages;
   (d) confirm `git` is absent or has no remote;
   and write /mnt/session/outputs/smoke_report.json.
 
@@ -21,7 +23,8 @@ rows (place, name, gap) against performance_eval/vuelta-2026/results/stage_14/re
 
 Usage::
 
-    uv run --group agents python agents/managed/smoke_test.py                 # new session (asks y/N)
+    uv run --group agents python agents/managed/smoke_test.py                 # new session, UCI path (asks y/N)
+    uv run --group agents python agents/managed/smoke_test.py --pcs           # retired PCS path (attended only)
     uv run --group agents python agents/managed/smoke_test.py --yes --budget-usd 5
     uv run --group agents python agents/managed/smoke_test.py --session-id sesn_…   # re-collect outputs
     uv run --group agents python agents/managed/smoke_test.py --parse-only path/to/stage14.html
@@ -386,7 +389,10 @@ def main(argv: Optional[List[str]] = None) -> int:
                     help="use `deployments.run` (fires 'Run the nightly cycle.' first) and queue the smoke message after it")
     ap.add_argument("--session-id", default=None, help="skip creation; stream/collect this session")
     ap.add_argument("--parse-only", type=Path, default=None, help="offline: parse this HTML and diff against the CSV")
-    ap.add_argument("--uci", action="store_true", help="UCI acquisition smoke: mount uci_acquire.py, delegate to uci-acquirer, ingest locally")
+    ap.add_argument("--uci", action="store_true", default=True,
+                    help="UCI acquisition smoke (the default since chip X, 2026-09-22): mount uci_acquire.py, delegate to uci-acquirer, ingest locally")
+    ap.add_argument("--pcs", dest="uci", action="store_false",
+                    help="retired PCS acquisition smoke: needs a pcs-acquirer agent in the workspace (provision.py no longer manages one)")
     ap.add_argument("--api-key", action="store_true")
     ap.add_argument("--max-minutes", type=float, default=45)
     ap.add_argument("--out-dir", type=Path, default=None)

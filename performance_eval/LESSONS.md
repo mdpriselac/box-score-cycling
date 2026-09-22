@@ -29,6 +29,7 @@ claim the original did not make.
 
 | Date | Tag | Lesson |
 |---|---|---|
+| 2026-09-22 | `acquisition` | A dead path described as a live fallback costs reasoning every night: the cloud asked for PCS pages nobody can fetch |
 | 2026-09-22 | `tooling` | A page name derived in two places is two names: the driver staged the Tour's stage05.html under Okolo Slovenska |
 | 2026-09-18 | `acquisition` | One race has one field: a start list belongs to the campaign, not to the unit someone guessed was due |
 | 2026-09-18 | `tooling` | A reference the serving DB cannot profile is not a reference; filter where it is chosen |
@@ -82,6 +83,48 @@ claim the original did not make.
 | 2026-07-06 | `keying` | A break read must carry `exclude_top_gc` |
 | 2026-07-05 | `keying` | Model-space semantics are not intuitive |
 | 2026-07-05 | `acquisition` | A truncated FirstCycling results page is fixed by rerunning |
+
+---
+
+## 2026-09-22 — A dead path described as a live fallback costs reasoning every night
+
+**Tag:** `acquisition` · coordinator session `sesn_01EXAMPLE78CD3112BF8B3A4`
+(2026-09-22, Giro della Romagna)
+
+ProCyclingStats began 403ing Anthropic's `web_fetch` on 2026-09-06 — that is
+the day the UCI became the results source (see the 2026-09-06 `acquisition`
+lesson). The PCS code, the `pcs-acquirer` agent and the prompts that named it
+were left in place, and the driver kept a matching ask: a unit whose campaign
+had no `uci_competition_url` exited 10 with `pcs_pages_needed`, whose summary
+literally told the reader to go and put PCS pages on disk.
+
+Giro della Romagna is such a race: the UCI 2026 calendar has no edition of it,
+the matcher declined (score 0.65 against *Giro di Campania* on the same date)
+and an operator had already recorded `operator_rejected`, so the field stayed
+`null` by design. The nightly duly asked for PCS pages, and the coordinator
+spent ten bash/grep calls reading `pcs_ingest.py`, the acquirer prompt and the
+PCS fixtures working out how to obtain them. It sent no request — the boundary
+held — but the reasoning was wasted, and it would have been wasted again for
+every unplaced race, every night.
+
+**The general form: an agent will try to satisfy the ask it is given. A wall
+has to be described as a wall. If a path is dead, the ask must stop pointing
+at it and the tool must stop being reachable — a comment saying "dormant" is
+not a wall, because the agent reads the ask, not the comment.**
+
+Fixed (chip X) by making the retirement structural rather than documentary:
+`pcs_pages_needed` is gone from the driver's vocabulary and `uci_url_needed`
+replaces it — a `blocks_settlement` ask addressed to the operator, carrying the
+campaign's `uci_match_evidence` (candidate and alternates) so the competition
+page can be picked in the inbox; `--provider auto` resolves to UCI and nothing
+else, even with PCS pages on disk; the `pcs-acquirer` yaml moved to
+`agents/managed/retired/`, out of `provision.py`'s glob and out of the
+coordinator's roster, so there is no agent left to delegate a fetch to; and
+coordinator prompt revision 6 contains no PCS substring at all, with the
+acquisition rule reduced to "the UCI is the only results source there is; a
+unit it cannot supply waits, and you never look for another." `--provider pcs`
+and `pcs_ingest.py` still work on the attended Mac, where a human puts the
+pages there — nothing was deleted, it just cannot be reached by default.
 
 ---
 

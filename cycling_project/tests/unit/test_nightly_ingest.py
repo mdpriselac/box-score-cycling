@@ -186,7 +186,9 @@ def test_missing_page_fails_closed(campaign):
 def test_driver_ingest_command_exits_10_listing_checks(campaign, tmp_path, capsys):
     page = campaign / "results/stage_14/pcs/embed_top10.html"
     _edit(page, "BRENNER Marco", "BUITRAGO Santiago")
-    code = drv.main(["ingest", "--campaign", str(campaign), "--unit", "stage_14", "--dry-run",
+    # --provider pcs since chip X (2026-09-22): `auto` is UCI only, and this fixture is the
+    # attended-Mac PCS archive.
+    code = drv.main(["ingest", "--campaign", str(campaign), "--unit", "stage_14", "--dry-run", "--provider", "pcs",
                      "--store-root", str(tmp_path / "store"), "--crosswalk", str(campaign / "rider_crosswalk.csv")])
     out = json.loads(capsys.readouterr().out)
     assert code == 10 and out["status"] == "waiting_for_input"
@@ -199,7 +201,9 @@ def test_driver_ingest_command_exits_10_listing_checks(campaign, tmp_path, capsy
 
 
 def test_driver_ingest_command_accepts_and_records_pcs_raw(campaign, tmp_path, capsys):
-    code = drv.main(["ingest", "--campaign", str(campaign), "--unit", "stage_14", "--dry-run",
+    # --provider pcs since chip X (2026-09-22): `auto` is UCI only, and this fixture is the
+    # attended-Mac PCS archive.
+    code = drv.main(["ingest", "--campaign", str(campaign), "--unit", "stage_14", "--dry-run", "--provider", "pcs",
                      "--store-root", str(tmp_path / "store"), "--crosswalk", str(campaign / "rider_crosswalk.csv")])
     out = json.loads(capsys.readouterr().out)
     assert code == 0 and out["status"] == "done" and out["ingest"]["winner"] == "Brenner Marco"

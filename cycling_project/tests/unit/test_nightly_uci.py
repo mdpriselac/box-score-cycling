@@ -545,16 +545,26 @@ def test_driver_settle_dry_run_prefers_uci_and_uploads_capture(campaign, tmp_pat
     assert not (campaign / "runs" / "2026-09-05").exists()
 
 
-def test_driver_falls_back_to_pcs_with_a_recorded_reason(campaign, tmp_path, capsys):
+def test_auto_never_falls_back_to_pcs_but_the_named_provider_still_works(campaign, tmp_path, capsys):
+    """Chip X (2026-09-22): `auto` means UCI, full stop. Until then a missing UCI capture fell
+    through to whatever sat in `results/<unit>/pcs/` — a provider the cloud has had no way to
+    feed since Cloudflare started 403ing Anthropic's fetcher (LESSONS 2026-09-06). The attended
+    Mac path is unchanged: name `pcs` and the same pages are ingested."""
     shutil.rmtree(campaign / "results" / "stage_14" / "uci")
     shutil.copytree(PCS, campaign / "results" / "stage_14" / "pcs")
-    assert _run(campaign, tmp_path, "settle", "--unit", "stage_14", "--dry-run") == 0
+
+    assert _run(campaign, tmp_path, "settle", "--unit", "stage_14", "--dry-run") == 10
     out = _out(capsys)
-    assert out["acquire"]["provider"] == "pcs" and out["acquire"]["fallback_reason"] == "fallback: no uci capture"
+    assert out["operator_task"]["kind"] == "acquisition_needed"          # UCI-mapped: the URL is fine
+    assert "pcs" not in json.dumps(out["operator_task"]["summary"]).lower()
+    assert not (campaign / "results/stage_14/results.csv").exists()
+
+    assert _run(campaign, tmp_path, "settle", "--unit", "stage_14", "--dry-run", "--provider", "pcs") == 0
+    out = _out(capsys)
+    assert out["acquire"]["provider"] == "pcs" and out["acquire"]["fallback_reason"] == "provider forced to pcs"
     assert out["ingest"]["provider"] == "pcs"
     rows = _ledger(tmp_path, "pcs_raw")
     assert rows and all(r["ingest_detail"]["provider"] == "pcs" and ":" not in r["kind"] for r in rows)
-    assert rows[0]["ingest_detail"]["fallback_reason"] == "fallback: no uci capture"
 
 
 def test_driver_without_any_capture_asks_for_acquisition(campaign, tmp_path, capsys):

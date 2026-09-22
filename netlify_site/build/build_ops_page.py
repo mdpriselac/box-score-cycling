@@ -71,7 +71,14 @@ SUPABASE_JS = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.58.0/+esm"
 # no longer applies. Unstructured ops-triage tasks are deliberately absent.
 TASK_SUCCESS_STEPS = {
     "acquisition_needed": "acquire",
+    # Retired 2026-09-22 (chip X): the driver no longer raises it, but rows filed before then
+    # must still reconcile.
     "pcs_pages_needed": "acquire",
+    # Its replacement: the campaign has no uci_competition_url. The operator picks the competition
+    # page (the matcher's candidates travel in the task detail); a later successful `acquire` for
+    # the unit proves the URL landed. It is a HUMAN_DECISION kind in the JS, so the "raced, so
+    # moot" date rule never clears it — the results are still owed after the race.
+    "uci_url_needed": "acquire",
     "ingest_failed": "ingest",
     "kambi_match": "capture_odds",
     "scenarios_needed": "stage_config",
@@ -455,7 +462,7 @@ function taskPhase(t) {{
 }}
 
 // Kinds that stand for a human decision, never for a step that can simply succeed later.
-const HUMAN_DECISION_KINDS = new Set(["identity_provisional", "crosswalk_proposals", "uci_competition_confirm"]);
+const HUMAN_DECISION_KINDS = new Set(["identity_provisional", "crosswalk_proposals", "uci_competition_confirm", "uci_url_needed"]);
 
 // Ledger proof that the ask is over: the same unit later FINISHED ok in the same phase, or a
 // preview ask whose unit has since been raced and settled (nothing is left to preview), or a

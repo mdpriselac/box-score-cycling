@@ -152,7 +152,12 @@ def _has_scenario_boards(pred: Path) -> bool:
 # operator_tasks.urgency is a CHECK-constrained vocabulary (crosswalk.URGENCIES); a settle that
 # cannot finish blocks settlement, a preview that cannot finish blocks publication.
 URGENCY_BY_KIND = {
-    "acquisition_needed": "blocks_settlement", "pcs_pages_needed": "blocks_settlement",
+    "acquisition_needed": "blocks_settlement",
+    # No uci_competition_url in campaign.json: nothing deterministic can be acquired, and the
+    # operator must pick the competition page from the matcher's candidates (chip X, 2026-09-22).
+    # It replaces `pcs_pages_needed`, an ask that told the cloud to go and get ProCyclingStats
+    # pages -- a path Cloudflare has blocked to Anthropic's fetcher since 2026-09-06.
+    "uci_url_needed": "blocks_settlement",
     "ingest_failed": "blocks_settlement",
     # Not a blocker by design (operator ruling 2026-09-16): the stage settles and publishes with a
     # provisional uci: id and a visible caveat; the weekly Mac reconcile turns it into a real id.
@@ -940,14 +945,12 @@ class Driver:
             return ("uci", None) if uci_ok else (None, "uci capture missing or incomplete")
         if pref == "pcs":
             return ("pcs", "provider forced to pcs") if pcs_ok else (None, "pcs pages missing")
+        # `auto` means UCI, full stop (chip X, 2026-09-22).  PCS was the automatic fallback until
+        # Cloudflare began 403ing Anthropic's fetcher (LESSONS 2026-09-06), so `auto` could pick a
+        # provider the cloud has no way to feed.  `--provider pcs`, given explicitly on the
+        # attended Mac, still reaches pcs_ingest; nothing else does, even with pages on disk.
         if uci_ok:
             return "uci", None
-        if pcs_ok:
-            if c.uci_competition_url:
-                idx = uci_acquire.read_index(res / "uci") or {}
-                why = "uci capture incomplete" if idx else "no uci capture"
-                return "pcs", f"fallback: {why}"
-            return "pcs", "fallback: campaign has no uci_competition_url"
         return None, None
 
     def _acquire(self, unit: str) -> Dict[str, Any]:
@@ -972,20 +975,56 @@ class Driver:
         self.record["provider"] = provider
         self.record["fallback_reason"] = reason
         if provider is None:
-            expected = {"uci": f"python -m cycling_project.nightly.uci_acquire --competition-url {c.uci_competition_url} "
-                               f"--campaign {c.dir} --unit {unit}" if c.uci_competition_url else "no uci_competition_url in campaign.json",
-                        "pcs": sorted(pcs_ingest.PAGE_FILES.values())}
-            if c.uci_competition_url:
+            if self.provider_pref == "pcs":                      # attended Mac path, asked for by hand
                 raise WaitingForInput("acquisition_needed",
-                                      f"{c.slug} {unit}: no complete UCI capture (results not published, or acquisition failed: "
-                                      f"{info.get('error') or info.get('skipped') or 'not run'}) and no PCS pages for fallback",
-                                      {"expected": expected, "acquire": info})
-            raise WaitingForInput("pcs_pages_needed",
-                                  f"{c.slug} {unit}: no PCS pages under results/{unit}/pcs/ (acquisition thread has not run) "
-                                  "and the campaign has no uci_competition_url",
-                                  {"expected": expected["pcs"], "acquire": info})
+                                      f"{c.slug} {unit}: --provider pcs, but no pages under results/{unit}/pcs/",
+                                      {"expected": {"pcs": sorted(pcs_ingest.PAGE_FILES.values())}, "acquire": info})
+            if not c.uci_competition_url:
+                raise self._uci_url_task(unit, info)
+            raise WaitingForInput("acquisition_needed",
+                                  f"{c.slug} {unit}: no complete UCI capture (results not published, or acquisition failed: "
+                                  f"{info.get('error') or info.get('skipped') or 'not run'})",
+                                  {"expected": {"uci": f"python -m cycling_project.nightly.uci_acquire "
+                                                       f"--competition-url {c.uci_competition_url} "
+                                                       f"--campaign {c.dir} --unit {unit}"},
+                                   "acquire": info})
         info["_detail"] = {"provider": provider, "fallback_reason": reason, "reused": info.get("reused"), "ran": info["ran"]}
         return info
+
+    def _uci_url_task(self, unit: str, info: Optional[Dict[str, Any]] = None) -> "WaitingForInput":
+        """The campaign has no `uci_competition_url`: a HUMAN ask, carrying the matcher's evidence.
+
+        `uci_calendar.py` writes `uci_match_evidence` into campaign.json whenever it declines to
+        set a URL (no exact date range, name similarity < 0.90, or a rival candidate) -- its
+        candidate and alternates are exactly what the operator needs to pick the right competition
+        page in the inbox, so they travel in the task detail.  Before chip X (2026-09-22) this
+        raised `pcs_pages_needed`, an ask that told the cloud coordinator to go and obtain
+        ProCyclingStats pages; PCS has 403ed Anthropic's fetcher since 2026-09-06, so the ask
+        could never be met and the coordinator spent its reasoning hunting for a way (session
+        sesn_01EXAMPLE78CD3112BF8B3A4, Giro della Romagna, 2026-09-22).
+        """
+        c = self.campaign
+        evidence = c.cfg.get("uci_match_evidence") or {}
+        candidate = evidence.get("candidate")
+        alternates = evidence.get("alternates") or []
+        detail: Dict[str, Any] = {
+            "expected": "an operator-confirmed uci_competition_url in campaign.json",
+            "campaign_json": str(c.dir / "campaign.json"),
+            "uci_match_evidence": evidence,
+            "candidate": candidate,
+            "alternates": alternates,
+            "matcher_decision": evidence.get("decision"),
+            "matcher_reason": evidence.get("reason"),
+            "resolve": f"python -m cycling_project.nightly.uci_calendar resolve --campaign {c.dir}",
+        }
+        if info is not None:
+            detail["acquire"] = info
+        n = len(alternates) + (1 if candidate else 0)
+        return WaitingForInput(
+            "uci_url_needed",
+            f"{c.slug} {unit}: campaign.json has no uci_competition_url, so there is nothing to "
+            f"acquire -- confirm the UCI competition page in the inbox ({n} candidate(s) on file)",
+            detail)
 
     def _crosswalk_store_rows(self) -> List[Dict[str, Any]]:
         try:
@@ -1004,9 +1043,13 @@ class Driver:
             provider, reason = self._detect_provider(unit)
             self.record["provider"], self.record["fallback_reason"] = provider, reason
         if provider is None:
-            raise WaitingForInput("acquisition_needed" if c.uci_competition_url else "pcs_pages_needed",
-                                  f"{c.slug} {unit}: nothing to ingest (no UCI capture, no PCS pages)",
-                                  {"expected": {"uci": bool(c.uci_competition_url), "pcs": sorted(pcs_ingest.PAGE_FILES.values())}})
+            if not c.uci_competition_url and self.provider_pref != "pcs":
+                raise self._uci_url_task(unit)
+            raise WaitingForInput("acquisition_needed",
+                                  f"{c.slug} {unit}: nothing to ingest (no captured results for provider "
+                                  f"{self.provider_pref})",
+                                  {"expected": {"uci": bool(c.uci_competition_url),
+                                                "pcs": sorted(pcs_ingest.PAGE_FILES.values())}})
         store_rows = self._crosswalk_store_rows()
         db = self.db_path if self.db_path.exists() else None
         if provider == "uci":
@@ -2042,7 +2085,8 @@ def build_parser() -> argparse.ArgumentParser:
                        help="selection_signatures_*.csv.gz override (default: newest in experiments/)")
         p.add_argument("--release-tag", default=None)
         p.add_argument("--provider", choices=("auto", "uci", "pcs"), default="auto",
-                       help="result provider: auto = UCI when captured, else PCS fallback")
+                       help="result provider: auto = UCI only (chip X 2026-09-22); pcs is the "
+                            "attended Mac path and must be named explicitly")
         p.add_argument("--no-acquire", action="store_true", help="never run the UCI acquisition in-process (settle)")
         p.add_argument("--aliases", type=Path, default=None, help="UCI alias CSV override (default performance_eval/crosswalk/uci_aliases.csv)")
         p.add_argument("--json", action="store_true", default=True, help=argparse.SUPPRESS)
@@ -2072,7 +2116,7 @@ def build_parser() -> argparse.ArgumentParser:
                         "picks up predictions/<unit>/agent_key.json when no human key is approved")
     p = sub.add_parser("acquire", help="run the deterministic UCI acquisition for a unit (idempotent)")
     common(p, unit=True); p.add_argument("--competition-url", default=None, help="override campaign.json uci_competition_url")
-    p = sub.add_parser("ingest", help="validate the captured results (UCI, else PCS) and write the FC-shaped archive")
+    p = sub.add_parser("ingest", help="validate the captured UCI results and write the FC-shaped archive")
     common(p, unit=True); identity_flag(p)
     p = sub.add_parser("bundle", help="freeze predictions/<unit>/bundle/")
     common(p, unit=True)

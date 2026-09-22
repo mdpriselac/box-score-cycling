@@ -5,7 +5,7 @@
 name: nightly-coordinator
 description: >-
   Coordinator of the nightly cycling run: bootstraps the release bundle, plans due units, delegates
-  results acquisition (UCI first, PCS fallback), runs the deterministic driver per campaign, and files operator tasks. A copy can be
+  results acquisition (UCI, the only source), runs the deterministic driver per campaign, and files operator tasks. A copy can be
   spawned to own ONE campaign's `night --campaign <slug>` run.
 model:
   id: claude-opus-5
@@ -17,7 +17,7 @@ tools:
       enabled: true
       permission_policy: {type: always_allow}
     configs:
-      # The coordinator never fetches: acquisition is the pcs-acquirer's job (§2.8) and its
+      # The coordinator never fetches: acquisition is the uci-acquirer's job (§2.8) and its
       # outbound write path must stay the append-only Supabase role only (§1a).
       - {name: web_search, enabled: false}
       - {name: web_fetch, enabled: false}
@@ -25,8 +25,7 @@ multiagent:
   type: coordinator
   agents:
     - {type: self}
-    - uci-acquirer
-    - pcs-acquirer
+    - uci-acquirer                    # the only results source; pcs-acquirer retired 2026-09-22 (chip X)
     - day-key-reader
     - editorial
     - ops-triage

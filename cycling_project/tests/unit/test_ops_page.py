@@ -93,6 +93,9 @@ def test_reconciliation_requires_deterministic_later_evidence(page, mod):
     assert mod.TASK_SUCCESS_STEPS == {
         "acquisition_needed": "acquire",
         "pcs_pages_needed": "acquire",
+        # 2026-09-22 (chip X): a campaign with no uci_competition_url — a later successful acquire
+        # (the operator supplied the URL) is the proof, but the date rule must never moot it
+        "uci_url_needed": "acquire",
         "ingest_failed": "ingest",
         "kambi_match": "capture_odds",
         "scenarios_needed": "stage_config",
@@ -119,7 +122,21 @@ def test_a_unit_that_later_finished_ok_reconciles_its_stale_tasks(page):
     assert 'later.find((r) => r.phase === "horizon")' in page
     assert "has since been raced and settled" in page
     # a human decision is never reconciled by a later success
-    assert 'new Set(["identity_provisional", "crosswalk_proposals", "uci_competition_confirm"])' in page
+    assert 'new Set(["identity_provisional", "crosswalk_proposals", "uci_competition_confirm", "uci_url_needed"])' in page
+
+
+def test_a_missing_uci_url_is_a_human_decision_that_a_later_acquire_can_prove(page, mod):
+    """Chip X (2026-09-22): `uci_url_needed` replaces `pcs_pages_needed`. The results are still
+    owed after the race, so the date rule must not clear it — but once the operator has supplied
+    the URL and an `acquire` step succeeds for the unit, the ask is over."""
+    assert mod.TASK_SUCCESS_STEPS["uci_url_needed"] == "acquire"
+    assert "pcs_pages_needed" in mod.TASK_SUCCESS_STEPS          # legacy rows in the ledger still reconcile
+    assert '"uci_url_needed"' in page
+    # HUMAN_DECISION_KINDS short-circuits both date-based rules, never the proving-step rule
+    assert page.index('HUMAN_DECISION_KINDS = new Set(') < page.index("function racedResolution(t)")
+    assert "const provingStep = CFG.taskSuccessSteps[t.kind];" in page
+    # the proving-step scan runs after both date-based rules have declined, so it still applies
+    assert page.index("const raced = racedResolution(t);") < page.index("if (!provingStep || !unit) return null;")
 
 
 def test_a_pre_race_ask_goes_moot_once_the_race_is_over(page):

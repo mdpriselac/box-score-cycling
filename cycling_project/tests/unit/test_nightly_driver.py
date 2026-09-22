@@ -36,8 +36,13 @@ def campaign(tmp_path):
 
 
 def _run(campaign, tmp_path, *argv, today="2026-09-05"):
+    """Replay the fixture. Chip X (2026-09-22) retired PCS from `--provider auto`, so the archive
+    replay names the provider explicitly — the attended Mac path the fixture stands for. Pass
+    `--provider ...` in ``argv`` to override (the auto-path tests do)."""
     base = ["--campaign", str(campaign), "--store-root", str(tmp_path / "store"),
             "--crosswalk", str(campaign / "rider_crosswalk.csv"), "--today", today]
+    if "--provider" not in argv:
+        base += ["--provider", "pcs"]
     return drv.main([argv[0], *base, *argv[1:]])
 
 
@@ -192,7 +197,7 @@ def test_settle_without_pcs_pages_exits_10_with_operator_task(campaign, tmp_path
     out = _out(capsys)
     assert code == 10 and out["status"] == "stopped" and len(out["runs"]) == 1
     run = out["runs"][0]
-    # the fixture campaign is UCI-mapped (uci_competition_url), so the ask names both providers
+    # the ask is acquisition_needed: the fixture is UCI-mapped, and --provider pcs found no pages
     assert run["status"] == "waiting_for_input" and run["operator_task"]["kind"] == "acquisition_needed"
     tasks = _ledger(tmp_path, "operator_tasks")
     assert len(tasks) == 1 and tasks[0]["campaign_slug"] == "vuelta-2026" and tasks[0]["author"] == "agent"
@@ -202,6 +207,68 @@ def test_settle_without_pcs_pages_exits_10_with_operator_task(campaign, tmp_path
     assert fin[-1]["state"] == "waiting" and fin[-1]["exit_code"] == 10
     assert run["record"] is None
     assert not (campaign / "runs" / "2026-09-05").exists()
+
+
+def test_a_campaign_with_no_uci_url_asks_for_one_and_never_for_pcs_pages(campaign, tmp_path, capsys):
+    """Chip X (2026-09-22). A race the UCI calendar matcher could not place used to raise
+    `pcs_pages_needed` — an ask that told the cloud to go and fetch ProCyclingStats pages, which
+    have 403ed Anthropic's fetcher since 2026-09-06. On 2026-09-22 the coordinator spent ten tool
+    calls on Giro della Romagna working out how. The ask is now for the URL itself, and it carries
+    the matcher's candidates so the operator can pick one in the inbox."""
+    cfg = json.loads((campaign / "campaign.json").read_text())
+    cfg["uci_competition_url"] = None
+    cfg["uci_match_evidence"] = {
+        "matcher": "uci_calendar", "decision": "operator_confirm", "score": 0.64,
+        "reason": "no exact name match on the date",
+        "candidate": {"competition_id": "78436", "name": "Giro di Campania",
+                      "url": "https://www.uci.org/competition-details/2026/ROA/78436"},
+        "alternates": [{"competition_id": "78437", "name": "Grand Prix d'Isbergues", "similarity": 0.35}],
+    }
+    (campaign / "campaign.json").write_text(json.dumps(cfg, indent=2))
+    shutil.rmtree(campaign / "results" / "stage_14" / "pcs")
+
+    assert _run(campaign, tmp_path, "settle", "--unit", "stage_14", "--dry-run", "--provider", "auto") == 10
+    out = _out(capsys)
+    task = out["operator_task"]
+    assert task["kind"] == "uci_url_needed" and task["urgency"] == "blocks_settlement"
+    assert "pcs" not in json.dumps(task).lower() and "procyclingstats" not in json.dumps(task).lower()
+    d = task["detail"]
+    assert d["candidate"]["competition_id"] == "78436"
+    assert d["alternates"][0]["competition_id"] == "78437"
+    assert d["uci_match_evidence"]["decision"] == "operator_confirm"
+    assert d["campaign_json"].endswith("campaign.json") and "uci_calendar resolve" in d["resolve"]
+    # and the kind is in the urgency table while the retired one is gone
+    assert "pcs_pages_needed" not in drv.URGENCY_BY_KIND
+    assert drv.URGENCY_BY_KIND["uci_url_needed"] == "blocks_settlement"
+
+
+def test_provider_auto_never_selects_pcs_even_with_pages_on_disk(campaign, tmp_path, capsys):
+    """`auto` means UCI, full stop (chip X). The fixture's PCS pages are right there and the
+    campaign is UCI-mapped, so before this `auto` fell back to pcs_ingest."""
+    d = drv.Driver(drv.Campaign.load(campaign), store=FakeStore(tmp_path / "store"),
+                   dry_run=True, provider="auto")
+    assert (campaign / "results" / "stage_14" / "pcs").is_dir()
+    assert d._detect_provider("stage_14") == (None, None)
+    # with pcs named explicitly the same pages are chosen
+    d2 = drv.Driver(drv.Campaign.load(campaign), store=FakeStore(tmp_path / "store2"),
+                    dry_run=True, provider="pcs")
+    assert d2._detect_provider("stage_14") == ("pcs", "provider forced to pcs")
+
+
+def test_provider_pcs_still_ingests_the_fixture_on_the_attended_path(campaign, tmp_path, capsys):
+    """Nothing is deleted: `--provider pcs` on the Mac still runs pcs_ingest over the archive."""
+    assert _run(campaign, tmp_path, "ingest", "--unit", "stage_14", "--dry-run") == 0
+    out = _out(capsys)
+    assert out["ingest"]["provider"] == "pcs" and out["ingest"]["verdict"] == "accepted"
+    assert out["ingest"]["n_classified"] > 100
+
+
+def test_the_coordinator_prompt_never_mentions_procyclingstats():
+    """The cloud must not be told about a source it cannot reach (chip X)."""
+    prompt = (Path(__file__).resolve().parents[3] / "agents/managed/prompts/nightly-coordinator.md").read_text()
+    low = prompt.lower()
+    assert "pcs" not in low and "procyclingstats" not in low
+    assert "uci_url_needed" in prompt and "Prompt revision 6" in prompt
 
 
 def test_a_hydrated_container_never_falls_back_to_a_fake_store(campaign, tmp_path, capsys, monkeypatch):

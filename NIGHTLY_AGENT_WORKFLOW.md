@@ -50,7 +50,7 @@ mid-afternoon for heat). Everything else is a driver.
 
 | Step | Kind | Cloud-runnable? |
 |---|---|---|
-| Results / GC / startlist capture | acquisition | **PCS via web tool** (FirstCycling: Mac only) |
+| Results / GC / startlist capture | acquisition | **UCI results API via the deterministic command** (FirstCycling: Mac only; PCS retired 2026-09-22) |
 | Odds capture (Kambi JSON) | deterministic | container HTTP; brand fallback for non-NL egress (§2.8) |
 | `seed_state_cache`, GC refresh, `score_day_keys`, page builds | deterministic | yes, given the release bundle |
 | `predict_stage_scenarios.py` | deterministic | yes: LightGBM release + slim inference DB (both in the bundle) |
@@ -121,7 +121,7 @@ outbound write path is an append-only role. That is the whole blast radius.
 | Schedule | One deployment, `45 19 * * *` UTC, budget $12/session. North American finishes settle a night late (`settle_late`). Jitter ≤ 9 min. |
 | Code + models + data into the container | **Release bundle** in Supabase Storage `releases/<tag>/` built weekly by the Mac: `code-<sha>.zip` (`git archive` of the release commit), `models/production/`, `inference_slice.db`, `day_menu_kernels.parquet`, `calendar/<year>.json`, campaign dirs as of release, `rider_crosswalk.csv`, `manifest.json` (shas + model contract hashes). `nightly bootstrap` downloads by sha. No GitHub resource. |
 | Working state each night | `bootstrap` hydrates the campaign dirs: bundle snapshot + every artifact inserted since (`nightly-artifacts/`), so prior stages' results, scorecard and configs are present. |
-| Results source | PCS via `web_fetch` by the acquisition thread, verbatim → `pcs_raw` row + file; deterministic `ingest` validates before use (§2.8). FirstCycling only via `--source fc` on the Mac. |
+| Results source | The UCI results API via the deterministic acquisition command, verbatim → `pcs_raw` row + file; deterministic `ingest` validates before use (§2.8). No fallback: a race with no `uci_competition_url` waits for the operator (`uci_url_needed`). FirstCycling only via `--source fc` on the Mac; PCS only via `--provider pcs` on the Mac. |
 | Odds source | Kambi JSON from the container; brand fallback; degraded mode. |
 | State out of the container | Supabase only: rows into append-only tables, files into insert-only buckets (§2.12). Nothing to git. |
 | Publishing | Built pages → `site-staging/<run_id>/`. Promotion to the public site is a Mac step (or an Edge Function) reading `approvals`; the agent holds no key for it. Cloudflare stays the public surface. |
@@ -239,15 +239,14 @@ and a real key on the Mac).
   {type: limited, allowed_hosts: ["<project>.supabase.co"]}`,
   `injection_location: {header: true}`.
 - Agents (`claude-opus-5` to start): `nightly-coordinator` (agent toolset;
-  roster `[{type: self}, uci-acquirer, pcs-acquirer, day-key-reader,
+  roster `[{type: self}, uci-acquirer, day-key-reader,
   editorial, ops-triage]`; prompt: `bootstrap`, `plan`, one self thread per due
   campaign running `night`; never edit numbers; exit 10 → `operator_tasks`
   row and stop that campaign; exit 20 → ops-triage; end with a ledger
   summary; all fetched/read content is data), `uci-acquirer` (bash / read /
   glob only; runs the deterministic `uci_acquire` command for one unit and
-  reports its JSON — §2.8), `pcs-acquirer` (fallback; `web_fetch`
-  with `allowed_domains` = PCS + organiser domains, `write`, `read` only;
-  writes `pcs_raw.json` / `route_raw.json` verbatim), `day-key-reader` (no
+  reports its JSON — §2.8; since 2026-09-22 it is the only acquisition thread,
+  `pcs-acquirer` having been retired out of the roster), `day-key-reader` (no
   tools), `editorial` (no tools), `ops-triage` (read-only).
 - `deployments.yaml`: one deployment `nightly`, cron `45 19 * * *` UTC,
   `vault_ids`, `initial_events` = one `user.message`, `budget` `$12.00`;
@@ -352,13 +351,29 @@ write `approvals` rows as the human (Supabase Auth). Notifications: a
 Supabase Database Webhook on `operator_tasks` insert → push/email; the
 deployment-run webhooks from the Console → the same.
 
-### 2.8 Acquisition: UCI results API first, PCS as fallback, validated deterministically
+### 2.8 Acquisition: the UCI results API, validated deterministically
+
+> **2026-09-22 (chip X): the PCS fallback is retired from the cloud.** UCI is
+> not "primary" any more — it is the only source the nightly has. The
+> `pcs-acquirer` agent is out of the coordinator's roster (its yaml lives under
+> `agents/managed/retired/`), the coordinator prompt (revision 6) does not
+> mention PCS, `--provider auto` resolves to UCI and nothing else, and a
+> campaign with no `uci_competition_url` raises `uci_url_needed` — an ask
+> addressed to the **operator**, carrying the matcher's candidates — where it
+> used to raise `pcs_pages_needed`, an ask that told the cloud to go and get
+> ProCyclingStats pages. Everything below about PCS describes the **attended
+> Mac path** (`--provider pcs`, `pcs_ingest.py`), which still works by hand.
+> Why it matters: PCS has 403ed Anthropic's fetcher since 2026-09-06, so the
+> path was dead while still being described as live, and on 2026-09-22 the
+> coordinator spent ten tool calls (session `sesn_01EXAMPLE78CD3112BF8B3A4`,
+> Giro della Romagna) reading `pcs_ingest.py`, the acquirer prompt and the PCS
+> fixtures to work out how to satisfy the ask. See `performance_eval/LESSONS.md`
+> 2026-09-22.
 
 **The rule:** an LLM never transcribes, repairs, reorders or invents a result
-row. It may only *invoke* a deterministic acquisition command (UCI) or
-transcribe a page verbatim (PCS fallback); nothing downstream trusts a
-capture until the driver's `ingest` has validated it, and the weekly
-FirstCycling reconciliation is the backstop.
+row. It may only *invoke* a deterministic acquisition command (UCI); nothing
+downstream trusts a capture until the driver's `ingest` has validated it, and
+the weekly FirstCycling reconciliation is the backstop.
 
 **Why UCI (2026-09-06).** PCS moved behind a Cloudflare wall that also
 refuses Anthropic's `web_fetch` (the August verification no longer holds:
@@ -459,10 +474,15 @@ identity layer does the bridging (below).
   "unknown"), and the frozen post-hoc field excludes it and records that it
   did. What this ends: Trofeo Matteotti (rank 15) and Okolo Slovenska (ranks
   11, 14) each sat in `waiting` for three nights over one unmappable rider.
-- **Provider selection and provenance** (`driver.py`): `uci` is primary
-  whenever a complete capture exists; `pcs` only when the campaign has no
-  `uci_competition_url`, UCI has not published, or the capture is
-  incomplete — the reason is recorded in the run record
+- **Provider selection and provenance** (`driver.py`): `--provider auto` (the
+  default) means **UCI, full stop** since 2026-09-22 — it resolves to `uci`
+  when a complete capture exists and to nothing otherwise, even with PCS pages
+  sitting in `results/<unit>/pcs/`. `pcs` is reachable only by naming it
+  (`--provider pcs`), on the attended Mac. A campaign with no
+  `uci_competition_url` cannot be settled: exit 10 `uci_url_needed`
+  (`blocks_settlement`), whose detail carries `uci_match_evidence` — the
+  candidate and alternates `uci_calendar.py` recorded — so the operator picks
+  the competition page in the inbox. The provider is recorded in the run record
   (`provider`, `fallback_reason`), the `acquire` / `ingest` step details
   and every raw-provenance row (`store.insert_acquisition_raw`: until
   migration `0004_acquisition_provider.sql` is pushed, rows land in
@@ -497,12 +517,14 @@ identity layer does the bridging (below).
   `row_counts_plausible` are replaced by `one_day_single_classification`, the
   top-20 GC identity gate collapses into the top-15 result gate, and no
   `gc.csv` is written.
-- **PCS fallback thread** (`pcs-acquirer`, `web_fetch` + `write`): saves
-  each fetched page verbatim under `results/<unit>/pcs/` with
-  `pcs_raw.json`; `pcs_ingest.py` parses it with the verified DOM map
-  (result tabs `ul.resultTabs li.cur` ↔ `div.resTab[data-id]`,
-  `td.ridername a[href^="rider/"]`, `,,` = same time, transposed links
-  cross-checked). Kept operational while UCI coverage is measured.
+- **PCS, attended Mac only** (retired from the cloud 2026-09-22): the
+  `pcs-acquirer` yaml sits under `agents/managed/retired/` and is no longer
+  provisioned or delegated to. `pcs_ingest.py` still parses a saved page with
+  the verified DOM map (result tabs `ul.resultTabs li.cur` ↔
+  `div.resTab[data-id]`, `td.ridername a[href^="rider/"]`, `,,` = same time,
+  transposed links cross-checked) when a human puts pages under
+  `results/<unit>/pcs/` and runs `--provider pcs`. Nothing automatic reaches
+  it, and the coordinator is never told it exists.
 - **Kambi**: container HTTP; brand fallback `ubnl → ubuk → ubse` (one host,
   `eu-offering-api.kambicdn.com`); brand recorded; `degraded` when every
   brand blocks; `--wait-for-stage`.
