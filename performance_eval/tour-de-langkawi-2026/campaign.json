@@ -2,9 +2,9 @@
   "slug": "tour-de-langkawi-2026",
   "name": "Tour de Langkawi",
   "fc_race_id": "128",
-  "uci_competition_url": null,
-  "uci_competition_id": null,
-  "uci_discipline": null,
+  "uci_competition_url": "https://www.uci.org/competition-details/2026/ROA/78441",
+  "uci_competition_id": "78441",
+  "uci_discipline": "ROA",
   "year": 2026,
   "category": "pro",
   "is_stage_race": true,
@@ -14,50 +14,50 @@
     {
       "number": 1,
       "date": "2026-09-27",
-      "towns": null,
-      "distance_km": null,
+      "towns": "Shah Alam → Kampar",
+      "distance_km": 193.0,
       "kind": null
     },
     {
       "number": 2,
       "date": "2026-09-28",
-      "towns": null,
-      "distance_km": null,
+      "towns": "Taiping → Gunung Jerai",
+      "distance_km": 145.6,
       "kind": null
     },
     {
       "number": 3,
       "date": "2026-09-29",
-      "towns": null,
-      "distance_km": null,
+      "towns": "Sungai Petani → Kuala Kangsar",
+      "distance_km": 189.9,
       "kind": null
     },
     {
       "number": 4,
       "date": "2026-09-30",
-      "towns": null,
-      "distance_km": null,
+      "towns": "Meru Raya → Cameron Highlands",
+      "distance_km": 140.1,
       "kind": null
     },
     {
       "number": 5,
       "date": "2026-10-01",
-      "towns": null,
-      "distance_km": null,
+      "towns": "Tapah → Genting Highlands",
+      "distance_km": 125.7,
       "kind": null
     },
     {
       "number": 6,
       "date": "2026-10-02",
-      "towns": null,
-      "distance_km": null,
+      "towns": "Pandan Indah → Rembau",
+      "distance_km": 121.3,
       "kind": null
     },
     {
       "number": 7,
       "date": "2026-10-03",
-      "towns": null,
-      "distance_km": null,
+      "towns": "Melaka → Batu Pahat",
+      "distance_km": 159.1,
       "kind": null
     },
     {
@@ -79,7 +79,7 @@
   "uci_match_evidence": {
     "matcher": "uci_calendar 1.0.0",
     "matched_at": "2026-09-18T21:47:49+00:00",
-    "decision": "operator_confirm",
+    "decision": "operator_confirmed",
     "existing_url_conflict": false,
     "auto_accept_rule": "exact date range AND name similarity >= 0.90 AND no other exact-date candidate at that bar",
     "score": 0.7273,
@@ -176,6 +176,9 @@
           "competitions": 845
         }
       }
-    }
+    },
+    "decided_at": "2026-09-25T05:39:51+00:00",
+    "decided_by": "operator",
+    "operator_note": "Sponsor prefix 'Petronas Le' pulls name similarity to 0.727; exact date range 27 Sep - 04 Oct 2026, same race."
   }
 }
