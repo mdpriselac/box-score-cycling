@@ -63,8 +63,8 @@
     {
       "number": 8,
       "date": "2026-10-04",
-      "towns": null,
-      "distance_km": null,
+      "towns": "Muar → Putrajaya",
+      "distance_km": 183.8,
       "kind": null
     }
   ],
@@ -75,7 +75,7 @@
   "pcs_slug": "tour-de-langkawi",
   "organiser_stage_urls": {},
   "void_stages": [],
-  "stages_provisional": true,
+  "stages_provisional": false,
   "uci_match_evidence": {
     "matcher": "uci_calendar 1.0.0",
     "matched_at": "2026-09-18T21:47:49+00:00",
