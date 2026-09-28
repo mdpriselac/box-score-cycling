@@ -1,14 +1,146 @@
 {
- "generated_at": "2026-09-22 16:41",
+ "generated_at": "2026-09-28 15:25",
  "site_name": "Cycling Race Predictor",
  "races": [
+  {
+   "slug": "tour-de-langkawi",
+   "year": 2026,
+   "name": "Tour de Langkawi 2026",
+   "short_name": "Tour de Langkawi 2026",
+   "type": "stage_race",
+   "status": "in_progress",
+   "automated": true,
+   "start_date": "2026-09-27",
+   "end_date": "2026-10-04",
+   "blurb": "Nightly model run and results record for Tour de Langkawi.",
+   "campaign_dir": "performance_eval/tour-de-langkawi-2026",
+   "url": "/race/tour-de-langkawi/2026",
+   "pages": {},
+   "stages": [
+    {
+     "stage": 1,
+     "unit": "stage_01",
+     "kind": "stage",
+     "date": "2026-09-27",
+     "label": "Stage 1 — Shah Alam → Kampar, 193 km",
+     "status": "settled",
+     "predicted": true,
+     "url": "/race/tour-de-langkawi/2026/stage-01",
+     "asset": "/tour-de-langkawi-2026-stage01.html",
+     "post_hoc": false,
+     "day_key": {
+      "bunch": 0.75,
+      "res_3": 0.15,
+      "res_7": 0.1
+     }
+    },
+    {
+     "stage": 2,
+     "unit": "stage_02",
+     "kind": "stage",
+     "date": "2026-09-28",
+     "label": "Stage 2 — Taiping → Gunung Jerai, 145.6 km",
+     "status": "settled",
+     "predicted": true,
+     "url": "/race/tour-de-langkawi/2026/stage-02",
+     "asset": "/tour-de-langkawi-2026-stage02.html",
+     "post_hoc": false,
+     "day_key": {
+      "res_2": 0.6,
+      "res_4": 0.25,
+      "gc_day": 0.15
+     }
+    },
+    {
+     "stage": 3,
+     "unit": "stage_03",
+     "kind": "stage",
+     "date": "2026-09-29",
+     "label": "Stage 3 — Sungai Petani → Kuala Kangsar, 189.9 km",
+     "status": "predicted",
+     "predicted": true,
+     "url": "/race/tour-de-langkawi/2026/stage-03",
+     "asset": "/tour-de-langkawi-2026-stage03.html",
+     "post_hoc": false,
+     "day_key": {
+      "bunch": 0.7,
+      "res_3": 0.2,
+      "res_7": 0.1
+     }
+    },
+    {
+     "stage": 4,
+     "unit": "stage_04",
+     "kind": "stage",
+     "date": "2026-09-30",
+     "label": "Stage 4 — Meru Raya → Cameron Highlands, 140.1 km",
+     "status": "upcoming",
+     "predicted": false,
+     "url": null,
+     "asset": null,
+     "post_hoc": false
+    },
+    {
+     "stage": 5,
+     "unit": "stage_05",
+     "kind": "stage",
+     "date": "2026-10-01",
+     "label": "Stage 5 — Tapah → Genting Highlands, 125.7 km",
+     "status": "upcoming",
+     "predicted": false,
+     "url": null,
+     "asset": null,
+     "post_hoc": false
+    },
+    {
+     "stage": 6,
+     "unit": "stage_06",
+     "kind": "stage",
+     "date": "2026-10-02",
+     "label": "Stage 6 — Pandan Indah → Rembau, 121.3 km",
+     "status": "upcoming",
+     "predicted": false,
+     "url": null,
+     "asset": null,
+     "post_hoc": false
+    },
+    {
+     "stage": 7,
+     "unit": "stage_07",
+     "kind": "stage",
+     "date": "2026-10-03",
+     "label": "Stage 7 — Melaka → Batu Pahat, 159.1 km",
+     "status": "upcoming",
+     "predicted": false,
+     "url": null,
+     "asset": null,
+     "post_hoc": false
+    },
+    {
+     "stage": 8,
+     "unit": "stage_08",
+     "kind": "stage",
+     "date": "2026-10-04",
+     "label": "Stage 8 — Muar → Putrajaya, 183.8 km",
+     "status": "upcoming",
+     "predicted": false,
+     "url": null,
+     "asset": null,
+     "post_hoc": false
+    }
+   ],
+   "n_stages": 8,
+   "n_settled": 2,
+   "n_predicted": 3,
+   "post_hoc": false
+  },
   {
    "slug": "omloop-van-het-houtland",
    "year": 2026,
    "name": "Omloop van het Houtland 2026",
    "short_name": "Omloop van het Houtland 2026",
    "type": "one_day",
-   "status": "upcoming",
+   "status": "settled",
    "automated": false,
    "start_date": "2026-09-23",
    "end_date": "2026-09-23",
@@ -41,7 +173,7 @@
    "name": "CRO Race 2026",
    "short_name": "CRO Race 2026",
    "type": "stage_race",
-   "status": "in_progress",
+   "status": "settled",
    "automated": true,
    "start_date": "2026-09-22",
    "end_date": "2026-09-27",
@@ -84,7 +216,7 @@
      "kind": "stage",
      "date": "2026-09-23",
      "label": "Stage 2 — Biograd na Moru → Novalja, 114.5 km",
-     "status": "predicted",
+     "status": "settled",
      "predicted": true,
      "url": "/race/cro-race/2026/stage-02",
      "asset": "/cro-race-2026-stage02.html",
@@ -101,11 +233,16 @@
      "kind": "stage",
      "date": "2026-09-24",
      "label": "Stage 3 — Krk → Labin, 174.5 km",
-     "status": "upcoming",
-     "predicted": false,
-     "url": null,
-     "asset": null,
-     "post_hoc": false
+     "status": "settled",
+     "predicted": true,
+     "url": "/race/cro-race/2026/stage-03",
+     "asset": "/cro-race-2026-stage03.html",
+     "post_hoc": false,
+     "day_key": {
+      "bunch": 0.5,
+      "res_3": 0.3,
+      "res_7": 0.2
+     }
     },
     {
      "stage": 4,
@@ -113,11 +250,16 @@
      "kind": "stage",
      "date": "2026-09-25",
      "label": "Stage 4 — Pula → Rijeka, 160 km",
-     "status": "upcoming",
-     "predicted": false,
-     "url": null,
-     "asset": null,
-     "post_hoc": false
+     "status": "settled",
+     "predicted": true,
+     "url": "/race/cro-race/2026/stage-04",
+     "asset": "/cro-race-2026-stage04.html",
+     "post_hoc": false,
+     "day_key": {
+      "bunch": 0.5,
+      "res_3": 0.28,
+      "gc_day": 0.22
+     }
     },
     {
      "stage": 5,
@@ -125,11 +267,16 @@
      "kind": "stage",
      "date": "2026-09-26",
      "label": "Stage 5 — Karlovac → Sveta Nedelja, 164.5 km",
-     "status": "upcoming",
-     "predicted": false,
-     "url": null,
-     "asset": null,
-     "post_hoc": false
+     "status": "settled",
+     "predicted": true,
+     "url": "/race/cro-race/2026/stage-05",
+     "asset": "/cro-race-2026-stage05.html",
+     "post_hoc": false,
+     "day_key": {
+      "gc_day": 0.4,
+      "res_4": 0.35,
+      "res_2": 0.25
+     }
     },
     {
      "stage": 6,
@@ -137,16 +284,21 @@
      "kind": "stage",
      "date": "2026-09-27",
      "label": "Stage 6 — Samobor → Zagreb, 159.5 km",
-     "status": "upcoming",
-     "predicted": false,
-     "url": null,
-     "asset": null,
-     "post_hoc": false
+     "status": "settled",
+     "predicted": true,
+     "url": "/race/cro-race/2026/stage-06",
+     "asset": "/cro-race-2026-stage06.html",
+     "post_hoc": false,
+     "day_key": {
+      "bunch": 0.6,
+      "res_3": 0.25,
+      "res_7": 0.15
+     }
     }
    ],
    "n_stages": 6,
-   "n_settled": 1,
-   "n_predicted": 2,
+   "n_settled": 6,
+   "n_predicted": 6,
    "post_hoc": false
   },
   {
@@ -2137,16 +2289,24 @@
  "months": [
   "2026-07",
   "2026-08",
-  "2026-09"
+  "2026-09",
+  "2026-10"
  ],
  "default_month": "2026-09",
  "aliases": {
   "/index.html": "/model",
+  "/tour-de-langkawi-2026-stage01.html": "/race/tour-de-langkawi/2026/stage-01",
+  "/tour-de-langkawi-2026-stage02.html": "/race/tour-de-langkawi/2026/stage-02",
+  "/tour-de-langkawi-2026-stage03.html": "/race/tour-de-langkawi/2026/stage-03",
   "/omloop-van-het-houtland-2026.html": "/race/omloop-van-het-houtland/2026/prediction",
   "/cro-race-2026-gc.html": "/race/cro-race/2026/gc",
   "/cro-race-2026-stages.html": "/race/cro-race/2026/stages",
   "/cro-race-2026-stage01.html": "/race/cro-race/2026/stage-01",
   "/cro-race-2026-stage02.html": "/race/cro-race/2026/stage-02",
+  "/cro-race-2026-stage03.html": "/race/cro-race/2026/stage-03",
+  "/cro-race-2026-stage04.html": "/race/cro-race/2026/stage-04",
+  "/cro-race-2026-stage05.html": "/race/cro-race/2026/stage-05",
+  "/cro-race-2026-stage06.html": "/race/cro-race/2026/stage-06",
   "/gp-d-isbergues-2026.html": "/race/gp-d-isbergues/2026/prediction",
   "/gooikse-pijl-2026.html": "/race/gooikse-pijl/2026/prediction",
   "/giro-di-campania-2026.html": "/race/giro-di-campania/2026/prediction",
@@ -2251,6 +2411,27 @@
    "chrome": true,
    "active": "model"
   },
+  "/race/tour-de-langkawi/2026": {
+   "asset": "/_frame/race/tour-de-langkawi-2026.html"
+  },
+  "/race/tour-de-langkawi/2026/stage-01": {
+   "asset": "/tour-de-langkawi-2026-stage01.html",
+   "base": true,
+   "chrome": true,
+   "active": "races"
+  },
+  "/race/tour-de-langkawi/2026/stage-02": {
+   "asset": "/tour-de-langkawi-2026-stage02.html",
+   "base": true,
+   "chrome": true,
+   "active": "races"
+  },
+  "/race/tour-de-langkawi/2026/stage-03": {
+   "asset": "/tour-de-langkawi-2026-stage03.html",
+   "base": true,
+   "chrome": true,
+   "active": "races"
+  },
   "/race/omloop-van-het-houtland/2026": {
    "asset": "/_frame/race/omloop-van-het-houtland-2026.html"
   },
@@ -2283,6 +2464,30 @@
   },
   "/race/cro-race/2026/stage-02": {
    "asset": "/cro-race-2026-stage02.html",
+   "base": true,
+   "chrome": true,
+   "active": "races"
+  },
+  "/race/cro-race/2026/stage-03": {
+   "asset": "/cro-race-2026-stage03.html",
+   "base": true,
+   "chrome": true,
+   "active": "races"
+  },
+  "/race/cro-race/2026/stage-04": {
+   "asset": "/cro-race-2026-stage04.html",
+   "base": true,
+   "chrome": true,
+   "active": "races"
+  },
+  "/race/cro-race/2026/stage-05": {
+   "asset": "/cro-race-2026-stage05.html",
+   "base": true,
+   "chrome": true,
+   "active": "races"
+  },
+  "/race/cro-race/2026/stage-06": {
+   "asset": "/cro-race-2026-stage06.html",
    "base": true,
    "chrome": true,
    "active": "races"
@@ -2919,6 +3124,9 @@
   },
   "/calendar/2026/09": {
    "asset": "/_frame/calendar/2026-09.html"
+  },
+  "/calendar/2026/10": {
+   "asset": "/_frame/calendar/2026-10.html"
   }
  }
 }
