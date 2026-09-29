@@ -1,0 +1,131 @@
+{
+  "slug": "hong-kong-cyclothon-2026",
+  "name": "Hong Kong Cyclothon",
+  "fc_race_id": "8499",
+  "uci_competition_url": null,
+  "uci_competition_id": null,
+  "uci_discipline": null,
+  "year": 2026,
+  "category": "d1",
+  "is_stage_race": false,
+  "start_date": "2026-10-11",
+  "end_date": "2026-10-11",
+  "stages": [
+    {
+      "number": null,
+      "date": "2026-10-11",
+      "towns": null,
+      "distance_km": null,
+      "kind": "one_day"
+    }
+  ],
+  "timezone": null,
+  "kambi_match": "hong kong cyclothon",
+  "kambi_localised_name": null,
+  "kambi_event_ids": {},
+  "pcs_slug": "hong-kong-cyclothon",
+  "organiser_stage_urls": {},
+  "void_stages": [],
+  "uci_match_evidence": {
+    "matcher": "uci_calendar 1.0.0",
+    "matched_at": "2026-09-29T20:27:26+00:00",
+    "decision": "operator_confirm",
+    "existing_url_conflict": false,
+    "auto_accept_rule": "exact date range AND name similarity >= 0.90 AND no other exact-date candidate at that bar",
+    "score": 0.6129,
+    "fields_compared": {
+      "dates": {
+        "campaign": "2026-10-11..2026-10-11",
+        "uci": "2026-10-11..2026-10-11",
+        "uci_text": "11 Oct 2026",
+        "verdict": "exact"
+      },
+      "name": {
+        "campaign": "Hong Kong Cyclothon",
+        "uci": "Sun Hung Kai Properties Hong Kong Cyclothon",
+        "campaign_normalised": "hong kong cyclothon",
+        "uci_normalised": "sun hung kai properties hong kong cyclothon",
+        "variant": "full~full",
+        "similarity": 0.6129,
+        "token_containment": 1.0
+      },
+      "country": {
+        "campaign": null,
+        "uci": "HKG",
+        "verdict": "not_compared",
+        "note": "the FirstCycling calendar rows and campaign files carry no country, so the listing's country is recorded but not used as a discriminator"
+      }
+    },
+    "candidate": {
+      "competition_id": "78464",
+      "discipline": "ROA",
+      "url": "https://www.uci.org/competition-details/2026/ROA/78464",
+      "name": "Sun Hung Kai Properties Hong Kong Cyclothon",
+      "country": "HKG",
+      "dates_text": "11 Oct 2026",
+      "start_date": "2026-10-11",
+      "end_date": "2026-10-11",
+      "listing": "upcoming"
+    },
+    "alternates": [
+      {
+        "competition_id": "78466",
+        "discipline": "ROA",
+        "url": "https://www.uci.org/competition-details/2026/ROA/78466",
+        "name": "Trofeo Tessile & Moda - Valdengo Oropa",
+        "country": "ITA",
+        "dates_text": "11 Oct 2026",
+        "start_date": "2026-10-11",
+        "end_date": "2026-10-11",
+        "listing": "upcoming",
+        "similarity": 0.303,
+        "dates_verdict": "exact"
+      },
+      {
+        "competition_id": "79923",
+        "discipline": "ROA",
+        "url": "https://www.uci.org/competition-details/2026/ROA/79923",
+        "name": "Caribbean Elite Road Cycling Championships - ME IRR",
+        "country": "DOM",
+        "dates_text": "11 Oct 2026",
+        "start_date": "2026-10-11",
+        "end_date": "2026-10-11",
+        "listing": "upcoming",
+        "similarity": 0.2951,
+        "dates_verdict": "exact"
+      },
+      {
+        "competition_id": "79924",
+        "discipline": "ROA",
+        "url": "https://www.uci.org/competition-details/2026/ROA/79924",
+        "name": "Caribbean Elite Road Cycling Championships - WE ITT",
+        "country": "DOM",
+        "dates_text": "11 Oct 2026",
+        "start_date": "2026-10-11",
+        "end_date": "2026-10-11",
+        "listing": "upcoming",
+        "similarity": 0.2951,
+        "dates_verdict": "exact"
+      }
+    ],
+    "reasons": [
+      "name similarity 0.613 below 0.90 ('Hong Kong Cyclothon' vs 'Sun Hung Kai Properties Hong Kong Cyclothon')"
+    ],
+    "snapshot": {
+      "captured_at": "2026-09-07T16:05:23+00:00",
+      "capturer": "uci_calendar 1.0.0",
+      "listings": {
+        "upcoming": {
+          "source_url": "https://www.uci.org/api/calendar/upcoming?discipline=ROA",
+          "sha256": "05074b45fbc5336e3c60b05c69b1e4677e77c3fd850ffe95c334a10b7b4c5556",
+          "competitions": 176
+        },
+        "past": {
+          "source_url": "https://www.uci.org/api/calendar/past?discipline=ROA",
+          "sha256": "5e0732365cb4c347099d3cf6acb259cfaf2c60281ae20b2ab5fbd14a33417bcd",
+          "competitions": 845
+        }
+      }
+    }
+  }
+}

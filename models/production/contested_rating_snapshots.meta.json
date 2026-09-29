@@ -1,8 +1,8 @@
 {
-  "last_sort_key": 20714011250,
-  "n_snapshot_rows": 581523,
-  "n_eligible_comps_lte_key": 8265,
+  "last_sort_key": 20725011281,
+  "n_snapshot_rows": 582462,
+  "n_eligible_comps_lte_key": 8281,
   "k_factor": 4.0,
   "start_date": "2010-01-01",
-  "updated_at": "2026-09-18T15:04:25"
+  "updated_at": "2026-09-29T13:38:26"
 }

@@ -1,0 +1,131 @@
+{
+  "slug": "binche-chimay-binche-2026",
+  "name": "Binche-Chimay-Binche",
+  "fc_race_id": "159",
+  "uci_competition_url": null,
+  "uci_competition_id": null,
+  "uci_discipline": null,
+  "year": 2026,
+  "category": "d1",
+  "is_stage_race": false,
+  "start_date": "2026-10-06",
+  "end_date": "2026-10-06",
+  "stages": [
+    {
+      "number": null,
+      "date": "2026-10-06",
+      "towns": null,
+      "distance_km": null,
+      "kind": "one_day"
+    }
+  ],
+  "timezone": "Europe/Brussels",
+  "kambi_match": "binche-chimay-binche",
+  "kambi_localised_name": null,
+  "kambi_event_ids": {},
+  "pcs_slug": "binche-chimay-binche",
+  "organiser_stage_urls": {},
+  "void_stages": [],
+  "uci_match_evidence": {
+    "matcher": "uci_calendar 1.0.0",
+    "matched_at": "2026-09-29T20:27:26+00:00",
+    "decision": "operator_confirm",
+    "existing_url_conflict": false,
+    "auto_accept_rule": "exact date range AND name similarity >= 0.90 AND no other exact-date candidate at that bar",
+    "score": 0.7843,
+    "fields_compared": {
+      "dates": {
+        "campaign": "2026-10-06..2026-10-06",
+        "uci": "2026-10-06..2026-10-06",
+        "uci_text": "06 Oct 2026",
+        "verdict": "exact"
+      },
+      "name": {
+        "campaign": "Binche-Chimay-Binche",
+        "uci": "Binche Chimay Binche pour Dames",
+        "campaign_normalised": "binche chimay binche",
+        "uci_normalised": "binche chimay binche pour dames",
+        "variant": "full~full",
+        "similarity": 0.7843,
+        "token_containment": 1.0
+      },
+      "country": {
+        "campaign": null,
+        "uci": "BEL",
+        "verdict": "not_compared",
+        "note": "the FirstCycling calendar rows and campaign files carry no country, so the listing's country is recorded but not used as a discriminator"
+      }
+    },
+    "candidate": {
+      "competition_id": "78456",
+      "discipline": "ROA",
+      "url": "https://www.uci.org/competition-details/2026/ROA/78456",
+      "name": "Binche Chimay Binche pour Dames",
+      "country": "BEL",
+      "dates_text": "06 Oct 2026",
+      "start_date": "2026-10-06",
+      "end_date": "2026-10-06",
+      "listing": "upcoming"
+    },
+    "alternates": [
+      {
+        "competition_id": "78455",
+        "discipline": "ROA",
+        "url": "https://www.uci.org/competition-details/2026/ROA/78455",
+        "name": "Binche - Chimay - Binche / Mémorial Frank Vandenbroucke",
+        "country": "BEL",
+        "dates_text": "06 Oct 2026",
+        "start_date": "2026-10-06",
+        "end_date": "2026-10-06",
+        "listing": "upcoming",
+        "similarity": 0.5797,
+        "dates_verdict": "exact"
+      },
+      {
+        "competition_id": "78457",
+        "discipline": "ROA",
+        "url": "https://www.uci.org/competition-details/2026/ROA/78457",
+        "name": "Coppa Citta' Di San Daniele",
+        "country": "ITA",
+        "dates_text": "06 Oct 2026",
+        "start_date": "2026-10-06",
+        "end_date": "2026-10-06",
+        "listing": "upcoming",
+        "similarity": 0.3913,
+        "dates_verdict": "exact"
+      },
+      {
+        "competition_id": "78458",
+        "discipline": "ROA",
+        "url": "https://www.uci.org/competition-details/2026/ROA/78458",
+        "name": "Tre Valli Varesine Women's Race",
+        "country": "ITA",
+        "dates_text": "06 Oct 2026",
+        "start_date": "2026-10-06",
+        "end_date": "2026-10-06",
+        "listing": "upcoming",
+        "similarity": 0.2353,
+        "dates_verdict": "exact"
+      }
+    ],
+    "reasons": [
+      "name similarity 0.784 below 0.90 ('Binche-Chimay-Binche' vs 'Binche Chimay Binche pour Dames')"
+    ],
+    "snapshot": {
+      "captured_at": "2026-09-07T16:05:23+00:00",
+      "capturer": "uci_calendar 1.0.0",
+      "listings": {
+        "upcoming": {
+          "source_url": "https://www.uci.org/api/calendar/upcoming?discipline=ROA",
+          "sha256": "05074b45fbc5336e3c60b05c69b1e4677e77c3fd850ffe95c334a10b7b4c5556",
+          "competitions": 176
+        },
+        "past": {
+          "source_url": "https://www.uci.org/api/calendar/past?discipline=ROA",
+          "sha256": "5e0732365cb4c347099d3cf6acb259cfaf2c60281ae20b2ab5fbd14a33417bcd",
+          "competitions": 845
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,131 @@
+{
+  "slug": "tre-valli-varesine-2026",
+  "name": "Tre Valli Varesine",
+  "fc_race_id": "190",
+  "uci_competition_url": "https://www.uci.org/competition-details/2026/ROA/78454",
+  "uci_competition_id": "78454",
+  "uci_discipline": "ROA",
+  "year": 2026,
+  "category": "pro",
+  "is_stage_race": false,
+  "start_date": "2026-10-06",
+  "end_date": "2026-10-06",
+  "stages": [
+    {
+      "number": null,
+      "date": "2026-10-06",
+      "towns": null,
+      "distance_km": null,
+      "kind": "one_day"
+    }
+  ],
+  "timezone": "Europe/Rome",
+  "kambi_match": "tre valli varesine",
+  "kambi_localised_name": null,
+  "kambi_event_ids": {},
+  "pcs_slug": "tre-valli-varesine",
+  "organiser_stage_urls": {},
+  "void_stages": [],
+  "uci_match_evidence": {
+    "matcher": "uci_calendar 1.0.0",
+    "matched_at": "2026-09-29T20:27:26+00:00",
+    "decision": "auto_accepted",
+    "existing_url_conflict": false,
+    "auto_accept_rule": "exact date range AND name similarity >= 0.90 AND no other exact-date candidate at that bar",
+    "score": 1.0,
+    "fields_compared": {
+      "dates": {
+        "campaign": "2026-10-06..2026-10-06",
+        "uci": "2026-10-06..2026-10-06",
+        "uci_text": "06 Oct 2026",
+        "verdict": "exact"
+      },
+      "name": {
+        "campaign": "Tre Valli Varesine",
+        "uci": "Tre Valli Varesine",
+        "campaign_normalised": "tre valli varesine",
+        "uci_normalised": "tre valli varesine",
+        "variant": "full~full",
+        "similarity": 1.0,
+        "token_containment": 1.0
+      },
+      "country": {
+        "campaign": null,
+        "uci": "ITA",
+        "verdict": "not_compared",
+        "note": "the FirstCycling calendar rows and campaign files carry no country, so the listing's country is recorded but not used as a discriminator"
+      }
+    },
+    "candidate": {
+      "competition_id": "78454",
+      "discipline": "ROA",
+      "url": "https://www.uci.org/competition-details/2026/ROA/78454",
+      "name": "Tre Valli Varesine",
+      "country": "ITA",
+      "dates_text": "06 Oct 2026",
+      "start_date": "2026-10-06",
+      "end_date": "2026-10-06",
+      "listing": "upcoming"
+    },
+    "alternates": [
+      {
+        "competition_id": "78458",
+        "discipline": "ROA",
+        "url": "https://www.uci.org/competition-details/2026/ROA/78458",
+        "name": "Tre Valli Varesine Women's Race",
+        "country": "ITA",
+        "dates_text": "06 Oct 2026",
+        "start_date": "2026-10-06",
+        "end_date": "2026-10-06",
+        "listing": "upcoming",
+        "similarity": 0.7347,
+        "dates_verdict": "exact"
+      },
+      {
+        "competition_id": "78456",
+        "discipline": "ROA",
+        "url": "https://www.uci.org/competition-details/2026/ROA/78456",
+        "name": "Binche Chimay Binche pour Dames",
+        "country": "BEL",
+        "dates_text": "06 Oct 2026",
+        "start_date": "2026-10-06",
+        "end_date": "2026-10-06",
+        "listing": "upcoming",
+        "similarity": 0.3265,
+        "dates_verdict": "exact"
+      },
+      {
+        "competition_id": "78457",
+        "discipline": "ROA",
+        "url": "https://www.uci.org/competition-details/2026/ROA/78457",
+        "name": "Coppa Citta' Di San Daniele",
+        "country": "ITA",
+        "dates_text": "06 Oct 2026",
+        "start_date": "2026-10-06",
+        "end_date": "2026-10-06",
+        "listing": "upcoming",
+        "similarity": 0.3182,
+        "dates_verdict": "exact"
+      }
+    ],
+    "reasons": [
+      "exact date range and name similarity 1.000 (variant full~full) — unique at the bar"
+    ],
+    "snapshot": {
+      "captured_at": "2026-09-07T16:05:23+00:00",
+      "capturer": "uci_calendar 1.0.0",
+      "listings": {
+        "upcoming": {
+          "source_url": "https://www.uci.org/api/calendar/upcoming?discipline=ROA",
+          "sha256": "05074b45fbc5336e3c60b05c69b1e4677e77c3fd850ffe95c334a10b7b4c5556",
+          "competitions": 176
+        },
+        "past": {
+          "source_url": "https://www.uci.org/api/calendar/past?discipline=ROA",
+          "sha256": "5e0732365cb4c347099d3cf6acb259cfaf2c60281ae20b2ab5fbd14a33417bcd",
+          "competitions": 845
+        }
+      }
+    }
+  }
+}

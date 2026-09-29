@@ -1,0 +1,167 @@
+{
+  "slug": "eneco-tour-2026",
+  "name": "Eneco Tour",
+  "fc_race_id": "24921",
+  "uci_competition_url": "https://www.uci.org/competition-details/2026/ROA/78467",
+  "uci_competition_id": "78467",
+  "uci_discipline": "ROA",
+  "year": 2026,
+  "category": "d1",
+  "is_stage_race": true,
+  "start_date": "2026-10-13",
+  "end_date": "2026-10-18",
+  "stages": [
+    {
+      "number": 1,
+      "date": "2026-10-13",
+      "towns": null,
+      "distance_km": null,
+      "kind": null
+    },
+    {
+      "number": 2,
+      "date": "2026-10-14",
+      "towns": null,
+      "distance_km": null,
+      "kind": null
+    },
+    {
+      "number": 3,
+      "date": "2026-10-15",
+      "towns": null,
+      "distance_km": null,
+      "kind": null
+    },
+    {
+      "number": 4,
+      "date": "2026-10-16",
+      "towns": null,
+      "distance_km": null,
+      "kind": null
+    },
+    {
+      "number": 5,
+      "date": "2026-10-17",
+      "towns": null,
+      "distance_km": null,
+      "kind": null
+    },
+    {
+      "number": 6,
+      "date": "2026-10-18",
+      "towns": null,
+      "distance_km": null,
+      "kind": null
+    }
+  ],
+  "timezone": "Europe/Amsterdam",
+  "kambi_match": "eneco tour",
+  "kambi_localised_name": null,
+  "kambi_event_ids": {},
+  "pcs_slug": "eneco-tour",
+  "organiser_stage_urls": {},
+  "void_stages": [],
+  "stages_provisional": true,
+  "uci_match_evidence": {
+    "matcher": "uci_calendar 1.0.0",
+    "matched_at": "2026-09-29T20:27:26+00:00",
+    "decision": "auto_accepted",
+    "existing_url_conflict": false,
+    "auto_accept_rule": "exact date range AND name similarity >= 0.90 AND no other exact-date candidate at that bar",
+    "score": 1.0,
+    "fields_compared": {
+      "dates": {
+        "campaign": "2026-10-13..2026-10-18",
+        "uci": "2026-10-13..2026-10-18",
+        "uci_text": "13 Oct - 18 Oct 2026",
+        "verdict": "exact"
+      },
+      "name": {
+        "campaign": "Eneco Tour",
+        "uci": "Eneco Tour",
+        "campaign_normalised": "eneco tour",
+        "uci_normalised": "eneco tour",
+        "variant": "full~full",
+        "similarity": 1.0,
+        "token_containment": 1.0
+      },
+      "country": {
+        "campaign": null,
+        "uci": "NED",
+        "verdict": "not_compared",
+        "note": "the FirstCycling calendar rows and campaign files carry no country, so the listing's country is recorded but not used as a discriminator"
+      }
+    },
+    "candidate": {
+      "competition_id": "78467",
+      "discipline": "ROA",
+      "url": "https://www.uci.org/competition-details/2026/ROA/78467",
+      "name": "Eneco Tour",
+      "country": "NED",
+      "dates_text": "13 Oct - 18 Oct 2026",
+      "start_date": "2026-10-13",
+      "end_date": "2026-10-18",
+      "listing": "upcoming"
+    },
+    "alternates": [
+      {
+        "competition_id": "76946",
+        "discipline": "ROA",
+        "url": "https://www.uci.org/competition-details/2026/ROA/76946",
+        "name": "Eneco Tour Women",
+        "country": "NED",
+        "dates_text": "13 Oct - 18 Oct 2026",
+        "start_date": "2026-10-13",
+        "end_date": "2026-10-18",
+        "listing": "upcoming",
+        "similarity": 0.7692,
+        "dates_verdict": "exact"
+      },
+      {
+        "competition_id": "76951",
+        "discipline": "ROA",
+        "url": "https://www.uci.org/competition-details/2026/ROA/76951",
+        "name": "Tour of Guangxi",
+        "country": "CHN",
+        "dates_text": "13 Oct - 18 Oct 2026",
+        "start_date": "2026-10-13",
+        "end_date": "2026-10-18",
+        "listing": "upcoming",
+        "similarity": 0.32,
+        "dates_verdict": "exact"
+      },
+      {
+        "competition_id": "78469",
+        "discipline": "ROA",
+        "url": "https://www.uci.org/competition-details/2026/ROA/78469",
+        "name": "Veneto Women",
+        "country": "ITA",
+        "dates_text": "14 Oct 2026",
+        "start_date": "2026-10-14",
+        "end_date": "2026-10-14",
+        "listing": "upcoming",
+        "similarity": 0.5455,
+        "dates_verdict": "overlap"
+      }
+    ],
+    "reasons": [
+      "exact date range and name similarity 1.000 (variant full~full) — unique at the bar"
+    ],
+    "snapshot": {
+      "captured_at": "2026-09-07T16:05:23+00:00",
+      "capturer": "uci_calendar 1.0.0",
+      "listings": {
+        "upcoming": {
+          "source_url": "https://www.uci.org/api/calendar/upcoming?discipline=ROA",
+          "sha256": "05074b45fbc5336e3c60b05c69b1e4677e77c3fd850ffe95c334a10b7b4c5556",
+          "competitions": 176
+        },
+        "past": {
+          "source_url": "https://www.uci.org/api/calendar/past?discipline=ROA",
+          "sha256": "5e0732365cb4c347099d3cf6acb259cfaf2c60281ae20b2ab5fbd14a33417bcd",
+          "competitions": 845
+        }
+      }
+    }
+  }
+}
