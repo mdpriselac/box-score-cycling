@@ -15,8 +15,10 @@ Steps (fail closed on any hash mismatch):
 6. Hydrate campaign dirs: the bundle snapshot is already on disk; list the
    whole ``nightly-artifacts/`` bucket once (``store.list_artifacts``),
    collapse to the newest object per campaign-relative path, and download
-   each path that the bundle lacks or that is newer than the release — once,
-   skipping any whose bytes are already on disk (Storage md5 etag).
+   each path that the bundle lacks or that is newer than the bundle's copy
+   (its Mac ``mtime`` from the manifest; the release time for older
+   manifests) — once, skipping any whose bytes are already on disk (Storage
+   md5 etag).
 7. Point serving at the slice: export ``CYCLING_DB_PATH`` for this process,
    write it into ``<dest>/.env`` and ``<dest>/nightly_env.sh``.
 8. Print the release tag.
@@ -42,7 +44,7 @@ import sys
 import tempfile
 import zipfile
 from pathlib import Path
-from typing import Iterable, Any, Dict, List, Optional, Sequence
+from typing import Iterable, Any, Dict, List, Mapping, Optional, Sequence
 
 from cycling_project.db_path import ENV_VAR as DB_ENV_VAR
 from cycling_project.nightly.release_store import MANIFEST_NAME, md5_file, parse_timestamp, resolve_store
@@ -206,7 +208,21 @@ def _recency(obj: dict) -> tuple:
     return (parse_timestamp(obj.get("created_at")) or _EPOCH, obj["key"])
 
 
-def plan_overlay(objs: Iterable[dict], bundled: Iterable[str], since: Any) -> Dict[str, dict]:
+def _bundle_asof(meta: Any, release_ts: Optional[dt.datetime]) -> Optional[dt.datetime]:
+    """When the bundle's copy of a file was last WRITTEN on the Mac.
+
+    Manifests built since 2026-10-02 carry ``mtime`` (UTC ISO) on every file entry; that is the
+    honest age of the bundle's copy.  An older manifest has none, and the release's ``created_at``
+    stands in for it — the pre-2026-10-02 rule, which assumed the Mac's copy was current at the cut.
+    """
+    if isinstance(meta, dict):
+        ts = parse_timestamp(meta.get("mtime"))
+        if ts is not None:
+            return ts
+    return release_ts
+
+
+def plan_overlay(objs: Iterable[dict], bundled: Any, since: Any) -> Dict[str, dict]:
     """Newest object per campaign-relative path that the overlay must consider.
 
     ``objs`` are ``{key, created_at, size, etag}`` rows with keys
@@ -221,8 +237,16 @@ def plan_overlay(objs: Iterable[dict], bundled: Iterable[str], since: Any) -> Di
     release — the previous "newer than the release" rule skipped them and the
     tick settled Tour of Britain 1–4 a second time. A path the bundle lacks
     therefore always applies.)
+
+    ``bundled`` is the manifest's ``files`` mapping (or, from older callers, just its paths).
+    The bundle's copy is dated by its own Mac write time when the manifest records one
+    (``mtime``), not by the release cut (2026-10-02, chip Z2): the Mac never pulls the cloud's
+    writes back, so a release cut at 21:20 carried the Mac's 09-28 ``key_scorecard.json`` and
+    beat the cloud's 19:58 upload of the same day — every release rolled each cumulative card
+    back to the Mac's copy and the next morning's ledger lost the settled stages in between
+    (Langkawi st3, CRO st2-4, Okolo st3-4, Luxembourg st3).  Newest write wins, per path.
     """
-    bundled_set = set(bundled)
+    metas = dict(bundled) if isinstance(bundled, Mapping) else {p: None for p in bundled}
     release_ts = parse_timestamp(since)
     newest: Dict[str, dict] = {}
     for obj in objs:
@@ -235,15 +259,17 @@ def plan_overlay(objs: Iterable[dict], bundled: Iterable[str], since: Any) -> Di
             newest[rel] = obj
     plan: Dict[str, dict] = {}
     for rel, obj in newest.items():
-        if f"performance_eval/{rel}" in bundled_set and release_ts is not None:
+        key = f"performance_eval/{rel}"
+        if key in metas:
+            asof = _bundle_asof(metas[key], release_ts)
             obj_ts = parse_timestamp(obj.get("created_at"))
-            if obj_ts is not None and obj_ts <= release_ts:
-                continue                   # the bundle already carries a copy at least this new
+            if asof is not None and obj_ts is not None and obj_ts <= asof:
+                continue                   # the bundle's copy was written at least this recently
         plan[rel] = obj
     return plan
 
 
-def overlay_artifacts(store: Any, tag: str, dest: Path, manifest_files: Optional[Iterable[str]] = None) -> List[str]:
+def overlay_artifacts(store: Any, tag: str, dest: Path, manifest_files: Any = None) -> List[str]:
     """Copy the newest ``nightly-artifacts/<run_id>/<campaign>/<rel>`` per path onto the bundle.
 
     One bucket listing, one download per path at most: :func:`plan_overlay`
@@ -359,7 +385,7 @@ def _bootstrap_locked(
 
     applied: List[str] = []
     if not skip_artifacts:
-        applied = overlay_artifacts(store, tag, dest, manifest_files=manifest["files"].keys())
+        applied = overlay_artifacts(store, tag, dest, manifest_files=manifest["files"])
         _say(f"campaigns: {manifest.get('campaigns')} hydrated")
 
     slice_path = dest / SLICE_NAME

@@ -30,6 +30,7 @@ claim the original did not make.
 | Date | Tag | Lesson |
 |---|---|---|
 | 2026-10-02 | `publishing` | A shadow artifact with no store is spend with no learning: every editorial draft died with the container |
+| 2026-10-02 | `tooling` | Every release rolled the cumulative scorecard back to the Mac's copy: the bundle was dated by the cut, not by its write |
 | 2026-10-02 | `keying` | Without terrain the reader keys yesterday's shape; the missing market is not what hurt it |
 | 2026-09-22 | `acquisition` | A dead path described as a live fallback costs reasoning every night: the cloud asked for PCS pages nobody can fetch |
 | 2026-09-22 | `tooling` | The automation covers WorldTour and .Pro: every `.1` failure was the outside world, not the code |
@@ -131,6 +132,48 @@ and notes into `performance_eval/editorial/feedback_<date>.md` for the next
 `SKILL.md` revision. Nothing reaches the public site: that is the next chip.
 
 ---
+
+## 2026-10-02 — Every release rolled the cumulative scorecard back to the Mac's copy: the bundle was dated by the cut, not by its write
+
+**Tag:** `tooling` · CRO Race, Tour de Langkawi, Tour de Luxembourg, Okolo Slovenska (chip Z2)
+
+The day-key reader's ledger takes `oracle_item` from `review/key_scorecard.json`, and settled
+rows kept vanishing: Langkawi st3, CRO st2–4, Luxembourg st3, Okolo st3–4. The hosted artifact
+history (read-only) shows that each loss happened on **the first tick after a release**. Release
+`data-2026-09-29` was cut at 21:12 UTC and carried the Mac's Langkawi card (stages 1–2, written
+09-28 22:19). The cloud had uploaded stages 1–3 at 19:58 the same day. `bootstrap.plan_overlay`
+skipped every artifact older than the release's `created_at` when the bundle carried the path,
+on the assumption that the bundle's copy was at least that new. The Mac never pulls cloud writes
+back, so that assumption is false. The next tick restored [1, 2] and settled only stage 4, giving
+[1, 2, 4]. The same pattern explains all six losses:
+
+| Release | Card in bundle | Lost |
+|---|---|---|
+| 09-19 | Okolo [1, 2], Luxembourg [1, 2] | Okolo st3, Luxembourg st3 |
+| 09-22 | Okolo [1, 2] | Okolo st4 |
+| 09-23 | CRO [1] | CRO st2 |
+| 09-25 | CRO [1] | CRO st3, st4 |
+| 09-29 | Langkawi [1, 2] | Langkawi st3 |
+
+In `data-2026-09-29`, 4 of the 291 bundled paths that had a pre-release artifact were stale this
+way: two scorecards and CRO's GC config and board. Everything else the Mac already held
+byte-identical.
+
+Two fixes, either one sufficient for the card:
+
+- **Newest write wins.** The manifest now records each campaign file's Mac `mtime`, and
+  `plan_overlay` dates the bundle's copy by it. A manifest entry without one falls back to the
+  old rule.
+- **The card is rebuilt, not carried.** `score_day_keys --backfill` scores every settled stage
+  with no row and attaches any unscored prospective agent key. The settle now always passes it,
+  so a row lost for any reason returns the same night. Existing rows are never re-labelled. The
+  re-scored labels matched the cloud's on all 25 stages.
+
+Generalisation: a file that both sides write has no single owner. Date each copy by its own
+write, and keep any cumulative product re-derivable from its archive.
+
+---
+
 ## 2026-10-02 — Without terrain the reader keys yesterday's shape; the missing market is not what hurt it
 
 **Tag:** `keying` · CRO Race, Tour de Langkawi, Tour de Luxembourg, Tour of Huangshan, Okolo Slovenska

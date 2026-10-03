@@ -81,3 +81,86 @@ def test_agent_refresh_and_paired_table(sdk, capsys):
     assert "Gate K (replay, 2 judgment stages)" in out
     assert "1 covered      human 1.00  agent 1.00  -> PASS" in out
     assert "family regressions" in out and "Gate K (prospective" not in out
+
+
+# --- --backfill: the card is monotonic (chip Z2, 2026-10-02) -----------------------------------
+# Every release rolled review/key_scorecard.json back to the Mac's copy and each settle scored only
+# --stage N, so a lost row never came back (Langkawi st3, CRO st2-4). --backfill scores every
+# settled stage missing a row and attaches unscored prospective agent keys; existing rows are never
+# re-labelled. The oracle is stubbed: labelling needs the DB's rider profiles.
+
+def _stub_oracle(mod, label="res_9"):
+    calls = []
+
+    def fake(stage, menu):
+        calls.append(stage)
+        return {"stage": stage, "oracle_item": label, "day_class": "residual", "rule_type": "x", "wg_size": 3,
+                "wg_prop": 0.02, "winning_time": 15000, "winner": "W", "winner_gc_morning": None,
+                "front5_gc_median": None, "top15_shares": {}, "top15_unknown": 0.0}
+    mod.oracle_item = fake
+    return calls
+
+
+def test_backfill_restores_a_lost_row_and_attaches_a_raw_shape_agent_key(sdk):
+    mod, camp = sdk
+    calls = _stub_oracle(mod)
+    card = json.loads(mod.SCORECARD.read_text())
+    kept = {r["stage"]: dict(r) for r in card}
+    card = [r for r in card if r["stage"] != 13]                    # the release overlay dropped st13
+    # st12: a prospective record saved in the reader's raw key_items shape, row unscored
+    (camp / "predictions/stage_12/agent_key.json").write_text(json.dumps(
+        {"key_items": [{"item": kept[12]["oracle_item"], "weight": 0.7}, {"item": "bunch", "weight": 0.3}],
+         "family": "escape", "confidence": 0.6, "human_review_required": True, "replay": False}))
+    assert mod.backfill_targets(card, also_agent=True) == {"missing": [13], "agent": [12], "replay": []}
+
+    card, done = mod.backfill(card, menu=None, also_agent=True)
+    assert done == {"missing": [13], "agent": [12], "replay": []}
+    assert calls == [13]                                            # only the lost stage is labelled
+    rows = {r["stage"]: r for r in card}
+    assert sorted(rows) == [12, 13, 14]
+    assert rows[13]["oracle_item"] == "res_9" and rows[13]["scored_at"]
+    assert rows[12]["oracle_item"] == kept[12]["oracle_item"]       # never re-labelled
+    assert rows[12]["agent_key"] is not None and rows[12]["agent_exact"] is True
+    assert rows[14] == kept[14]                                     # untouched
+
+    # idempotent: nothing left to do, nothing relabelled
+    assert mod.backfill_targets(card, also_agent=True) == {"missing": [], "agent": [], "replay": []}
+    card2, done2 = mod.backfill(card, menu=None, also_agent=True)
+    assert done2 == {"missing": [], "agent": [], "replay": []} and card2 == card and calls == [13]
+
+
+def test_backfill_keeps_replay_records_off_the_archive(sdk):
+    mod, camp = sdk
+    _stub_oracle(mod)
+    card = json.loads(mod.SCORECARD.read_text())
+    (camp / "predictions/stage_13/agent_key.json").write_text(json.dumps(
+        _agent_record({"res_2": 0.6, "gc_day": 0.4}, replay=True)))
+    card, done = mod.backfill(card, menu=None, also_agent=True)
+    assert done == {"missing": [], "agent": [], "replay": [13]}
+    assert "agent_key" not in next(r for r in card if r["stage"] == 13)
+    assert [r["stage"] for r in json.loads(mod.REPLAY_SCORECARD.read_text())] == [13]
+    assert mod.backfill_targets(card, also_agent=True)["replay"] == []
+
+
+def test_backfill_ignores_unsettled_and_void_stages(sdk):
+    mod, camp = sdk
+    calls = _stub_oracle(mod)
+    (camp / "results/stage_15").mkdir()                             # void / not yet settled: no results.json
+    card = json.loads(mod.SCORECARD.read_text())
+    card, done = mod.backfill(card, menu=None, also_agent=False)
+    assert done["missing"] == [] and calls == []
+
+
+def test_main_backfill_writes_the_stage_and_every_missing_row(sdk, monkeypatch, capsys):
+    mod, camp = sdk
+    calls = _stub_oracle(mod)
+    monkeypatch.setattr(mod, "load_menu", lambda: None)
+    monkeypatch.setattr(mod, "set_campaign", lambda p: None)        # the fixture already points the module
+    card = json.loads(mod.SCORECARD.read_text())
+    mod.SCORECARD.write_text(json.dumps([r for r in card if r["stage"] == 12]))   # rolled back to st12 only
+    monkeypatch.setattr("sys.argv", ["score_day_keys.py", "--campaign", str(camp), "--stage", "14",
+                                     "--also", "agent", "--backfill"])
+    mod.main()
+    rows = json.loads(mod.SCORECARD.read_text())
+    assert [r["stage"] for r in rows] == [12, 13, 14] and calls == [14, 13]
+    assert '"missing": [13]' in capsys.readouterr().out
