@@ -1,6 +1,6 @@
 ---
 name: editorial
-version: 1.0.0
+version: 1.1.0
 description: Write the campaign's stage-preview and stage-retro prose from a frozen facts bundle, in the house style, framed as information capture and never as betting advice.
 ---
 
@@ -89,6 +89,13 @@ artifact; the narrative may only reference races and metrics present in it.
   ("6.50 (9.9%)"), gaps as m:ss ("at 4:12"), ranks as "#22", distances as
   "154.5 km", probabilities at one decimal place. If a number is not in the
   bundle you do not write it — write the qualitative claim instead.
+- Write each number as its literal value, copied from the bundle into the
+  sentence ("125.7 km", "at 0:42"). Never write a template token — a bundle
+  path such as route.distance_km or results.top#1.name wrapped in double
+  curly braces: nothing fills them in, the linter rejects every one, and a
+  reader sees braces instead of facts.
+  `placeholders_used` is a plain-English list of facts you left out because
+  the bundle does not carry them — it is not a templating mechanism.
 - Riders are named exactly as the bundle names them (the bundle's
   `rider_name` / `name` fields; a market name may differ in word order —
   prefer the results/board form).
@@ -134,6 +141,8 @@ artifact; the narrative may only reference races and metrics present in it.
 
 You get one retry. The report lists every lexicon hit (replace the word),
 every numeral not found in the bundle (remove the number or replace it with
-the bundle's value), and every key restatement that does not match the
-approved key (quote the approved weights). Fix exactly those and return the
+the bundle's value), every double-curly-brace placeholder token (write the bundle's
+literal value in its place, or drop the claim if the bundle lacks it), and
+every key restatement that does not match the approved key (quote the
+approved weights). Fix exactly those and return the
 whole JSON again.
