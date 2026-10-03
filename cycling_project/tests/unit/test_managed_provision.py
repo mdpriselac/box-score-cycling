@@ -113,8 +113,10 @@ def test_tool_surfaces_match_the_trust_boundary(pv, env):
     assert enabled(a["uci-acquirer"]) == {"bash", "read", "glob"}              # deterministic CLI runner: no write, no web
     coord = enabled(a["nightly-coordinator"])
     assert "bash" in coord and "web_fetch" not in coord and "web_search" not in coord
+    # judgment agents on Opus 5.5; the one-command UCI runner on Sonnet 5.5 (2026-10-02)
+    expected = {"uci-acquirer": "claude-sonnet-5-5"}
     for name, spec in a.items():
-        assert spec["model"]["id"] == "claude-opus-5-5", name
+        assert spec["model"]["id"] == expected.get(name, "claude-opus-5-5"), name
 
 
 def test_no_agent_can_fetch_procyclingstats(pv, env):

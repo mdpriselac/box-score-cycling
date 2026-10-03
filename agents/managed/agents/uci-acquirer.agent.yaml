@@ -12,8 +12,10 @@ description: >-
   sha256s, exit code. Give it the campaign slug, absolute campaign directory, unit and the exact UCI
   competition URL. It runs nothing else and edits nothing.
 model:
-  id: claude-opus-5-5
-  effort: low
+  # Sonnet 5.5 since 2026-10-02: the whole job is one deterministic command and a verbatim
+  # report, no judgment (owner decision; the four judgment agents stay on Opus 5.5).
+  id: claude-sonnet-5-5
+  effort: medium
 system_file: ../prompts/uci-acquirer.md
 tools:
   - type: agent_toolset_20260401
