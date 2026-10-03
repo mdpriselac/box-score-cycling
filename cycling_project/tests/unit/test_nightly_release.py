@@ -280,6 +280,23 @@ def _git(root: Path, *args: str) -> str:
         ["git", "-c", "user.name=t", "-c", "user.email=t@example.com", *args], cwd=root, text=True).strip()
 
 
+@pytest.fixture(autouse=True)
+def _bootstrap_env_is_restored(monkeypatch):
+    """``bootstrap()`` writes CYCLING_DB_PATH and NIGHTLY_RELEASE_TAG straight into os.environ
+    (a hydrated container needs them in every later shell). Registering both with monkeypatch
+    makes teardown restore them, so a release test can never leak "inside a release" into the
+    driver tests that run after it (which then refuse their FakeStore fallback — found by chip Z2,
+    2026-10-03: 7 driver tests failed whenever this file ran first)."""
+    # monkeypatch.delenv on an ABSENT variable records nothing, so teardown would not undo a later
+    # direct os.environ write; setenv first records "originally absent", then delenv clears it.
+    for name in (db_path_mod.ENV_VAR, "NIGHTLY_RELEASE_TAG"):
+        original = os.environ.get(name)
+        monkeypatch.setenv(name, original if original is not None else "_")
+        if original is None:
+            monkeypatch.delenv(name)
+    yield
+
+
 @pytest.fixture
 def fake_project(tmp_path):
     root = tmp_path / "repo"
