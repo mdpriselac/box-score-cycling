@@ -31,6 +31,7 @@ claim the original did not make.
 |---|---|---|
 | 2026-10-02 | `publishing` | A shadow artifact with no store is spend with no learning: every editorial draft died with the container |
 | 2026-10-02 | `tooling` | Every release rolled the cumulative scorecard back to the Mac's copy: the bundle was dated by the cut, not by its write |
+| 2026-10-02 | `acquisition` | The organiser's road book is on the open web; research it once per race, not per stage ($0.80 for six CRO stages vs $1.69 for one) |
 | 2026-10-02 | `keying` | Without terrain the reader keys yesterday's shape; the missing market is not what hurt it |
 | 2026-09-22 | `acquisition` | A dead path described as a live fallback costs reasoning every night: the cloud asked for PCS pages nobody can fetch |
 | 2026-09-22 | `tooling` | The automation covers WorldTour and .Pro: every `.1` failure was the outside world, not the code |
@@ -171,6 +172,83 @@ Two fixes, either one sufficient for the card:
 
 Generalisation: a file that both sides write has no single owner. Date each copy by its own
 write, and keep any cumulative product re-derivable from its archive.
+
+---
+
+## 2026-10-02 — The organiser's road book is on the open web; research it once per race, not per stage
+
+**Tag:** `acquisition` · chip Z1, branch `chip-z1-route-research`
+
+Route facts had no producer after ProCyclingStats blocked Anthropic's fetcher
+(2026-09-06), so every .Pro bundle reached the reader with distance and two
+towns. Chip Z1 adds a research step (`cycling_project/nightly/route_research.py`
+on the Mac, the `route-researcher` agent in the cloud) that writes a sourced
+`route_raw.json` for `route_facts` to validate.
+
+The paid smoke on CRO Race 2026 stage 3 (Krk → Labin) found the organiser's
+official road book PDF in three searches and four fetches, and transcribed
+four categorised climbs (Sv. Jelena cat 2 at km 109,0; Labin cat 3 at km
+137,5; Skitača cat 1 at km 153,0, 3,5 km at 10,8%; the uphill Labin finish),
+3300 m and the finale, with media figures for the same climbs recorded as
+disagreements in `notes`. After ingest, `route_facts` was `complete`, and the
+towns and distance matched the FirstCycling archive. The reader, re-keyed on a
+scratch bundle that carried this route.json, moved from bunch .50 / res_3 /
+res_7 (true item res_2, uncovered) to res_4 .55 / res_2 .25 / gc_day .20. The
+family is now right and the true item is covered, though not exact; this is
+one stage.
+
+What to remember:
+
+- **The cost is the server-side tool loop, not the answer.** That single
+  stage used 391K input tokens and 4.7K output tokens, $1.69, because every
+  search and fetch iteration re-reads the growing context. **Round 2 measured
+  the fix: research per race, not per stage.** One gathering conversation per
+  race fetches the road book once and caches it verbatim
+  (`predictions/route_sources/`), then a tool-less call per stage transcribes
+  from the cached documents, which share a prompt-cache prefix. CRO Race cost
+  $0.36 to gather (a 5 MB road-book reprint in a Croatian Police PDF, plus
+  the organiser's stage pages), $0.28 for the first stage and about $0.03 for
+  each further stage: **$0.80 for all six stages**, against $1.69 for one.
+  Luxembourg's 22.5 MB road book was too large to inline: the first run
+  dropped it, and the module now sends large PDFs through the Files API. That
+  cost $0.99 to gather and $0.99 for the first stage, because 189K tokens of
+  PDF were written to the cache; later stages would be cheap.
+- **What the facts bought, measured honestly.** Re-keyed with skill v1.0.0
+  on scratch bundles, with no odds, against the oracle:
+
+  | Stage | Before | After |
+  |---|---|---|
+  | CRO st3 (res_2) | bunch .50 / res_3 .30 / res_7 .20: uncovered | res_4 .50 / **res_2 .30** / gc_day .20: covered |
+  | CRO st4 (res_4) | bunch .50 / res_3 .28 / gc_day .22: uncovered | res_7 .40 / res_3 .30 / bunch .30: uncovered |
+  | CRO st5 (bunch) | gc_day .40 / res_4 .35 / res_2 .25: uncovered | gc_day .45 / res_4 .35 / res_6 .20: uncovered |
+  | Lux st5 (res_2) | gc_day .45 / res_4 .35 / res_6 .20: uncovered | unchanged: uncovered |
+
+  Every key was flagged both before and after. One of four improved:
+  terrain fixes the stage where the label hid a hilltop finish. It does not
+  fix CRO st4 (an HC climb 53 km out, then a flat finish, keyed as a sprint
+  where a small group won) or CRO st5 (a cat-2 climb 16 km out, keyed as a
+  selective day, which ended in a reduced sprint). Those are judgment misses
+  that route facts alone do not settle. All four route.json files graded
+  `partial` only because neither road book prints a stage-type label
+  (`profile_class`), and the reader named "route facts partial" in its flag.
+  **Owner decision (round 3):** a stage sourced by a research layer, with
+  distance, vertical and a validated climb list (or `climbs_listed: false`),
+  now grades `complete` without a label. The absent label is listed,
+  non-blocking, in `optional_missing`. Errors, warnings and climb disorder
+  still downgrade to `partial`, and FirstCycling-only stages stay `partial`.
+  Re-graded for free, all six CRO stages and Lux st5 are now `complete`. The
+  re-key table above was run under the old grade.
+- **The transcription is verbatim, so the numbers are European.** "174,5 km"
+  parsed as 1745 and "10,8%" as 108. Only the range checks stopped them
+  (reject, never default). `parse_number` now reads a comma followed by one
+  or two digits as a decimal comma; a comma followed by three digits is still
+  a thousands separator. The road book URL contains spaces, and the source
+  validator now accepts them. Luxembourg's road book prints climbing as
+  "3083m D+" (French *dénivelé positif*), which is now accepted as a unit.
+- **Search results leak the race.** The transcript retrieved three result
+  reports alongside the road book. The record itself stayed clean because the
+  prompt says "the course only, never the race". On a retrospective run,
+  check `finale`/`notes` before trusting a re-key.
 
 ---
 

@@ -5,7 +5,7 @@
 name: nightly-coordinator
 description: >-
   Coordinator of the nightly cycling run: bootstraps the release bundle, plans due units, delegates
-  results acquisition (UCI, the only source), runs the deterministic driver per campaign, and files operator tasks. A copy can be
+  results acquisition (UCI, the only source) and route research, runs the deterministic driver per campaign, and files operator tasks. A copy can be
   spawned to own ONE campaign's `night --campaign <slug>` run.
 model:
   id: claude-opus-5-5
@@ -26,6 +26,7 @@ multiagent:
   agents:
     - {type: self}
     - uci-acquirer                    # the only results source; pcs-acquirer retired 2026-09-22 (chip X)
+    - route-researcher                # sourced route facts for partial/missing previews (chip Z1, 2026-10-02)
     - day-key-reader
     - editorial
     - ops-triage

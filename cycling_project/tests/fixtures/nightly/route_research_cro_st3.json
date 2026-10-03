@@ -1,0 +1,92 @@
+{
+ "_comment": "record_route_facts input from the chip Z1 paid smoke, CRO Race 2026 stage 3 (2026-10-02); urls_seen = every URL the transcript retrieved",
+ "record": {
+  "found_stage_page": true,
+  "distance_km": "174,5 km",
+  "vertical_metres": "3300 m",
+  "profile_class": "HILLY",
+  "start": "Krk",
+  "finish": "Labin",
+  "climbs_listed": true,
+  "climbs": [
+   {
+    "name": "Sv. Jelena",
+    "category": "2. kategorija / 2nd category",
+    "km_mark": "109,0",
+    "km_to_go": "65,5",
+    "length_km": null,
+    "gradient_pct": null,
+    "source_url": "https://d3g42de5vbfx19.cloudfront.net/races/roadbooks/2026 - CRO Race.pdf"
+   },
+   {
+    "name": "Labin (1st pass of the finish line)",
+    "category": "3. kategorija / 3rd category",
+    "km_mark": "137,5",
+    "km_to_go": "37,0",
+    "length_km": null,
+    "gradient_pct": null,
+    "source_url": "https://d3g42de5vbfx19.cloudfront.net/races/roadbooks/2026 - CRO Race.pdf"
+   },
+   {
+    "name": "Skitača",
+    "category": "1. kategorija / 1st category",
+    "km_mark": "153,0",
+    "km_to_go": "21,5",
+    "length_km": "3,5 km",
+    "gradient_pct": "10,8%",
+    "source_url": "https://d3g42de5vbfx19.cloudfront.net/races/roadbooks/2026 - CRO Race.pdf"
+   },
+   {
+    "name": "Labin (finish)",
+    "category": "3. kategorija / 3rd category",
+    "km_mark": "174,5",
+    "km_to_go": "0,0",
+    "length_km": null,
+    "gradient_pct": null,
+    "source_url": "https://d3g42de5vbfx19.cloudfront.net/races/roadbooks/2026 - CRO Race.pdf"
+   }
+  ],
+  "finale": "Official roadbook: riders enter the Labin circuit at km 135,5 (start of climb), pass the finish line for the first time at km 137,5 (Labin KoM, 3rd cat.), then the climb to Skitača starts at Ravni (km 149,5, narrow road) and tops out at km 153,0, 21,5 km to go (1st cat., 3,5 km at 10,8%, max 24,0%). The descent ends at Brovinje, 16,5 km to go (narrow road). The circuit rejoins at km 172,5, where the climb begins 2,0 km out, and the finish is uphill on the Labin KoM (3rd cat.) at km 174,5. Cycling Mole's preview describes it as \"the usual cobbled finish in Labin\".",
+  "notes": "Organiser roadbook (CRO Race 2026 official guide, stage 3, Thursday 24.9.2026) gives 174,5 km and 3300 m elevation gain. Other sources differ: Cyclingfantasy's stage page gives 174.35 km and +3167 m, and Cyclingflash gives 174.4 km and 2997 m. The organiser figures are recorded. Climb lengths and gradients from Cyclingfantasy's stage page (not the organiser) are: Sv. Jelena 5.57 km at 5.6% (108.6 km, 65.7 to go); Labin 1.62 km at 6% (137.4 km); Skitaca 3.17 km at 11.7% (153.0 km); Labin finish 1.62 km at 6.3%. Its route preview gives Škitača as 3.2 km at 11.6% and the final climb as 1.6 km at 6.1%. For Skitača the roadbook's own figures (3,5 km, 10,8%) are recorded. Profile label 'HILLY' is from Cyclingfantasy; Wikipedia's table also lists it as a 'Hilly stage'. The roadbook does not print a stage-type label. Intermediate sprints per the roadbook: Malinska km 36,0, Lovran km 95,5, Štrmac km 132,0. The roadbook was retrieved after the race had been run, but it is the pre-race official guide.",
+  "sources": [
+   {
+    "url": "https://d3g42de5vbfx19.cloudfront.net/races/roadbooks/2026 - CRO Race.pdf",
+    "title": "CRO Race 2026 Službeni vodič / Roadbook",
+    "supports": "distance, elevation gain, start, finish, all climbs (category, km, km to go), Skitača length/gradient, finale itinerary"
+   },
+   {
+    "url": "https://cyclingfantasy.cc/en/race/cro-race/2026/stage/3",
+    "title": "CRO Race 2026 - Stage 3 Profile | Cycling Fantasy",
+    "supports": "alternative distance/elevation and climb lengths/gradients (in notes)"
+   },
+   {
+    "url": "https://cyclingfantasy.cc/en/race/cro-race/2026/route-and-favourites",
+    "title": "CRO Race 2026 - Route, Favourites & Predictions | Cycling Fantasy",
+    "supports": "profile_class HILLY; preview climb figures (notes)"
+   },
+   {
+    "url": "https://cyclingmole.com/2026/09/23/2026-cro-race-stage-3-preview/",
+    "title": "2026 CRO Race Stage 3 Preview - Cycling Mole",
+    "supports": "cobbled finish in Labin (finale)"
+   }
+  ]
+ },
+ "urls_seen": [
+  "https://crorace.com/en/",
+  "https://crorace.com/en/tobias-svarre-wins-in-dramatic-finish-in-labin-and-takes-the-lead-in-cro-race/",
+  "https://cyclingfantasy.cc/en/race/cro-race/2026/route-and-favourites",
+  "https://cyclingfantasy.cc/en/race/cro-race/2026/stage/3",
+  "https://cyclingflash.com/news/tobias-svarre-claims-first-pro-win-in-cro-race-wall-stage-tim-wellens-third",
+  "https://cyclingflash.com/race/cro-race-2026",
+  "https://cyclingmole.com/2026/09/23/2026-cro-race-stage-3-preview/",
+  "https://cyclinguptodate.com/cycling/results-cro-race-2026-stage-3-uno-x-strikes-again-as-tobias-svarre-wins-queen-stage-ahead-of-tiberi-and-wellens",
+  "https://d3g42de5vbfx19.cloudfront.net/races/roadbooks/2026 - CRO Race.pdf",
+  "https://en.wikipedia.org/wiki/2026_CRO_Race",
+  "https://krkevents.com/en/event/cro-race-2026-is-coming-to-krk/",
+  "https://rabac-labin.com/en/cro-race-returns-to-labin-thursday-24-09-2026/",
+  "https://visitkrk.city/en/posts/cro-race-2026-returns-to-krk/",
+  "https://www.cyclingnews.com/pro-cycling/racing/cro-race-uno-x-mobility-win-again-on-queen-stage-3-as-tobias-svarre-vaults-into-race-lead/",
+  "https://www.sbs.com.au/ondemand/sports-series/cro-race-2026/cro-race-2026/cro-race-2026-s2026-ep3/2510680643576",
+  "https://www.tour-magazin.de/en/professional-cycling/races/cro-race-60704/"
+ ]
+}

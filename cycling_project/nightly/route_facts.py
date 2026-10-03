@@ -35,8 +35,19 @@ Inputs, in increasing order of authority:
          "climbs": [{"name": "Puerto de la Forestal", "category": "3",
                      "km_mark": 34.5, "length_km": 6.7, "gradient_pct": 4.1}],
          "sources": [{"url": "...", "fetched_at": "...", "file": "..."}],
+         "finale": "the last kilometres, as a source describes them",
          "notes": "free text"
        }
+
+   A **research layer** (``researched_by`` present: written by
+   ``cycling_project.nightly.route_research`` on the Mac or by the cloud
+   ``route-researcher`` agent, chip Z1 2026-10-02) must carry at least one
+   source with an ``http(s)`` ``url`` and a ``fetched_at``; without one the
+   whole layer is rejected and nothing it says reaches route.json. A climb may
+   name its ``source_url``; one that is not among the layer's sources is an
+   error. Its start/finish towns are cross-checked against the FirstCycling
+   archive: a mismatch (wrong stage, wrong edition) is a warning, so the day
+   is ``partial``, never ``complete``.
 
 3. ``predictions/<unit>/route.override.json`` — an operator correction, same
    field names plus ``reason`` / ``source`` / ``recorded_by``. It wins field
@@ -58,7 +69,14 @@ reason and the field goes to null):
 ``route_facts`` grades the result:
 
 * ``complete``  — distance, vertical, profile class and the climb list are
-  all known and valid (``climbs_listed: false`` counts as known-empty);
+  all known and valid (``climbs_listed: false`` counts as known-empty).
+  When the route comes from a **sourced research layer** (``researched_by``
+  with valid sources), ``profile_class`` is optional: road books rarely print
+  a stage-type label (CRO Race and Tour de Luxembourg 2026 did not), so
+  distance + vertical + a validated climb list is ``complete`` and the absent
+  label is listed, non-blocking, in ``optional_missing`` (owner decision,
+  chip Z1 round 3, 2026-10-02). Errors, warnings and climb disorder still
+  downgrade to ``partial``; a FirstCycling-only stage is still ``partial``;
 * ``partial``   — something is known, something is missing or flagged;
 * ``missing``   — no usable input at all. Recorded, never invented.
 """
@@ -81,9 +99,17 @@ MAX_DISTANCE_KM = 400.0
 MAX_VERTICAL_M = 10000.0
 MAX_GRADIENT_PCT = 25.0
 CLIMB_FIELDS = ("name", "category", "km_mark", "length_km", "gradient_pct")
+# Free-text caps: a transcription is short. Longer text is rejected, never cut.
+MAX_TEXT_CHARS = {"profile_class": 80, "start": 120, "finish": 120,
+                  "finale": 800, "notes": 2000}
+SCALAR_FIELDS = ("distance_km", "vertical_metres", "profile_class", "start", "finish",
+                 "fc_profile_code", "finale", "notes")
 
 # Fields that must all be known and valid for a `complete` grade.
 REQUIRED_FOR_COMPLETE = ("distance_km", "vertical_metres", "profile_class")
+# With a sourced research layer these stop blocking `complete` and are reported
+# in `optional_missing` instead (owner decision, chip Z1 round 3, 2026-10-02).
+OPTIONAL_WITH_RESEARCH = ("profile_class",)
 
 
 class RouteFactsError(Exception):
@@ -105,12 +131,21 @@ def parse_number(value: Any, *, field: str) -> tuple[float | None, str | None]:
         return float(value), None
     if not isinstance(value, str):
         return None, f"{field}: expected a number, got {type(value).__name__}"
-    cleaned = value.strip().replace(",", "")
+    cleaned = value.strip()
+    # A comma followed by exactly 1-2 digits is a decimal comma ("174,5 km",
+    # "10,8%" — the CRO Race 2026 road book); a comma followed by three digits
+    # is a thousands separator ("2,350 m"). Without this "174,5 km" read as
+    # 1745 and was only caught by the range check (chip Z1, 2026-10-02).
+    if re.match(r"^[+-]?\d+,\d{1,2}(?!\d)", cleaned):
+        cleaned = cleaned.replace(",", ".", 1)
+    cleaned = cleaned.replace(",", "")
     m = re.match(r"^[+-]?\d*\.?\d+", cleaned)
     if not m:
         return None, f"{field}: cannot read a number from {value!r}"
     trailing = cleaned[m.end():].strip()
-    if trailing and not re.fullmatch(r"(km|m|%|meter|metres|meters|pct)\.?", trailing,
+    # "3083m D+" is the French road-book notation for climbing (dénivelé positif),
+    # Tour de Luxembourg 2026; the unit may carry it.
+    if trailing and not re.fullmatch(r"(km|m|%|meter|metres|meters|pct)\.?(\s*D\+)?", trailing,
                                      re.IGNORECASE):
         return None, f"{field}: unexpected text after the number in {value!r}"
     return float(m.group(0)), None
@@ -172,11 +207,81 @@ def newest_fc_archive(results_unit_dir: Path) -> Path | None:
 
 
 # --------------------------------------------------------------------------
+# Research-layer provenance
+
+
+def is_research_layer(raw: dict) -> bool:
+    return bool(isinstance(raw, dict) and raw.get("researched_by"))
+
+
+# Host without whitespace; the path may carry spaces (the CRO Race road book is
+# ".../roadbooks/2026 - CRO Race.pdf").
+URL_RE = re.compile(r"^https?://[^\s/]+\.[^\s/]+(/.*)?$")
+
+
+def valid_sources(raw: dict, errors: list[str], rejected: list[dict]) -> list[dict]:
+    """The layer's sources that carry an http(s) ``url`` and a ``fetched_at``."""
+    value = raw.get("sources")
+    if value is None:
+        return []
+    if not isinstance(value, list):
+        errors.append(f"route_raw.sources: expected a list, got {type(value).__name__}")
+        rejected.append({"field": "sources", "value": value, "reason": "not a list"})
+        return []
+    good = []
+    for i, src in enumerate(value):
+        url = src.get("url") if isinstance(src, dict) else None
+        fetched = src.get("fetched_at") if isinstance(src, dict) else None
+        if not (isinstance(url, str) and URL_RE.match(url.strip())):
+            reason = "no http(s) url"
+        elif not parse_text(fetched):
+            reason = "no fetched_at"
+        else:
+            good.append(src)
+            continue
+        errors.append(f"route_raw.sources[{i}]: {reason}")
+        rejected.append({"field": f"sources[{i}]", "value": src, "reason": reason})
+    return good
+
+
+def _fold(text: str) -> str:
+    import unicodedata
+    text = unicodedata.normalize("NFKD", str(text))
+    text = "".join(ch for ch in text if not unicodedata.combining(ch))
+    return re.sub(r"[^a-z0-9]+", " ", text.lower()).strip()
+
+
+def towns_agree(a: str, b: str) -> bool:
+    """Lenient place-name match: equal, contained, or a shared word of 4+ letters.
+
+    ``Luxembourg-Limpertsberg`` and ``Luxembourg (Limpertsberg)`` agree;
+    ``Labin`` and ``Rijeka`` do not. Accents and punctuation are ignored.
+    """
+    fa, fb = _fold(a), _fold(b)
+    if not fa or not fb:
+        return True
+    if fa == fb or fa in fb or fb in fa:
+        return True
+    return bool({w for w in fa.split() if len(w) >= 4} & {w for w in fb.split() if len(w) >= 4})
+
+
+def _layer_sources(raw: dict, override: dict) -> list[dict]:
+    out = []
+    for label, layer in (("route_raw", raw), ("override", override)):
+        value = layer.get("sources") if isinstance(layer, dict) else None
+        for s in value if isinstance(value, list) else []:
+            if isinstance(s, dict):
+                out.append({**s, "layer": label})
+    return out
+
+
+# --------------------------------------------------------------------------
 # Validation
 
 
 def validate_climb(raw: Any, index: int, distance_km: float | None,
-                   errors: list[str], rejected: list[dict]) -> dict | None:
+                   errors: list[str], rejected: list[dict],
+                   known_urls: set[str] | None = None) -> dict | None:
     where = f"climbs[{index}]"
     if not isinstance(raw, dict):
         errors.append(f"{where}: expected an object, got {type(raw).__name__}")
@@ -219,6 +324,10 @@ def validate_climb(raw: Any, index: int, distance_km: float | None,
     for extra in raw:
         if extra not in CLIMB_FIELDS:
             climb[extra] = raw[extra]
+    source_url = raw.get("source_url")
+    if known_urls is not None and source_url and source_url not in known_urls:
+        local_errors.append(f"{where}: source_url {source_url!r} is not one of the "
+                            f"layer's sources")
     if local_errors:
         errors.extend(local_errors)
         rejected.append({"field": where, "value": raw, "reason": "; ".join(local_errors)})
@@ -286,6 +395,23 @@ def ingest_route(campaign_dir: Path, unit: str, *, write: bool = True) -> dict:
             inputs.append({"layer": "route_raw", "file": str(raw_path),
                            "error": str(e)})
 
+    # A research layer (web research, chip Z1) speaks only with a source: with
+    # no valid source URL nothing it says is carried. Rejected, never
+    # defaulted; the FirstCycling facts stand alone.
+    raw_sources: list[dict] = []
+    research = is_research_layer(raw)
+    if raw:
+        raw_sources = valid_sources(raw, errors, rejected)
+        if research and not raw_sources:
+            errors.append("route_raw.json is a research layer with no valid source "
+                          "(url + fetched_at): the whole layer is rejected")
+            rejected.append({"field": "route_raw", "value": raw.get("researched_by"),
+                             "reason": "research layer without a source"})
+            inputs[-1]["rejected"] = True
+            raw = {}
+            research = False
+    known_urls = {s["url"] for s in raw_sources} if research else None
+
     # ---- layer 3: the operator override ---------------------------------
     override: dict[str, Any] = {}
     override_path = unit_dir / "route.override.json"
@@ -307,8 +433,7 @@ def ingest_route(campaign_dir: Path, unit: str, *, write: bool = True) -> dict:
     for layer, label in ((fc_facts, "firstcycling"), (raw, "route_raw"),
                          (override, "override")):
         scalars: dict[str, Any] = {}
-        for field in ("distance_km", "vertical_metres", "profile_class",
-                      "start", "finish", "fc_profile_code", "notes"):
+        for field in SCALAR_FIELDS:
             if field not in layer:
                 continue
             if field in ("distance_km", "vertical_metres"):
@@ -320,7 +445,15 @@ def ingest_route(campaign_dir: Path, unit: str, *, write: bool = True) -> dict:
                     continue
                 scalars[field] = value
             else:
-                scalars[field] = parse_text(layer[field])
+                text = parse_text(layer[field])
+                cap = MAX_TEXT_CHARS.get(field)
+                if text is not None and cap is not None and len(text) > cap:
+                    err = f"{label}.{field}: {len(text)} characters, above the {cap} cap"
+                    errors.append(err)
+                    rejected.append({"field": field, "value": text[:200] + "...",
+                                     "reason": err, "layer": label})
+                    continue
+                scalars[field] = text
         merge_layer(merged, field_sources, scalars, label, overrides_applied)
 
     distance = merged.get("distance_km")
@@ -354,6 +487,18 @@ def ingest_route(campaign_dir: Path, unit: str, *, write: bool = True) -> dict:
                 f"on the archived stage page"
             )
 
+    # Towns: a research layer naming another start or finish than the archived
+    # stage page has probably transcribed the wrong stage or edition.
+    for field in ("start", "finish"):
+        ours, fc = parse_text(raw.get(field)), fc_facts.get(field)
+        if research and ours and fc:
+            agrees = towns_agree(ours, fc)
+            cross_checks.append({"field": field, "ours": ours, "firstcycling": fc,
+                                 "agrees": agrees, "source": "route_raw"})
+            if not agrees:
+                warnings.append(f"{field} disagrees with FirstCycling: {ours!r} from the "
+                                f"research layer vs {fc!r} on the archived stage page")
+
     # ---- climbs ----------------------------------------------------------
     climbs: list[dict] | None = None
     climbs_source: str | None = None
@@ -378,7 +523,8 @@ def ingest_route(campaign_dir: Path, unit: str, *, write: bool = True) -> dict:
         else:
             if climbs_source == "override":
                 overrides_applied.append("climbs")
-            parsed = [validate_climb(c, i, distance, errors, rejected)
+            parsed = [validate_climb(c, i, distance, errors, rejected,
+                                     known_urls if climbs_source == "route_raw" else None)
                       for i, c in enumerate(value)]
             climbs = [c for c in parsed if c is not None]
             if climbs:
@@ -396,7 +542,10 @@ def ingest_route(campaign_dir: Path, unit: str, *, write: bool = True) -> dict:
 
     # ---- grade -----------------------------------------------------------
     known_climbs = bool(climbs) or climbs_listed is False
-    missing_fields = [f for f in REQUIRED_FOR_COMPLETE if merged.get(f) is None]
+    optional = OPTIONAL_WITH_RESEARCH if research else ()
+    missing_fields = [f for f in REQUIRED_FOR_COMPLETE
+                      if merged.get(f) is None and f not in optional]
+    optional_missing = [f for f in optional if merged.get(f) is None]
     if not known_climbs:
         missing_fields.append("climbs")
 
@@ -424,8 +573,11 @@ def ingest_route(campaign_dir: Path, unit: str, *, write: bool = True) -> dict:
         "climbs_listed": climbs_listed,
         "climbs_ordered": ordered,
         "fc_profile_code": merged.get("fc_profile_code"),
+        "finale": merged.get("finale"),
         "notes": merged.get("notes"),
+        "researched_by": raw.get("researched_by") if research else None,
         "missing_fields": missing_fields,
+        "optional_missing": optional_missing,
         "errors": errors,
         "warnings": warnings,
         "rejected": rejected,
@@ -436,8 +588,12 @@ def ingest_route(campaign_dir: Path, unit: str, *, write: bool = True) -> dict:
                                               "recorded_at")
                      if k in override} or None,
         "inputs": inputs,
-        "source_urls": [s for layer in (raw, override)
-                        for s in (layer.get("sources") or [])],
+        # Every URL a carried layer cites, once, in order; the full source
+        # records (fetched_at, file, title, ...) beside them.
+        "source_urls": list(dict.fromkeys(
+            s["url"] for s in _layer_sources(raw, override)
+            if isinstance(s.get("url"), str))),
+        "sources": _layer_sources(raw, override),
     }
 
     if write:
@@ -485,6 +641,8 @@ def main(argv: list[str] | None = None) -> int:
               f"  sources={sorted(set(route['field_sources'].values()))}")
         for field in route["missing_fields"]:
             print(f"  missing: {field}")
+        for field in route["optional_missing"]:
+            print(f"  absent (optional, not blocking): {field}")
         for err in route["errors"]:
             print(f"  ERROR: {err}")
         for warn in route["warnings"]:

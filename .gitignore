@@ -127,6 +127,8 @@ models/production_backup_*/
 # *_bets.html reports are tracked — only saved vendor pages are excluded.
 performance_eval/**/stage_page_*.html
 performance_eval/**/race_page_*.html
+# route research source cache (chip Z1): road books can be 20+ MB; index.json + gather.json are tracked
+performance_eval/**/predictions/route_sources/src_*
 performance_eval/**/*FirstCycling*.html
 performance_eval/**/odds/**/raw/
 # The blanket *.csv rule above would otherwise swallow the results and odds

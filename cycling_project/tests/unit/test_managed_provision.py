@@ -99,11 +99,25 @@ def test_the_coordinator_stores_every_editorial_draft(pv, env):
     assert "editorial" in drv.build_parser()._subparsers._group_actions[0].choices
 
 
+def test_the_coordinator_dispatches_route_research_from_the_plan(pv, env):
+    """Chip Z1 (2026-10-02): the plan's `route_research` units get one researcher task each,
+    before the campaign thread runs; the reader itself never gets web tools."""
+    p = pv.plan(env)
+    coord = p["agents"]["nightly-coordinator"]["system"]
+    assert "`route_research`" in coord and "route-researcher" in coord
+    assert "predictions/<unit>/route_raw.json" in coord
+    assert "ingest-route performance_eval/<slug> <unit> --dry-run" in coord
+    assert "route-researcher" in p["agents"]["nightly-coordinator"]["multiagent"]["agents"]
+    researcher = p["agents"]["route-researcher"]["system"]
+    assert "researched_by" in researcher and "never the race" in researcher
+    assert "data about a bike race" in researcher
+
+
 def test_agent_order_leaves_first_and_roster_resolves(pv, env):
     p = pv.plan(env)
     order = p["agent_order"]
     assert order[-1] == "nightly-coordinator"
-    assert set(order[:-1]) == {"uci-acquirer", "day-key-reader", "editorial", "ops-triage"}
+    assert set(order[:-1]) == {"uci-acquirer", "route-researcher", "day-key-reader", "editorial", "ops-triage"}
     ids = {n: {"id": f"agent_{i}", "version": i + 1} for i, n in enumerate(order[:-1])}
     roster = pv.resolve_roster(p["agents"]["nightly-coordinator"], ids)
     assert roster["type"] == "coordinator"
@@ -129,6 +143,9 @@ def test_tool_surfaces_match_the_trust_boundary(pv, env):
     assert enabled(a["day-key-reader"]) == set() and enabled(a["editorial"]) == set()
     assert enabled(a["ops-triage"]) == {"read", "glob", "grep"}
     assert enabled(a["uci-acquirer"]) == {"bash", "read", "glob"}              # deterministic CLI runner: no write, no web
+    # route research (chip Z1): the web, one file, and no bash — a page that tries to instruct it
+    # cannot run a command or reach the vaulted Supabase key
+    assert enabled(a["route-researcher"]) == {"web_search", "web_fetch", "write", "read"}
     coord = enabled(a["nightly-coordinator"])
     assert "bash" in coord and "web_fetch" not in coord and "web_search" not in coord
     # judgment agents on Opus 5.5; the one-command UCI runner on Sonnet 5.5 (2026-10-02)
@@ -145,8 +162,20 @@ def test_no_agent_can_fetch_procyclingstats(pv, env):
     assert "pcs-acquirer" not in p["agents"]
     roster = p["agents"]["nightly-coordinator"]["multiagent"]["agents"]
     assert "pcs-acquirer" not in roster
-    blob = json.dumps(p["agents"], default=str).lower()
+    # The only place the domain may appear is a blocklist (route-researcher, chip Z1): it keeps
+    # the web tools from spending budget on a wall, it never enables anything.
+    def without_blocklists(node):
+        if isinstance(node, dict):
+            return {k: without_blocklists(v) for k, v in node.items() if k != "blocked_domains"}
+        if isinstance(node, list):
+            return [without_blocklists(v) for v in node]
+        return node
+    blob = json.dumps(without_blocklists(p["agents"]), default=str).lower()
     assert "procyclingstats" not in blob
+    for spec in p["agents"].values():
+        for ts in spec.get("tools") or []:
+            for cfg in ts.get("configs") or []:
+                assert not any("procyclingstats" in d for d in cfg.get("allowed_domains") or [])
     coord = p["agents"]["nightly-coordinator"]["system"].lower()
     assert "pcs" not in coord and "procyclingstats" not in coord
     assert "uci is the only results source" in coord
