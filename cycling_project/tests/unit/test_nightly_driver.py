@@ -166,6 +166,8 @@ def test_night_dry_run_replays_stage_14_to_15(campaign, tmp_path, capsys):
     seed = next(s for s in steps if s["step"] == "seed_state_cache")
     assert seed["detail"]["argv"][1].endswith("seed_state_cache.py") and "--race-id" in seed["detail"]["argv"]
     assert next(s for s in steps if s["step"] == "score_day_keys")["detail"]["argv"][2:6] == ["--campaign", str(campaign), "--stage", "14"]
+    # the card is monotonic: settle also backfills every settled stage missing a row (chip Z2)
+    assert next(s for s in steps if s["step"] == "score_day_keys")["detail"]["argv"][6:] == ["--also", "agent", "--backfill"]
     fin = [s for s in steps if s["step"] == "finish"]
     assert [(s["state"], s["exit_code"]) for s in fin] == [("ok", 0), ("ok", 0)]
     # but --dry-run/--no-log makes no mirrored campaign run records or logs.

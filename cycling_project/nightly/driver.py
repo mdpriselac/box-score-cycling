@@ -943,10 +943,15 @@ class Driver:
         else:
             self.step("gc_config", lambda: None, skip="no predictions/gc/scenarios.json")
 
-        # 4. day-key scoring — always, even for unkeyed stages
+        # 4. day-key scoring — always, even for unkeyed stages.  --backfill also scores every
+        # settled stage that has no card row (or an unscored prospective agent key): the card is
+        # the day-key reader's ledger and must be monotonic.  Before 2026-10-02 (chip Z2) only
+        # stage N was scored, so a row lost once — every release rolled the cumulative card back
+        # to the Mac's copy (bootstrap.plan_overlay) — never came back.  Deterministic from the
+        # archive; existing rows are never re-labelled.
         if stage is not None:
             self.script("score_day_keys", [self.python, SCRIPTS["score_day_keys"], "--campaign", c.dir, "--stage", stage,
-                                           "--also", "agent"], lock=True)
+                                           "--also", "agent", "--backfill"], lock=True)
 
         # A missed preview is still publishable as an honestly labelled
         # retrospective.  Build it from the settled oracle, freeze the result

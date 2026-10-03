@@ -483,6 +483,61 @@ def test_plan_overlay_collapses_and_applies_bundle_rule():
     }
 
 
+def test_plan_overlay_dates_the_bundle_copy_by_its_mac_write_time():
+    """2026-10-02 (chip Z2): release data-2026-09-29 was cut at 21:12 from the Mac's Langkawi card
+    (written 09-28 22:19, stages 1-2); the cloud had uploaded stages 1-3 at 19:58 the same day.  The
+    release-time rule kept the Mac copy and the next morning's ledger lost stage 3.  With the copy's
+    own mtime in the manifest, the newer cloud write wins; a Mac edit made after it still wins."""
+    since = "2026-09-29T21:12:36+00:00"
+    card = "tour-de-langkawi-2026/review/key_scorecard.json"
+    cfg = "tour-de-langkawi-2026/campaign.json"
+    old_manifest = "tour-de-langkawi-2026/predictions/gc/scenarios.json"
+    objs = [
+        {"key": f"r1/{card}", "created_at": "2026-09-28T19:58:41+00:00", "size": 1, "etag": None},   # before the Mac copy
+        {"key": f"r2/{card}", "created_at": "2026-09-29T19:58:50+00:00", "size": 1, "etag": None},   # after it, before the cut
+        {"key": f"r2/{cfg}", "created_at": "2026-09-29T19:58:50+00:00", "size": 1, "etag": None},    # Mac edited later
+        {"key": f"r2/{old_manifest}", "created_at": "2026-09-29T19:58:50+00:00", "size": 1, "etag": None},
+    ]
+    files = {
+        f"performance_eval/{card}": {"sha256": "x", "size": 1, "mtime": "2026-09-28T22:19:47+00:00"},
+        f"performance_eval/{cfg}": {"sha256": "x", "size": 1, "mtime": "2026-09-29T21:00:00+00:00"},
+        f"performance_eval/{old_manifest}": {"sha256": "x", "size": 1},          # pre-Z2 manifest entry: release rule
+    }
+    plan = bootstrap_mod.plan_overlay(objs, files, since)
+    assert {rel: o["key"] for rel, o in plan.items()} == {card: f"r2/{card}"}
+    # the bare-path form (older callers) keeps the release-time rule for every bundled path
+    assert bootstrap_mod.plan_overlay(objs, list(files), since) == {}
+
+
+def test_manifest_records_mac_mtime_for_campaign_files_and_bootstrap_honours_it(fake_project, tmp_path, monkeypatch):
+    root, slice_db = fake_project
+    card = root / "performance_eval" / "vuelta-2026" / "review" / "key_scorecard.json"
+    card.parent.mkdir(parents=True, exist_ok=True)
+    card.write_text(json.dumps([{"stage": 1}, {"stage": 2}]))
+    old = dt.datetime(2026, 9, 4, 22, 0, tzinfo=dt.timezone.utc).timestamp()
+    os.utime(card, (old, old))                                   # the Mac last wrote it on 09-04 22:00
+    root2, out, manifest = _bundle(fake_project, tmp_path)
+    rel = "performance_eval/vuelta-2026/review/key_scorecard.json"
+    assert manifest["files"][rel]["mtime"] == "2026-09-04T22:00:00+00:00"
+    assert "mtime" not in manifest["files"][manifest["git"]["code_zip"]]       # only campaign files are dated
+    assert verify_bundle(out) == []
+
+    store = FakeStore(tmp_path / "store")
+    upload_bundle(store, out, manifest)
+    store.approve("data-2026-09-05", by="human")
+    monkeypatch.delenv(db_path_mod.ENV_VAR, raising=False)
+    # the cloud settled stage 3 after the Mac's write but before the release row was created
+    store.put_artifact("run-x/vuelta-2026/review/key_scorecard.json",
+                       json.dumps([{"stage": 1}, {"stage": 2}, {"stage": 3}]).encode(),
+                       created_at="2026-09-04T23:00:00+00:00")
+    release = store.get_release("data-2026-09-05")
+    assert release["created_at"] > "2026-09-04T23:00:00"           # the artifact predates the release
+    dest = tmp_path / "dest"
+    summary = bootstrap(dest, store, skip_uv_sync=True)
+    assert summary["artifacts_overlaid"] == ["run-x/vuelta-2026/review/key_scorecard.json"]
+    assert [r["stage"] for r in json.loads((dest / rel).read_text())] == [1, 2, 3]
+
+
 def test_bootstrap_refuses_concurrent_owner_and_recovers_after_release(tmp_path):
     dest = tmp_path / "dest"
     dest.mkdir()

@@ -87,6 +87,11 @@ def sha256_file(path: Path, chunk: int = 1 << 20) -> str:
     return h.hexdigest()
 
 
+def mtime_iso(ts: float) -> str:
+    """A file mtime as a UTC ISO timestamp (seconds), the shape ``release_store.parse_timestamp`` reads."""
+    return dt.datetime.fromtimestamp(ts, dt.timezone.utc).isoformat(timespec="seconds")
+
+
 def _git(*args: str, cwd: Path = PROJECT_ROOT) -> str:
     return subprocess.check_output(["git", *args], cwd=cwd, text=True).strip()
 
@@ -274,7 +279,15 @@ def build_bundle(
     files: Dict[str, dict] = {}
 
     def add(relpath: str, path: Path) -> None:
-        files[relpath] = {"sha256": sha256_file(path), "size": path.stat().st_size}
+        st = path.stat()
+        files[relpath] = {"sha256": sha256_file(path), "size": st.st_size}
+        if relpath.startswith("performance_eval/"):
+            # The Mac write time of this copy (``_copy`` is copy2, so the bundle file keeps the
+            # source's mtime).  bootstrap.plan_overlay dates the bundle's copy by it, so a cloud
+            # artifact written after the Mac last touched the file wins even when it predates
+            # the release cut (2026-10-02, chip Z2: every release rolled the cumulative
+            # key_scorecard.json back to the Mac's copy).
+            files[relpath]["mtime"] = mtime_iso(st.st_mtime)
 
     # 1. code
     code_name = f"code-{sha[:12]}.zip"

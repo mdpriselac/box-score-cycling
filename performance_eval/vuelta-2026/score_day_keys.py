@@ -17,6 +17,15 @@ pipeline is NOT needed mid-race.
     uv run python performance_eval/vuelta-2026/score_day_keys.py --stage 4
     uv run python performance_eval/vuelta-2026/score_day_keys.py --also agent          # + the agent's key
     uv run python performance_eval/vuelta-2026/score_day_keys.py --agent-refresh       # re-attach every agent key, no DB
+    uv run python performance_eval/vuelta-2026/score_day_keys.py --stage 4 --also agent --backfill   # + every missing row
+
+``--backfill`` (chip Z2, 2026-10-02) makes the card monotonic: besides ``--stage`` it scores
+every settled stage (``results/stage_NN/results.json`` archived) that has no card row, and
+attaches the agent fields to any existing row that lacks them while a prospective
+``agent_key.json`` is on disk (a replay record missing from the replay card is re-attached
+there). Rows already present are never re-labelled, so a second run changes nothing. The
+nightly settle runs it every night: before this, each settle scored only ``--stage N`` and a
+card rolled back by the release overlay never got its lost rows again.
 
 Appends to review/key_scorecard.json and prints the running table.
 
@@ -387,6 +396,85 @@ def print_paired_table(card: list) -> None:
         print(f"  sample size: {n} of >= 30 stages across >= 3 races required before promotion")
 
 
+def score_stage(stage: int, menu, card: list, also_agent: bool = False) -> tuple:
+    """Label one settled stage from the archive and (re)write its row; returns (card, row).
+
+    Agent fields already on the row survive a re-score of the human key."""
+    row = score(oracle_item(stage, menu), logged_key(stage))
+    row["scored_at"] = datetime.now().isoformat()
+    prior = next((r for r in card if r["stage"] == stage), {})
+    row = {**{k: prior[k] for k in (*AGENT_FIELDS, "agent_scored_at") if k in prior}, **row}
+    card = [r for r in card if r["stage"] != stage] + [row]
+    if also_agent:
+        record = agent_record(stage)
+        if record is None:
+            print(f"  --also agent: no predictions/stage_{stage:02d}/agent_key.json")
+        else:
+            card = write_agent_score(row, record, card)
+            row = next(r for r in card if r["stage"] == stage) if not record.get("replay") else attach_agent(row, record)
+    return card, row
+
+
+def settled_stages() -> list:
+    """Every stage whose results are archived (a void stage never has a results.json)."""
+    out = []
+    for p in RESULTS_ROOT.glob("stage_*"):
+        try:
+            n = int(p.name.split("_")[1])
+        except (IndexError, ValueError):
+            continue
+        if (p / "results.json").exists():
+            out.append(n)
+    return sorted(out)
+
+
+def backfill_targets(card: list, also_agent: bool = False) -> dict:
+    """What ``--backfill`` would do, without doing it.
+
+    ``missing``: settled stages with no card row (labelled from the archive).
+    ``agent``: stages whose prospective ``agent_key.json`` has no score on its existing row
+    (``agent_key`` null — e.g. raw ``key_items`` records the scorer ignored before 071ed9f).
+    ``replay``: replay records absent from the replay card."""
+    have = {r["stage"]: r for r in card if "stage" in r}
+    missing = [k for k in settled_stages() if k not in have]
+    agent, replay = [], []
+    if also_agent:
+        rep = json.loads(REPLAY_SCORECARD.read_text()) if REPLAY_SCORECARD.exists() else []
+        rep_stages = {r.get("stage") for r in rep}
+        for k, row in sorted(have.items()):
+            record = agent_record(k)
+            if record is None:
+                continue
+            if record.get("replay"):
+                if k not in rep_stages:
+                    replay.append(k)
+            elif row.get("agent_key") is None:
+                agent.append(k)
+    return {"missing": missing, "agent": agent, "replay": replay}
+
+
+def backfill(card: list, menu, also_agent: bool = False, skip=()) -> tuple:
+    """Make the card monotonic: score every target of :func:`backfill_targets`.
+
+    Existing rows are never re-labelled (their oracle stays as first scored); only the agent
+    fields are attached from the stored row, as ``--agent-refresh`` does. Returns (card, done)."""
+    targets = backfill_targets(card, also_agent)
+    done = {"missing": [], "agent": [], "replay": []}
+    for k in targets["missing"]:
+        if k in skip:
+            continue
+        card, _ = score_stage(k, menu, card, also_agent=also_agent)
+        done["missing"].append(k)
+    for kind in ("agent", "replay"):
+        for k in targets[kind]:
+            if k in skip:
+                continue
+            row = next(r for r in card if r["stage"] == k)
+            card = write_agent_score(row, agent_record(k), card)
+            done[kind].append(k)
+    return card, done
+
+
 def agent_refresh() -> list:
     """Re-attach agent fields to every stage with an agent_key.json using the
     stored oracle rows (no DB, no re-labelling)."""
@@ -408,6 +496,9 @@ def main():
     ap.add_argument("--stage", type=int, default=None)
     ap.add_argument("--also", choices=["agent"], default=None,
                     help="also score predictions/stage_NN/agent_key.json into the row (paired table)")
+    ap.add_argument("--backfill", action="store_true",
+                    help="also score every settled stage with no card row, and attach a missing agent score "
+                         "to any row whose prospective agent_key.json is on disk (idempotent)")
     ap.add_argument("--agent-refresh", action="store_true",
                     help="re-attach every agent key from stored oracle rows and print the paired table (no DB)")
     args = ap.parse_args()
@@ -419,22 +510,12 @@ def main():
     stage = args.stage or latest_archived_stage()
 
     menu = load_menu()
-    row = score(oracle_item(stage, menu), logged_key(stage))
-    row["scored_at"] = datetime.now().isoformat()
-
     SCORECARD.parent.mkdir(parents=True, exist_ok=True)
     card = json.loads(SCORECARD.read_text()) if SCORECARD.exists() else []
-    prior = next((r for r in card if r["stage"] == stage), {})
-    # never drop agent fields already on the row when re-scoring the human key
-    row = {**{k: prior[k] for k in (*AGENT_FIELDS, "agent_scored_at") if k in prior}, **row}
-    card = [r for r in card if r["stage"] != stage] + [row]
-    if args.also == "agent":
-        record = agent_record(stage)
-        if record is None:
-            print(f"  --also agent: no predictions/stage_{stage:02d}/agent_key.json")
-        else:
-            card = write_agent_score(row, record, card)
-            row = next(r for r in card if r["stage"] == stage) if not record.get("replay") else attach_agent(row, record)
+    card, row = score_stage(stage, menu, card, also_agent=args.also == "agent")
+    if args.backfill:
+        card, filled = backfill(card, menu, also_agent=args.also == "agent", skip={stage})
+        print(f"backfill: {json.dumps(filled, sort_keys=True)}")
     card.sort(key=lambda r: r["stage"])
     SCORECARD.write_text(json.dumps(card, indent=1))
 
