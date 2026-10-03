@@ -111,6 +111,61 @@ def test_missing_odds_is_recorded_not_fatal(campaign):
     assert any(n.startswith("odds missing") for n in m["notes"])
 
 
+def _strip_market(campaign: Path, category: str = "pro") -> None:
+    """A race Kambi never listed: no odds dir, no event ids, no event_id/odds_capture."""
+    shutil.rmtree(campaign / "odds")
+    cfg = json.loads((campaign / "campaign.json").read_text())
+    cfg["kambi_event_ids"] = {}
+    cfg["category"] = category
+    (campaign / "campaign.json").write_text(json.dumps(cfg))
+    for p in (campaign / "predictions").glob("stage_*/scenarios.json"):
+        sc = json.loads(p.read_text())
+        sc.pop("event_id", None)
+        sc.pop("odds_capture", None)
+        p.write_text(json.dumps(sc))
+
+
+def test_no_market_configured_is_not_offered(campaign):
+    _strip_market(campaign)
+    assert rdk.market_expected(campaign, 14) == []
+    m = rdk.build_bundle(campaign, 14)
+    assert m["odds"] == "not_offered" and not any(e["path"].startswith("odds/") for e in m["entries"])
+    assert any(n.startswith("odds not_offered") for n in m["notes"])
+    assert not any(n.startswith("odds missing") for n in m["notes"])
+    ctx = json.loads((campaign / "predictions/stage_14/bundle/stage_context.json").read_text())
+    assert ctx["odds"] == "not_offered"
+
+
+@pytest.mark.parametrize("restore", ["category_wt", "event_ids", "stage_event_id", "degraded"])
+def test_any_sign_of_a_market_keeps_missing(campaign, restore):
+    _strip_market(campaign, category="wt" if restore == "category_wt" else "pro")
+    if restore == "event_ids":
+        cfg = json.loads((campaign / "campaign.json").read_text())
+        cfg["kambi_event_ids"] = {"stage_14": "1028797734"}
+        (campaign / "campaign.json").write_text(json.dumps(cfg))
+    elif restore == "stage_event_id":
+        p = campaign / "predictions/stage_14/scenarios.json"
+        sc = json.loads(p.read_text())
+        sc["event_id"] = "1028797734"
+        p.write_text(json.dumps(sc))
+    elif restore == "degraded":
+        d = campaign / "odds" / "2026-09-05"
+        d.mkdir(parents=True)
+        (d / "degraded.json").write_text("{}")
+    assert rdk.market_expected(campaign, 14)
+    m = rdk.build_bundle(campaign, 14)
+    assert m["odds"] == "missing" and any(n.startswith("odds missing") for n in m["notes"])
+
+
+def test_template_sentinels_do_not_count_as_a_market(campaign):
+    _strip_market(campaign)
+    p = campaign / "predictions/stage_14/scenarios.json"
+    sc = json.loads(p.read_text())
+    sc.update(event_id="FILL_FROM_ODDS_PROVENANCE", odds_capture="YYYY-MM-DD/markets_HHMM.json")
+    p.write_text(json.dumps(sc))
+    assert rdk.build_bundle(campaign, 14)["odds"] == "not_offered"
+
+
 def test_render_inlines_only_inline_entries(campaign):
     m = rdk.build_bundle(campaign, 14)
     blocks = rdk.render_bundle(campaign / "predictions/stage_14/bundle", m)
@@ -210,6 +265,30 @@ def test_key_stage_flags_low_confidence_and_invalid_refs(campaign):
     assert record["schema_valid"] is False
     assert any("not a bundle file" in e for e in record["validation_errors"])
     assert any("results for the stage" in e for e in record["validation_errors"])
+
+
+def test_key_stage_no_market_review_follows_the_route_grade(campaign):
+    """Driver policy 2026-10-02 (chip Z3 round 2): no market + a route not graded `complete`
+    forces review ("terrain unknown, no market"); no market with a complete route does not;
+    a degraded/absent configured market forces "missing odds" as before."""
+    _strip_market(campaign)
+    ev = [{"claim": "st12 escape held", "ref": "settled_stages.json"}]
+    # the fixture has no route.json -> route_facts: missing
+    record = rdk.key_stage(campaign, 14, client=FakeClient(_model_output(evidence=ev)), store_kind="none", replay=True)
+    assert record["schema_valid"] is True and record["human_review_required"] is True
+    assert record["review_forced_by"] == [rec.TERRAIN_UNKNOWN_NO_MARKET]
+
+    (campaign / "predictions/stage_14/route.json").write_text(json.dumps({"route_facts": "complete"}))
+    record = rdk.key_stage(campaign, 14, client=FakeClient(_model_output(evidence=ev)), store_kind="none",
+                           replay=True, rebuild_bundle=True)
+    assert record["human_review_required"] is False and record["review_forced_by"] == []
+
+    shutil.copytree(FIXTURE / "odds", campaign / "odds")      # a market existed ...
+    for day in ("2026-09-03", "2026-09-04"):                    # ... but no pre-start snapshot survives
+        shutil.rmtree(campaign / "odds" / day)
+    record = rdk.key_stage(campaign, 14, client=FakeClient(_model_output(evidence=ev)), store_kind="none",
+                           replay=True, rebuild_bundle=True)
+    assert record["review_forced_by"] == ["missing odds"] and record["human_review_required"] is True
 
 
 def test_key_stage_refusal_raises(campaign):

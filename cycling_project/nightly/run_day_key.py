@@ -12,7 +12,10 @@ Bundle (frozen under ``predictions/stage_NN/bundle/``, never rebuilt unless
 ``--rebuild-bundle``): the newest Kambi snapshot captured BEFORE the stage
 event's start (``markets_*.json`` + ``win_odds_*.csv`` + provenance, plus a
 derived compact ``odds/stage_market.json`` and ``odds/movement.json`` when a
-prior snapshot exists), the latest ``results/stage_(N-1)/gc.csv``, the
+prior snapshot exists) — manifest ``odds: present``; with no usable snapshot
+the manifest says ``missing`` when a market was configured or expected (a
+degraded or late capture) and ``not_offered`` when the race never had one
+(:func:`market_expected`; most .Pro/.1 races) — the latest ``results/stage_(N-1)/gc.csv``, the
 ``settled_stages.json`` ledger (every earlier stage with archived results:
 key as logged, oracle item, winner-group facts, front group, the morning
 read's text, the evening reflection), ``scorecard.json`` (the running
@@ -23,7 +26,7 @@ frozen ``day_menu_v1_reference.md``, and ``manifest.json`` with sha256s.
 What the agent NEVER sees: ``results/stage_NN`` for the stage being keyed,
 the human's ``day_key``/``day_key_note`` for that stage (only ``label``,
 ``date``, ``exclude_riders``, ``void_stages`` are read from its
-``scenarios.json``), and any scorecard row at or after the stage.
+``scenarios.json``, plus whether ``event_id``/``odds_capture`` are set), and any scorecard row at or after the stage.
 
 The model call: the skill body as the system prompt, the bundle inlined as
 user content, ``claude-opus-5-5``, adaptive thinking, structured output
@@ -182,7 +185,8 @@ def list_odds_snapshots(campaign: Path) -> list[dict]:
 def select_odds(campaign: Path, stage: int, stage_day: Optional[str], event_id: Optional[str] = None) -> dict:
     """Newest snapshot carrying the stage's event and captured BEFORE the event
     starts (the event's own ``start`` when present, else stage-day 12:00 UTC).
-    Returns {"status": "present"|"missing", ...}."""
+    Returns {"status": "present"|"missing", ...}; ``build_bundle`` turns a
+    ``missing`` into ``not_offered`` when :func:`market_expected` finds no market."""
     fallback_cutoff = _parse_utc(f"{stage_day}T12:00:00+00:00") if stage_day else None
     eligible = []
     for snap in list_odds_snapshots(campaign):
@@ -205,6 +209,47 @@ def select_odds(campaign: Path, stage: int, stage_day: Optional[str], event_id: 
     current = eligible[-1]
     prior = eligible[-2] if len(eligible) > 1 else None
     return {"status": "present", "current": current, "prior": prior}
+
+
+def _configured(value: Any) -> bool:
+    """A config field that is set and not a ``TEMPLATE_scenarios.json`` sentinel (cf. driver._is_placeholder)."""
+    s = "" if value is None else str(value).strip()
+    return bool(s) and not s.startswith(("FILL_", "YYYY"))
+
+
+def market_expected(campaign: Path, stage: int, cfg: Optional[dict] = None) -> list[str]:
+    """Why a market for this race is expected; empty means none was ever configured or offered.
+
+    Any one of these makes an absent snapshot ``missing`` (degraded or late) rather than
+    ``not_offered``: a category that requires odds (WT), a Kambi event id in campaign.json,
+    any odds snapshot or degraded-feed record in the campaign, or an ``event_id`` /
+    ``odds_capture`` in the stage's scenarios.json.  The preview's odds step writes the ids
+    and snapshots when Kambi lists the race, so a .Pro race Kambi never lists has none of
+    them (driver.py: "Kambi lists no market ... preview continues without the book benchmark").
+    Only the two market fields are read from the keyed stage's config — never its day key.
+    """
+    from cycling_project.nightly.driver import ODDS_REQUIRED_CATEGORIES
+    campaign = Path(campaign)
+    cfg = cfg if cfg is not None else load_campaign(campaign)
+    why: list[str] = []
+    category = str(cfg.get("category") or "").lower()
+    if category in ODDS_REQUIRED_CATEGORIES:
+        why.append(f"category {category!r} requires a market")
+    ids = cfg.get("kambi_event_ids")
+    if isinstance(ids, dict) and any(_configured(v) for v in ids.values()):
+        why.append("campaign.json lists Kambi event ids")
+    odds_dir = campaign / "odds"
+    if odds_dir.is_dir() and (any(odds_dir.glob("*/markets_*.json")) or any(odds_dir.glob("*/degraded.json"))):
+        why.append("the campaign holds odds snapshots or a degraded-feed record")
+    p = _stage_dir(campaign, stage) / "scenarios.json"
+    if p.exists():
+        try:
+            stage_cfg = _read_json(p)
+        except (ValueError, json.JSONDecodeError):
+            stage_cfg = {}
+        if _configured(stage_cfg.get("event_id")) or _configured(stage_cfg.get("odds_capture")):
+            why.append("the stage config carries an event_id/odds_capture")
+    return why
 
 
 def _stage_rows(csv_path: Optional[Path], event_name: str) -> list[dict]:
@@ -485,6 +530,13 @@ def build_bundle(campaign: Path, stage: int, *, out_dir: Optional[Path] = None, 
                  captured_at=cap)
         else:
             notes.append("no prior snapshot for this stage's market: no movement file")
+    elif not market_expected(campaign, stage, cfg):
+        # Structural, not a fault: the reader should not treat it as a degraded feed (SKILL §3.5,
+        # §3.8) and the driver does not force review on it (day_key_record.apply_driver_rules).
+        odds_status = "not_offered"
+        notes.append(f"odds not_offered: no market exists for this race (category {cfg.get('category') or 'unknown'}: "
+                     "no Kambi event id, no odds_capture, no snapshot) — structural, not a degraded feed; "
+                     "the market instruments were never available")
     else:
         notes.append(f"odds missing: {odds['reason']}")
 
@@ -674,7 +726,7 @@ def key_stage(campaign: Path, stage: int, *, model: str = DEFAULT_MODEL, replay:
 
     record = rec.normalise_record(output, race=manifest["race"], stage=stage, stage_date=manifest.get("stage_date"))
     errors = rec.validate_record(record, manifest, results_marker=f"stage_{stage:02d}")
-    record = rec.apply_driver_rules(record, odds_present=(manifest["odds"] == "present"),
+    record = rec.apply_driver_rules(record, odds_status=manifest.get("odds"), route_facts=manifest.get("route_facts"),
                                     confidence_threshold=confidence_threshold)
     record = rec.stamp_provenance(record, model_id=meta.get("model") or model, manifest_sha256=manifest["manifest_sha256"],
                                   skill_path=skill_path, replay=replay,
