@@ -287,7 +287,7 @@ def test_the_coordinator_prompt_never_mentions_procyclingstats():
     prompt = (Path(__file__).resolve().parents[3] / "agents/managed/prompts/nightly-coordinator.md").read_text()
     low = prompt.lower()
     assert "pcs" not in low and "procyclingstats" not in low
-    assert "uci_url_needed" in prompt and "Prompt revision 7" in prompt
+    assert "uci_url_needed" in prompt and "Prompt revision 8" in prompt
 
 
 def test_a_hydrated_container_never_falls_back_to_a_fake_store(campaign, tmp_path, capsys, monkeypatch):

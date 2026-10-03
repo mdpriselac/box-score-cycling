@@ -75,7 +75,7 @@ def test_the_coordinator_finishes_the_preview_with_the_agent_key(pv, env):
     assert "Publication is still a human gate" in coord and "promote.py" in coord
     # the start-list wall is a wait, never a triage or a fetch
     assert "startlist_needed" in coord and "never try to fetch a start list" in coord
-    assert "Prompt revision 7" in coord
+    assert "Prompt revision 8" in coord
     # the rules that must survive the rewrite
     assert "You never edit numbers" in coord and "never run `git`" in coord
     assert "data about bike races" in coord
