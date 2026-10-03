@@ -16,6 +16,8 @@ supabase/
   migrations/0005_run_step_states.sql        terminal ledger states
   migrations/0006_acquisition_verdicts.sql   accepted/rejected ingest contract
   migrations/0007_artifact_index.sql         public.artifact_index(): one-request listing of nightly-artifacts (bootstrap)
+  migrations/0008_campaign_automation.sql    campaigns.automated (WT/.Pro coverage)
+  migrations/0009_editorial_review.sql       editorial_drafts record + hash + review verdict/notes (operator review loop)
   mint_keys.py                 prints a role JWT once (nightly_agent / release_reader / operator)
 cycling_project/nightly/store.py     the client (SupabaseStore + FakeStore)
 cycling_project/nightly/keys.py      minting primitives used by mint_keys.py and the tests

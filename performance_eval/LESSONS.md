@@ -29,6 +29,7 @@ claim the original did not make.
 
 | Date | Tag | Lesson |
 |---|---|---|
+| 2026-10-02 | `publishing` | A shadow artifact with no store is spend with no learning: every editorial draft died with the container |
 | 2026-09-22 | `acquisition` | A dead path described as a live fallback costs reasoning every night: the cloud asked for PCS pages nobody can fetch |
 | 2026-09-22 | `tooling` | The automation covers WorldTour and .Pro: every `.1` failure was the outside world, not the code |
 | 2026-09-22 | `tooling` | A page name derived in two places is two names: the driver staged the Tour's stage05.html under Okolo Slovenska |
@@ -84,6 +85,49 @@ claim the original did not make.
 | 2026-07-06 | `keying` | A break read must carry `exclude_top_gc` |
 | 2026-07-05 | `keying` | Model-space semantics are not intuitive |
 | 2026-07-05 | `acquisition` | A truncated FirstCycling results page is fixed by rerunning |
+
+---
+
+## 2026-10-02 — A shadow artifact with no store is spend with no learning
+
+**Tag:** `publishing` · hosted operator tasks 104 and 114 · chip ED
+
+Since the cloud tick went live, the coordinator delegated every successful
+settle and preview to the `editorial` agent, and saved the returned JSON beside
+the facts bundle as `editorial_draft.json` "for `upload` to insert as a draft".
+Two things were wrong at once. No code read that file — `_upload` shipped boards,
+pages and results, never a draft row — and the order was backwards anyway: the
+editorial thread runs after `night` has finished, so the unit's `upload` had
+already happened when the draft reached the disk. The hosted
+`editorial_drafts` table held **zero rows** after weeks of running; roughly
+$13 a week of prose was written, never read, and destroyed with the container.
+The only copy on the Mac (Tour de Langkawi stage 5, committed 2026-10-02) is a
+file that came back with the run's artifacts, not a row anyone could review.
+
+"Shadow mode" was meant to mean *written, stored and judged, but not
+published*. Without the store it meant *written and thrown away*: no draft to
+read, no verdict to record, nothing to steer the next skill revision with. The
+gate that was supposed to decide whether prose is good enough (Gate E) could
+never have opened, because it had nothing to count.
+
+**The general form: a shadow output is only an experiment if it lands
+somewhere a human will look. Before paying for an agent's output, name the
+row it becomes, the command that writes that row, and where in the run that
+command sits relative to the agent's return — and test the round trip, not
+just the writer.**
+
+Fixed (chip ED): the driver persists every `predictions/<unit>/editorial_draft*.json`
+— in `upload` when the draft is already on disk, and through a new
+`editorial` command the coordinator runs right after saving one (prompt
+revision 7 names the file, `editorial_draft_<artifact>.json`, and the command).
+Each draft is validated against the §5.2 schema, linted, rendered to `body_md`
+in a fixed section order and inserted once (idempotent on the record's
+sha256); a draft that fails is stored with `lint_ok` false, never dropped.
+Migration 0009 adds the full record and a review verdict + notes, the operator
+inbox renders the drafts as prose with Approve / Request changes / Reject, and
+`python -m cycling_project.nightly.editorial_feedback` collects the verdicts
+and notes into `performance_eval/editorial/feedback_<date>.md` for the next
+`SKILL.md` revision. Nothing reaches the public site: that is the next chip.
 
 ---
 

@@ -437,6 +437,9 @@ uv run python -m cycling_project.nightly.run_editorial --artifact stage_retro \
     --campaign <campaign> --unit stage_NN            # add --apply to merge the prose
 ```
 
+Every draft — the cloud's or this one — lands in `editorial_drafts` for review;
+§7a is how you read it and how your notes reach the next skill revision.
+
 ---
 
 ## 5. PREVIEW — before unit M starts
@@ -906,6 +909,53 @@ for this runbook:
 run that is not the real nightly must pass `--store fake` or `--dry-run`;
 the agent role's rows are append-only and only the service key can remove
 them.
+
+### 7a. Reviewing the editorial drafts (chip ED, 2026-10-02)
+
+The nightly writes prose for every successful preview and settle. Each draft
+is a row in `editorial_drafts` — stored by the driver, never by hand:
+
+| Where the draft comes from | What stores it |
+|---|---|
+| Cloud: the coordinator saves `predictions/<unit>/editorial_draft_<artifact>.json` after `night` | `python -m cycling_project.nightly editorial --campaign <slug> --unit <unit>` (prompt rev 7 runs it) |
+| Any draft already on disk when a unit uploads | `upload` (inside `settle` / `preview`) |
+| Mac: `run_editorial` calling the API itself | `run_editorial` (its own store insert) |
+
+Each row carries the full record, the rendered prose (`body_md`, sections in
+a fixed order), the lint report (lexicon, numerals against the facts bundle,
+key restatements, §5.2 schema) and `lint_ok`. A draft that fails is stored
+anyway, flagged, so you see the bad ones too. Storing is idempotent on the
+record's sha256: re-running `upload` or `editorial` never duplicates a draft.
+
+**To review:** rebuild and open the inbox (`netlify_site/build/build_ops_page.py`,
+then `http://localhost:8411/_frame/ops.html`, §2.7 of the workflow). The
+**Editorial** section lists the drafts waiting for you, newest first, as they
+would read on a page, with the lint findings, the draft's own `flags`, its
+`claims` and its placeholder notes in a muted block beneath. Fill in "Acting
+as", write your notes and press **Approve**, **Request changes** or
+**Reject** — notes are required for the last two, because they are the whole
+point: say what to keep and what to change in words the skill can absorb.
+Reviewed drafts fold into a history with a verdict filter; you can change a
+verdict later. The buttons need migration `0009_editorial_review.sql` pushed;
+before that the section shows the prose read-only.
+
+**To turn notes into a better skill:**
+
+```bash
+uv run python -m cycling_project.nightly.editorial_feedback                 # every review so far
+uv run python -m cycling_project.nightly.editorial_feedback --since 2026-10-03
+```
+
+writes `performance_eval/editorial/feedback_<date>.md` (operator key, read
+only): a tally, the words that recur in your notes, then each reviewed draft
+grouped by verdict with your notes, its lint findings and the prose. Read it
+when revising `agents/skills/editorial/SKILL.md` or the lexicon, bump the
+skill version, and say in the commit which digest it answers. Nothing feeds
+your notes to the live agent automatically.
+
+**Approving is not publishing.** Gate E is unchanged: no prose reaches the
+public site until a later chip gives the page builders a slot that reads
+approved rows (`review_status = 'approved'`, `record`).
 
 ---
 

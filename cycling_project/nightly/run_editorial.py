@@ -561,18 +561,189 @@ def assemble(artifact: str, record: Dict[str, Any]) -> Dict[str, Any]:
     return {}
 
 
-def body_markdown(artifact: str, record: Dict[str, Any], assembled: Dict[str, Any]) -> str:
-    head = (record.get("sections") or {}).get("headline") or ""
-    parts = [f"# {head}".strip()] if head else []
+# --------------------------------------------------------------------------
+# review rendering + validation (chip ED, 2026-10-02): every draft, however it was
+# written, is stored as one editorial_drafts row whose body_md the operator inbox renders
+# --------------------------------------------------------------------------
+
+#: Section order on the review page, per artifact.  ``headline`` is the page heading;
+#: anything a later skill version adds is appended after these, alphabetically.
+REVIEW_ORDER = {
+    "stage_preview": ("stage_read", "model_vs_market", "key_rationale_summary", "scenario_notes", "gc_note"),
+    "stage_retro": RETRO_ORDER,
+}
+SECTION_TITLES = {
+    "stage_read": "Stage read", "model_vs_market": "Model and market",
+    "key_rationale_summary": "The key", "scenario_notes": "Scenarios", "gc_note": "General classification",
+    "retro_key_vs_oracle": "Key against the oracle", "retro_pool_panel": "Board retrieval",
+    "race_state": "Race state",
+}
+
+
+def review_markdown(record: Dict[str, Any]) -> str:
+    """``body_md`` for review: the headline as ``#``, each section under ``##`` in a fixed
+    order, scenario notes under ``###`` per scenario key.  Model text is copied verbatim; the
+    inbox escapes it and renders only headings, paragraphs and emphasis."""
+    sec = record.get("sections") if isinstance(record.get("sections"), dict) else {}
+    artifact = record.get("artifact")
+    order = list(REVIEW_ORDER.get(artifact, ()))
+    order += sorted(k for k in sec if k not in order and k != "headline")
+    parts: List[str] = []
+    head = sec.get("headline")
+    if isinstance(head, str) and head.strip():
+        parts.append(f"# {' '.join(head.split())}")
+    for key in order:
+        value = sec.get(key)
+        title = SECTION_TITLES.get(key, key.replace("_", " ").capitalize())
+        if key == "scenario_notes" and isinstance(value, list):
+            notes = [n for n in value if isinstance(n, dict) and str(n.get("note") or "").strip()]
+            if notes:
+                parts.append(f"## {title}")
+                for n in notes:
+                    parts.append(f"### {n.get('scenario_key') or 'scenario'}")
+                    parts.append(str(n["note"]).strip())
+        elif isinstance(value, str) and value.strip():
+            parts.append(f"## {title}")
+            parts.append(value.strip())
+        elif value not in (None, "", [], {}):
+            parts.append(f"## {title}")
+            parts.append(json.dumps(value, ensure_ascii=False))
+    return "\n\n".join(parts) if parts else "(empty draft: no sections)"
+
+
+def _schema_errors(value: Any, schema: Dict[str, Any], path: str) -> List[str]:
+    """The subset of JSON Schema ``output_schema`` uses: type, enum, properties, required,
+    additionalProperties=false, items."""
+    t = schema.get("type")
+    ok = {"object": isinstance(value, dict), "array": isinstance(value, list), "string": isinstance(value, str),
+          "boolean": isinstance(value, bool),
+          "integer": isinstance(value, int) and not isinstance(value, bool)}.get(t, True)
+    if not ok:
+        return [f"{path or '$'}: expected {t}, got {type(value).__name__}"]
+    errors: List[str] = []
+    if "enum" in schema and value not in schema["enum"]:
+        errors.append(f"{path or '$'}: {value!r} not in {schema['enum']}")
+    if t == "object":
+        props = schema.get("properties") or {}
+        for k in schema.get("required") or ():
+            if k not in value:
+                errors.append(f"{path}.{k}: missing" if path else f"{k}: missing")
+        if schema.get("additionalProperties") is False:
+            for k in value:
+                if k not in props:
+                    errors.append(f"{path}.{k}: unexpected" if path else f"{k}: unexpected")
+        for k, sub in props.items():
+            if k in value:
+                errors += _schema_errors(value[k], sub, f"{path}.{k}" if path else k)
+    elif t == "array" and isinstance(schema.get("items"), dict):
+        for i, item in enumerate(value):
+            errors += _schema_errors(item, schema["items"], f"{path}[{i}]")
+    return errors
+
+
+def validate_record(record: Any, *, unit: Optional[str] = None) -> List[str]:
+    """Errors against the §5.2 output schema and the skill's hard rule 7 (empty = valid).
+
+    A one-day unit (``race``) has no stage number, so a null ``stage`` is accepted there.
+    """
+    if not isinstance(record, dict):
+        return [f"$: expected object, got {type(record).__name__}"]
+    artifact = record.get("artifact")
+    if artifact not in ARTIFACTS:
+        return [f"artifact: {artifact!r} not one of {list(ARTIFACTS)}"]
+    candidate = record
+    if unit == "race" and record.get("stage") is None:
+        candidate = {**record, "stage": 0}
+    errors = _schema_errors(candidate, output_schema(artifact), "")
+    flags = record.get("flags") if isinstance(record.get("flags"), dict) else {}
+    if flags.get("no_advice_language") is not True:
+        errors.append("flags.no_advice_language: must be true")
+    if flags.get("tone_check") != "information-capture framing":
+        errors.append("flags.tone_check: must be 'information-capture framing'")
+    return errors
+
+
+def record_sha256(record: Any) -> str:
+    """Idempotency key for a draft: the canonical JSON of the record."""
+    return _sha256_text(json.dumps(record, sort_keys=True, ensure_ascii=False, separators=(",", ":")))
+
+
+def draft_phase(artifact: Optional[str], unit: str, fallback: str = "preview") -> str:
+    """``editorial_drafts.phase`` (check: preview / retro / gc / one_day)."""
+    if unit == "race":
+        return "one_day"
+    if unit == "gc":
+        return "gc"
+    if artifact in PHASE_BY_ARTIFACT:
+        return PHASE_BY_ARTIFACT[artifact]
+    return {"settle": "retro"}.get(fallback, fallback if fallback in ("preview", "retro") else "preview")
+
+
+#: Draft files the driver persists.  ``editorial_draft_<artifact>.json`` is the name the
+#: coordinator writes from prompt revision 7; ``editorial_draft.json`` is what it wrote before
+#: (a preview and a retro for the same unit would have shared it).  ``editorial_<artifact>.json``
+#: (the API runner's own wrapper) is NOT read: ``run`` inserts that row itself.
+DRAFT_GLOB = "editorial_draft*.json"
+
+
+def _facts_for(pred_dir: Path, artifact: Optional[str]) -> Tuple[Optional[Dict[str, Any]], Optional[str]]:
+    names = [f"editorial_facts_{artifact}.json"] if artifact else []
     if artifact == "stage_retro":
-        parts.extend(assembled.get("reflection", []))
-    elif artifact == "stage_preview":
-        parts.append(assembled.get("day_key_note", ""))
-        for k, v in (assembled.get("scenario_notes") or {}).items():
-            parts.append(f"**{k}** — {v}")
-        if assembled.get("gc_note"):
-            parts.append(f"**gc** — {assembled['gc_note']}")
-    return "\n\n".join(p for p in parts if p)
+        names.append("retro_facts.json")
+    for name in names:
+        p = pred_dir / name
+        if p.is_file():
+            try:
+                return _load_json(p), name
+            except (OSError, json.JSONDecodeError):
+                continue
+    return None, None
+
+
+def prepare_draft(path: Path, unit: str, *, fallback_phase: str = "preview",
+                  lexicon: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    """Everything an ``editorial_drafts`` row needs from one draft file.
+
+    Never raises on a bad draft: an unparseable or schema-invalid draft comes back with
+    ``lint_ok`` false and the errors in ``lint.validation`` so the owner sees it.
+    """
+    path = Path(path)
+    pred_dir = path.parent
+    raw = path.read_text(encoding="utf-8", errors="replace")
+    try:
+        record: Any = json.loads(raw)
+    except json.JSONDecodeError as exc:
+        return {"record": {"unparseable": True, "raw": raw[:200_000]}, "record_sha256": _sha256_text(raw),
+                "artifact": None, "phase": draft_phase(None, unit, fallback_phase),
+                "body_md": "# Unparseable editorial draft\n\n" + raw[:20_000],
+                "lint": {"ok": False, "source_file": path.name,
+                         "validation": {"ok": False, "errors": [f"invalid JSON: {exc}"]}},
+                "lint_ok": False}
+    if isinstance(record, dict) and isinstance(record.get("record"), dict) and "sections" not in record:
+        record = record["record"]                       # the API runner's wrapper shape
+    errors = validate_record(record, unit=unit)
+    artifact = record.get("artifact") if isinstance(record, dict) and isinstance(record.get("artifact"), str) else None
+    report: Dict[str, Any]
+    facts_name = None
+    if isinstance(record, dict) and isinstance(record.get("sections"), dict):
+        facts, facts_name = _facts_for(pred_dir, artifact)
+        cfg_path = pred_dir / "scenarios.json"
+        try:
+            config = _load_json(cfg_path) if cfg_path.is_file() else None
+            max_stage = ((facts or {}).get("campaign") or {}).get("n_stages") or lint_prose.DEFAULT_MAX_STAGE
+            report = lint_prose.lint_sections(record["sections"], facts=facts, config=config,
+                                              route=(facts or {}).get("route"), lexicon=lexicon or lint_prose.load_lexicon(),
+                                              check_numerals=facts is not None, max_stage=max_stage)
+        except Exception as exc:  # noqa: BLE001 — a lint crash is a finding, not a lost draft
+            report = {"ok": False, "error": f"{type(exc).__name__}: {exc}"}
+    else:
+        report = {"ok": False, "error": "no sections to lint"}
+    lint = {**report, "source_file": path.name, "facts_source": facts_name,
+            "validation": {"ok": not errors, "errors": errors}}
+    return {"record": record, "record_sha256": record_sha256(record), "artifact": artifact,
+            "phase": draft_phase(artifact, unit, fallback_phase),
+            "body_md": review_markdown(record) if isinstance(record, dict) else raw[:20_000],
+            "lint": lint, "lint_ok": bool(report.get("ok")) and not errors}
 
 
 PROTECTED_SCENARIO_KEYS = ("refs", "day_key", "tag")
@@ -708,9 +879,13 @@ def run(artifact: str, campaign_dir: Path, unit: str, *, apply: bool = False, mo
     row = None
     try:
         store = open_store(store_kind, runs_dir or (campaign_dir / "runs"), role="agent")
-        row = store.insert_editorial_draft(None, draft["campaign"], unit, PHASE_BY_ARTIFACT[artifact],
-                                           body_markdown(artifact, record, assembled), kind="prose",
-                                           author="agent", lint=report, lint_ok=bool(report and report["ok"]))
+        errors = validate_record(record, unit=unit)
+        lint = {**(report or {}), "validation": {"ok": not errors, "errors": errors},
+                "source_file": out_path.name, "facts_source": facts_path.name}
+        row = store.insert_editorial_draft(None, draft["campaign"], unit, draft_phase(artifact, unit),
+                                           review_markdown(record), kind="prose", author="agent", lint=lint,
+                                           lint_ok=bool(report and report["ok"]) and not errors,
+                                           record=record, record_sha256=record_sha256(record), artifact=artifact)
         log(f"editorial_drafts row via store={store_kind}")
     except Exception as exc:  # noqa: BLE001 — a store outage must not lose the draft on disk
         log(redact(f"store insert skipped: {exc}"))

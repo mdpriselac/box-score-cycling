@@ -208,3 +208,68 @@ def test_promotion_would_refuse_to_copy_the_page_back_in():
 
     with pytest.raises(ValueError):
         promote.safe_relpath("run-1/_frame/ops.html", "run-1")
+
+
+# ---------------------------------------------------------------------------
+# editorial review (chip ED, 2026-10-02)
+# ---------------------------------------------------------------------------
+
+def test_the_inbox_reads_editorial_drafts_without_risking_the_rest(page):
+    """Drafts load on their own query: an error there is toasted, the inbox still renders."""
+    assert '<p class="kicker">Editorial</p>' in page and 'id="editorial"' in page
+    assert 'const ed = await sb.from("editorial_drafts").select("*")' in page
+    assert 'if (ed.error) toast("editorial_drafts: " + ed.error.message, true);' in page
+    assert "renderEditorial();" in page
+
+
+def test_pending_drafts_come_first_and_reviewed_ones_fold_away(page):
+    assert 'const pending = drafts.filter((d) => draftStatus(d) === "pending");' in page
+    assert '<details id="ed-history"' in page and 'id="ed-filter"' in page
+    assert '.order("created_at", { ascending: false }).limit(300)' in page     # newest first
+
+
+def test_model_text_is_escaped_before_any_markup(page):
+    """The prose is data: everything goes through esc() and only the renderer's own tags appear."""
+    assert "function inlineMd(s) {\n  return esc(s)" in page
+    assert '["h3", "h4", "h5"][h[1].length - 1]' in page
+    assert "${mdToHtml(d.body_md)}" in page
+    assert "innerHTML = d.body_md" not in page and "${d.body_md}" not in page
+
+
+def test_three_verdicts_with_notes_written_through_the_operator_role(page, mod):
+    assert mod.REVIEW_STATUSES == ("pending", "approved", "rejected", "revise")
+    for verdict, label in (("approved", "Approve"), ("revise", "Request changes"), ("rejected", "Reject")):
+        assert f'data-review="{verdict}"' in page and f">{label}</button>" in page
+    assert 'if (status !== "approved" && !notes)' in page                      # notes required to reject/revise
+    assert ".update({ review_status: status, review_notes: notes || null, reviewed_by: identity })" in page
+    assert "if (!requireIdentity()) return;\n  if (!CFG.reviewStatuses.includes(status)) return;" in page
+    # without migration 0009 the buttons are not offered
+    assert 'const canReview = "review_status" in d;' in page and "0009_editorial_review.sql" in page
+
+
+def test_lint_flags_and_claims_sit_beneath_the_prose(page):
+    assert page.index('<div class="prose">${mdToHtml(d.body_md)}</div>') < page.index("${draftMeta(d)}")
+    for frag in ("function lintFindings(lint)", "rec.claims", "rec.placeholders_used", "rec.flags",
+                 'lint ${d.lint_ok ? "ok" : "failed"}'):
+        assert frag in page
+
+
+def test_editorial_tasks_reconcile_once_a_draft_lands(page, mod):
+    assert mod.EDITORIAL_TASK_PATTERN == "editorial"
+    assert "function editorialResolution(t, created)" in page
+    assert "reached editorial_drafts after this task was filed" in page
+
+
+def test_the_inbox_script_parses(page):
+    """Syntax-check the module script (minus its CDN import) with node, when node is installed."""
+    import shutil
+    import subprocess
+
+    node = shutil.which("node")
+    if not node:
+        pytest.skip("node not installed")
+    js = re.search(r'<script type="module">(.*?)</script>', page, re.S).group(1)
+    js = re.sub(r"^import .*$", "", js, flags=re.M)
+    proc = subprocess.run([node, "-e", "new Function(require('fs').readFileSync(0, 'utf8'))"],
+                          input=js, capture_output=True, text=True, timeout=60)
+    assert proc.returncode == 0, proc.stderr

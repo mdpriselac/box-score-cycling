@@ -268,7 +268,7 @@ def test_the_coordinator_prompt_never_mentions_procyclingstats():
     prompt = (Path(__file__).resolve().parents[3] / "agents/managed/prompts/nightly-coordinator.md").read_text()
     low = prompt.lower()
     assert "pcs" not in low and "procyclingstats" not in low
-    assert "uci_url_needed" in prompt and "Prompt revision 6" in prompt
+    assert "uci_url_needed" in prompt and "Prompt revision 7" in prompt
 
 
 def test_a_hydrated_container_never_falls_back_to_a_fake_store(campaign, tmp_path, capsys, monkeypatch):
@@ -576,7 +576,7 @@ def test_driver_source_contains_no_git_invocation():
     assert "publish" not in {a.dest for a in drv.build_parser()._subparsers._group_actions[0].choices.values()
                              for a in [a] if hasattr(a, "dest")} or True
     assert set(drv.build_parser()._subparsers._group_actions[0].choices) == {
-        "bootstrap", "plan", "night", "settle", "preview", "acquire", "ingest", "bundle", "refs", "validate", "upload", "status", "task"}
+        "bootstrap", "plan", "night", "settle", "preview", "acquire", "ingest", "bundle", "refs", "validate", "upload", "editorial", "status", "task"}
 
 
 def test_status_lists_ledger_and_plan(campaign, tmp_path, capsys):

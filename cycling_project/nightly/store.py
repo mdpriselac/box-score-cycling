@@ -123,7 +123,14 @@ def _strip_none(row: Dict[str, Any]) -> Dict[str, Any]:
 
 #: Columns a not-yet-pushed migration may be missing; dropped and retried once, with a
 #: log note (campaigns.automated arrives with 0008_campaign_automation.sql, chip Y).
-_OPTIONAL_COLUMNS = {"campaigns": ("automated",)}
+_OPTIONAL_COLUMNS = {"campaigns": ("automated",),
+                     # 0009_editorial_review.sql (chip ED, 2026-10-02): the full draft, its
+                     # idempotency hash and the artifact type.  Without them the row still lands.
+                     "editorial_drafts": ("record", "record_sha256", "artifact")}
+
+#: The operator's verdict on an editorial draft (0009_editorial_review.sql).
+REVIEW_STATUSES = ("pending", "approved", "rejected", "revise")
+REVIEW_FIELDS = ("review_status", "review_notes", "reviewed_by", "reviewed_at")
 
 
 def _normalise(table: str, row: Dict[str, Any]) -> Dict[str, Any]:
@@ -544,11 +551,43 @@ class SupabaseStore:
 
     def insert_editorial_draft(self, run_id: Optional[str], campaign_slug: str, unit: str, phase: str,
                                body_md: str, *, kind: str = "prose", author: str = "agent",
-                               lint: Optional[Dict[str, Any]] = None, lint_ok: Optional[bool] = None) -> Dict[str, Any]:
+                               lint: Optional[Dict[str, Any]] = None, lint_ok: Optional[bool] = None,
+                               record: Optional[Dict[str, Any]] = None, record_sha256: Optional[str] = None,
+                               artifact: Optional[str] = None) -> Dict[str, Any]:
+        """One draft row.  ``record`` / ``record_sha256`` / ``artifact`` need migration 0009; when
+        it is not pushed they are dropped and the insert retried once (the prose still lands)."""
         row = _strip_none({"run_id": str(run_id) if run_id else None, "campaign_slug": campaign_slug,
                            "unit": unit, "phase": phase, "kind": kind, "author": author, "body_md": body_md,
-                           "lint": lint or {}, "lint_ok": lint_ok})
-        return self._insert("editorial_drafts", [row])[0]
+                           "lint": lint or {}, "lint_ok": lint_ok, "record": record,
+                           "record_sha256": record_sha256, "artifact": artifact})
+        return self._without_unknown_columns(
+            "editorial_drafts", row, lambda p: self._insert("editorial_drafts", [p])[0])
+
+    def editorial_drafts(self, *, campaign_slug: Optional[str] = None, unit: Optional[str] = None,
+                         since: Optional[str] = None, reviewed_only: bool = False,
+                         limit: int = 1000) -> List[Dict[str, Any]]:
+        """Draft rows, newest first (``select=*``: works with or without migration 0009, except
+        ``reviewed_only``, which needs its ``review_status`` column)."""
+        params = {"order": "created_at.desc,id.desc", "limit": str(limit)}
+        if campaign_slug:
+            params["campaign_slug"] = f"eq.{campaign_slug}"
+        if unit:
+            params["unit"] = f"eq.{unit}"
+        if since:
+            params["created_at"] = f"gte.{since}"
+        if reviewed_only:
+            params["review_status"] = "neq.pending"
+        return self._select("editorial_drafts", params)
+
+    def review_editorial_draft(self, draft_id: int, status: str, *, by: str,
+                               notes: Optional[str] = None) -> Dict[str, Any]:
+        """Operator verdict (the inbox writes the same columns through RLS)."""
+        self._require_operator("reviewing an editorial draft")
+        if status not in REVIEW_STATUSES:
+            raise ValueError(f"review status must be one of {REVIEW_STATUSES}")
+        rows = self._patch("editorial_drafts", {"id": f"eq.{int(draft_id)}"},
+                           {"review_status": status, "review_notes": notes, "reviewed_by": by})
+        return rows[0] if rows else {}
 
     def approved_day_key(self, campaign_slug: str, unit: str) -> Optional[Dict[str, Any]]:
         """The newest human-approved key for a unit, or None."""
@@ -919,6 +958,9 @@ class FakeStore(_rs.FakeStore):
         if table in ("day_key_decisions", "editorial_drafts"):
             if row.get("approved_by") or row.get("approved_at") or row.get("author") == "human":
                 self._deny(f"agent may not insert an approved/human row into {table}")
+        if table == "editorial_drafts" and (row.get("review_status", "pending") != "pending" or row.get("review_notes")
+                                            or row.get("reviewed_by") or row.get("reviewed_at")):
+            self._deny("agent may not insert a reviewed editorial draft")
         if table == "operator_tasks" and (row.get("resolved") or row.get("resolved_by") or row.get("resolution")):
             self._deny("agent may not insert a resolved operator task")
         if table == "crosswalk_proposals" and (row.get("status", "proposed") != "proposed" or row.get("resolved_by")):
@@ -1027,11 +1069,66 @@ class FakeStore(_rs.FakeStore):
             "run_id": str(run_id) if run_id else None, "family": family, "confidence": confidence,
             "rationale": rationale, "evidence": evidence or {}}))
 
+    #: False models a hosted schema without migration 0009 (tests): the new columns are
+    #: refused the way PostgREST refuses them, and the client's retry drops them.
+    editorial_review_columns = True
+
     def insert_editorial_draft(self, run_id, campaign_slug, unit, phase, body_md, *, kind="prose", author="agent",
-                               lint=None, lint_ok=None):
-        return self.insert("editorial_drafts", _strip_none({
+                               lint=None, lint_ok=None, record=None, record_sha256=None, artifact=None):
+        row = _strip_none({
             "run_id": str(run_id) if run_id else None, "campaign_slug": campaign_slug, "unit": unit, "phase": phase,
-            "kind": kind, "author": author, "body_md": body_md, "lint": lint or {}, "lint_ok": lint_ok}))
+            "kind": kind, "author": author, "body_md": body_md, "lint": lint or {}, "lint_ok": lint_ok,
+            "record": record, "record_sha256": record_sha256, "artifact": artifact})
+        if row.get("phase") not in ("preview", "retro", "gc", "one_day"):
+            raise StoreError(f"editorial_drafts.phase {row.get('phase')!r} violates the check constraint", 400, "23514")
+        if self.editorial_review_columns:
+            return self.insert("editorial_drafts", {"review_status": "pending", **row})
+        return self._without_unknown_columns("editorial_drafts", row, self._insert_draft_pre_0009)
+
+    def _insert_draft_pre_0009(self, row):
+        unknown = [k for k in _OPTIONAL_COLUMNS["editorial_drafts"] if k in row]
+        if unknown:
+            raise StoreError(f"insert editorial_drafts: HTTP 400 Could not find the '{unknown[0]}' column of "
+                             "'editorial_drafts' in the schema cache", 400, "PGRST204")
+        return self.insert("editorial_drafts", row)
+
+    _without_unknown_columns = SupabaseStore._without_unknown_columns
+
+    def editorial_drafts(self, *, campaign_slug=None, unit=None, since=None, reviewed_only=False, limit=1000):
+        rows = [r for r in self.rows.get("editorial_drafts", [])
+                if (not campaign_slug or r.get("campaign_slug") == campaign_slug)
+                and (not unit or r.get("unit") == unit)
+                and (not since or str(r.get("created_at") or "") >= since)
+                and (not reviewed_only or r.get("review_status", "pending") != "pending")]
+        rows.sort(key=lambda r: (str(r.get("created_at") or ""), int(r.get("id") or 0)), reverse=True)
+        return rows[:limit]
+
+    def review_editorial_draft(self, draft_id, status, *, by, notes=None):
+        """The operator's verdict, with 0009's trigger semantics: approved <=> approved_by set."""
+        if self.role != "operator":
+            self._deny("reviewing an editorial draft is a human action")
+        if status not in REVIEW_STATUSES:
+            raise ValueError(f"review status must be one of {REVIEW_STATUSES}")
+        for r in self.rows.get("editorial_drafts", []):
+            if int(r.get("id") or 0) == int(draft_id):
+                now = _utcnow()
+                reviewed = status != "pending"
+                r.update({"review_status": status, "review_notes": notes,
+                          "reviewed_by": by if reviewed else None, "reviewed_at": now if reviewed else None,
+                          "approved_by": by if status == "approved" else None,
+                          "approved_at": now if status == "approved" else None})
+                self._rewrite_table("editorial_drafts")
+                return r
+        raise StoreError(f"editorial_drafts id {draft_id} not found", 404)
+
+    def _rewrite_table(self, table):
+        """The on-disk mirror after an in-place human edit (the only non-append write)."""
+        path = self.ledger_dir / f"{table}.jsonl"
+        if not path.exists():
+            return
+        with open(path, "w", encoding="utf-8") as fh:
+            for rec in self.rows.get(table, []):
+                fh.write(json.dumps(rec, ensure_ascii=False, sort_keys=True, default=str) + "\n")
 
     # human actions, exposed for tests (the dashboard in production)
     def approve_day_key(self, campaign_slug, unit, day_key, by="test"):

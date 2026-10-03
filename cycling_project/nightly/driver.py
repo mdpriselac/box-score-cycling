@@ -25,7 +25,7 @@ There is no ``publish`` or ``commit`` command and no git operation anywhere
 in this module (``assert_no_git`` guards every subprocess).
 
 Commands: ``bootstrap`` · ``plan`` · ``night`` · ``settle`` · ``preview`` · ``acquire`` ·
-``ingest`` · ``bundle`` · ``refs`` · ``validate`` · ``upload`` · ``status``.
+``ingest`` · ``bundle`` · ``refs`` · ``validate`` · ``upload`` · ``editorial`` · ``status``.
 ``--dry-run`` everywhere: no fetch, ``--no-log``, a ``FakeStore``, scripts
 recorded but not executed.
 """
@@ -2015,13 +2015,14 @@ class Driver:
                     files += [pred / "scenarios.json", pred / "startlist.json"]
                     files += sorted(p for p in pred.glob("*.json") if p.name not in NON_BOARD_JSON)
             files += sorted(p for p in c.pred_dir("gc").glob("*.json") if p.name != "scenarios.json") if c.pred_dir("gc").is_dir() else []
+            files += self._editorial_files(unit)        # a retro draft written before upload ran
         else:
             files += [pred / "scenarios.json", pred / "route.json", *(pred / n for n in AGENT_KEY_FILES)]
             files += sorted(p for p in pred.glob("*.json") if p.name not in ("scenarios.json", "route.json",
                                                                              *AGENT_KEY_FILES, "agent_key_response.json",
                                                                              "retro_facts.json"))
             files += sorted(p for p in (pred / "bundle").rglob("*") if p.is_file()) if (pred / "bundle").is_dir() else []
-        for f in files:
+        for f in dict.fromkeys(files):                # a post-hoc settle globs the drafts twice
             if f.is_file():
                 key = f"{c.slug}/{f.relative_to(c.dir).as_posix()}"
                 k = self._upload_file(f, key)
@@ -2067,8 +2068,90 @@ class Driver:
                 n_log = self.store.insert_prediction_log_rows(plog_rows, self.run["run_id"])
             except Exception as exc:  # noqa: BLE001
                 self._say(f"  [store] prediction_log upload failed: {exc}")
+        editorial = self._persist_editorial(unit, phase)
         return {"artifacts": uploaded, "pages": pages, "predictions_rows": boards, "prediction_log_rows": n_log,
-                "_detail": {"artifacts": len(uploaded), "pages": len(pages), "predictions_rows": boards, "prediction_log_rows": n_log}}
+                "editorial_drafts": editorial,
+                "_detail": {"artifacts": len(uploaded), "pages": len(pages), "predictions_rows": boards, "prediction_log_rows": n_log,
+                            "editorial_drafts": len(editorial["inserted"]),
+                            "editorial_duplicates": editorial["duplicates"]}}
+
+    # -- editorial drafts (chip ED, 2026-10-02) ----------------------------------
+    def _editorial_files(self, unit: str) -> List[Path]:
+        """The unit's draft files and the facts bundles they were written from (artifacts)."""
+        from cycling_project.nightly.run_editorial import DRAFT_GLOB
+        pred = self.campaign.pred_dir(unit)
+        if not pred.is_dir():
+            return []
+        return sorted(pred.glob(DRAFT_GLOB)) + sorted(pred.glob("editorial_facts_*.json"))
+
+    def _persist_editorial(self, unit: str, phase: str) -> Dict[str, Any]:
+        """Insert one ``editorial_drafts`` row per draft file the coordinator saved for the unit.
+
+        Until 2026-10-02 nothing did this: the coordinator saved ``editorial_draft.json`` "for
+        upload to insert", no code inserted it, and every draft died with the container (hosted
+        tasks 104 and 114).  Idempotent: a draft whose record hash (or, before migration 0009,
+        whose body) is already stored for the unit is not inserted again.  A draft that fails
+        validation is stored anyway, ``lint_ok`` false, so the owner sees the bad ones too.
+        """
+        from cycling_project.nightly.run_editorial import DRAFT_GLOB, prepare_draft
+        out: Dict[str, Any] = {"inserted": [], "duplicates": 0, "errors": [], "files": []}
+        pred = self.campaign.pred_dir(unit)
+        paths = sorted(pred.glob(DRAFT_GLOB)) if pred.is_dir() else []
+        if not paths:
+            return out
+        try:
+            existing = self.store.editorial_drafts(campaign_slug=self.campaign.slug, unit=unit)
+        except Exception as exc:  # noqa: BLE001 — store a possible duplicate rather than lose a draft
+            self._say(f"  [store] editorial_drafts lookup failed ({exc}); inserting without the duplicate check")
+            existing = []
+        for path in paths:
+            out["files"].append(path.name)
+            draft = prepare_draft(path, unit, fallback_phase=phase)
+            if any(r.get("record_sha256") == draft["record_sha256"]
+                   or (not r.get("record_sha256") and r.get("phase") == draft["phase"]
+                       and r.get("body_md") == draft["body_md"]) for r in existing):
+                out["duplicates"] += 1
+                self._say(f"  editorial: {path.name} already stored for {unit}; not inserted again")
+                continue
+            try:
+                row = self.store.insert_editorial_draft(
+                    self.run["run_id"] if self.run else None, self.campaign.slug, unit, draft["phase"],
+                    draft["body_md"], kind="prose", author="agent", lint=draft["lint"], lint_ok=draft["lint_ok"],
+                    record=draft["record"], record_sha256=draft["record_sha256"], artifact=draft["artifact"])
+            except Exception as exc:  # noqa: BLE001
+                out["errors"].append(f"{path.name}: {redact(str(exc))}")
+                self._say(f"  [store] editorial draft insert failed for {path.name}: {exc}")
+                continue
+            existing.append({**draft, **(row or {})})
+            out["inserted"].append({"id": (row or {}).get("id"), "file": path.name, "artifact": draft["artifact"],
+                                    "phase": draft["phase"], "lint_ok": draft["lint_ok"]})
+            self._say(f"  editorial: {path.name} → editorial_drafts #{(row or {}).get('id')} "
+                      f"({draft['artifact'] or 'invalid'}, lint {'ok' if draft['lint_ok'] else 'FAILED'})")
+        return out
+
+    def _editorial(self, unit: str) -> Dict[str, Any]:
+        """``editorial`` command: ship the drafts the editorial thread returned after ``night``'s
+        upload had already run — the artifacts and the rows, nothing else (no pages, no boards,
+        no prediction_log rows, so it is safe to run as often as the coordinator likes)."""
+        from cycling_project.nightly.run_editorial import DRAFT_GLOB
+        c = self.campaign
+        pred = c.pred_dir(unit)
+        if not (pred.is_dir() and any(pred.glob(DRAFT_GLOB))):
+            raise DriverFailure("editorial_draft_missing",
+                                f"no predictions/{unit}/editorial_draft_<artifact>.json to store",
+                                detail={"looked_in": str(c.pred_dir(unit).relative_to(c.dir))})
+        uploaded = []
+        for f in self._editorial_files(unit):
+            k = self._upload_file(f, f"{c.slug}/{f.relative_to(c.dir).as_posix()}")
+            if k:
+                uploaded.append(k)
+        # the phase only matters for a draft too broken to name its own artifact
+        result = self._persist_editorial(unit, "settle" if (c.results_dir(unit) / "results.csv").exists() else "preview")
+        if result["errors"]:
+            raise DriverFailure("editorial_insert", "; ".join(result["errors"]), detail=result)
+        return {"artifacts": uploaded, "editorial_drafts": result,
+                "_detail": {"artifacts": len(uploaded), "editorial_drafts": len(result["inserted"]),
+                            "editorial_duplicates": result["duplicates"]}}
 
     # ------------------------------------------------------------------------
     # status
@@ -2169,6 +2252,9 @@ def build_parser() -> argparse.ArgumentParser:
     common(p, unit=True); identity_flag(p)
     p = sub.add_parser("upload", help="insert artifacts, pages and rows for a unit")
     common(p, unit=True); p.add_argument("--phase", choices=("settle", "preview"), required=True)
+    p = sub.add_parser("editorial", help="store the unit's editorial_draft_<artifact>.json as an editorial_drafts "
+                                         "row + artifact (idempotent; no pages, boards or prediction_log rows)")
+    common(p, unit=True)
     p = sub.add_parser("status", help="ledger view")
     common(p, campaign_required=False)
     p = sub.add_parser("task", help="file an operator_tasks row (e.g. an ops-triage report) through the store")
@@ -2272,6 +2358,9 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         return _emit(code, out)
     if args.command == "upload":
         code, out = driver.run_phase(args.unit, "upload", lambda: {"upload": driver.step("upload", lambda: driver._upload(args.unit, args.phase))}, idempotent=False)
+        return _emit(code, out)
+    if args.command == "editorial":
+        code, out = driver.run_phase(args.unit, "editorial", lambda: {"editorial": driver.step("editorial", lambda: driver._editorial(args.unit))}, idempotent=False)
         return _emit(code, out)
     return _emit(EXIT_FAILED, {"status": "failed", "error_class": "unknown_command", "message": args.command})
 

@@ -1,0 +1,57 @@
+{
+ "stage": 5,
+ "fc_race_id": "128",
+ "year": 2026,
+ "date": "2026-10-01",
+ "label": "Stage 5 — Tapah → Genting Highlands, 125.7 km",
+ "void_stages": [],
+ "config_source": "auto:campaign.json",
+ "config_note": "Written by the nightly driver from campaign.json: this race ships no TEMPLATE_scenarios.json, so the day's boards, its references and its alternate branch are all machine-chosen. Nothing here is a human read.",
+ "scenarios": {
+  "main_read": {
+   "label": "The main read — the day as the key says it goes",
+   "short": "Main read",
+   "refs": [
+    10560,
+    10559,
+    9951,
+    9950,
+    9855
+   ],
+   "tag": "tour-de-langkawi-2026_st05_main_read",
+   "note": "The main board. It inherits the config-root day key and is priced on the reference set that key selects.",
+   "refs_source": "auto:day_menu_archetype",
+   "refs_archetype": "mountain_break",
+   "refs_item": "res_4",
+   "refs_note": "References chosen by the driver, not by a human: the day key leads with res_4 (a mountain day won from the escape), which maps to the mountain_break archetype (mountain day won from the escape: mountain share ≥ 0.35, field spread (frac_120s < 0.5)). 5 are at the campaign's own category tier. Reference days: Tour of the Alps 2026 stage 3, Tour of the Alps 2026 stage 2, Tour of Magnificent Qinghai 2025 stage 6, Tour of Magnificent Qinghai 2025 stage 5, Tour of Slovenia 2025 stage 2."
+  },
+  "alt_gc_day": {
+   "label": "The other branch — the classification men deciding it on the last climb",
+   "short": "Alt: gc_day",
+   "refs": [
+    1045,
+    1044,
+    1129,
+    1053,
+    1052
+   ],
+   "tag": "tour-de-langkawi-2026_st05_alt_gc_day",
+   "day_key": {
+    "gc_day": 1.0
+   },
+   "note": "The alternate branch, chosen by the driver because the day key carries weight in a second family (the macro read). It is priced as if that shape were certain, so the two boards bracket the read.",
+   "refs_source": "auto:day_menu_archetype",
+   "refs_archetype": "gc_from_two",
+   "refs_item": "gc_day",
+   "refs_note": "References chosen by the driver, not by a human: the day key leads with gc_day (the classification men deciding it on the last climb), which maps to the gc_from_two archetype (GC-type mountain finish decided among ≤ 3 (mountain share ≥ 0.4)). 5 are at the campaign's own category tier. Reference days: Tour of Slovenia 2024 stage 4, Tour of Slovenia 2024 stage 3, Tour de Hongrie 2024 stage 3, Tour of the Alps 2024 stage 4, Tour of the Alps 2024 stage 3."
+  }
+ },
+ "day_key": {
+  "res_4": 0.4,
+  "res_2": 0.35,
+  "gc_day": 0.25
+ },
+ "day_key_author": "agent",
+ "day_key_source": "agent:agent_key.json",
+ "refs_source": "auto:day_menu_archetype"
+}

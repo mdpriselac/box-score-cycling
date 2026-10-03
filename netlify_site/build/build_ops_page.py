@@ -173,8 +173,35 @@ OPS_CSS = """
   .note{font-family:var(--sans);font-size:13px;color:var(--slate);max-width:680px}
   .rowactions{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:10px}
   .rowactions input,.rowactions textarea{max-width:340px}
+  .draft .prose{font-size:16px;line-height:1.62;max-width:740px;margin:10px 0 4px}
+  .draft .prose p{margin:0 0 12px}
+  .draft .prose h3{font-size:21px;line-height:1.3;margin:4px 0 14px}
+  .draft .prose h4{font-family:var(--sans);font-size:12px;font-weight:700;letter-spacing:.07em;
+    text-transform:uppercase;color:var(--slate);margin:20px 0 6px}
+  .draft .prose h5{font-family:var(--mono);font-size:12.5px;font-weight:600;margin:14px 0 4px}
+  .draft .prose blockquote{border-left:3px solid var(--line);margin:0 0 12px;padding-left:12px;color:var(--slate)}
+  .draftmeta{background:var(--paper);border:1px solid var(--line);border-radius:6px;
+    padding:10px 12px;margin-top:10px;font-family:var(--sans);font-size:12.5px;color:var(--slate)}
+  .draftmeta ul{margin:4px 0 6px 18px;padding:0}
+  .draftmeta li{margin:2px 0}
+  .draftmeta .ctx{font-family:var(--mono);font-size:11.5px}
+  .verdict{font-family:var(--sans);font-size:12px;font-weight:700;padding:1px 9px;border-radius:99px;
+    border:1px solid var(--line)}
+  .verdict.v-approved,.verdict.lint-ok{background:var(--green-soft);color:var(--green);border-color:#cfe0d6}
+  .verdict.v-revise{background:var(--yellow-soft);color:#7a6410;border-color:#eedf9e}
+  .verdict.v-rejected,.verdict.lint-bad{background:#f3e2de;color:var(--red);border-color:#e3cdc7}
+  .verdict.v-pending{background:var(--blue-soft);color:var(--blue);border-color:#cfe0d6}
   @media (max-width:640px){ .keyform{gap:6px} select{max-width:150px} }
 """
+
+# Draft review verdicts (supabase/migrations/0009_editorial_review.sql). "revise" is the
+# column value behind the "Request changes" button.
+REVIEW_STATUSES = ("pending", "approved", "rejected", "revise")
+
+# Hosted tasks 104 and 114 (2026-09/10) reported that editorial drafts never reached the
+# ledger. Any agent-filed task whose kind names the editorial path is over once a draft row
+# for the same campaign lands after it (chip ED, 2026-10-02).
+EDITORIAL_TASK_PATTERN = "editorial"
 
 
 def build_html(url: str, publishable_key: str, *, local: bool, project_ref: str) -> str:
@@ -191,6 +218,8 @@ def build_html(url: str, publishable_key: str, *, local: bool, project_ref: str)
         "familyOf": dict(FAMILY_OF),
         "tolerance": WEIGHT_TOLERANCE,
         "taskSuccessSteps": TASK_SUCCESS_STEPS,
+        "reviewStatuses": list(REVIEW_STATUSES),
+        "editorialTaskPattern": EDITORIAL_TASK_PATTERN,
         "days": 14,
     }
     dash = (f"https://supabase.com/dashboard/project/{project_ref}" if project_ref else "")
@@ -252,6 +281,16 @@ the link will bounce. Password sign-in is unaffected.</p>
 <div id="daykeys"></div>
 <div id="proposals"></div>
 <div id="runs-pending"></div>
+</section>
+
+<section>
+<p class="kicker">Editorial</p>
+<h2 id="editorial-head">Editorial drafts</h2>
+<p class="note">Prose the editorial agent wrote for each preview and retro, as it would read on
+the page. Your verdict and notes are stored on the draft and collected by
+<span class="mono">python -m cycling_project.nightly.editorial_feedback</span> for the next skill
+revision. Nothing here is published: approving a draft only marks it as fit to use.</p>
+<div id="editorial"></div>
 </section>
 
 <section>
@@ -434,7 +473,13 @@ async function load() {{
     if (s.error) toast("run_steps: " + s.error.message, true);
     steps = s.data || [];
   }}
-  data = {{ tasks, keys, proposals, runs, approvals, steps, campaigns, stages }};
+  // Editorial drafts load on their own: a failure here must not hide the rest of the inbox.
+  const ed = await sb.from("editorial_drafts").select("*")
+    .order("created_at", {{ ascending: false }}).limit(300);
+  if (ed.error) toast("editorial_drafts: " + ed.error.message, true);
+  const drafts = ed.data || [];
+  data = {{ tasks, keys, proposals, runs, approvals, steps, campaigns, stages, drafts,
+           draftsError: ed.error ? ed.error.message : "" }};
   const reconciled = await reconcileTasks();
   render();
   if (reconciled) toast(`Reconciled ${{reconciled}} superseded task${{reconciled === 1 ? "" : "s"}}.`);
@@ -523,8 +568,21 @@ function completedLaterResolution(t, created) {{
   return null;
 }}
 
+// A task about drafts that never reached the ledger is over once one does (tasks 104/114).
+function editorialResolution(t, created) {{
+  if (!String(t.kind || "").includes(CFG.editorialTaskPattern)) return null;
+  const landed = (data.drafts || []).find((d) => d.campaign_slug === t.campaign_slug
+    && Date.parse(d.created_at || "") > created);
+  return landed ? `Automatically reconciled: editorial draft #${{landed.id}} for ${{landed.unit}} reached editorial_drafts after this task was filed.` : null;
+}}
+
 function supersededTaskResolution(t) {{
   if (t.author && t.author !== "agent") return null;
+  const filed = Date.parse(t.created_at || "");
+  if (Number.isFinite(filed)) {{
+    const drafted = editorialResolution(t, filed);
+    if (drafted) return drafted;
+  }}
 
   if (t.kind === "crosswalk_proposals") {{
     const refs = ((t.detail || {{}}).proposals || []).map((p) => p.pcs_slug).filter(Boolean);
@@ -595,6 +653,7 @@ function render() {{
   renderDayKeys(pendingKeys);
   renderProposals();
   renderPendingRuns(pendingRuns);
+  renderEditorial();
   renderRuns();
 }}
 
@@ -907,6 +966,149 @@ async function decideRun(runId, decision) {{
   toast(decision === "approve"
     ? "Approved. Publish it with: python -m cycling_project.nightly.promote --run " + runId
     : "Held — promote will skip it.");
+  load();
+}}
+
+// -- editorial drafts (chip ED, 2026-10-02)
+// Model text is DATA. Everything is escaped first; the only markup this renderer emits is
+// its own: h3/h4/h5 for "#", "##", "###" lines, <p>, <blockquote>, <strong>, <em>, <br>.
+function inlineMd(s) {{
+  return esc(s)
+    .replace(/\\*\\*([^*\\n]+)\\*\\*/g, "<strong>$1</strong>")
+    .replace(/(^|[^*])\\*([^*\\n]+)\\*(?!\\*)/g, "$1<em>$2</em>")
+    .replace(/\\n/g, "<br>");
+}}
+
+function mdToHtml(src) {{
+  const blocks = String(src ?? "").replace(/\\r\\n?/g, "\\n").split(/\\n\\s*\\n/);
+  return blocks.map((b) => b.trim()).filter(Boolean).map((b) => {{
+    const h = /^(#{{1,3}})\\s+([\\s\\S]*)$/.exec(b);
+    if (h) {{
+      const tag = ["h3", "h4", "h5"][h[1].length - 1];
+      return `<${{tag}}>${{inlineMd(h[2].replace(/\\n/g, " "))}}</${{tag}}>`;
+    }}
+    if (/^>/.test(b)) return `<blockquote>${{inlineMd(b.replace(/^>\\s?/gm, ""))}}</blockquote>`;
+    return `<p>${{inlineMd(b)}}</p>`;
+  }}).join("");
+}}
+
+const VERDICT_LABEL = {{ pending: "waiting for you", approved: "approved",
+  revise: "changes requested", rejected: "rejected" }};
+
+function draftStatus(d) {{
+  if (d.review_status) return d.review_status;
+  return d.approved_by ? "approved" : "pending";
+}}
+
+function draftArtifact(d) {{
+  return d.artifact || ((d.record || {{}}).artifact) || d.phase || "draft";
+}}
+
+function lintFindings(lint) {{
+  if (!lint || typeof lint !== "object") return "<li>no lint report</li>";
+  const out = [];
+  const val = lint.validation || {{}};
+  (val.errors || []).forEach((e) => out.push(`<li>schema: ${{esc(e)}}</li>`));
+  (lint.lexicon || []).forEach((h) => out.push(
+    `<li>lexicon <b>${{esc(h.match || h.term)}}</b> in ${{esc(h.section)}} <span class="ctx">${{esc(h.context)}}</span></li>`));
+  (lint.numerals || []).forEach((m) => out.push(
+    `<li>numeral <b>${{esc(m.token)}}</b> not in the facts bundle (${{esc(m.section)}}) <span class="ctx">${{esc(m.context)}}</span></li>`));
+  (lint.key || []).forEach((k) => out.push(
+    `<li>key restated as <b>${{esc(k.item)}} ${{esc(k.stated)}}</b> in ${{esc(k.section)}} — approved ${{esc(JSON.stringify(k.allowed))}}</li>`));
+  (lint.placeholders || []).forEach((p) => out.push(`<li>placeholder ${{esc(p.token)}} in ${{esc(p.section)}}</li>`));
+  if (lint.error) out.push(`<li>lint error: ${{esc(lint.error)}}</li>`);
+  if ((lint.checks || {{}}).numerals === false) out.push("<li>numerals not checked: no facts bundle beside the draft</li>");
+  return out.length ? out.join("") : "<li>clean: lexicon, numerals and key all pass</li>";
+}}
+
+function draftMeta(d) {{
+  const rec = d.record && typeof d.record === "object" ? d.record : {{}};
+  const claims = Array.isArray(rec.claims) ? rec.claims : [];
+  const placeholders = Array.isArray(rec.placeholders_used) ? rec.placeholders_used : [];
+  const flags = rec.flags && typeof rec.flags === "object"
+    ? Object.entries(rec.flags).map(([k, v]) => `${{esc(k)}}: <b>${{esc(v)}}</b>`).join(" · ") : "—";
+  return `<div class="draftmeta">
+    <div><b>Lint</b> (${{esc((d.lint || {{}}).source_file || "")}}${{(d.lint || {{}}).facts_source ? " against " + esc(d.lint.facts_source) : ""}})</div>
+    <ul>${{lintFindings(d.lint)}}</ul>
+    <div><b>Flags</b> ${{flags}}</div>
+    ${{claims.length ? `<details><summary>${{claims.length}} claim${{claims.length === 1 ? "" : "s"}} and their basis</summary><ul>` +
+      claims.map((c) => `<li>${{esc(c.text)}} <span class="ctx">— ${{esc(c.basis)}}</span></li>`).join("") + "</ul></details>" : ""}}
+    ${{placeholders.length ? `<details><summary>${{placeholders.length}} placeholder note${{placeholders.length === 1 ? "" : "s"}}</summary><ul>` +
+      placeholders.map((p) => `<li>${{esc(p)}}</li>`).join("") + "</ul></details>" : ""}}
+    ${{d.record ? "" : "<div>The full record is not stored (migration 0009 not pushed when this draft landed).</div>"}}
+  </div>`;
+}}
+
+function draftCard(d) {{
+  const st = draftStatus(d);
+  const when = esc((d.created_at || "").slice(0, 16).replace("T", " "));
+  const reviewed = st !== "pending"
+    ? `<p class="note"><span class="verdict v-${{esc(st)}}">${{esc(VERDICT_LABEL[st] || st)}}</span>
+        by <b>${{esc(d.reviewed_by || d.approved_by || "—")}}</b>
+        ${{d.reviewed_at ? esc(String(d.reviewed_at).slice(0, 16).replace("T", " ")) : ""}}
+        ${{d.review_notes ? "— " + esc(d.review_notes) : ""}}</p>` : "";
+  const canReview = "review_status" in d;
+  const actions = canReview ? `<div class="rowactions">
+      <textarea id="ed-notes-${{d.id}}" placeholder="notes for the skill: what to keep, what to change (required to reject or request changes)">${{esc(st === "pending" ? "" : d.review_notes || "")}}</textarea></div>
+      <div class="btnrow">
+        <button data-review="approved" data-draft="${{d.id}}">Approve</button>
+        <button class="ghost" data-review="revise" data-draft="${{d.id}}">Request changes</button>
+        <button class="ghost" data-review="rejected" data-draft="${{d.id}}">Reject</button>
+      </div>`
+    : `<p class="note">Review buttons appear once <span class="mono">0009_editorial_review.sql</span> is pushed.</p>`;
+  return `<div class="item draft" id="draft-${{d.id}}">
+    <div class="sub"><span><b>${{esc(d.campaign_slug)}}</b></span><span>${{esc(d.unit)}}</span>
+      <span>${{esc(draftArtifact(d))}}</span><span>${{when}}</span>
+      <span class="verdict ${{d.lint_ok ? "lint-ok" : "lint-bad"}}">lint ${{d.lint_ok ? "ok" : "failed"}}</span>
+      <span class="taskid">draft #${{esc(d.id)}}</span></div>
+    ${{reviewed}}
+    <div class="prose">${{mdToHtml(d.body_md)}}</div>
+    ${{draftMeta(d)}}
+    ${{actions}}
+  </div>`;
+}}
+
+let draftFilter = "all";
+
+function renderEditorial() {{
+  const drafts = data.drafts || [];
+  const pending = drafts.filter((d) => draftStatus(d) === "pending");
+  const reviewed = drafts.filter((d) => draftStatus(d) !== "pending");
+  $("editorial-head").textContent = pending.length
+    ? `${{pending.length}} draft${{pending.length === 1 ? "" : "s"}} to read`
+    : "Editorial drafts";
+  if (data.draftsError) {{
+    $("editorial").innerHTML = `<p class="empty">Could not load drafts: ${{esc(data.draftsError)}}</p>`;
+    return;
+  }}
+  const shown = reviewed.filter((d) => draftFilter === "all" || draftStatus(d) === draftFilter);
+  const opts = ["all", "approved", "revise", "rejected"].map((v) =>
+    `<option value="${{v}}"${{v === draftFilter ? " selected" : ""}}>${{v === "all" ? "every verdict" : esc(VERDICT_LABEL[v])}}</option>`).join("");
+  $("editorial").innerHTML =
+    (pending.length ? pending.map(draftCard).join("")
+      : `<p class="empty">No draft is waiting for a read.</p>`) +
+    (reviewed.length ? `<details id="ed-history" style="margin-top:22px"${{draftFilter !== "all" ? " open" : ""}}>
+        <summary>Reviewed drafts — ${{reviewed.length}}</summary>
+        <label for="ed-filter">Show</label><select id="ed-filter">${{opts}}</select>
+        ${{shown.map(draftCard).join("") || '<p class="empty">None with that verdict.</p>'}}</details>` : "");
+  const f = $("ed-filter");
+  if (f) f.onchange = (e) => {{ draftFilter = e.target.value; renderEditorial(); }};
+  $("editorial").querySelectorAll("button[data-review]").forEach((b) => {{
+    b.onclick = () => reviewDraft(Number(b.dataset.draft), b.dataset.review);
+  }});
+}}
+
+async function reviewDraft(id, status) {{
+  if (!requireIdentity()) return;
+  if (!CFG.reviewStatuses.includes(status)) return;
+  const notes = (($(`ed-notes-${{id}}`) || {{}}).value || "").trim();
+  if (status !== "approved" && !notes)
+    return toast("Write a note first: a rejection or a change request has to say what to change.", true);
+  const {{ error }} = await sb.from("editorial_drafts")
+    .update({{ review_status: status, review_notes: notes || null, reviewed_by: identity }}).eq("id", id);
+  if (error) return toast("Review refused: " + error.message
+    + (/review_/.test(error.message) ? " (is 0009_editorial_review.sql pushed?)" : ""), true);
+  toast(`Draft #${{id}}: ${{VERDICT_LABEL[status]}}.`);
   load();
 }}
 

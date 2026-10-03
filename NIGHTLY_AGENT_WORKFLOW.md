@@ -264,7 +264,8 @@ and a real key on the Mac).
 | `bundle` | Freezes `predictions/<unit>/bundle/` + `manifest.json` (odds, latest `gc.csv`, startlist + withdrawals, settled-stage ledger, `route.json`, `day_menu_v1_reference.md`, scorecard). |
 | `refs --archetype <name>` | Signature-table query for named archetypes, excluding refs already used in the campaign. Since 2026-09-16 `preview` runs the same query itself (`nightly/autoconfig.py`, step `scenario_refs`): a stage race needs no `TEMPLATE_scenarios.json`, no hand-written references and no hand-written GC config. |
 | `validate` | Schemas, NaNs, `lambdarank_win_p` sum ≈ 1, `post_hoc` on late configs, `void_stages` consistent, key weights sum to 1, crosswalk coverage (a warning under `identity_policy=provisional`, blocking under `strict`). |
-| `upload` | Insert artifacts under `nightly-artifacts/<run_id>/<campaign>/…` and pages under `site-staging/<run_id>/…`; insert `predictions`, `prediction_log`, `pcs_raw`, `operator_tasks` rows. Never overwrites. |
+| `upload` | Insert artifacts under `nightly-artifacts/<run_id>/<campaign>/…` and pages under `site-staging/<run_id>/…`; insert `predictions`, `prediction_log`, `pcs_raw`, `operator_tasks` rows, and one `editorial_drafts` row per draft file on disk (§2.5). Never overwrites. |
+| `editorial` | (2026-10-02) Store the unit's `editorial_draft_<artifact>.json` after the editorial thread returns: the draft + facts as artifacts and one `editorial_drafts` row each, idempotent on the record hash; exit 20 `editorial_draft_missing` when there is none. Nothing else is uploaded. |
 | `status` | Ledger view from `runs`. |
 
 `publish` is **not** a driver command the agent can run; see §2.9.
@@ -323,8 +324,57 @@ page now exist to approve — not who is trusted with the judgment.
 
 ### 2.5 Editorial agent skill + lexicon linter — `agents/skills/editorial/`
 
-Unchanged from rev 1. Drafts go to `editorial_drafts`; the builder uses a
-draft only when `approved_by` is set (until Gate E).
+The skill, lexicon and linter are unchanged from rev 1. **The review loop
+around them was built 2026-10-02 (build-queue chip ED)** — before that the
+coordinator saved `editorial_draft.json` "for `upload` to insert", no code
+did, the editorial thread returned after `night`'s upload had already run, and
+`editorial_drafts` held zero rows (hosted tasks 104, 114; LESSONS 2026-10-02
+`publishing`).
+
+- **Persist (driver).** `predictions/<unit>/editorial_draft*.json`
+  (`editorial_draft_<artifact>.json` from coordinator prompt rev 7; the bare
+  `editorial_draft.json` is still read) becomes one `editorial_drafts` row:
+  `run_editorial.prepare_draft` validates the record against the §5.2 schema
+  plus skill rule 7 (`validate_record`), lints it with `lint_prose` against
+  `editorial_facts_<artifact>.json` (or `retro_facts.json`) and the unit's
+  `scenarios.json`, and renders `body_md` with `review_markdown` — headline as
+  `#`, sections as `##` in a fixed per-artifact order, scenario notes as `###`.
+  `phase` follows the artifact (`stage_preview` → preview, `stage_retro` /
+  `monthly_review` → retro, unit `race` → one_day); `kind` prose, `author`
+  agent. Two entry points: `upload` (both phases, any draft already on disk)
+  and the `editorial --campaign <slug> --unit <unit>` command the coordinator
+  runs right after saving a draft (uploads the draft + facts as artifacts and
+  inserts the rows; no pages, boards or prediction_log rows). Idempotent on
+  `record_sha256` (canonical record JSON), falling back to `body_md` equality
+  while 0009 is unpushed. An invalid or unparseable draft is stored with
+  `lint_ok` false and its errors under `lint.validation` — never dropped.
+- **Schema (migration 0009, owner pushes).** `editorial_drafts` gains `record`
+  (the full draft, which a page builder will read), `record_sha256` (unique per
+  campaign + unit), `artifact`, `review_status` (pending / approved / rejected /
+  revise), `review_notes`, `reviewed_by`, `reviewed_at`. The agent still only
+  inserts, and RLS refuses any row with review fields set; the operator gets a
+  column grant on the four review columns; trigger `editorial_drafts_a_review`
+  keeps approved ⇔ `approved_by` set (and maps the 0002 `approved_by` path onto
+  `review_status`). `SupabaseStore.insert_editorial_draft` drops the three new
+  columns and retries once when PostgREST reports them missing.
+- **Review (inbox).** The operator inbox's **Editorial** section renders
+  pending drafts newest first as prose (escaped, a safe markdown subset), with
+  lint findings, `flags`, `claims` and placeholder notes beneath, and Approve /
+  Request changes / Reject with notes (required for the last two), written as
+  the operator role. Reviewed drafts fold into a filterable history. An
+  agent-filed task whose kind names the editorial path reconciles once a draft
+  for its campaign lands.
+- **Shape the skill.** `python -m cycling_project.nightly.editorial_feedback
+  [--since]` writes `performance_eval/editorial/feedback_<date>.md` — verdict
+  tally, recurring note words, each reviewed draft with notes, lint and prose.
+  It is the input to the next `SKILL.md` / lexicon revision; notes are never fed
+  to the live agent automatically. (A later step could inline the last N
+  revise/reject notes into the editorial task as a "house notes" block — a
+  prompt change with its own version bump, not a side channel.)
+
+**Gate E is unchanged.** Approving a draft marks it fit to use; nothing reaches
+the public site until a later chip adds the page slot that reads approved rows
+(`review_status = 'approved'`, from `record`).
 
 ### 2.6 One-day race path — built 2026-09-08 (build-queue chip K)
 

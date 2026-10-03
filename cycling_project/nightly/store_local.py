@@ -75,11 +75,14 @@ class JsonlStore:
         return self.insert_many("reconciliation", rows)
 
     def insert_editorial_draft(self, run_id, campaign_slug: str, unit: str, phase: str, body_md: str, *,
-                               kind: str = "prose", author: str = "agent", lint=None, lint_ok=None) -> dict[str, Any]:
-        """Same signature as ``store.SupabaseStore.insert_editorial_draft`` (chip G shadow drafts)."""
+                               kind: str = "prose", author: str = "agent", lint=None, lint_ok=None,
+                               record=None, record_sha256=None, artifact=None) -> dict[str, Any]:
+        """Same signature as ``store.SupabaseStore.insert_editorial_draft`` (chip G shadow drafts;
+        ``record`` / ``record_sha256`` / ``artifact`` from chip ED)."""
         row = {"run_id": str(run_id) if run_id else None, "campaign_slug": campaign_slug, "unit": unit,
                "phase": phase, "kind": kind, "author": author, "body_md": body_md,
-               "lint": lint or {}, "lint_ok": lint_ok}
+               "lint": lint or {}, "lint_ok": lint_ok, "record": record, "record_sha256": record_sha256,
+               "artifact": artifact}
         return self.insert("editorial_drafts", {k: v for k, v in row.items() if v is not None})
 
     # -- the ONE mutating path: human confirmation -----------------------

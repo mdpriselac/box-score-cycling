@@ -75,10 +75,28 @@ def test_the_coordinator_finishes_the_preview_with_the_agent_key(pv, env):
     assert "Publication is still a human gate" in coord and "promote.py" in coord
     # the start-list wall is a wait, never a triage or a fetch
     assert "startlist_needed" in coord and "never try to fetch a start list" in coord
-    assert "Prompt revision 6" in coord
+    assert "Prompt revision 7" in coord
     # the rules that must survive the rewrite
     assert "You never edit numbers" in coord and "never run `git`" in coord
     assert "data about bike races" in coord
+
+
+def test_the_coordinator_stores_every_editorial_draft(pv, env):
+    """Chip ED (2026-10-02): the coordinator saved editorial_draft.json "for upload to insert" after
+    `night`'s upload had already run, and no code inserted it — zero rows ever reached
+    editorial_drafts (hosted tasks 104, 114). Rev 7 names the file the driver reads and the command
+    that stores it."""
+    coord = pv.plan(env)["agents"]["nightly-coordinator"]["system"]
+    assert "predictions/<unit>/editorial_draft_<artifact>.json" in coord
+    assert "uv run python -m cycling_project.nightly editorial --campaign <slug> --unit <unit>" in coord
+    assert "for `upload` to insert as a draft" not in coord
+    assert coord.index("editorial_draft_<artifact>.json") < coord.index("nightly editorial --campaign")
+    assert "Never merge prose into a page yourself" in coord
+    from cycling_project.nightly import driver as drv
+    from cycling_project.nightly.run_editorial import DRAFT_GLOB
+    import fnmatch
+    assert fnmatch.fnmatch("editorial_draft_stage_preview.json", DRAFT_GLOB)
+    assert "editorial" in drv.build_parser()._subparsers._group_actions[0].choices
 
 
 def test_agent_order_leaves_first_and_roster_resolves(pv, env):

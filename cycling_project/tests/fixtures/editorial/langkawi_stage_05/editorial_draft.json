@@ -1,0 +1,105 @@
+{
+  "artifact": "stage_preview",
+  "race": "Tour de Langkawi",
+  "stage": 5,
+  "sections": {
+    "headline": "Stage 5 runs 125.7 km from Tapah to the summit at Genting Highlands, and the agent-written key reads it as an escape day with a quarter of the weight held back for the classification men.",
+    "stage_read": "The road book is thin. Stage 5 is 125.7 km from Tapah to Genting Highlands, and that is very nearly all the bundle knows about the ground: route_facts is flagged partial, the climb list is empty, and both vertical_metres and profile_class are absent, so there is no measured length, no gradient and no profile class for the final ascent. The decisive terrain is asserted by the name of the finish rather than quantified, and any terrain argument this morning has to carry that caveat openly. What is measured is the same race behind us. The settled ledger holds stages 1, 2 and 4, with stage 3 absent from it and no void stages recorded for the campaign. Stage 1 was a mass sprint, day_class bunch, oracle item bunch, with a winning group of 105 riders and Malucelli Matteo first across the line. Stages 2 and 4 were both day_class residual with oracle item res_4, both classed solo, both with a winning group of 1, and both won from deep in the classification: Jasch Lennart from 32nd overall on the morning of stage 2, Rikunov Petr from 28th on the morning of stage 4. The front five on those two days carried a classification median of 59.0 and 44.0 respectively, which says the men at the head of the race were mostly riders with nothing to defend rather than the classification group. Two of the three settled days in this race have therefore gone to one man alone, from outside the classification picture, with the front of the race populated by riders the general classification has already dismissed. That is a strong same-race prior for the escape family, and it is the prior the key follows. The honest counterweight is that a short day finishing on a summit is the one shape in which the classification men have both a reason and the ground to reverse that pattern, and this race has not yet produced such a day for the ledger to measure. So the read is: escape family first, on the evidence of stages 2 and 4, with the terrain caveat that the one piece of parcours information we have — a summit finish — points the other way and cannot be sized because the climb statistics are missing.",
+    "model_vs_market": "There is no market for this stage, and that has to be said plainly rather than worked around. market.available is false, every book_odds and book_devig_pct on both morning boards is null, and the general classification market is flagged unavailable too. So there are no devigged implied probabilities to quote, no favourite to compare against, and no benchmark for how much real information the model captured this morning. The usual test — how much of the book sits inside the classification top-10 against how much sits outside it, and where the model's probabilities part company with the market's and why — cannot be run. What can be run is the same split using the model's own numbers against the morning classification, which measures the disagreement between the two model heads instead of between model and market. Under the root key the main board's top 15 holds six riders from the morning classification top-10 — Castellon Jan, Jasch Lennart, Balderstone Abel, Gaffuri Mattia, Diaz Jose Manuel and Gutiérrez Jorge — and nine from outside it, including Breuillard Nicolas at the head of the board, Cavia Daniel, Retegi Mikel, Huby Antoine, Rikunov Petr and Covili Luca. The classification branch board holds nine of its fifteen from the classification top-10, and its first three are exactly the first three on the road, reordered: Castellon Jan, Jasch Lennart, Balderstone Abel. The distance between six and nine is the entire argument of the day, and with no book it is an internal argument rather than an information-capture claim against the market. One thing both boards agree on, and which a market could have contradicted if one existed: Fougner Eivind Broholt, sixth overall at 1:16, appears in neither board's top 15 at all.",
+    "key_rationale_summary": "Take the chase incentive first. Jasch Lennart starts in the lead for Tudor Pro Cycling Team with Balderstone Abel at 0:20 and Castellon Jan at 0:38 behind him, and both of those men ride for Caja Rural-Seguros RGA — one team holds second and third overall and has a direct reason to spend on a summit finish, while Tudor, with Jasch and Donzé Robin at 2:12, has to answer whatever Caja Rural does. Behind them sit seven riders between 1:14 and 1:46 — Diaz Jose Manuel, Christophersen Cedrik Bakke, Fougner Eivind Broholt, Gaffuri Mattia, Le Berre Mathis, Gutiérrez Jorge and Bregnhøj Mathias — all close enough that a hard finish is worth riding for. Past that the reasons run out quickly: López Martin at 2:48 and de Bod Stefan at 3:01 are riding for placings rather than the lead, and the bulk of a 109-rider field has no reason whatever to chase a move that does not threaten the classification. That asymmetry is the mechanism that produced the solo wins on stages 2 and 4 of this race, and nothing in the classification has changed it. The key as stamped is res_4 0.4 / res_2 0.35 / gc_day 0.25. It was machine-written by an agent and carries no human approval — day_key_author is agent — and it is restated here exactly as stamped, with no re-weighting, nothing added and nothing dropped. res_4 at 0.4 is the heaviest item, the deeper residual-form window, and it is precisely the item the bundle's oracle named on both settled solo days in this race, so the weight is earned by same-race evidence rather than asserted. res_2 at 0.35 is the shorter residual window sitting beside it, which is what separates a rider arriving on form right now from one carrying a longer body of it; with two of three settled days won by riders 32nd and 28th overall, recency is doing real work here. gc_day at 0.25 is the quarter held back for the possibility that the climb to Genting Highlands simply sorts the race by classification ability, and it is deliberately the smallest item because the one measured thing about this parcours — the distance, 125.7 km — is all the support that reading has while vertical_metres and the climb list are missing. The verdict: the weights are a defensible escape-family read of this race's own ledger, and the thing to watch is that they rest on an agent-authored key with no human sign-off and on a road book flagged partial.",
+    "scenario_notes": [
+      {
+        "scenario_key": "main_read",
+        "note": "main_read is the day as the root key says it goes: the scenario carries day_key null and inherits config root, so res_4 0.4 / res_2 0.35 / gc_day 0.25, the escape family. Its mechanism is the one this race has already shown twice — a move goes early, the classification teams have no reason to chase while the leader's own margin is intact, and the day is won alone rather than from a group. Its reference set, as the bundle gives it, is Tour of the Alps stages 3 and 2 on 2026-04-22 and 2026-04-21, Tour of Magnificent Qinghai stages 6 and 5 on 2025-07-11 and 2025-07-10, and Tour of Slovenia stage 2 on 2025-06-05, with the board built on state through stage 4 across 109 riders. pool_cut is null, so nothing is cut and the whole field is ranked; the consequence worth noting is that the production top 15 carries four riders the pool marks as outside it — Christophersen Cedrik Bakke, Malucelli Matteo, Le Berre Mathis and Donzé Robin — whereas the key's own top 15 is entirely in-pool. Under the key the board reads Breuillard Nicolas first, up from #3 on the production board, at 3.4% to win with 51.1% top-15 and a lambdarank figure of 7.4%; Castellon Jan second at 4.7% and 70.8%, carrying the board's strongest lambdarank at 13.1%; Jasch Lennart third, down from #1, at 4.4% and 67.1%; Balderstone Abel fourth at 3.4% and 57.1%; and Cavia Daniel sixth, whose 4.8% is the highest win probability anywhere in the key's top 15 even though his top-15 figure is only 32.4%. The clearest statement the key makes is in what it moves: Retegi Mikel from #18 to #8, Herreño Martín from #16 to #11, Covili Luca from #17 to #13 and de Bod Stefan from #19 to #15, while Malucelli Matteo, the stage 1 winner and an 8.1% win probability on the production board, falls from #10 to #23, and Christophersen Cedrik Bakke from #7 to #16. In short, the key demotes the fastest finisher and the classification men who need the race controlled, and promotes riders whose recent form outruns their standing."
+      },
+      {
+        "scenario_key": "alt_gc_day",
+        "note": "alt_gc_day is the other branch, the classification men deciding it on the last climb: day_key gc_day 1.0, all weight on classification ability and none on residual form. Its mechanism is the straightforward reverse of the main read — the ascent to Genting Highlands is hard enough that the classification group rides it as a classification day, the move is pulled back on the slope, and the finish is contested by the men already inside the first minutes overall. Its reference set is a different vintage from the main read's: Tour of Slovenia stages 4 and 3 on 2024-06-15 and 2024-06-14, Tour de Hongrie stage 3 on 2024-05-10, and Tour of the Alps stages 4 and 3 on 2024-04-18 and 2024-04-17, again on state through stage 4 across 109 riders. pool_cut is null here too, and under this branch the entire top 15 is in-pool, Christophersen Cedrik Bakke included, where the main read leaves him outside. The board is far more concentrated than the main read's: Castellon Jan first at 8.6% to win with 85.9% top-15 and 21.1% lambdarank, Jasch Lennart second at 5.7% and 82.0%, Balderstone Abel up to #3 from #6 at 4.3% and 75.2%, Gaffuri Mattia #4 at 3.8% and 79.9%, and Breuillard Nicolas — the main read's leader — pushed down to #5 despite 6.5% to win and 11.7% lambdarank. Nine of the fifteen come from the morning classification top-10, and the first three on this board are the first three on the road. What the branch says, then, is that if the climb decides it the race has already told us who decides: Castellon Jan and Balderstone Abel with a numerical advantage over the leader, and Jasch Lennart obliged to hold 0:20 and 0:38 on his own."
+      }
+    ],
+    "gc_note": "The bundle carries a general classification block, but it is close to empty: heads is empty, so neither the state-aware outlook nor the stateless blend can be quoted, and its market is flagged unavailable, so there is no classification market to set against them. The block is dated 2026-10-04. What remains is the morning classification carried forward from stage 4, and it is tight at the top. Jasch Lennart leads for Tudor Pro Cycling Team; Balderstone Abel is at 0:20 and Castellon Jan at 0:38, both for Caja Rural-Seguros RGA, which means the leader is outnumbered by the two riders nearest him. Diaz Jose Manuel at 1:14, Christophersen Cedrik Bakke at 1:15 and Fougner Eivind Broholt at 1:16 are stacked a second apart, then Gaffuri Mattia at 1:23, Le Berre Mathis at 1:36, Gutiérrez Jorge at 1:41 and Bregnhøj Mathias at 1:46. Donzé Robin is at 2:12, Herreño Martín and Haug Kieran level at 2:21, López Martin at 2:48 and de Bod Stefan at 3:01. With 8 stages in the campaign and state through stage 4, a summit finish at Genting Highlands is the sort of day that either confirms those margins or removes them, and the gaps behind 0:38 are small enough that a single strong climb reorders the podium places without touching the escape question at all. Because both classification heads and the classification market are missing from the bundle, this section rests on the ledger's gaps alone and should not be read as an outlook."
+  },
+  "claims": [
+    {
+      "text": "Stage 5 covers 125.7 km from Tapah to Genting Highlands.",
+      "basis": "route.distance_km, route.start, route.finish"
+    },
+    {
+      "text": "The road book is incomplete: route_facts is partial, the climb list is empty, and vertical_metres and profile_class are absent, so no climb statistics are quoted.",
+      "basis": "route.route_facts, route.climbs, route.vertical_metres, route.profile_class"
+    },
+    {
+      "text": "The settled ledger holds stages 1, 2 and 4; stage 1 was a mass sprint with a 105-rider winning group won by Malucelli Matteo.",
+      "basis": "scorecard.ledger[0]"
+    },
+    {
+      "text": "Stages 2 and 4 were solo wins with oracle item res_4, won by Jasch Lennart from 32nd overall and Rikunov Petr from 28th overall, with front-five classification medians of 59.0 and 44.0.",
+      "basis": "scorecard.ledger[1], scorecard.ledger[2]"
+    },
+    {
+      "text": "No market exists for this stage: market.available is false and every book_odds and book_devig_pct on both boards is null, so no devigged implied probabilities are quoted and no market benchmark is available.",
+      "basis": "market.available, boards[*].top15_*[*].book_odds, boards[*].top15_*[*].book_devig_pct"
+    },
+    {
+      "text": "The approved day key for the stage is res_4 0.4 / res_2 0.35 / gc_day 0.25, restated unchanged and noted as agent-authored without human approval.",
+      "basis": "config.day_key"
+    },
+    {
+      "text": "The morning classification through stage 4 has Jasch Lennart leading, Balderstone Abel at 0:20, Castellon Jan at 0:38, then riders from Diaz Jose Manuel at 1:14 to Bregnhøj Mathias at 1:46, with López Martin at 2:48 and de Bod Stefan at 3:01.",
+      "basis": "gc_morning.top"
+    },
+    {
+      "text": "Both boards rank 109 riders on state through stage 4 with pool_cut null.",
+      "basis": "boards[0].n_riders, boards[0].state_through_stage, boards[0].pool_cut, boards[1].n_riders, boards[1].state_through_stage, boards[1].pool_cut"
+    },
+    {
+      "text": "main_read inherits the config root key and uses the five listed 2026 and 2025 reference days.",
+      "basis": "config.scenarios.main_read.day_key, boards[0].day_key, boards[0].references"
+    },
+    {
+      "text": "Under the root key the main board reads Breuillard Nicolas #1 (production #3, 3.4% win, 51.1% top-15, 7.4% lambdarank), Castellon Jan #2 (4.7%, 70.8%, 13.1%), Jasch Lennart #3 (4.4%, 67.1%) and Cavia Daniel #6 (4.8%, 32.4%).",
+      "basis": "boards[0].top15_with_key"
+    },
+    {
+      "text": "The key promotes Retegi Mikel #18 to #8, Herreño Martín #16 to #11, Covili Luca #17 to #13 and de Bod Stefan #19 to #15, and demotes Malucelli Matteo #10 to #23 and Christophersen Cedrik Bakke #7 to #16.",
+      "basis": "boards[0].top15_production, boards[0].top15_with_key"
+    },
+    {
+      "text": "The production top 15 of the main board carries four riders flagged outside the pool while the key's top 15 is entirely in-pool.",
+      "basis": "boards[0].top15_production[*].in_pool, boards[0].top15_with_key[*].in_pool"
+    },
+    {
+      "text": "alt_gc_day uses day_key gc_day 1.0 with a 2024 reference set and reads Castellon Jan #1 (8.6% win, 85.9% top-15, 21.1% lambdarank), Jasch Lennart #2 (5.7%, 82.0%), Balderstone Abel #3 from production #6 (4.3%, 75.2%), Gaffuri Mattia #4 (3.8%, 79.9%) and Breuillard Nicolas #5 (6.5%, 11.7% lambdarank).",
+      "basis": "config.scenarios.alt_gc_day.day_key, boards[1].references, boards[1].top15_with_key"
+    },
+    {
+      "text": "Six of the main read's top 15 come from the morning classification top-10 against nine of fifteen on the classification branch board; Fougner Eivind Broholt, sixth at 1:16, appears on neither board's top 15.",
+      "basis": "boards[0].top15_with_key, boards[1].top15_with_key, gc_morning.top"
+    },
+    {
+      "text": "The general classification block carries no heads and no market, so no classification outlook is quoted.",
+      "basis": "gc.heads, gc.market.available, gc.date"
+    },
+    {
+      "text": "The campaign is 8 stages with no void stages.",
+      "basis": "campaign.n_stages, campaign.void_stages"
+    }
+  ],
+  "placeholders_used": [
+    "numbers written inline from the bundle per house style; placeholders_used records facts the bundle does not carry and which were therefore left unwritten",
+    "route.vertical_metres absent — no climbing total stated",
+    "route.profile_class absent — no profile class stated",
+    "route.climbs empty — no climb length, gradient or category stated",
+    "market.available false and all book_odds / book_devig_pct null — no devigged implied probabilities, no favourite, no book benchmark",
+    "gc.market.available false — no classification market stated",
+    "gc.heads empty — neither the state-aware outlook nor the stateless blend quoted",
+    "boards[*].pool_cut null — no pool cut described",
+    "scorecard.stage null and tally covered 0 / exact 0 / stages_scored 0 — no key scoring cited",
+    "scorecard.ledger has no stage 3 entry — no stage 3 outcome cited",
+    "config.day_key stamped by agent, not human-approved — flagged as such, weights restated unchanged"
+  ],
+  "flags": {
+    "tone_check": "information-capture framing",
+    "no_advice_language": true
+  }
+}

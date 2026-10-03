@@ -672,6 +672,35 @@ def test_list_artifacts_prefers_index_rpc_and_walks_folders_when_missing(monkeyp
     assert calls == [("rest", "rpc/artifact_index")]                        # runs table never queried
 
 
+@pytestmark_live
+def test_live_editorial_review_loop(live):
+    """0009 (chip ED): the agent stores a pending draft once; only the operator reviews it, and
+    approved <=> approved_by stays true through the trigger."""
+    run = live.start_run()
+    rid = run["run_id"]
+    rec = {"artifact": "stage_preview", "sections": {"headline": "H."}}
+    row = live.agent.insert_editorial_draft(rid, live.campaign, "stage_05", "preview", "# H.", lint_ok=True,
+                                            record=rec, record_sha256="f" * 64, artifact="stage_preview")
+    assert row["review_status"] == "pending" and row["record"] == rec and row["artifact"] == "stage_preview"
+    with pytest.raises(StoreConflictError):                      # same draft, same unit: never twice
+        live.agent.insert_editorial_draft(rid, live.campaign, "stage_05", "preview", "# H.", record=rec,
+                                          record_sha256="f" * 64, artifact="stage_preview")
+    with pytest.raises(StorePermissionError):
+        live.agent._insert("editorial_drafts", [{"campaign_slug": live.campaign, "unit": "stage_06", "phase": "preview",
+                                                 "body_md": "x", "review_status": "approved"}])
+    with pytest.raises(StorePermissionError):
+        live.agent._patch("editorial_drafts", {"id": f"eq.{row['id']}"}, {"review_status": "approved"})
+    got = live.operator._patch("editorial_drafts", {"id": f"eq.{row['id']}"},
+                               {"review_status": "revise", "review_notes": "Too long.", "reviewed_by": "matt"})[0]
+    assert got["review_status"] == "revise" and got["approved_by"] is None and got["reviewed_at"]
+    got = live.operator._patch("editorial_drafts", {"id": f"eq.{row['id']}"},
+                               {"review_status": "approved", "reviewed_by": "matt"})[0]
+    assert got["approved_by"] == "matt" and got["approved_at"]
+    with pytest.raises(StorePermissionError):                    # the prose itself is not editable
+        live.operator._patch("editorial_drafts", {"id": f"eq.{row['id']}"}, {"body_md": "rewritten"})
+    assert [r["id"] for r in live.agent.editorial_drafts(campaign_slug=live.campaign, unit="stage_05")] == [row["id"]]
+
+
 def test_md5_etag_parsing():
     from cycling_project.nightly.store import _md5_etag
     assert _md5_etag('"cfd6e303a08819423d12c85c4f859ff4"') == "cfd6e303a08819423d12c85c4f859ff4"
