@@ -87,6 +87,23 @@ def test_ledger_entries_carry_measured_outcomes_and_reads(campaign):
     assert st13["morning_read"] is None and st13["oracle_item"] == "res_2"
 
 
+def test_ledger_names_an_agent_key_and_carries_its_own_read(campaign):
+    """A board priced from the reader's record (raw `key_items` shape, as the coordinator saves it)
+    reaches the next morning's ledger as the agent's key, with its primary_mechanism as the read."""
+    pred = campaign / "predictions" / "stage_12"
+    cfg = json.loads((pred / "scenarios.json").read_text())
+    cfg.update(day_key={"res_2": 0.6, "gc_day": 0.4}, day_key_author="agent",
+               day_key_source="agent:agent_key.json")
+    cfg.pop("day_key_note", None)
+    (pred / "scenarios.json").write_text(json.dumps(cfg))
+    (pred / "agent_key.json").write_text(json.dumps({
+        "key_items": [{"item": "res_2", "weight": 0.6}, {"item": "gc_day", "weight": 0.4}],
+        "primary_mechanism": "Inference: a break of climbers stays clear of a marking GC group."}))
+    st12 = next(e for e in rdk.settled_ledger(campaign, 14) if e["stage"] == 12)
+    assert st12["key_source"] == "agent" and st12["key_as_logged"] == {"res_2": 0.6, "gc_day": 0.4}
+    assert st12["morning_read"].startswith("[day-key agent's own morning read] Inference: a break")
+
+
 def test_missing_odds_is_recorded_not_fatal(campaign):
     shutil.rmtree(campaign / "odds")
     m = rdk.build_bundle(campaign, 14)

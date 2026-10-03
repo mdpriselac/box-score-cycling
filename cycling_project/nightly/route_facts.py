@@ -13,9 +13,15 @@ Inputs, in increasing order of authority:
 
 1. ``results/<unit>/stage_page_*.html`` — the FirstCycling stage page archive
    (newest), when the weekly Mac run has one. Its ``div.sideBox`` carries
-   ``15th stage | 110.2 km``, ``Palma del Rio -> Cordoba`` and a bare profile
-   code (``GT2``). Used as a cross-check, and as a source for distance,
-   start and finish when the raw transcription lacks them.
+   ``15th stage | 110.2 km``, ``Palma del Rio -> Cordoba`` and a bare code
+   (``GT2``) kept as ``fc_profile_code``. That code is the RACE's class, not
+   the stage's profile: it is ``GT2`` on every Vuelta 2026 stage, and a .Pro
+   stage race shows ``2.Pro`` there (which the pattern does not match). The
+   page's only stage-level terrain is a profile IMAGE
+   (``img/ritt_etapper/<year>_<race>_<stage>.png``), which is not read.
+   (performance_eval/runs/day_key_no_odds_review_2026-10-02.md.) Used as a
+   cross-check, and as a source for distance, start and finish when the raw
+   transcription lacks them.
 2. ``predictions/<unit>/route_raw.json`` — the acquisition thread's verbatim
    transcription. Shape (every field optional; numbers may arrive as strings
    like ``"110.2 km"``, ``"1,900 m"``, ``"4.1%"``)::
@@ -126,8 +132,9 @@ def parse_fc_stage_page(html: str) -> dict:
 
     Verified against the committed Vuelta 2026 archive: the box holds the race
     link, the nation, ``15th stage | 110.2 km``, ``Palma del Rio -> Cordoba``
-    and a bare profile code (``GT2``). The code is recorded verbatim and never
-    translated into a profile class — its scale is FirstCycling's, not ours.
+    and a bare code (``GT2``). The code is recorded verbatim and never
+    translated into a profile class — and it could not be: it is the race's
+    class (identical on all 21 Vuelta stages), not a stage profile.
     """
     from bs4 import BeautifulSoup
 

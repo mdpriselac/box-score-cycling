@@ -145,5 +145,14 @@ def test_score_agent_key():
     s = rec.score_agent_key(good_record(key={"bunch": 1.0}), "res_2")
     assert s["agent_covered"] is False and s["agent_family_covered"] is False
     assert rec.score_agent_key(None, "res_2")["agent_key"] is None
+    # the reader's raw answer, saved by the coordinator without the fold (CRO Race st4, 2026-09-25)
+    raw = good_record()
+    raw.pop("key")
+    raw["key_items"] = [{"item": "bunch", "weight": 0.5}, {"item": "res_3", "weight": 0.28},
+                        {"item": "gc_day", "weight": 0.22}]
+    s = rec.score_agent_key(raw, "bunch")
+    assert s["agent_key"] == {"bunch": 0.5, "res_3": 0.28, "gc_day": 0.22}
+    assert s["agent_exact"] and s["agent_weight_on_true"] == 0.5 and s["agent_confidence"] == 0.62
+    assert rec.score_agent_key({"key_items": []}, "bunch")["agent_key"] is None
     assert rec.family_covered({"res_4": 1.0}, "res_2") is True
     assert rec.family_covered({"res_7": 1.0}, "res_2") is False

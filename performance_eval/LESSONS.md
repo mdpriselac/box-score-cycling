@@ -30,6 +30,7 @@ claim the original did not make.
 | Date | Tag | Lesson |
 |---|---|---|
 | 2026-10-02 | `publishing` | A shadow artifact with no store is spend with no learning: every editorial draft died with the container |
+| 2026-10-02 | `keying` | Without terrain the reader keys yesterday's shape; the missing market is not what hurt it |
 | 2026-09-22 | `acquisition` | A dead path described as a live fallback costs reasoning every night: the cloud asked for PCS pages nobody can fetch |
 | 2026-09-22 | `tooling` | The automation covers WorldTour and .Pro: every `.1` failure was the outside world, not the code |
 | 2026-09-22 | `tooling` | A page name derived in two places is two names: the driver staged the Tour's stage05.html under Okolo Slovenska |
@@ -128,6 +129,36 @@ inbox renders the drafts as prose with Approve / Request changes / Reject, and
 `python -m cycling_project.nightly.editorial_feedback` collects the verdicts
 and notes into `performance_eval/editorial/feedback_<date>.md` for the next
 `SKILL.md` revision. Nothing reaches the public site: that is the next chip.
+
+---
+## 2026-10-02 — Without terrain the reader keys yesterday's shape; the missing market is not what hurt it
+
+**Tag:** `keying` · CRO Race, Tour de Langkawi, Tour de Luxembourg, Tour of Huangshan, Okolo Slovenska
+
+The .Pro stage races keyed since 2026-09-18 have no Kambi market and route
+facts of distance plus two towns. Judgment days went 0/6 exact, 3/6 covered,
+with weight 0.12 on the true item; the Vuelta agent with odds went 5/8, 8/8,
+0.48. Bunch days were unchanged (9/10 against 6/7). The misses split on the
+**label**, not the odds. Summit-named Langkawi days ("→ Gunung Jerai",
+"→ Cameron Highlands", "→ Genting Highlands") got the family 3/3. The CRO
+days (Labin, Rijeka, Sveta Nedelja) were the only three wrong-family keys of
+the 17, and none of the three covered the true item. Removing the odds from three Vuelta
+judgment-day bundles kept all three keys exact (weight on truth 0.63 → 0.57).
+
+The mechanism: with no terrain, §3.4's same-race ledger becomes a streak
+read. CRO st3 was keyed bunch after two sprints (a 2-rider Labin finish);
+CRO st5 was keyed escape after two selective days (a 42-rider sprint);
+Langkawi st5 was keyed for the break because st4's break won (gc_day). "The
+ledger forces the majority" holds only for a stage shown to be of the same
+shape, and distance plus towns cannot show it.
+
+The FirstCycling sideBox "profile code" (`GT2`) is the race's class (the
+same on all 21 Vuelta stages), so the only route facts come from a research
+step that does not yet exist. Two plumbing faults hid the record: the
+evening scorer ignored agent keys saved in the raw `key_items` shape (11 of
+17 stages unscored), and the ledger never carried the agent's own earlier
+read. Both are fixed on `claude/chip-z-no-odds-review`. Full report:
+`performance_eval/runs/day_key_no_odds_review_2026-10-02.md`.
 
 ---
 

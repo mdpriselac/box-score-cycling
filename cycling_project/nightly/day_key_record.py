@@ -368,11 +368,15 @@ def stamp_provenance(record: dict, *, model_id: str, manifest_sha256: str,
 
 def score_agent_key(agent_record: Optional[dict], oracle_item: str) -> dict:
     """The ``agent_*`` fields for one scorecard row (None record -> nulls)."""
-    if not agent_record or not isinstance(agent_record.get("key"), dict) or not agent_record["key"]:
+    # The coordinator sometimes saves the reader's raw answer (`key_items`, a list) instead of the
+    # folded record; the driver prices from either shape (6a456d9), so the scorer must read both.
+    # Before 2026-10-02 it read only `key`, and 11 cloud-keyed stages (CRO Race 3-6, Langkawi 1-7)
+    # scored as "no agent key" (performance_eval/runs/day_key_no_odds_review_2026-10-02.md).
+    key = normalise_key((agent_record or {}).get("key") or (agent_record or {}).get("key_items") or {})
+    if not key:
         return {"agent_key": None, "agent_exact": None, "agent_covered": None,
                 "agent_weight_on_true": None, "agent_flagged": None,
                 "agent_family_covered": None, "agent_confidence": None, "agent_replay": None}
-    key = {k: float(v) for k, v in agent_record["key"].items()}
     tot = sum(key.values()) or 1.0
     key = {k: v / tot for k, v in key.items()}
     top = argmax_item(key)
