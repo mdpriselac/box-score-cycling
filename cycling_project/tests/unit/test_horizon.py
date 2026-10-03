@@ -15,7 +15,7 @@ from pathlib import Path
 
 import pytest
 
-from cycling_project.nightly import horizon, oneday, tiers
+from cycling_project.nightly import horizon, oneday, route_facts, tiers
 from cycling_project.nightly.store import FakeStore
 from cycling_project.tests.utils.mock_responses import MockResponse, MockWebClient
 
@@ -513,3 +513,68 @@ def test_the_summary_records_the_covered_tiers(perf, store, db_path):
     write_campaign(perf, "pro-2026", stage_race_config("pro-2026"))
     summary = run(perf, store, Client(), db_path, dry_run=True)
     assert summary["automation_tiers"] == ["wt", "pro"]
+
+
+# ---------------------------------------------------------------------------
+# route research (chip Z1, 2026-10-02): paid, opt-in, due units only, capped
+# ---------------------------------------------------------------------------
+
+def _fake_researcher(calls):
+    def research(campaign_dir, unit):
+        calls.append(unit)
+        pred = Path(campaign_dir) / "predictions" / unit
+        (pred / "route_raw.json").write_text(json.dumps({
+            "researched_by": "test", "vertical_metres": "2100 m", "profile_class": "hilly",
+            "climbs_listed": False, "sources": [{"url": "https://organiser.example/st", "fetched_at": "t"}]}))
+        (pred / "route_research.json").write_text(json.dumps({"status": "written"}))
+        route = route_facts.ingest_route(Path(campaign_dir), unit)
+        return {"status": "written", "route_facts": route["route_facts"], "cost_usd": 0.0}
+    return research
+
+
+def test_route_research_is_off_unless_asked(perf, store, db_path):
+    write_campaign(perf, "giro-test-2026", stage_race_config())
+    calls = []
+    summary = run(perf, store, Client(), db_path, days=3, researcher=_fake_researcher(calls))
+    assert calls == [] and summary["route_research"] is False
+    assert not any(s["step"].startswith("route_research") for s in summary["campaigns"][0]["steps"])
+
+
+def test_route_research_runs_for_due_partial_units_and_uploads_its_files(perf, store, db_path):
+    d = write_campaign(perf, "giro-test-2026", stage_race_config())
+    calls = []
+    summary = run(perf, store, Client(), db_path, days=3, route_research_enabled=True,
+                  researcher=_fake_researcher(calls))
+    camp = summary["campaigns"][0]
+    assert calls and set(calls) <= set(camp["units"])           # due units only, never the backfill
+    unit = calls[0]
+    route = json.loads((d / "predictions" / unit / "route.json").read_text())
+    assert route["route_facts"] == "complete"
+    assert route["distance_km"] == pytest.approx(140.4 + int(unit[-1]))   # FirstCycling still supplies it
+    run_id = camp["run_id"]
+    assert f"{run_id}/giro-test-2026/predictions/{unit}/route_raw.json" in camp["uploaded"]
+    assert f"{run_id}/giro-test-2026/predictions/{unit}/route_research.json" in camp["uploaded"]
+    # one attempt per unit: the next pass researches nothing it already did
+    again = []
+    run(perf, store, Client(), db_path, days=3, route_research_enabled=True,
+        researcher=_fake_researcher(again))
+    assert not set(again) & set(calls)
+
+
+def test_route_research_respects_the_per_run_cap(perf, store, db_path):
+    write_campaign(perf, "giro-test-2026", stage_race_config())
+    calls = []
+    run(perf, store, Client(), db_path, days=3, route_research_enabled=True,
+        researcher=_fake_researcher(calls), max_route_research=1)
+    assert len(calls) == 1
+
+
+def test_a_failed_research_never_costs_the_handover(perf, store, db_path):
+    d = write_campaign(perf, "giro-test-2026", stage_race_config())
+
+    def boom(campaign_dir, unit):
+        raise RuntimeError("model refused")
+
+    summary = run(perf, store, Client(), db_path, days=3, route_research_enabled=True, researcher=boom)
+    assert summary["campaigns"][0]["status"] == "ok"
+    assert (d / "predictions" / "stage_01" / "startlist.json").exists()

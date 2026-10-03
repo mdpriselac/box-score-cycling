@@ -19,6 +19,10 @@ before the 19:45 UTC tick.  For every unit the cloud is about to preview it:
 2. archives the **FirstCycling stage page** verbatim to
    ``results/<unit>/stage_page_<date>.html`` (what ``route_facts.ingest_route``
    consumes) and runs the ingest, producing ``predictions/<unit>/route.json``;
+   With ``--route-research`` (PAID, off by default; chip Z1 2026-10-02) a due
+   stage-race unit whose route.json is still partial/missing then gets one
+   ``route_research.research_unit`` conversation (web search + fetch,
+   sourced ``route_raw.json``, re-ingest), capped by ``--max-route-research``;
 3. fills the campaign's **stage metadata** (date, towns, distance, kind) from
    those pages, flipping ``stages_provisional`` to false only when every stage
    is known;
@@ -68,6 +72,7 @@ from typing import Any, Callable, Dict, List, Optional, Sequence
 
 from cycling_project.db_path import default_db_path
 from cycling_project.nightly import registry, route_facts, tiers
+from cycling_project.nightly import route_research as route_research_mod
 from cycling_project.nightly.crosswalk import build_operator_task
 from cycling_project.nightly.driver import (
     FINISHED_AFTER_DAYS, ONE_DAY_UNIT, RACE_DAY_OVER_HOUR, Campaign, _has_scenario_boards,
@@ -93,6 +98,8 @@ DEFAULT_MAX_AGE_HOURS = 20.0
 # (a stage page for a stage we have never seen) is capped so a 21-stage grand
 # tour cannot turn one night into a 21-request crawl.
 DEFAULT_MAX_BACKFILL = 6
+# Route research is paid (one Messages conversation per unit): a hard cap per run.
+DEFAULT_MAX_ROUTE_RESEARCH = 3
 INDEX_NAME = "horizon_raw.json"
 STARTLIST_NAME = "startlist.json"
 FAKESTORE_DIRNAME = "fakestore"
@@ -732,7 +739,10 @@ def capture_campaign(due: Due, store: Any, *, fetcher: Fetcher, db_path: Optiona
                      max_age_hours: float = DEFAULT_MAX_AGE_HOURS,
                      max_backfill: int = DEFAULT_MAX_BACKFILL, backfill: bool = True,
                      dry_run: bool = False, now: Optional[dt.datetime] = None,
-                     quiet: bool = False) -> Dict[str, Any]:
+                     quiet: bool = False, route_research_enabled: bool = False,
+                     researcher: Optional[Callable[[Path, str], Dict[str, Any]]] = None,
+                     research_budget: Optional[Dict[str, int]] = None,
+                     automation_tiers: Optional[Sequence[str]] = None) -> Dict[str, Any]:
     """Capture one campaign's handover.  Never raises: a failure files a task."""
     campaign = due.campaign
     run = Run(store, due, dry_run=dry_run, quiet=quiet)
@@ -814,6 +824,34 @@ def capture_campaign(due: Due, store: Any, *, fetcher: Fetcher, db_path: Optiona
                     f"route={detail.get('route_grade')} "
                     f"{'/'.join(k for k in ('date', 'towns', 'distance_km') if (detail.get('facts') or {}).get(k))}")
 
+        # -- route research (paid, opt-in: --route-research; chip Z1 2026-10-02).  Due
+        #    units only, never the opportunistic backfill; one attempt per unit
+        #    (route_research.needs_research), so a re-run tomorrow costs nothing.
+        if route_research_enabled and campaign.is_stage_race and not dry_run:
+            for unit in due.units:
+                if research_budget is not None and research_budget["left"] <= 0:
+                    break
+                needed, why = route_research_mod.needs_research(
+                    campaign.dir, unit, campaign.cfg, covered=automation_tiers)
+                if not needed:
+                    continue
+                if research_budget is not None:
+                    research_budget["left"] -= 1
+
+                def _research(unit=unit) -> Dict[str, Any]:
+                    return (researcher or route_research_mod.research_unit)(campaign.dir, unit)
+
+                try:
+                    detail = run.step(f"route_research:{unit}", _research)
+                except Exception as exc:  # noqa: BLE001 — research is an extra, never the handover
+                    run.say(f"  {campaign.slug} {unit}: route research failed — {exc}")
+                    continue
+                pred = campaign.pred_dir(unit)
+                written += [pred / route_research_mod.RAW_NAME, pred / route_research_mod.LOG_NAME,
+                            pred / "route.json"]
+                run.say(f"  {campaign.slug} {unit}: route research {detail.get('status')} "
+                        f"route={detail.get('route_facts')} cost=${detail.get('cost_usd')}")
+
         # -- campaign.json
         stages = run.step("stages", lambda: update_stages(
             campaign, facts, fc_numbers=fc_numbers, dry_run=dry_run))
@@ -849,7 +887,9 @@ def run_horizon(*, days: int = DEFAULT_DAYS, store: Any = None, perf_eval: Optio
                 local_now: Optional[dt.datetime] = None,
                 automation_tiers: Optional[Sequence[str]] = None,
                 client_factory: Optional[Callable[[], Any]] = None,
-                quiet: bool = False) -> Dict[str, Any]:
+                quiet: bool = False, route_research_enabled: bool = False,
+                researcher: Optional[Callable[[Path, str], Dict[str, Any]]] = None,
+                max_route_research: int = DEFAULT_MAX_ROUTE_RESEARCH) -> Dict[str, Any]:
     """Select, capture, upload — the whole daily pass.  Returns the summary."""
     perf_eval = Path(perf_eval or PERF_EVAL)
     due = select_units(perf_eval, store, days=days, today=today, only=only, local_now=local_now,
@@ -864,12 +904,15 @@ def run_horizon(*, days: int = DEFAULT_DAYS, store: Any = None, perf_eval: Optio
     }
     if not quiet:
         print(f"horizon {__version__}: {len(due)} campaign(s) due within {days} day(s)", flush=True)
+    budget = {"left": max_route_research}
+    summary["route_research"] = bool(route_research_enabled)
     try:
         for item in due:
             summary["campaigns"].append(capture_campaign(
                 item, store, fetcher=fetcher, db_path=db_path, max_age_hours=max_age_hours,
                 max_backfill=max_backfill, backfill=backfill, dry_run=dry_run, now=now,
-                quiet=quiet))
+                quiet=quiet, route_research_enabled=route_research_enabled, researcher=researcher,
+                research_budget=budget, automation_tiers=automation_tiers))
     finally:
         fetcher.close()
     summary["requests_made"] = fetcher.requests_made
@@ -905,6 +948,11 @@ def build_parser() -> argparse.ArgumentParser:
                    help="only fetch pages for due units, never for stages never seen")
     p.add_argument("--max-backfill", type=int, default=DEFAULT_MAX_BACKFILL,
                    help=f"cap on never-seen stage pages per campaign (default {DEFAULT_MAX_BACKFILL})")
+    p.add_argument("--route-research", action="store_true",
+                   help="PAID: research sourced route facts (climbs, vertical, finale) for due "
+                        "stage-race units whose route.json is partial/missing (route_research.py)")
+    p.add_argument("--max-route-research", type=int, default=DEFAULT_MAX_ROUTE_RESEARCH,
+                   help=f"cap on researched units per run (default {DEFAULT_MAX_ROUTE_RESEARCH})")
     p.add_argument("--performance-eval", type=Path, default=PERF_EVAL)
     p.add_argument("--quiet", action="store_true", help="JSON summary only")
     tiers.add_tier_flags(p)
@@ -926,7 +974,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         db_path=args.db_path or default_db_path(), max_age_hours=args.max_age_hours,
         max_backfill=args.max_backfill, backfill=not args.no_backfill, dry_run=args.dry_run,
         today=args.today, local_now=args.local_now, only=args.campaign, quiet=args.quiet,
-        automation_tiers=tiers.tiers_from_args(args))
+        automation_tiers=tiers.tiers_from_args(args),
+        route_research_enabled=args.route_research, max_route_research=args.max_route_research)
     print(json.dumps(summary, indent=1, ensure_ascii=False, default=str))
     # Exit 0 even when a unit failed: the failure is an operator task, and the
     # scheduler must not treat one bad race as a broken nightly handover.

@@ -1,0 +1,39 @@
+# Route research thread (chip Z1, 2026-10-02; performance_eval/runs/day_key_no_odds_review_2026-10-02.md
+# Rec. 1). The coordinator delegates ONE task per unit listed under `route_research` in a campaign's
+# `plan` output: a WT/.Pro stage-race preview whose route.json is still partial/missing. The agent
+# searches the open web (organiser stage pages, road books, reputable previews), transcribes the
+# stage's categorised climbs / vertical / profile label / finale VERBATIM with source URLs, and writes
+# predictions/<unit>/route_raw.json. It computes nothing and decides nothing; the deterministic
+# `route_facts` ingest (run by the driver's preview) validates, rejects a layer without sources and
+# grades. The day-key reader never gets these tools: it reads only the validated route.json.
+#
+# Trust boundary: web_search / web_fetch run on Anthropic's servers (the environment's `networking`
+# does not govern them); `write` + `read` touch only the session container. No bash, so a page that
+# tries to instruct it cannot run a command or reach the Supabase key. The blocked domain is a site
+# behind Cloudflare for Anthropic's fetcher since 2026-09-06: a fetch there only wastes the budget.
+name: route-researcher
+description: >-
+  Researches ONE stage's route on the open web and writes predictions/<unit>/route_raw.json:
+  categorised climbs (name, category, km, length, gradient), vertical metres, the source's own
+  stage-type label and the finale, each value verbatim with its source URL and fetch time. Give it
+  the campaign directory, the unit, the race name and year, the stage number and date, the
+  FirstCycling start/finish towns and distance. It never computes, estimates or recalls a value.
+model:
+  id: claude-opus-5-5
+  effort: medium
+system_file: ../prompts/route-researcher.md
+tools:
+  - type: agent_toolset_20260401
+    default_config:
+      enabled: false
+    configs:
+      - name: web_search
+        enabled: true
+        blocked_domains:
+          - procyclingstats.com
+      - name: web_fetch
+        enabled: true
+        blocked_domains:
+          - procyclingstats.com
+      - {name: write, enabled: true}
+      - {name: read, enabled: true}

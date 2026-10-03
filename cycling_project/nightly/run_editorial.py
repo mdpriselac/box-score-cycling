@@ -395,7 +395,7 @@ def build_facts_bundle(campaign_dir: Path, unit: str, artifact: str, *, db_path:
     if route_path.exists():
         route = _load_json(route_path)
         bundle["route"] = {k: route.get(k) for k in ("distance_km", "vertical_metres", "profile_class", "start",
-                                                     "finish", "climbs", "route_facts", "fc_profile_code", "notes")}
+                                                     "finish", "climbs", "route_facts", "fc_profile_code", "finale", "notes")}
         if isinstance(route.get("override"), dict):
             bundle["route"]["override_reason"] = route["override"].get("reason")
         sources[f"predictions/{unit}/route.json"] = _sha256(route_path)

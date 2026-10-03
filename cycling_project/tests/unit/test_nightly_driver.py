@@ -75,6 +75,23 @@ def test_plan_due_units_stage14_to_15(campaign, tmp_path, capsys):
     assert st16["due"] == ["preview"] and "blocked" in st16["flags"]
 
 
+def test_plan_lists_previews_that_need_route_research(campaign, tmp_path, capsys):
+    """Chip Z1 (2026-10-02): the coordinator dispatches one route-researcher per unit listed."""
+    pred = campaign / "predictions" / "stage_15"
+    assert _run(campaign, tmp_path, "plan", "--dry-run") == 0
+    plan = _out(capsys)
+    assert plan["route_research"] == []                     # the operator's override stands
+    (pred / "route.override.json").unlink()
+    assert _run(campaign, tmp_path, "plan", "--dry-run") == 0
+    plan = _out(capsys)
+    assert plan["route_research"] == ["stage_15"]           # preview due, no route facts at all
+    assert next(u for u in plan["units"] if u["unit"] == "stage_15")["route_research"] is True
+    assert next(u for u in plan["units"] if u["unit"] == "stage_14")["route_research"] is False
+    (pred / "route.json").write_text(json.dumps({"route_facts": "complete"}))
+    assert _run(campaign, tmp_path, "plan", "--dry-run") == 0
+    assert _out(capsys)["route_research"] == []
+
+
 def test_a_startlist_handover_is_not_a_rendered_board(campaign, tmp_path, capsys):
     """The Mac horizon capture writes ``startlist.json`` into ``predictions/<unit>/`` for every
     unit the cloud is about to preview. That file is a handover, not a board: it must not make
@@ -268,7 +285,7 @@ def test_the_coordinator_prompt_never_mentions_procyclingstats():
     prompt = (Path(__file__).resolve().parents[3] / "agents/managed/prompts/nightly-coordinator.md").read_text()
     low = prompt.lower()
     assert "pcs" not in low and "procyclingstats" not in low
-    assert "uci_url_needed" in prompt and "Prompt revision 6" in prompt
+    assert "uci_url_needed" in prompt and "Prompt revision 7" in prompt
 
 
 def test_a_hydrated_container_never_falls_back_to_a_fake_store(campaign, tmp_path, capsys, monkeypatch):

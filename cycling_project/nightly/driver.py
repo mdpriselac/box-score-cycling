@@ -54,7 +54,7 @@ from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Tupl
 
 from cycling_project.db_path import ENV_VAR as DB_ENV_VAR, default_db_path
 from cycling_project.nightly import day_key_record as rec
-from cycling_project.nightly import autoconfig, hindsight, oneday, pcs_ingest, site_paths, tiers, uci_acquire, uci_identity, uci_ingest
+from cycling_project.nightly import autoconfig, hindsight, oneday, pcs_ingest, route_research, site_paths, tiers, uci_acquire, uci_identity, uci_ingest
 from cycling_project.nightly.crosswalk import CROSSWALK_CSV, build_operator_task, read_crosswalk_csv
 from cycling_project.nightly.secrets import load_local_env, redact
 from cycling_project.webscrape_tools.logging_config import get_logger
@@ -134,6 +134,7 @@ NON_BOARD_JSON = {
     "scenarios.json", "route.json", "route_raw.json", "route.override.json",
     "agent_key.json", "agent_key_response.json", "day_key_agent.json", "retro_facts.json",
     "startlist.json", "horizon_raw.json",   # Mac horizon handover files, never a rendered board (2026-09-16)
+    "route_research.json",                  # route research log (chip Z1, 2026-10-02)
 }
 
 
@@ -793,7 +794,7 @@ class Driver:
                    "local_now": self.local_now.isoformat(timespec="minutes"),
                    "category": c.category, "automated": False, "skipped": skipped,
                    "void_stages": sorted(set(c.void_stages)), "units": [],
-                   "settle": [], "preview": []}
+                   "settle": [], "preview": [], "route_research": []}
             if note:
                 out["automation_note"] = note
             return out
@@ -825,7 +826,7 @@ class Driver:
             return {"campaign": c.slug, "today": str(today), "timezone": c.timezone,
                     "local_now": self.local_now.isoformat(timespec="minutes"), "void_stages": sorted(void),
                     "category": c.category, "automated": True,
-                    "units": [], "settle": [], "preview": [], "finished": True,
+                    "units": [], "settle": [], "preview": [], "route_research": [], "finished": True,
                     "note": f"last unit {max(dated)} is more than {FINISHED_AFTER_DAYS} days ago: nothing is due"}
         for number, date_s in sorted(entries, key=lambda t: (t[0] is None, t[0] or 0)):
             if not date_s:
@@ -868,13 +869,19 @@ class Driver:
             # in the small hours of the race day itself — that is a genuine morning read, and
             # the old ``today < d`` test dropped it.  Once racing can have begun, the window
             # shuts: a board built then would not be a preview.
+            research = False
             if d <= preview_window_end and not self._day_has_started(d) and not has_boards:
                 due.append("preview")
                 if not prev_settled:
                     flags.append("blocked")
+                # Route research (chip Z1, 2026-10-02): a preview whose route facts are
+                # partial/missing gets one route-researcher task before the campaign
+                # thread runs; the preview's route_facts step then ingests route_raw.json.
+                research = c.is_stage_race and route_research.needs_research(
+                    c.dir, unit, c.cfg, covered=self.automation_tiers)[0]
             units.append({"unit": unit, "date": date_s, "void": False, "due": due, "flags": flags,
                           "has_results": has_results, "has_boards": has_boards, "has_pcs": has_pcs, "has_uci": has_uci,
-                          "uci_competition_url": c.uci_competition_url})
+                          "uci_competition_url": c.uci_competition_url, "route_research": research})
             if settle_due and "gap" not in flags:
                 prev_settled = has_results
         return {"campaign": c.slug, "today": str(today), "timezone": c.timezone,
@@ -883,7 +890,8 @@ class Driver:
                 **({"automation_note": note} if note else {}),
                 "void_stages": sorted(void), "units": units,
                 "settle": [u["unit"] for u in units if "settle" in u["due"]],
-                "preview": [u["unit"] for u in units if "preview" in u["due"]]}
+                "preview": [u["unit"] for u in units if "preview" in u["due"]],
+                "route_research": [u["unit"] for u in units if u.get("route_research")]}
 
     def night(self, horizon_days: int = 1) -> Tuple[int, Dict[str, Any]]:
         plan = self.plan(horizon_days)
