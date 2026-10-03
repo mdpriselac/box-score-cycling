@@ -323,7 +323,19 @@ def _logged_key_for(campaign: Path, k: int) -> dict:
     if cfg.get("post_hoc"):
         out["key_source"] = "post_hoc (no morning read)"
         return out
-    if cfg.get("day_key"):
+    if cfg.get("day_key") and cfg.get("day_key_author") == "agent":
+        # A board priced from the day-key reader's record (driver._resolve_day_key). The record's
+        # paragraph is its `primary_mechanism`, which the driver never copies into day_key_note, so
+        # before 2026-10-02 every agent-keyed stage reached the next morning's ledger with
+        # morning_read null and key_source "config-root" — the reader lost its own earlier read
+        # and could not tell it from a human one.
+        out["day_key"] = cfg["day_key"]
+        out["key_source"] = "agent"
+        agent = _stage_dir(campaign, k) / "agent_key.json"
+        record = _read_json(agent) if agent.exists() else {}
+        read = record.get("primary_mechanism") if isinstance(record, dict) else None
+        out["morning_read"] = f"[day-key agent's own morning read] {read}" if read else cfg.get("day_key_note")
+    elif cfg.get("day_key"):
         out["day_key"] = cfg["day_key"]
         out["key_source"] = "config-root"
         out["morning_read"] = cfg.get("day_key_note")
