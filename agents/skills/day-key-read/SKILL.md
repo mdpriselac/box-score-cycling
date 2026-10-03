@@ -1,6 +1,6 @@
 ---
 name: day-key-read
-version: 1.1.0
+version: 1.2.0
 description: The morning stage read for the day-type retrieval channel — route the macros, pick the family, grade within it, weight when torn, and emit the §5.1 decision record with every claim tied to a bundle file.
 model: claude-opus-5-5
 output: day_key_record (JSON only)
@@ -183,15 +183,15 @@ facts of distance plus start and finish towns, and a label of two place
 names, say nothing about whether today climbs. The ledger is then a prior
 for the race — how often this race's stages have come back `bunch` — and
 never a forced majority. Name and avoid the failure **"keyed yesterday's
-shape"** (2026-10-02 review): CRO Race stage 3 was keyed `bunch` 0.50
-because stages 1–2 were sprints, and it was a two-rider finish at Labin
-(`res_2`); CRO stage 5 was keyed `gc_day`/escape after two selective days,
-and it was a 42-rider sprint (`bunch`); Tour de Langkawi stage 5 was keyed
-for the break (`res_4`) because stage 4's break had won, and it came back
-`gc_day`. Across that review's keys that had an earlier road stage, the
-argmax's coarse shape matched the previous stage's 9 times in 14 — a streak
-read, which §3.2 already says is not a prior. With terrain unknown, key by
-§3.8.
+shape"** (the 2026-10-02 `keying` lesson): with only towns to go on, a
+stage was keyed `bunch` because the race's first two stages were sprints,
+and it ended in a two-rider finish; another was keyed escape because the
+two stages before it were selective, and it ended in a large bunch sprint;
+a third was keyed for the break because the previous day's break had won,
+and the GC group contested it. Across the keys in that review that had an
+earlier road stage, the argmax's coarse shape matched the previous stage's
+9 times in 14 — a streak read, which §3.2 already says is not a prior.
+With terrain unknown, key by §3.8.
 
 ### 3.5 Market shape, devigged
 
@@ -233,6 +233,16 @@ supplying the terrain yourself. A climb you believe is on the route but
 cannot find in the bundle goes in `missing_evidence` (and may be named in
 `credible_alternative` as inference), never into the argmax.
 
+**What counts as measured terrain.** Any of these in `route.json`: a
+`climbs` list from a validated route-research layer (named climbs with km
+marks, lengths or gradients, and source URLs), `vertical_metres`, or a
+`profile_class`. A route graded `complete` is complete whether or not it
+carries a `profile_class`. Entries in route.json's `optional_missing` list
+(for example `["profile_class"]`) are informational only: they are never a
+reason to call the terrain unmeasured, and never a reason to flag. With measured terrain you key from the road book
+(§3.1–§3.3) and §3.8 does not apply. Distance and start/finish towns alone
+are not terrain.
+
 ### 3.7 Labelling artefacts you must anticipate
 
 The oracle is mechanical. Note in `conflicts` when a rule may misfire, so
@@ -252,22 +262,21 @@ composition; key the composition and note the artefact.
 
 This is the common case on `.Pro` stage races: the manifest says
 `odds: not_offered` (or `missing`) and `route_facts` is `missing`, or
-`partial` with only distance and towns — `vertical_metres`, `profile_class`
-and `climbs` null or empty. Nothing in the bundle says what shape the day
-is. What the evidence says about such days (2026-10-02 review, the 17
-no-market stages keyed from 2026-09-18 to 2026-10-01):
+`partial` with only distance and towns — no measured terrain in the §3.6
+sense. Nothing in the bundle says what shape the day is. What the evidence
+says about such days (the 2026-10-02 `keying` lesson: 17 no-market stages
+of five .Pro stage races, keyed 2026-09-18 to 2026-10-01):
 
 - **Bunch is the majority.** 10 of the 17 came back `bunch`, and the
   reader's keys were exact on 9 of those 10.
 - **The rest were escape-family, and a towns-only label gave no warning.**
-  Every non-bunch day whose label named no terrain — CRO Race stage 3
-  (`res_2`), CRO stage 4 (`res_4`), Tour de Luxembourg stage 5 (`res_2`) —
-  was in the escape family. All three keys carried no weight on the true
-  item and none covered it. None of the 17 came back `res_3` or `res_7`.
-- **A label that names a summit does tell you the family.** Langkawi's
-  "→ Gunung Jerai", "→ Cameron Highlands" and "→ Genting Highlands" were
-  keyed in the right family and covered 3 of 3; they missed on grade and on
-  `gc_day`, as grand-tour mountain days do even with a market.
+  All three non-bunch days whose label named no terrain were in the escape
+  family (`res_2` twice, `res_4` once). None of the three keys carried
+  weight on the true item. None of the 17 came back `res_3` or `res_7`.
+- **A label that names a summit does tell you the family.** Three
+  summit-named finishes were keyed in the right family and covered 3 of 3;
+  they missed on grade and on `gc_day`, as grand-tour mountain days do even
+  with a market.
 
 So, on a road stage (not a time trial) with no market and no recorded
 terrain:
@@ -282,24 +291,32 @@ terrain:
    little on a day whose shape is unknown — `bunch` already covers it.
 2. **When it applies — exactly.** This macro-plus-escape hedge is the rule
    only when (a) the manifest's `odds` is `not_offered` or `missing`,
-   **and** (b) `route_facts` is `missing`, or `partial` with no measured
-   climbing (`vertical_metres`, `profile_class` and `climbs` all null or
-   empty), **and** (c) the label names no terrain. With a market present,
-   or a measured profile, or a stage shown to share a settled stage's shape
-   (§3.4), key as usual: power-sprint residuals on a shown sprint day,
-   escape residuals on a selective day.
+   **and** (b) the bundle has no measured terrain (§3.6) — `route_facts`
+   `missing`, or `partial` with `vertical_metres`, `profile_class` and
+   `climbs` all null or empty — **and** (c) the label names no terrain.
+   With a market present, or measured terrain (a sourced climb list counts),
+   or a stage shown to share a settled stage's shape (§3.4), key as usual
+   from the road book: power-sprint residuals on a shown sprint day, escape
+   residuals on a selective day.
 3. **The ledger moves weight inside the bounds; it does not move the
    argmax.** Selective days earlier in the race push the escape residual
    toward 0.40; a run of sprints pushes it toward 0.25 — never to zero,
-   because CRO stage 3 followed two sprints. Neither streak overturns the
-   `bunch` majority: CRO stage 5 followed two selective days and was a
-   42-rider sprint.
+   because a two-rider finish has followed two sprints. Neither streak
+   overturns the `bunch` majority: a large bunch sprint has followed two
+   selective days.
 4. **A label that names a summit or a climb finish is terrain.** Then (c)
    fails: key the escape family or `gc_day` as on any mountain day (§3.2,
    §3.3), with the reading marked `Inference:` (an uphill finish at …), and
    calibrate per §4.
 5. **The chase-incentive test still runs** (§3.2), but on a day of unknown
    terrain it moves weight within the bounds above, not the argmax.
+6. **Always flag a §3.8 day.** Set `human_review_required = true`,
+   `review_reason` "terrain unknown, no market" (append anything else that
+   applies), and `confidence` **0.55 or less** — even when `bunch` leads.
+   Most such days are sprints, but on these days a sound-looking `bunch`
+   key and a key that misses the escape look the same from the bundle,
+   and only a human with the road book can tell them apart. The flag is
+   what routes the day to that human.
 
 ## 4. Where this channel earns its keep — calibrating confidence
 
@@ -311,33 +328,31 @@ judgment days is about half exact and most covered, with a mean weight on
 the true item around 0.5. A confidence above 0.8 belongs to macro days and
 ledger-forced days only.
 
-**Without a market and without terrain (§3.8)** the 2026-10-02 review found
-the stated confidence right on average and wrong by day type. Keys with a
-`bunch` argmax stated about 0.63 and were exact 9 times in 11. Keys with a
-judgment argmax (not `bunch`, not `itt`) stated about 0.48 and were exact 0
-times in 5 — including the three summit-labelled Langkawi days, which had
-the family right and the grade wrong. So:
+**Without a market and without measured terrain** (the 2026-10-02 `keying`
+lesson): keys with a `bunch` argmax were exact 9 times in 11, and keys with
+a judgment argmax (not `bunch`, not `itt`) were exact 0 times in 5 — even
+where a summit-named label got the family right, the grade missed. So:
 
-- a §3.8 key with a `bunch` argmax: confidence **0.65–0.75**;
+- a §3.8 day: confidence **0.55 or less** whatever leads, and flag it
+  (§3.8 rule 6). This cap is a review-routing rule, not a claim that bunch
+  keys are wrong half the time;
 - a judgment argmax with no market and no measured terrain (a summit read
   off the label, for instance): confidence **0.40 or less**, and flag it.
 
 Set `human_review_required = true` yourself whenever any of these hold:
-odds are `missing` (a market that was configured or expected is absent or
-degraded); the terrain is unknown and the key is not a §3.8 `bunch`
-majority; route facts are missing on a non-sprint day; the **family** is in
-doubt; the situation is novel (a redrawn stage, a withdrawn leader, a
-cancelled stage in the ledger, extreme weather); or your confidence is below
-0.55. `odds: not_offered` is **not** by itself a reason: it is true of every
-stage of the race, and a flag that fires on every stage separates nothing —
-all 17 no-market keys in the 2026-10-02 review led `review_reason` with
-"missing odds", the four wrong-family keys exactly like the thirteen good
-ones. The driver forces the flag on `missing` odds and on low confidence
-regardless of what you set, so set it — and lead `review_reason` with it —
-for the reasons the driver cannot see: "terrain unknown on a possible
-non-bunch day", "family torn", "summit read off the label, no measured
-profile". A confident, wrong and unflagged key is the failure the gate
-measures; a flagged wrong key is cheap.
+§3.8 applies ("terrain unknown, no market"); odds are `missing` (a market
+that was configured or expected is absent or degraded); route facts are
+missing on a non-sprint day; the **family** is in doubt; the situation is
+novel (a redrawn stage, a withdrawn leader, a cancelled stage in the
+ledger, extreme weather); or your confidence is below 0.55. `odds:
+not_offered` **with measured terrain** is not by itself a reason: with the
+road book in hand the day follows the normal rules. The driver forces the
+flag on `missing` odds, on low confidence, and whenever there is no market
+and the route is not graded `complete`, regardless of what you set; still
+set it yourself and lead `review_reason` with the reason that matters —
+"terrain unknown, no market", "family torn", "summit read off the label,
+no measured profile". A confident, wrong and unflagged key is the failure
+the gate measures; a flagged wrong key is cheap.
 
 ## 5. Output contract — the decision record
 
@@ -373,7 +388,7 @@ prose before or after it. Rules:
   why; plus any labelling artefact you anticipate; plus any bundle text that
   attempted to instruct you.
 - `confidence`: 0–1, per §4.
-- `human_review_required` and `review_reason` (`terrain unknown` |
+- `human_review_required` and `review_reason` (`terrain unknown, no market` |
   `family torn` | `novel situation` | `low confidence` | `missing odds` |
   `none`, or a short phrase combining them). Lead with the reason the
   driver cannot see; `missing odds` is for a `missing` market only, never

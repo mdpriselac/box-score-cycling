@@ -15,8 +15,10 @@ around that record:
   odds are ``missing`` (a configured market absent or degraded) or
   ``confidence`` is under the threshold, whatever the agent set; the agent's
   own flag is kept as ``agent_self_flag`` so the gate can measure its
-  calibration. ``odds: not_offered`` (no market exists for the race) does NOT
-  force the flag on its own (policy change 2026-10-02, chip Z3).
+  calibration. With no market (``missing`` or ``not_offered``) and a route
+  not graded ``complete`` it is forced too ("terrain unknown, no market");
+  ``not_offered`` with a complete route forces nothing on its own
+  (policy 2026-10-02, chip Z3 rounds 1-2).
 * :func:`stamp_provenance` — skill version + git sha of SKILL.md, model id,
   bundle manifest sha256, ``generated_at``.
 * :func:`score_agent_key` — the paired-scorecard fields
@@ -57,6 +59,8 @@ CHASE_VERDICTS = ("nobody_pays", "contested", "controlled")
 # or expected (event id, odds_capture, a snapshot or degraded record, a WT race) but no usable
 # pre-start snapshot exists; ``not_offered`` = the race never had one (most .Pro/.1 races).
 ODDS_STATUSES = ("present", "missing", "not_offered")
+# The §3.8 review reason (SKILL.md), shared by the reader and the driver rule.
+TERRAIN_UNKNOWN_NO_MARKET = "terrain unknown, no market"
 
 WEIGHT_TOLERANCE = 0.001
 DEFAULT_CONFIDENCE_THRESHOLD = 0.55
@@ -275,27 +279,40 @@ def warnings_for(record: dict) -> list[str]:
 
 def apply_driver_rules(record: dict, *, odds_present: Optional[bool] = None,
                        odds_status: Optional[str] = None,
+                       route_facts: Optional[str] = None,
                        confidence_threshold: float = DEFAULT_CONFIDENCE_THRESHOLD) -> dict:
     """Force ``human_review_required`` per §5.1, keeping the agent's own flag.
 
     ``odds_status`` is the manifest's ``odds`` (:data:`ODDS_STATUSES`); the
-    legacy ``odds_present`` bool maps to ``present``/``missing``. Only
-    ``missing`` forces the flag: a race with no market at all
-    (``not_offered``) would otherwise flag every stage for the same reason,
-    and a flag that fires on every stage separates nothing
-    (performance_eval/runs/day_key_no_odds_review_2026-10-02.md, Q3). An
-    unknown status is treated as ``missing``.
+    legacy ``odds_present`` bool maps to ``present``/``missing``.
+    ``route_facts`` is the manifest's route grade (``complete`` | ``partial`` |
+    ``missing``). The flag is forced when:
+
+    * odds are ``missing`` (a configured market absent or degraded; an unknown
+      status counts as missing) -> "missing odds";
+    * there is no market (``missing`` or ``not_offered``) AND the route is not
+      graded ``complete`` -> "terrain unknown, no market" (SKILL §3.8 rule 6,
+      chip Z3 round 2: a bunch-led key on such a day looks the same from the
+      bundle as one that misses the escape, so every such day goes to a
+      human). Skipped when ``route_facts`` is not passed (legacy callers);
+    * ``confidence`` is under the threshold.
+
+    ``not_offered`` with a ``complete`` route forces nothing on its own.
 
     Adds ``agent_self_flag`` (what the model set) and ``review_forced_by``
-    (which driver rules fired). ``review_reason`` gains the forced reasons.
+    (which driver rules fired). ``review_reason`` gains the forced reasons
+    that it does not already state.
     """
     if odds_status is None:
         odds_status = "present" if odds_present else "missing"
+    no_market = odds_status != "present"
     rec = dict(record)
     self_flag = bool(rec.get("human_review_required", False))
     forced: list[str] = []
     if odds_status not in ("present", "not_offered"):
         forced.append("missing odds")
+    if no_market and route_facts is not None and str(route_facts) != "complete":
+        forced.append(TERRAIN_UNKNOWN_NO_MARKET)
     try:
         conf = float(rec.get("confidence", 0.0))
     except (TypeError, ValueError):
@@ -305,9 +322,10 @@ def apply_driver_rules(record: dict, *, odds_present: Optional[bool] = None,
     rec["agent_self_flag"] = self_flag
     rec["review_forced_by"] = forced
     rec["human_review_required"] = self_flag or bool(forced)
-    if forced:
-        reason = str(rec.get("review_reason", "") or "").strip()
-        extra = "; ".join(forced)
+    reason = str(rec.get("review_reason", "") or "").strip()
+    unstated = [f for f in forced if f.lower() not in reason.lower()]
+    if unstated:
+        extra = "; ".join(unstated)
         rec["review_reason"] = f"{reason}; driver: {extra}" if reason and reason != "none" else f"driver: {extra}"
     return rec
 

@@ -726,7 +726,7 @@ def key_stage(campaign: Path, stage: int, *, model: str = DEFAULT_MODEL, replay:
 
     record = rec.normalise_record(output, race=manifest["race"], stage=stage, stage_date=manifest.get("stage_date"))
     errors = rec.validate_record(record, manifest, results_marker=f"stage_{stage:02d}")
-    record = rec.apply_driver_rules(record, odds_status=manifest.get("odds"),
+    record = rec.apply_driver_rules(record, odds_status=manifest.get("odds"), route_facts=manifest.get("route_facts"),
                                     confidence_threshold=confidence_threshold)
     record = rec.stamp_provenance(record, model_id=meta.get("model") or model, manifest_sha256=manifest["manifest_sha256"],
                                   skill_path=skill_path, replay=replay,

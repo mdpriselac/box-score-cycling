@@ -267,14 +267,21 @@ def test_key_stage_flags_low_confidence_and_invalid_refs(campaign):
     assert any("results for the stage" in e for e in record["validation_errors"])
 
 
-def test_key_stage_not_offered_market_is_not_forced_to_review(campaign):
-    """Driver policy 2026-10-02 (chip Z3): no market for the race is not by itself a review flag;
-    a degraded/absent configured market still is."""
+def test_key_stage_no_market_review_follows_the_route_grade(campaign):
+    """Driver policy 2026-10-02 (chip Z3 round 2): no market + a route not graded `complete`
+    forces review ("terrain unknown, no market"); no market with a complete route does not;
+    a degraded/absent configured market forces "missing odds" as before."""
     _strip_market(campaign)
     ev = [{"claim": "st12 escape held", "ref": "settled_stages.json"}]
+    # the fixture has no route.json -> route_facts: missing
     record = rdk.key_stage(campaign, 14, client=FakeClient(_model_output(evidence=ev)), store_kind="none", replay=True)
-    assert record["schema_valid"] is True and record["human_review_required"] is False
-    assert record["review_forced_by"] == []
+    assert record["schema_valid"] is True and record["human_review_required"] is True
+    assert record["review_forced_by"] == [rec.TERRAIN_UNKNOWN_NO_MARKET]
+
+    (campaign / "predictions/stage_14/route.json").write_text(json.dumps({"route_facts": "complete"}))
+    record = rdk.key_stage(campaign, 14, client=FakeClient(_model_output(evidence=ev)), store_kind="none",
+                           replay=True, rebuild_bundle=True)
+    assert record["human_review_required"] is False and record["review_forced_by"] == []
 
     shutil.copytree(FIXTURE / "odds", campaign / "odds")      # a market existed ...
     for day in ("2026-09-03", "2026-09-04"):                    # ... but no pre-start snapshot survives

@@ -125,6 +125,31 @@ def test_driver_rules_by_odds_status():
     assert rec.ODDS_STATUSES == ("present", "missing", "not_offered")
 
 
+def test_driver_rules_force_review_without_market_and_measured_route():
+    """Chip Z3 round 2 (SKILL §3.8 rule 6): no market AND a route not graded complete forces the
+    flag even on a confident bunch-led key; a complete route lifts it; a market lifts it."""
+    T = rec.TERRAIN_UNKNOWN_NO_MARKET
+    bunch = dict(key={"bunch": 0.7, "res_4": 0.3}, family="macro", confidence=0.7)
+    for grade in ("partial", "missing"):
+        r = rec.apply_driver_rules(good_record(**bunch), odds_status="not_offered", route_facts=grade)
+        assert r["human_review_required"] is True and r["review_forced_by"] == [T]
+        assert r["review_reason"] == f"driver: {T}"
+    r = rec.apply_driver_rules(good_record(**bunch), odds_status="not_offered", route_facts="complete")
+    assert r["human_review_required"] is False and r["review_forced_by"] == []
+    r = rec.apply_driver_rules(good_record(**bunch), odds_status="present", route_facts="partial")
+    assert r["review_forced_by"] == []
+    r = rec.apply_driver_rules(good_record(**bunch), odds_status="missing", route_facts="partial")
+    assert r["review_forced_by"] == ["missing odds", T]
+    r = rec.apply_driver_rules(good_record(**bunch), odds_status="missing", route_facts="complete")
+    assert r["review_forced_by"] == ["missing odds"]
+    # the reader already said it: the reason is not repeated
+    r = rec.apply_driver_rules(good_record(**bunch, human_review_required=True, review_reason=T),
+                               odds_status="not_offered", route_facts="partial")
+    assert r["review_reason"] == T and r["agent_self_flag"] is True
+    # legacy callers that pass no route grade keep the round-1 behaviour
+    assert rec.apply_driver_rules(good_record(**bunch), odds_status="not_offered")["review_forced_by"] == []
+
+
 def test_normalise_record_folds_key_items():
     out = {"key_items": [{"item": "res_2", "weight": 0.6}, {"item": "gc_day", "weight": 0.4}], "family": "escape"}
     r = rec.normalise_record(out, race="vuelta-2026", stage=14, stage_date="2026-09-05")
@@ -158,7 +183,7 @@ def test_provenance_stamp(tmp_path):
 
 def test_real_skill_has_semver_header():
     assert rec.skill_version(rec.SKILL_PATH).count(".") == 2
-    assert tuple(int(x) for x in rec.skill_version(rec.SKILL_PATH).split(".")) >= (1, 1, 0)  # no-market rules (chip Z3)
+    assert tuple(int(x) for x in rec.skill_version(rec.SKILL_PATH).split(".")) >= (1, 2, 0)  # no-market rules + §3.8 flag (chip Z3)
     body = rec.skill_body(rec.SKILL_PATH)
     assert body.startswith("# Day-key read") and "version:" not in body[:40]
 
