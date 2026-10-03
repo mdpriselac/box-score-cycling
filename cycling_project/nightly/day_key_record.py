@@ -12,9 +12,11 @@ around that record:
   refs resolve to ``bundle/manifest.json`` entries, no results for the stage
   being keyed.
 * :func:`apply_driver_rules` — ``human_review_required`` is forced true when
-  odds are missing or ``confidence`` is under the threshold, whatever the
-  agent set; the agent's own flag is kept as ``agent_self_flag`` so the gate
-  can measure its calibration.
+  odds are ``missing`` (a configured market absent or degraded) or
+  ``confidence`` is under the threshold, whatever the agent set; the agent's
+  own flag is kept as ``agent_self_flag`` so the gate can measure its
+  calibration. ``odds: not_offered`` (no market exists for the race) does NOT
+  force the flag on its own (policy change 2026-10-02, chip Z3).
 * :func:`stamp_provenance` — skill version + git sha of SKILL.md, model id,
   bundle manifest sha256, ``generated_at``.
 * :func:`score_agent_key` — the paired-scorecard fields
@@ -50,6 +52,11 @@ FAMILY_OF = {
 }
 FAMILIES = ("macro", "escape", "power_sprint", "bridge")
 CHASE_VERDICTS = ("nobody_pays", "contested", "controlled")
+
+# Manifest ``odds`` vocabulary (run_day_key.build_bundle). ``missing`` = a market was configured
+# or expected (event id, odds_capture, a snapshot or degraded record, a WT race) but no usable
+# pre-start snapshot exists; ``not_offered`` = the race never had one (most .Pro/.1 races).
+ODDS_STATUSES = ("present", "missing", "not_offered")
 
 WEIGHT_TOLERANCE = 0.001
 DEFAULT_CONFIDENCE_THRESHOLD = 0.55
@@ -266,17 +273,28 @@ def warnings_for(record: dict) -> list[str]:
 # driver rules
 # ---------------------------------------------------------------------------
 
-def apply_driver_rules(record: dict, *, odds_present: bool,
+def apply_driver_rules(record: dict, *, odds_present: Optional[bool] = None,
+                       odds_status: Optional[str] = None,
                        confidence_threshold: float = DEFAULT_CONFIDENCE_THRESHOLD) -> dict:
     """Force ``human_review_required`` per §5.1, keeping the agent's own flag.
+
+    ``odds_status`` is the manifest's ``odds`` (:data:`ODDS_STATUSES`); the
+    legacy ``odds_present`` bool maps to ``present``/``missing``. Only
+    ``missing`` forces the flag: a race with no market at all
+    (``not_offered``) would otherwise flag every stage for the same reason,
+    and a flag that fires on every stage separates nothing
+    (performance_eval/runs/day_key_no_odds_review_2026-10-02.md, Q3). An
+    unknown status is treated as ``missing``.
 
     Adds ``agent_self_flag`` (what the model set) and ``review_forced_by``
     (which driver rules fired). ``review_reason`` gains the forced reasons.
     """
+    if odds_status is None:
+        odds_status = "present" if odds_present else "missing"
     rec = dict(record)
     self_flag = bool(rec.get("human_review_required", False))
     forced: list[str] = []
-    if not odds_present:
+    if odds_status not in ("present", "not_offered"):
         forced.append("missing odds")
     try:
         conf = float(rec.get("confidence", 0.0))

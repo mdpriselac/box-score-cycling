@@ -99,6 +99,32 @@ def test_driver_forces_review_on_missing_odds_and_low_confidence():
     assert r["human_review_required"] is True and r["agent_self_flag"] is True and r["review_forced_by"] == []
 
 
+def test_driver_rules_by_odds_status():
+    """Policy 2026-10-02 (chip Z3): `missing` (a configured market absent or degraded) still forces
+    review; `not_offered` (the race never had a market) does not on its own — low confidence and
+    the agent's own flag still do."""
+    r = rec.apply_driver_rules(good_record(confidence=0.7), odds_status="missing")
+    assert r["human_review_required"] is True and r["review_forced_by"] == ["missing odds"]
+
+    r = rec.apply_driver_rules(good_record(confidence=0.7), odds_status="not_offered")
+    assert r["human_review_required"] is False and r["review_forced_by"] == []
+    assert "missing odds" not in r["review_reason"]
+
+    r = rec.apply_driver_rules(good_record(confidence=0.4), odds_status="not_offered")
+    assert r["human_review_required"] is True and r["review_forced_by"][0].startswith("low confidence")
+
+    r = rec.apply_driver_rules(good_record(confidence=0.7, human_review_required=True,
+                                           review_reason="terrain unknown on a possible non-bunch day"),
+                               odds_status="not_offered")
+    assert r["human_review_required"] is True and r["agent_self_flag"] is True
+    assert r["review_reason"] == "terrain unknown on a possible non-bunch day"
+
+    # an unknown status is read as missing; no status at all keeps the legacy default
+    assert rec.apply_driver_rules(good_record(confidence=0.7), odds_status="weird")["review_forced_by"] == ["missing odds"]
+    assert rec.apply_driver_rules(good_record(confidence=0.7))["review_forced_by"] == ["missing odds"]
+    assert rec.ODDS_STATUSES == ("present", "missing", "not_offered")
+
+
 def test_normalise_record_folds_key_items():
     out = {"key_items": [{"item": "res_2", "weight": 0.6}, {"item": "gc_day", "weight": 0.4}], "family": "escape"}
     r = rec.normalise_record(out, race="vuelta-2026", stage=14, stage_date="2026-09-05")
@@ -132,6 +158,7 @@ def test_provenance_stamp(tmp_path):
 
 def test_real_skill_has_semver_header():
     assert rec.skill_version(rec.SKILL_PATH).count(".") == 2
+    assert tuple(int(x) for x in rec.skill_version(rec.SKILL_PATH).split(".")) >= (1, 1, 0)  # no-market rules (chip Z3)
     body = rec.skill_body(rec.SKILL_PATH)
     assert body.startswith("# Day-key read") and "version:" not in body[:40]
 
