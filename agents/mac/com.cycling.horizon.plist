@@ -2,7 +2,9 @@
 <!--
   Daily horizon capture — the Mac's handover to the cloud nightly.
 
-  Runs `python -m cycling_project.nightly.horizon --store auto` from the MAIN
+  Runs `python -m cycling_project.nightly.horizon --store auto --route-research`
+  (PAID web research of route facts, per race, capped by --max-route-research;
+  added 2026-10-03, chip Z1) from the MAIN
   checkout (never a worktree: a worktree has no .env, and the capture wants the
   real campaign directories and the real SQLite database).
 
@@ -27,7 +29,7 @@
   <array>
     <string>/bin/zsh</string>
     <string>-lc</string>
-    <string>cd "$HOME/Documents/Cycling Project" &amp;&amp; mkdir -p performance_eval/runs &amp;&amp; exec caffeinate -i uv run python -m cycling_project.nightly.horizon --store auto &gt;&gt; "performance_eval/runs/horizon_$(date +%Y-%m-%d).log" 2&gt;&amp;1</string>
+    <string>cd "$HOME/Documents/Cycling Project" &amp;&amp; mkdir -p performance_eval/runs &amp;&amp; exec caffeinate -i uv run python -m cycling_project.nightly.horizon --store auto --route-research &gt;&gt; "performance_eval/runs/horizon_$(date +%Y-%m-%d).log" 2&gt;&amp;1</string>
   </array>
 
   <key>StartCalendarInterval</key>
