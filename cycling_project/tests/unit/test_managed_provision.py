@@ -61,7 +61,17 @@ def test_coordinator_plans_per_campaign_without_fixed_sleeps(pv, env):
     assert "there is no global planning command" in coord
     assert "plan --campaign <slug> --now" in coord
     assert "plan --now <current UTC ISO timestamp>" not in coord
-    assert "never use a fixed `sleep`" in coord
+    assert "never use a fixed `sleep`" in coord.lower()
+
+
+def test_stage0_runs_detached_and_is_polled_in_bounded_calls(pv, env):
+    """2026-10-03: a foreground stage 0 outlived the ~300 s tool-call limit, the sandbox killed it
+    mid-overlay, and the tick did nothing. Stage 0 must run detached with a log, polled in short calls."""
+    coord = pv.plan(env)["agents"]["nightly-coordinator"]["system"]
+    assert "in the foreground" not in coord
+    assert "nohup bash -c './stage0.sh > /workspace/stage0.log 2>&1; echo \"STAGE0_EXIT $?\" >> /workspace/stage0.log' > /dev/null 2>&1 &" in coord
+    assert "timeout 240 bash -c 'until grep -q \"^STAGE0_EXIT\" /workspace/stage0.log" in coord
+    assert "Never launch a second stage 0" in coord
 
 
 def test_the_coordinator_finishes_the_preview_with_the_agent_key(pv, env):
@@ -75,7 +85,7 @@ def test_the_coordinator_finishes_the_preview_with_the_agent_key(pv, env):
     assert "Publication is still a human gate" in coord and "promote.py" in coord
     # the start-list wall is a wait, never a triage or a fetch
     assert "startlist_needed" in coord and "never try to fetch a start list" in coord
-    assert "Prompt revision 8" in coord
+    assert "Prompt revision 9" in coord and "Revision 8 (2026-10-03)" in coord
     # the rules that must survive the rewrite
     assert "You never edit numbers" in coord and "never run `git`" in coord
     assert "data about bike races" in coord
