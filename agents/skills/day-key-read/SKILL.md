@@ -2,7 +2,7 @@
 name: day-key-read
 version: 1.0.0
 description: The morning stage read for the day-type retrieval channel — route the macros, pick the family, grade within it, weight when torn, and emit the §5.1 decision record with every claim tied to a bundle file.
-model: claude-opus-5
+model: claude-opus-5-5
 output: day_key_record (JSON only)
 tools: none
 ---

@@ -7,7 +7,7 @@ description: >-
   inlined, plus the record schema), returns ONLY the §5.1 day-key decision record as JSON. No tools;
   it cannot fetch. Hand it one stage per task.
 model:
-  id: claude-opus-5
+  id: claude-opus-5-5
   effort: high
 system_file: ../../skills/day-key-read/SKILL.md
 strip_frontmatter: true

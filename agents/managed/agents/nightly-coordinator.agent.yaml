@@ -8,7 +8,7 @@ description: >-
   results acquisition (UCI, the only source), runs the deterministic driver per campaign, and files operator tasks. A copy can be
   spawned to own ONE campaign's `night --campaign <slug>` run.
 model:
-  id: claude-opus-5
+  id: claude-opus-5-5
   effort: high
 system_file: ../prompts/nightly-coordinator.md
 tools:

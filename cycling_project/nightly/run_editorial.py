@@ -9,7 +9,7 @@ Flow (NIGHTLY_BUILD_QUEUE.md chip G; AGENT_DESIGN.md §3.3 / §5.2 / §6.3):
    results by rider id through the ``riders`` table, name fallback), the
    odds capture named by the config, ``route.json`` when present and the
    GC scenario when present. A preview never sees ``results/<unit>``.
-2. Call the Claude API ONCE (``claude-opus-5``, adaptive thinking,
+2. Call the Claude API ONCE (``claude-opus-5-5``, adaptive thinking,
    structured output against the §5.2 schema, no tools) with the skill as
    the system prompt and the bundle inlined as user content.
 3. Lint (lexicon + numerals + key consistency). On failure retry ONCE with
@@ -44,7 +44,7 @@ from cycling_project.nightly.store_local import open_store
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 SKILL_PATH = lint_prose.SKILL_DIR / "SKILL.md"
-DEFAULT_MODEL = "claude-opus-5"
+DEFAULT_MODEL = "claude-opus-5-5"
 ARTIFACTS = ("stage_retro", "stage_preview", "monthly_review")
 PHASE_BY_ARTIFACT = {"stage_retro": "retro", "stage_preview": "preview", "monthly_review": "retro"}
 

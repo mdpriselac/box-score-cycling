@@ -26,7 +26,7 @@ the human's ``day_key``/``day_key_note`` for that stage (only ``label``,
 ``scenarios.json``), and any scorecard row at or after the stage.
 
 The model call: the skill body as the system prompt, the bundle inlined as
-user content, ``claude-opus-5``, adaptive thinking, structured output
+user content, ``claude-opus-5-5``, adaptive thinking, structured output
 against :data:`day_key_record.RECORD_SCHEMA`, no tools, no prefill. The
 record is validated, driver rules applied, provenance stamped, and written to
 ``predictions/stage_NN/agent_key.json`` (raw API metadata beside it as
@@ -57,7 +57,7 @@ logger = get_logger(__name__)
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 MENU_REFERENCE = PROJECT_ROOT / "day_menu_v1_reference.md"
-DEFAULT_MODEL = "claude-opus-5"
+DEFAULT_MODEL = "claude-opus-5-5"
 MAX_TOKENS = 16000
 STAGE_EVENT_RE = re.compile(r"\b(?:Etappe|Stage|Etapp|Étape|Tappa)\s+(\d+)\b", re.I)
 FRONT_GROUP_N = 10

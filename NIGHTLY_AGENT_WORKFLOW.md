@@ -279,7 +279,7 @@ and a real key on the Mac).
   `SUPABASE_NIGHTLY_KEY` (the `nightly_agent` role key), `networking:
   {type: limited, allowed_hosts: ["<project>.supabase.co"]}`,
   `injection_location: {header: true}`.
-- Agents (`claude-opus-5` to start): `nightly-coordinator` (agent toolset;
+- Agents (`claude-opus-5` to start, `claude-opus-5-5` since 2026-10-02): `nightly-coordinator` (agent toolset;
   roster `[{type: self}, uci-acquirer, day-key-reader,
   editorial, ops-triage]`; prompt: `bootstrap`, `plan`, one self thread per due
   campaign running `night`; never edit numbers; exit 10 → `operator_tasks`

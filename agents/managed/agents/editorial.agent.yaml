@@ -6,7 +6,7 @@ description: >-
   record (numbers via placeholders, information-capture framing, no advice language). No tools. Hand
   it one artifact per task: the artifact type, the facts bundle JSON and the output schema.
 model:
-  id: claude-opus-5
+  id: claude-opus-5-5
   effort: high
 system_file: ../../skills/editorial/SKILL.md
 strip_frontmatter: true

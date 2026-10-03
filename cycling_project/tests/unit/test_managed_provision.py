@@ -114,7 +114,7 @@ def test_tool_surfaces_match_the_trust_boundary(pv, env):
     coord = enabled(a["nightly-coordinator"])
     assert "bash" in coord and "web_fetch" not in coord and "web_search" not in coord
     for name, spec in a.items():
-        assert spec["model"]["id"] == "claude-opus-5", name
+        assert spec["model"]["id"] == "claude-opus-5-5", name
 
 
 def test_no_agent_can_fetch_procyclingstats(pv, env):

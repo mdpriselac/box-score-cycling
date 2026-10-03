@@ -508,7 +508,7 @@ uv run python -m cycling_project.nightly.run_day_key --campaign <campaign> --sta
 It freezes `predictions/stage_NN/bundle/` (the newest odds snapshot captured
 before the stage's start, `gc.csv` after N−1, the settled-stage ledger, the
 scorecard restricted to earlier stages, `route.json`, the menu reference, and
-`manifest.json` with sha256s), makes one `claude-opus-5` call with
+`manifest.json` with sha256s), makes one `claude-opus-5-5` call with
 `agents/skills/day-key-read/SKILL.md` as the system prompt, and writes
 `predictions/stage_NN/agent_key.json`. The record is shadow only. `--dry-run`
 builds the bundle without the API call; `--rebuild-bundle` discards a frozen

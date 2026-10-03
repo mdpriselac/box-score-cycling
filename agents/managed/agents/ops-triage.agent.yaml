@@ -7,7 +7,7 @@ description: >-
   excerpts, proposed action, urgency). It never remediates. Hand it the step, error_class, log_path
   and the run directory.
 model:
-  id: claude-opus-5
+  id: claude-opus-5-5
   effort: medium
 system_file: ../prompts/ops-triage.md
 tools:

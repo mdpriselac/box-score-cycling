@@ -112,7 +112,7 @@ class _Msg:
     def __init__(self, payload, stop="end_turn"):
         self.content = [_Block(json.dumps(payload))]
         self.stop_reason = stop
-        self.model = "claude-opus-5"
+        self.model = "claude-opus-5-5"
         self._request_id = "req_test"
         self.usage = {"input_tokens": 10, "output_tokens": 5}
 
@@ -170,7 +170,7 @@ def test_key_stage_end_to_end_with_fake_client(campaign):
     # one call, skill as system prompt, bundle + instruction as user content, schema attached, no tools
     assert len(client.calls) == 1
     kw = client.calls[0]
-    assert kw["model"] == "claude-opus-5" and kw["thinking"] == {"type": "adaptive"}
+    assert kw["model"] == "claude-opus-5-5" and kw["thinking"] == {"type": "adaptive"}
     assert kw["output_config"]["format"]["schema"] == rec.RECORD_SCHEMA and "tools" not in kw
     assert kw["system"][0]["text"].startswith("# Day-key read") and len(kw["messages"]) == 1
     assert kw["messages"][0]["role"] == "user" and kw["messages"][0]["content"][-1]["text"].startswith("Key stage 14")
@@ -178,7 +178,7 @@ def test_key_stage_end_to_end_with_fake_client(campaign):
 
     assert record["key"] == {"res_2": 0.65, "gc_day": 0.35} and record["schema_valid"] is True
     assert record["replay"] is True and record["human_review_required"] is False
-    assert record["provenance"]["model_id"] == "claude-opus-5" and record["provenance"]["skill_version"] == rec.skill_version()
+    assert record["provenance"]["model_id"] == "claude-opus-5-5" and record["provenance"]["skill_version"] == rec.skill_version()
     assert record["provenance"]["bundle_manifest_sha256"] == json.loads(
         (campaign / "predictions/stage_14/bundle/manifest.json").read_text())["manifest_sha256"]
     written = json.loads((campaign / "predictions/stage_14/agent_key.json").read_text())

@@ -12,7 +12,7 @@ description: >-
   sha256s, exit code. Give it the campaign slug, absolute campaign directory, unit and the exact UCI
   competition URL. It runs nothing else and edits nothing.
 model:
-  id: claude-opus-5
+  id: claude-opus-5-5
   effort: low
 system_file: ../prompts/uci-acquirer.md
 tools:
