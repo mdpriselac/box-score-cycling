@@ -917,7 +917,7 @@ is a row in `editorial_drafts` — stored by the driver, never by hand:
 
 | Where the draft comes from | What stores it |
 |---|---|
-| Cloud: the coordinator saves `predictions/<unit>/editorial_draft_<artifact>.json` after `night` | `python -m cycling_project.nightly editorial --campaign <slug> --unit <unit>` (prompt rev 7 runs it) |
+| Cloud: the coordinator saves `predictions/<unit>/editorial_draft_<artifact>.json` after `night` | `python -m cycling_project.nightly editorial --campaign <slug> --unit <unit>`. It lints first: a failing first attempt exits 10 (`editorial_lint_failed`), nothing is stored, the coordinator sends the report back once, then runs `… --final` (prompt rev 10) |
 | Any draft already on disk when a unit uploads | `upload` (inside `settle` / `preview`) |
 | Mac: `run_editorial` calling the API itself | `run_editorial` (its own store insert) |
 
@@ -926,6 +926,24 @@ a fixed order), the lint report (lexicon, numerals against the facts bundle,
 key restatements, §5.2 schema) and `lint_ok`. A draft that fails is stored
 anyway, flagged, so you see the bad ones too. Storing is idempotent on the
 record's sha256: re-running `upload` or `editorial` never duplicates a draft.
+
+**One retry, then stored (chip EE, 2026-10-03).** A draft that fails the
+lint on its first attempt gets the skill's one retry before it is stored, in
+the cloud as on the Mac. The row's `lint.attempt` is 1 or 2, and
+`lint.first_attempt` keeps what the first try got wrong. The inbox lists that
+under the lint findings, and the feedback digest counts how often the retry
+was needed. A draft still failing after its retry is stored and flagged. To
+store a failing draft by hand without the retry:
+`uv run python -m cycling_project.nightly editorial --campaign <slug> --unit <unit> --final --store fake`
+Use `--store fake` for any test. The hosted store is the coordinator's.
+
+**Rider names in prose are given-name first** (skill 1.2.0). The facts
+bundle gives every rider a `display_name` ("Gleb Syritsa") beside the
+database `name` ("Syritsa Gleb"), taken from the UCI capture's surname split
+or, failing that, a particle-aware heuristic (`display_name_source:
+heuristic`, worth a glance for compound surnames such as "Pezzo Rosola
+Kevin"). A surname-first name in prose shows as an advisory "name order"
+finding. It never fails a draft.
 
 **To review:** rebuild and open the inbox (`netlify_site/build/build_ops_page.py`,
 then `http://localhost:8411/_frame/ops.html`, §2.7 of the workflow). The

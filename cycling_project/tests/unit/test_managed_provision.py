@@ -85,7 +85,7 @@ def test_the_coordinator_finishes_the_preview_with_the_agent_key(pv, env):
     assert "Publication is still a human gate" in coord and "promote.py" in coord
     # the start-list wall is a wait, never a triage or a fetch
     assert "startlist_needed" in coord and "never try to fetch a start list" in coord
-    assert "Prompt revision 9" in coord and "Revision 8 (2026-10-03)" in coord
+    assert "Prompt revision 10" in coord and "Revision 9 (2026-10-03)" in coord and "Revision 8 (2026-10-03)" in coord
     # the rules that must survive the rewrite
     assert "You never edit numbers" in coord and "never run `git`" in coord
     assert "data about bike races" in coord
@@ -107,6 +107,24 @@ def test_the_coordinator_stores_every_editorial_draft(pv, env):
     import fnmatch
     assert fnmatch.fnmatch("editorial_draft_stage_preview.json", DRAFT_GLOB)
     assert "editorial" in drv.build_parser()._subparsers._group_actions[0].choices
+
+
+def test_the_coordinator_runs_the_editorial_retry_the_skill_promises(pv, env):
+    """Chip EE (2026-10-03): the skill promised one lint retry; the Mac runner ran it, the cloud
+    never did — the first two stored drafts failed on placeholders a retry would have caught.
+    Rev 10: check, one retry in the SAME thread, then `--final` stores the reply, pass or fail."""
+    coord = pv.plan(env)["agents"]["nightly-coordinator"]["system"]
+    check = "nightly editorial --campaign <slug> --unit <unit>`"
+    final = "nightly editorial --campaign <slug> --unit <unit> --final"
+    assert check in coord and final in coord
+    assert coord.index(check) < coord.index("editorial_lint_failed") < coord.index(final)
+    assert "SAME editorial thread" in coord and "fix exactly these and return the whole JSON again" in coord
+    assert "There is never a\n     second retry" in coord or "never a second retry" in " ".join(coord.split())
+    assert "writes no operator task" in coord
+    assert "`editorial_lint_failed`, which is the editorial retry" in coord
+    from cycling_project.nightly import driver as drv
+    ed = drv.build_parser()._subparsers._group_actions[0].choices["editorial"]
+    assert "--final" in ed._option_string_actions
 
 
 def test_the_coordinator_dispatches_route_research_from_the_plan(pv, env):

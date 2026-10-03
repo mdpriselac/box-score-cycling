@@ -21,6 +21,11 @@ Three checks, all offline:
     "res_2 at a real 0.40") must match the config's ``day_key`` or one of
     its scenario-level keys; the ``day_key_note`` section may only restate
     the root key.
+(d) **Name order** (advisory, chip EE 2026-10-03) — a rider's FirstCycling
+    ``name`` (surname first, "Syritsa Gleb") written in prose where the bundle
+    gives a different ``display_name`` ("Gleb Syritsa"). Reported under
+    ``name_order`` and ``advisory_counts``; it never fails a draft, because the
+    skill allows the table form when a sentence quotes a board row.
 
 ``lint_sections`` returns a JSON-serialisable report with ``ok``; the CLI
 exits 0 when clean and 1 when any check fails. ``--regress`` walks every
@@ -36,6 +41,8 @@ import re
 import sys
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple, Union
+
+from cycling_project.nightly import rider_names
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 SKILL_DIR = PROJECT_ROOT / "agents" / "skills" / "editorial"
@@ -297,6 +304,23 @@ def key_mismatches(text: str, allowed: Dict[str, Dict[str, float]], *, tol: floa
 
 
 # --------------------------------------------------------------------------
+# name order (advisory)
+# --------------------------------------------------------------------------
+
+def name_order_hits(text: str, pairs: Dict[str, str]) -> List[Dict[str, Any]]:
+    """Surname-first names written in prose where a different display name exists."""
+    hits = []
+    for name, display in pairs.items():
+        if name in display:
+            continue
+        for m in re.finditer(r"(?<![\w])" + re.escape(name) + r"(?![\w])", text):
+            hits.append({"token": name, "use": display, "start": m.start(),
+                         "context": _context(text, m.start(), m.end())})
+    hits.sort(key=lambda h: h["start"])
+    return hits
+
+
+# --------------------------------------------------------------------------
 # orchestration
 # --------------------------------------------------------------------------
 
@@ -334,13 +358,14 @@ def lint_sections(sections: Dict[str, Any], *, facts: Any = None, config: Option
     index = FactIndex(facts, route, max_stage=max_stage) if check_numerals else None
     keys = config_keys(config)
     root_only = {"root": keys["root"]} if "root" in keys else {}
+    pairs = rider_names.name_pairs(facts) if facts is not None else {}
     report: Dict[str, Any] = {
         "ok": True,
         "lexicon_version": lex["version"],
         "checks": {"lexicon": True, "numerals": bool(check_numerals and facts is not None),
-                   "key": bool(keys)},
+                   "key": bool(keys), "name_order": bool(pairs)},
         "sections_checked": list(flat),
-        "lexicon": [], "numerals": [], "key": [], "placeholders": [],
+        "lexicon": [], "numerals": [], "key": [], "placeholders": [], "name_order": [],
     }
     for name, text in flat.items():
         if not isinstance(text, str) or not text.strip():
@@ -356,9 +381,51 @@ def lint_sections(sections: Dict[str, Any], *, facts: Any = None, config: Option
             allowed = root_only if name.split(".")[0].split("[")[0] == "day_key_note" and root_only else keys
             for prob in key_mismatches(text, allowed):
                 report["key"].append({"section": name, **prob})
-    report["counts"] = {k: len(report[k]) for k in ("lexicon", "numerals", "key", "placeholders")}
+        for hit in name_order_hits(text, pairs):
+            report["name_order"].append({"section": name, **hit})
+    report["counts"] = {k: len(report[k]) for k in FAILING_CHECKS}
+    report["advisory_counts"] = {k: len(report[k]) for k in ADVISORY_CHECKS}
     report["ok"] = not any(report["counts"].values())
     return report
+
+
+FAILING_CHECKS = ("lexicon", "numerals", "key", "placeholders")
+ADVISORY_CHECKS = ("name_order",)
+
+
+def retry_report(report: Dict[str, Any], *, validation_errors: Sequence[str] = ()) -> Dict[str, Any]:
+    """The lint report as the editorial agent's one retry receives it: each finding reduced to
+    its section and offending token (plus the replacement where there is one), duplicates
+    folded into a count. Shared by the Mac runner and the driver's ``editorial`` check so the
+    cloud and the Mac send the same thing."""
+    out: Dict[str, Any] = {}
+
+    def fold(items: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        seen: Dict[str, Dict[str, Any]] = {}
+        for it in items:
+            k = json.dumps(it, sort_keys=True, ensure_ascii=False)
+            if k in seen:
+                seen[k]["n"] = seen[k].get("n", 1) + 1
+            else:
+                seen[k] = dict(it)
+        return list(seen.values())
+
+    rows = {
+        "lexicon": [{"section": h["section"], "token": h.get("match") or h.get("term")} for h in report.get("lexicon") or []],
+        "numerals": [{"section": h["section"], "token": h["token"]} for h in report.get("numerals") or []],
+        "key": [{"section": h["section"], "token": f"{h['item']} {h['stated']}", "approved": h.get("allowed")}
+                for h in report.get("key") or []],
+        "placeholders": [{"section": h["section"], "token": h["token"]} for h in report.get("placeholders") or []],
+        "name_order": [{"section": h["section"], "token": h["token"], "use": h["use"]} for h in report.get("name_order") or []],
+    }
+    for k, items in rows.items():
+        if items:
+            out[k] = fold(items)
+    if validation_errors:
+        out["schema"] = list(validation_errors)
+    if report.get("error"):
+        out["error"] = report["error"]
+    return out
 
 
 def config_prose(config: Dict[str, Any]) -> Dict[str, Any]:

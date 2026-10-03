@@ -179,6 +179,19 @@ class WaitingForInput(Exception):
         self.urgency = urgency or URGENCY_BY_KIND.get(kind, "blocks_settlement")
 
 
+class EditorialLintFailed(WaitingForInput):
+    """A first-attempt editorial draft failed the lint (chip EE, 2026-10-03): exit 10 with the
+    compact report and NOTHING stored.  Not an operator ask — the coordinator sends the report
+    back to the same editorial thread once and stores the reply with ``editorial --final``, so
+    no ``operator_task`` row is written."""
+
+    def __init__(self, report: Dict[str, Any]):
+        super().__init__("editorial_lint_failed",
+                         "editorial draft failed the lint on its first attempt; retry once, then store with --final",
+                         {"lint_report": report}, urgency="routine")
+        self.report = report
+
+
 class DriverFailure(Exception):
     """A step failed: exit 20 with ``error_class`` / ``step`` / ``log_path``."""
 
@@ -745,6 +758,13 @@ class Driver:
                 "run_id": self.run["run_id"], "dry_run": self.dry_run, "record": str(self.record_path) if self.record_path else None}
         try:
             result = body() or {}
+        except EditorialLintFailed as e:
+            self.finish("waiting", EXIT_WAITING, {"kind": e.kind, "lint_report": e.report})
+            return EXIT_WAITING, {**base, "status": "waiting_for_input", "kind": e.kind,
+                                  "lint_report": e.report, "operator_task": None,
+                                  "next": "send lint_report to the same editorial thread once "
+                                          "(\"Fix exactly these and return the whole JSON again\"), save the reply "
+                                          "over the draft file, then run `editorial --final`"}
         except WaitingForInput as w:
             task = build_operator_task(w.kind, self.campaign.slug if self.campaign else None, w.summary,
                                        {**w.detail, "unit": unit, "phase": phase, "run_id": self.run["run_id"]}, w.urgency)
@@ -2095,19 +2115,36 @@ class Driver:
         pred = self.campaign.pred_dir(unit)
         if not pred.is_dir():
             return []
-        return sorted(pred.glob(DRAFT_GLOB)) + sorted(pred.glob("editorial_facts_*.json"))
+        return (sorted(pred.glob(DRAFT_GLOB)) + sorted(pred.glob("editorial_lint_attempt1*.json"))
+                + sorted(pred.glob("editorial_facts_*.json")))
 
-    def _persist_editorial(self, unit: str, phase: str) -> Dict[str, Any]:
+    @staticmethod
+    def _attempt1_path(draft: Path) -> Path:
+        """Sidecar the ``editorial`` check writes when a first attempt fails the lint:
+        ``editorial_draft_stage_preview.json`` → ``editorial_lint_attempt1_stage_preview.json``
+        (outside ``DRAFT_GLOB``, so it is shipped as an artifact but never stored as a draft)."""
+        return draft.with_name(draft.name.replace("editorial_draft", "editorial_lint_attempt1", 1))
+
+    def _persist_editorial(self, unit: str, phase: str, *, check: bool = False,
+                           final: bool = False) -> Dict[str, Any]:
         """Insert one ``editorial_drafts`` row per draft file the coordinator saved for the unit.
 
         Until 2026-10-02 nothing did this: the coordinator saved ``editorial_draft.json`` "for
         upload to insert", no code inserted it, and every draft died with the container (hosted
         tasks 104 and 114).  Idempotent: a draft whose record hash (or, before migration 0009,
-        whose body) is already stored for the unit is not inserted again.  A draft that fails
-        validation is stored anyway, ``lint_ok`` false, so the owner sees the bad ones too.
+        whose body) is already stored for the unit is not inserted again.
+
+        ``check`` (the ``editorial`` command, chip EE 2026-10-03): a FIRST attempt that fails
+        the lint or the schema is not stored — its report goes to ``lint_failures`` and to an
+        ``editorial_lint_attempt1_*`` sidecar, and the coordinator gets the skill's one retry.
+        A draft is a second attempt when ``final`` is set or when a sidecar holds a DIFFERENT
+        record; a second attempt is always stored, pass or fail, never retried again.  Every
+        stored row's ``lint`` carries ``attempt``, ``retried`` and ``first_attempt``.
+        ``upload`` runs without ``check``: whatever is on disk is stored, flagged when bad.
         """
+        from cycling_project.nightly.lint_prose import retry_report
         from cycling_project.nightly.run_editorial import DRAFT_GLOB, prepare_draft
-        out: Dict[str, Any] = {"inserted": [], "duplicates": 0, "errors": [], "files": []}
+        out: Dict[str, Any] = {"inserted": [], "duplicates": 0, "errors": [], "files": [], "lint_failures": []}
         pred = self.campaign.pred_dir(unit)
         paths = sorted(pred.glob(DRAFT_GLOB)) if pred.is_dir() else []
         if not paths:
@@ -2126,10 +2163,36 @@ class Driver:
                 out["duplicates"] += 1
                 self._say(f"  editorial: {path.name} already stored for {unit}; not inserted again")
                 continue
+            side = self._attempt1_path(path)
+            prior = _read_json(side) if side.is_file() else None
+            second = final or bool(prior and prior.get("record_sha256") != draft["record_sha256"])
+            compact = retry_report(draft["lint"], validation_errors=draft["lint"].get("validation", {}).get("errors") or ())
+            if check and not draft["lint_ok"] and not second:
+                side.write_text(json.dumps({
+                    "attempt": 1, "file": path.name, "record_sha256": draft["record_sha256"],
+                    "checked_at": _utcnow(), "lint_ok": False, "counts": draft["lint"].get("counts"),
+                    "validation": draft["lint"].get("validation"), "retry_report": compact,
+                    "record": draft["record"]}, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
+                out["lint_failures"].append({"file": path.name, "artifact": draft["artifact"], "report": compact})
+                self._say(f"  editorial: {path.name} failed the lint on attempt 1; not stored, retry requested")
+                continue
+            lint = dict(draft["lint"])
+            if prior and second:
+                lint.update({"attempt": 2, "retried": True,
+                             "first_attempt": {"ok": False, "counts": prior.get("counts"),
+                                               "validation_ok": (prior.get("validation") or {}).get("ok"),
+                                               "record_sha256": prior.get("record_sha256"),
+                                               "retry_report": prior.get("retry_report")}})
+            elif final:
+                lint.update({"attempt": 2, "retried": True, "first_attempt": None})
+            else:
+                lint.update({"attempt": 1, "retried": False,
+                             "first_attempt": {"ok": draft["lint_ok"], "counts": draft["lint"].get("counts"),
+                                               "validation_ok": draft["lint"].get("validation", {}).get("ok")}})
             try:
                 row = self.store.insert_editorial_draft(
                     self.run["run_id"] if self.run else None, self.campaign.slug, unit, draft["phase"],
-                    draft["body_md"], kind="prose", author="agent", lint=draft["lint"], lint_ok=draft["lint_ok"],
+                    draft["body_md"], kind="prose", author="agent", lint=lint, lint_ok=draft["lint_ok"],
                     record=draft["record"], record_sha256=draft["record_sha256"], artifact=draft["artifact"])
             except Exception as exc:  # noqa: BLE001
                 out["errors"].append(f"{path.name}: {redact(str(exc))}")
@@ -2137,15 +2200,19 @@ class Driver:
                 continue
             existing.append({**draft, **(row or {})})
             out["inserted"].append({"id": (row or {}).get("id"), "file": path.name, "artifact": draft["artifact"],
-                                    "phase": draft["phase"], "lint_ok": draft["lint_ok"]})
+                                    "phase": draft["phase"], "lint_ok": draft["lint_ok"], "attempt": lint["attempt"]})
             self._say(f"  editorial: {path.name} → editorial_drafts #{(row or {}).get('id')} "
-                      f"({draft['artifact'] or 'invalid'}, lint {'ok' if draft['lint_ok'] else 'FAILED'})")
+                      f"({draft['artifact'] or 'invalid'}, attempt {lint['attempt']}, lint {'ok' if draft['lint_ok'] else 'FAILED'})")
         return out
 
-    def _editorial(self, unit: str) -> Dict[str, Any]:
+    def _editorial(self, unit: str, *, final: bool = False) -> Dict[str, Any]:
         """``editorial`` command: ship the drafts the editorial thread returned after ``night``'s
         upload had already run — the artifacts and the rows, nothing else (no pages, no boards,
-        no prediction_log rows, so it is safe to run as often as the coordinator likes)."""
+        no prediction_log rows, so it is safe to run as often as the coordinator likes).
+
+        Lints before it stores (chip EE): a first attempt that fails comes back as
+        ``EditorialLintFailed`` (exit 10, ``kind: editorial_lint_failed``, the compact report,
+        nothing stored, no operator task); ``final`` stores whatever is there."""
         from cycling_project.nightly.run_editorial import DRAFT_GLOB
         c = self.campaign
         pred = c.pred_dir(unit)
@@ -2153,15 +2220,18 @@ class Driver:
             raise DriverFailure("editorial_draft_missing",
                                 f"no predictions/{unit}/editorial_draft_<artifact>.json to store",
                                 detail={"looked_in": str(c.pred_dir(unit).relative_to(c.dir))})
+        # the phase only matters for a draft too broken to name its own artifact
+        result = self._persist_editorial(unit, "settle" if (c.results_dir(unit) / "results.csv").exists() else "preview",
+                                         check=True, final=final)
         uploaded = []
         for f in self._editorial_files(unit):
             k = self._upload_file(f, f"{c.slug}/{f.relative_to(c.dir).as_posix()}")
             if k:
                 uploaded.append(k)
-        # the phase only matters for a draft too broken to name its own artifact
-        result = self._persist_editorial(unit, "settle" if (c.results_dir(unit) / "results.csv").exists() else "preview")
         if result["errors"]:
             raise DriverFailure("editorial_insert", "; ".join(result["errors"]), detail=result)
+        if result["lint_failures"]:
+            raise EditorialLintFailed({f["file"]: f["report"] for f in result["lint_failures"]})
         return {"artifacts": uploaded, "editorial_drafts": result,
                 "_detail": {"artifacts": len(uploaded), "editorial_drafts": len(result["inserted"]),
                             "editorial_duplicates": result["duplicates"]}}
@@ -2265,9 +2335,12 @@ def build_parser() -> argparse.ArgumentParser:
     common(p, unit=True); identity_flag(p)
     p = sub.add_parser("upload", help="insert artifacts, pages and rows for a unit")
     common(p, unit=True); p.add_argument("--phase", choices=("settle", "preview"), required=True)
-    p = sub.add_parser("editorial", help="store the unit's editorial_draft_<artifact>.json as an editorial_drafts "
-                                         "row + artifact (idempotent; no pages, boards or prediction_log rows)")
+    p = sub.add_parser("editorial", help="lint, then store the unit's editorial_draft_<artifact>.json as an editorial_drafts "
+                                         "row + artifact (idempotent; no pages, boards or prediction_log rows). A first "
+                                         "attempt that fails the lint exits 10 (editorial_lint_failed) unstored")
     common(p, unit=True)
+    p.add_argument("--final", action="store_true",
+                   help="the draft is the one retry: store it with its lint result, pass or fail")
     p = sub.add_parser("status", help="ledger view")
     common(p, campaign_required=False)
     p = sub.add_parser("task", help="file an operator_tasks row (e.g. an ops-triage report) through the store")
@@ -2373,7 +2446,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         code, out = driver.run_phase(args.unit, "upload", lambda: {"upload": driver.step("upload", lambda: driver._upload(args.unit, args.phase))}, idempotent=False)
         return _emit(code, out)
     if args.command == "editorial":
-        code, out = driver.run_phase(args.unit, "editorial", lambda: {"editorial": driver.step("editorial", lambda: driver._editorial(args.unit))}, idempotent=False)
+        code, out = driver.run_phase(args.unit, "editorial", lambda: {"editorial": driver.step("editorial", lambda: driver._editorial(args.unit, final=args.final))}, idempotent=False)
         return _emit(code, out)
     return _emit(EXIT_FAILED, {"status": "failed", "error_class": "unknown_command", "message": args.command})
 

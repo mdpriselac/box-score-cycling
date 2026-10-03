@@ -29,6 +29,8 @@ claim the original did not make.
 
 | Date | Tag | Lesson |
 |---|---|---|
+| 2026-10-03 | `publishing` | A promised retry the cloud never ran: the skill offered one lint retry, only the Mac runner performed it |
+| 2026-10-03 | `tooling` | Names are data: order them deterministically, never ask the model to reorder "Lopez Sevilla Diego Pablo" |
 | 2026-10-02 | `publishing` | A shadow artifact with no store is spend with no learning: every editorial draft died with the container |
 | 2026-10-02 | `tooling` | Every release rolled the cumulative scorecard back to the Mac's copy: the bundle was dated by the cut, not by its write |
 | 2026-10-02 | `acquisition` | The organiser's road book is on the open web; research it once per race, not per stage ($0.80 for six CRO stages vs $1.69 for one) |
@@ -88,6 +90,76 @@ claim the original did not make.
 | 2026-07-06 | `keying` | A break read must carry `exclude_top_gc` |
 | 2026-07-05 | `keying` | Model-space semantics are not intuitive |
 | 2026-07-05 | `acquisition` | A truncated FirstCycling results page is fixed by rerunning |
+
+---
+
+## 2026-10-03 — A promised retry the cloud never ran
+
+**Tag:** `publishing` · the first two stored drafts (Langkawi stage 7 retro, stage 8 preview) · chip EE
+
+The editorial skill has always said "If the draft comes back with a lint
+report — you get one retry". On the Mac that was true: `run_editorial` lints,
+appends the report, calls once more and stops. In the cloud nobody sent a
+report back. The coordinator saved the agent's reply and ran the driver's
+`editorial` command, which linted the draft and stored it, pass or fail. The
+first two drafts stored through chip ED both failed on one thing only: 129
+and 71 double-brace bundle paths written where numbers belonged. Skill 1.1.0
+fixed the instruction, but one retry with the report in hand would have
+caught it the same night with no skill change at all.
+
+**The general form: a promise a skill makes about its own runtime is a
+requirement on every runtime that runs it. When the same agent runs in two
+places (Mac runner, cloud coordinator), check that each one performs every
+step the skill describes, including the error path. The Mac path was tested,
+so the cloud path was assumed to match.**
+
+Fixed (chip EE): `editorial` lints before it stores. A first attempt that fails
+exits 10 with `kind: editorial_lint_failed` and a compact report (each finding
+reduced to section and token, shared with the Mac runner through
+`lint_prose.retry_report`). Nothing is stored and no operator task is written.
+The attempt-1 record and report are kept in an `editorial_lint_attempt1_*`
+sidecar. Coordinator prompt revision 10 sends the report to the same editorial
+thread once, saves the reply over the file and runs `editorial --final`. The
+second attempt is always stored, pass or fail. Every row's `lint` carries
+`attempt`, `retried` and `first_attempt`, so the feedback digest counts how
+often the retry was needed.
+
+---
+
+## 2026-10-03 — Names are data: order them deterministically
+
+**Tag:** `tooling` · owner review of the Langkawi stage 8 preview · chip EE
+
+FirstCycling stores one `name` field, surname first ("Syritsa Gleb", "van der
+Poel Mathieu"). The facts bundle carried it as `name` and the skill said to
+name riders "exactly as the bundle names them". The prose therefore read
+"Syritsa Gleb and Gate Aaron on the main read board… won stage 6 with
+Pickrell Riley". The hand-written Vuelta pages put the given name first in
+prose ("Matthew Brennan") and kept the database order only in tables.
+
+Asking the model to reorder is not a fix. It cannot know where "Lopez Sevilla
+Diego Pablo" or "Ibanez Gonzalez Carlos Andres" splits, and a wrong split
+reads as a different rider. The split is already recorded elsewhere: the UCI
+writes surnames in capitals ("LOPEZ SEVILLA Diego Pablo"), and every campaign
+settled from the UCI archives that form beside the FirstCycling rows.
+
+**The general form: when the model's output needs a deterministic transform
+of the data (name order, number formatting, units), do the transform in code
+and give the model the result. Keep the raw value as the join key and add
+the display form beside it. Record which rule produced each display value
+so the fallback can be audited.**
+
+Fixed (chip EE): `cycling_project/nightly/rider_names.py`. The UCI split
+decides the order, joined from the campaign's own captures by place plus a
+shared surname token, then `uci_aliases.csv`, then the crosswalk's capitals
+`pcs_name`. The token set stays FirstCycling's, so the prose says "Aaron Gate",
+not "Aaron Murray Gate". Without a UCI form, a particle-aware heuristic
+applies, labelled `display_name_source: "heuristic"`: leading particles plus
+one token form the surname. On 1,488 UCI-labelled campaign riders it agreed
+with the UCI split 98.5% of the time; "last token is the given name" agreed
+96.2%. Every rider row in the bundle gains `display_name` beside the unchanged
+`name`. Skill 1.2.0 uses it in prose. The linter reports a surname-first name
+in prose as advisory `name_order` and never fails a draft for it.
 
 ---
 

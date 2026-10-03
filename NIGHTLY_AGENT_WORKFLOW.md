@@ -324,7 +324,7 @@ page now exist to approve — not who is trusted with the judgment.
 
 ### 2.5 Editorial agent skill + lexicon linter — `agents/skills/editorial/`
 
-The skill, lexicon and linter are unchanged from rev 1. **The review loop
+The skill (now 1.2.0), lexicon and linter keep their rev-1 shape. **The review loop
 around them was built 2026-10-02 (build-queue chip ED)** — before that the
 coordinator saved `editorial_draft.json` "for `upload` to insert", no code
 did, the editorial thread returned after `night`'s upload had already run, and
@@ -371,6 +371,39 @@ did, the editorial thread returned after `night`'s upload had already run, and
   to the live agent automatically. (A later step could inline the last N
   revise/reject notes into the editorial task as a "house notes" block — a
   prompt change with its own version bump, not a side channel.)
+
+- **One lint retry, in the cloud too (chip EE, 2026-10-03).** The skill always
+  promised one retry; only the Mac runner performed it (LESSONS 2026-10-03
+  `publishing`). The `editorial` command now lints before it stores. If a
+  first attempt fails the lint or the schema, the command exits 10 with
+  `kind: editorial_lint_failed` and `lint_report`, a compact report per draft
+  file from `lint_prose.retry_report`: `lexicon`, `numerals`, `key`,
+  `placeholders`, `schema` and advisory `name_order`, each as section + token,
+  with duplicates folded into `n`. It stores nothing and writes no
+  operator_task. It keeps the first record and its report in
+  `editorial_lint_attempt1_<artifact>.json`, which is shipped as an artifact
+  and never stored as a draft. Coordinator prompt rev 10 sends the report to
+  the SAME editorial thread once, saves the reply over the draft file and runs
+  `editorial --final`. A draft is a second attempt when `--final` is passed or
+  the sidecar holds a different record. A second attempt is always stored, pass
+  or fail, and is never retried again. Every stored row's `lint` carries
+  `attempt`, `retried` and `first_attempt` (the first attempt's counts and
+  retry report). The Mac runner records the same three fields. `upload` never
+  gates, so a draft already on disk is stored as it stands. The feedback digest
+  prints "Needed the lint retry: X of N", and the inbox lists a second
+  attempt's first-try failures.
+- **Display names (chip EE, 2026-10-03).** Every rider row in the facts bundle
+  keeps FirstCycling's surname-first `name` as the join key and gains
+  `display_name` + `display_name_source` from `rider_names.py`. The sources,
+  in order: the UCI split from the campaign's own captures (`uci`),
+  `uci_aliases.csv` (`uci_alias`), the crosswalk's capitals `pcs_name`
+  (`crosswalk`), then a particle-aware `heuristic`. Book names, which are
+  already given-name first, take the matching rider's display name or stay
+  verbatim (`market`). `abandons` gains `display_names`; scorecard rows gain
+  `winner_display_name`. Skill 1.2.0 writes prose with `display_name`; when a
+  sentence quotes a table row, either form is fine within that sentence. The
+  linter's `name_order` check is advisory: it reports and rides along with a
+  retry, but never fails a draft, because the table form is allowed.
 
 **Gate E is unchanged.** Approving a draft marks it fit to use; nothing reaches
 the public site until a later chip adds the page slot that reads approved rows

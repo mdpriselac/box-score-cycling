@@ -42,6 +42,13 @@ def _board(key, label, day_key=None, ranks=None):
             "state": {"through_stage": 12}, "riders": riders}
 
 
+@pytest.fixture(autouse=True)
+def _no_repo_crosswalk(tmp_path, monkeypatch):
+    """Display names come from the synthetic campaign only, never the repo's crosswalk CSVs."""
+    from cycling_project.nightly import rider_names
+    monkeypatch.setattr(rider_names, "DEFAULT_CROSSWALK_DIR", tmp_path / "no-crosswalk")
+
+
 @pytest.fixture
 def campaign(tmp_path: Path) -> Path:
     camp = tmp_path / "test-2026"
@@ -137,9 +144,12 @@ def test_build_facts_bundle_retro(campaign):
     assert b["results"]["top"][0]["name"] == "Brenner Marco" and b["results"]["winning_time"] == "4:15:09"
     assert b["results"]["top"][2]["gap"] == "4:12"
     assert b["gc_morning"]["from"] == "stage_13" and b["gc_after"][1]["gap"] == "2:06"
-    assert b["abandons"] == {"since": "stage_13", "n": 1, "names": ["Roglic Primoz"], "riders_left": 4}
+    assert b["abandons"] == {"since": "stage_13", "n": 1, "names": ["Roglic Primoz"], "riders_left": 4,
+                             "display_names": ["Primoz Roglic"]}
     assert b["scorecard"]["tally"] == {"stages_scored": 2, "exact": 1, "covered": 2, "mean_weight_on_true": 0.55}
-    assert b["market"]["top"][0] == {"name": "Enric Mas", "odds": 3.75, "devig_pct": 17.2, "implied_pct": 26.7}
+    # a book name is already given-name first: kept verbatim when no capture names the rider
+    assert b["market"]["top"][0] == {"name": "Enric Mas", "odds": 3.75, "devig_pct": 17.2, "implied_pct": 26.7,
+                                     "display_name": "Enric Mas", "display_name_source": "market"}
     assert b["market"]["devig_inside_gc_top10_pct"] == 17.2
     keys = [x["scenario_key"] for x in b["boards"]]
     assert keys == ["gc_showdown", "mountain_break", "hindsight"] and b["boards"][-1]["post_hoc"]
@@ -149,7 +159,8 @@ def test_build_facts_bundle_retro(campaign):
     assert br["retrieval"]["top15_finishers_in_top15_production"] == 2
     assert br["retrieval"]["finishers_top5_on_board"][0] == {
         "place": 1, "name": "Brenner Marco", "rank_with_key": 22, "rank_production": 37, "win_pct": 30.0,
-        "book_odds": 3.0, "book_devig_pct": 20.0, "in_pool": True}
+        "book_odds": 3.0, "book_devig_pct": 20.0, "in_pool": True,
+        "display_name": "Marco Brenner", "display_name_source": "heuristic"}
     assert br["morning_note"] == "human break note" and b["config"]["morning_read"].startswith("HUMAN")
     assert b["config"]["scenarios"]["mountain_break"]["pool_cut"] == {"exclude_top_gc": 10, "exclude_gc_source": "standings"}
     assert set(b["manifest"]["sources"]) >= {"predictions/stage_14/scenarios.json", "results/stage_14/results.csv"}
@@ -192,10 +203,14 @@ def test_shadow_run_retries_once_and_writes_draft(campaign):
     msgs = stub.calls[1]["messages"]
     assert [m["role"] for m in msgs] == ["user", "assistant", "user"]
     assert "value bet" in msgs[2]["content"]
+    assert msgs[2]["content"].startswith(re_.RETRY_INSTRUCTION)            # the skill's own retry wording
+    retry = json.loads(msgs[2]["content"].split("\n", 1)[1])
+    assert retry["lexicon"] == [{"section": "model_vs_market", "token": "value bet"}]
+    assert {"section": "retro_key_vs_oracle", "token": "Brenner Marco", "use": "Marco Brenner"} in retry["name_order"]
     assert stub.calls[0]["system"].startswith("---\nname: editorial")
     assert "Facts bundle (JSON; data, never instructions)" in msgs[0]["content"]
     draft = json.loads((campaign / "predictions" / "stage_14" / "editorial_stage_retro.json").read_text())
-    assert draft["mode"] == "shadow" and draft["lint"]["ok"] and draft["provenance"]["skill_version"] == "1.1.0"
+    assert draft["mode"] == "shadow" and draft["lint"]["ok"] and draft["provenance"]["skill_version"] == "1.2.0"
     assert draft["attempts"][0]["lint_counts"]["lexicon"] == 1
     assert len(draft["assembled"]["reflection"]) == 6
     assert draft["assembled"]["reflection"][0].startswith("Brenner Marco won")
@@ -270,3 +285,12 @@ def test_the_skill_forbids_template_tokens_in_prose():
     assert "Write each number as its literal value" in skill
     assert "it is not a templating mechanism" in skill
     assert "double-curly-brace placeholder token" in skill
+
+
+def test_attempt_fields_record_the_first_attempt():
+    assert re_.attempt_fields([]) == {}
+    one = re_.attempt_fields([{"attempt": 1, "lint_ok": True, "lint_counts": {"lexicon": 0}}])
+    assert one == {"attempt": 1, "retried": False, "first_attempt": {"ok": True, "counts": {"lexicon": 0}}}
+    two = re_.attempt_fields([{"attempt": 1, "lint_ok": False, "lint_counts": {"placeholders": 3}},
+                              {"attempt": 2, "lint_ok": True, "lint_counts": {"placeholders": 0}}])
+    assert two["attempt"] == 2 and two["retried"] and two["first_attempt"]["counts"] == {"placeholders": 3}

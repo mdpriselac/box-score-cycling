@@ -1018,7 +1018,16 @@ function lintFindings(lint) {{
   (lint.placeholders || []).forEach((p) => out.push(`<li>placeholder ${{esc(p.token)}} in ${{esc(p.section)}}</li>`));
   if (lint.error) out.push(`<li>lint error: ${{esc(lint.error)}}</li>`);
   if ((lint.checks || {{}}).numerals === false) out.push("<li>numerals not checked: no facts bundle beside the draft</li>");
-  return out.length ? out.join("") : "<li>clean: lexicon, numerals and key all pass</li>";
+  const clean = out.length === 0;
+  (lint.name_order || []).forEach((n) => out.push(
+    `<li>name order (advisory): <b>${{esc(n.token)}}</b> in ${{esc(n.section)}}, display name ${{esc(n.use)}}</li>`));
+  if (lint.retried) {{
+    const fc = (lint.first_attempt || {{}}).counts || {{}};
+    const why = Object.keys(fc).filter((k) => fc[k]).map((k) => `${{k}} ${{fc[k]}}`).join(", ");
+    out.push(`<li>second attempt: the first failed the lint${{why ? " on " + esc(why) : ""}} and was retried once</li>`);
+  }}
+  if (clean) out.push("<li>clean: lexicon, numerals and key all pass</li>");
+  return out.join("");
 }}
 
 function draftMeta(d) {{

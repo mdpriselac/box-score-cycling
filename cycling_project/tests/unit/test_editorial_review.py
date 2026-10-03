@@ -120,6 +120,9 @@ def test_the_editorial_command_stores_the_draft_once(campaign, tmp_path, capsys)
     assert row["lint_ok"] is True and row["review_status"] == "pending" and not row.get("approved_by")
     assert row["record"]["sections"]["headline"].startswith("Stage 5 runs")
     assert row["run_id"] == out["run_id"]
+    # a clean first draft is stored at once, as attempt 1 (chip EE)
+    assert row["lint"]["attempt"] == 1 and row["lint"]["retried"] is False
+    assert row["lint"]["first_attempt"]["ok"] is True
     # the coordinator may run it twice; the upload may re-run; nothing is stored twice
     assert _main(campaign, tmp_path, "editorial", "--unit", "stage_05") == 0
     again = json.loads(capsys.readouterr().out)["editorial"]["editorial_drafts"]
@@ -146,9 +149,16 @@ def test_a_bad_draft_is_stored_flagged_never_dropped(campaign, tmp_path, capsys)
     retro["sections"] = {**rec["sections"], "stage_read": "A value bet on Jasch at 9.99."}
     (pred / "editorial_draft_stage_retro.json").write_text(json.dumps(retro))
     (pred / "editorial_draft.json").write_text("{not json")             # the pre-rev-7 name, broken
-    assert _main(campaign, tmp_path, "editorial", "--unit", "stage_05") == 0
+    # chip EE: the check stores the clean draft and asks for the one retry on the two bad ones
+    assert _main(campaign, tmp_path, "editorial", "--unit", "stage_05") == drv.EXIT_WAITING
+    first = json.loads(capsys.readouterr().out)
+    assert first["kind"] == "editorial_lint_failed" and first["operator_task"] is None
+    assert set(first["lint_report"]) == {"editorial_draft.json", "editorial_draft_stage_retro.json"}
+    assert len(_rows(tmp_path)) == 1 and not _rows(tmp_path, "operator_tasks")
+    # the retry came back unchanged: --final stores them anyway, flagged, never dropped
+    assert _main(campaign, tmp_path, "editorial", "--unit", "stage_05", "--final") == 0
     res = json.loads(capsys.readouterr().out)["editorial"]["editorial_drafts"]
-    assert len(res["inserted"]) == 3
+    assert len(res["inserted"]) == 2 and res["duplicates"] == 1
     rows = {r["lint"]["source_file"]: r for r in _rows(tmp_path)}
     good = rows["editorial_draft_stage_preview.json"]
     assert good["lint_ok"] is True
@@ -156,11 +166,85 @@ def test_a_bad_draft_is_stored_flagged_never_dropped(campaign, tmp_path, capsys)
     assert bad["lint_ok"] is False and bad["phase"] == "retro" and bad["artifact"] == "stage_retro"
     assert any("no_advice_language" in e for e in bad["lint"]["validation"]["errors"])
     assert bad["lint"]["counts"]["lexicon"] >= 1               # "value bet"
+    assert bad["lint"]["attempt"] == 2 and bad["lint"]["first_attempt"]["counts"]["lexicon"] >= 1
+    assert good["lint"]["attempt"] == 1 and good["lint"]["retried"] is False
     broken = rows["editorial_draft.json"]
     assert broken["lint_ok"] is False and not broken.get("artifact")
     assert broken["record"]["unparseable"] is True and broken["phase"] == "preview"
     assert broken["lint"]["validation"]["errors"][0].startswith("invalid JSON")
     assert broken["body_md"].startswith("# Unparseable editorial draft")
+
+
+def _placeholder_draft(pred):
+    """The cloud's 2026-10-03 failure: a bundle path in double braces where a number belongs."""
+    rec = json.loads((FIXTURE / "editorial_draft.json").read_text())
+    rec["sections"]["stage_read"] = rec["sections"]["stage_read"] + " The stage is {{route.distance_km}} km."
+    (pred / "editorial_draft_stage_preview.json").write_text(json.dumps(rec))
+    return rec
+
+
+def test_a_failing_first_draft_waits_for_its_one_retry(campaign, tmp_path, capsys):
+    """Chip EE: the skill promised one retry; the cloud stored the first reply whatever it said."""
+    pred = campaign / "predictions" / "stage_05"
+    _placeholder_draft(pred)
+    for _ in range(2):                                   # re-running the check on the same draft changes nothing
+        assert _main(campaign, tmp_path, "editorial", "--unit", "stage_05") == drv.EXIT_WAITING
+        out = json.loads(capsys.readouterr().out)
+        assert out["status"] == "waiting_for_input" and out["kind"] == "editorial_lint_failed"
+        assert out["operator_task"] is None and "--final" in out["next"]
+        (report,) = out["lint_report"].values()
+        assert set(out["lint_report"]) == {"editorial_draft_stage_preview.json"}
+        assert report["placeholders"] == [{"section": "stage_read", "token": "{{route.distance_km}}"}]
+        # the real 10-01 draft named riders surname first: advisory, but it rides along with the retry
+        assert {"section": "stage_read", "token": "Malucelli Matteo", "use": "Matteo Malucelli"} in report["name_order"]
+        assert set(report) == {"placeholders", "name_order"}
+        assert _rows(tmp_path) == [] and _rows(tmp_path, "operator_tasks") == []
+    side = json.loads((pred / "editorial_lint_attempt1_stage_preview.json").read_text())
+    assert side["attempt"] == 1 and side["counts"]["placeholders"] == 1
+    assert "{{route.distance_km}}" in side["record"]["sections"]["stage_read"]   # the first draft survives the overwrite
+    # the retry comes back clean and is saved over the same file: stored as attempt 2, both results kept
+    shutil.copy(FIXTURE / "editorial_draft.json", pred / "editorial_draft_stage_preview.json")
+    assert _main(campaign, tmp_path, "editorial", "--unit", "stage_05", "--final") == 0
+    out = json.loads(capsys.readouterr().out)
+    assert any(k.endswith("editorial_lint_attempt1_stage_preview.json") for k in out["editorial"]["artifacts"])
+    (row,) = _rows(tmp_path)
+    assert row["lint_ok"] is True and row["lint"]["attempt"] == 2 and row["lint"]["retried"] is True
+    first = row["lint"]["first_attempt"]
+    assert first["ok"] is False and first["counts"]["placeholders"] == 1
+    assert first["retry_report"]["placeholders"][0]["token"] == "{{route.distance_km}}"
+
+
+def test_the_retry_is_stored_even_when_it_still_fails(campaign, tmp_path, capsys):
+    pred = campaign / "predictions" / "stage_05"
+    _placeholder_draft(pred)
+    assert _main(campaign, tmp_path, "editorial", "--unit", "stage_05") == drv.EXIT_WAITING
+    capsys.readouterr()
+    rec = _placeholder_draft(pred)
+    rec["sections"]["headline"] += " Again."                 # a different record, still failing
+    (pred / "editorial_draft_stage_preview.json").write_text(json.dumps(rec))
+    # without --final too: a sidecar holding a DIFFERENT record marks this as the retry
+    assert _main(campaign, tmp_path, "editorial", "--unit", "stage_05") == 0
+    capsys.readouterr()
+    (row,) = _rows(tmp_path)
+    assert row["lint_ok"] is False and row["lint"]["attempt"] == 2
+    assert row["lint"]["counts"]["placeholders"] == 1 and row["lint"]["first_attempt"]["counts"]["placeholders"] == 1
+
+
+def test_final_without_a_check_stores_a_failing_draft_as_the_retry(campaign, tmp_path, capsys):
+    _placeholder_draft(campaign / "predictions" / "stage_05")
+    assert _main(campaign, tmp_path, "editorial", "--unit", "stage_05", "--final") == 0
+    capsys.readouterr()
+    (row,) = _rows(tmp_path)
+    assert row["lint_ok"] is False and row["lint"]["attempt"] == 2 and row["lint"]["first_attempt"] is None
+
+
+def test_upload_still_stores_whatever_is_on_disk(campaign, tmp_path, capsys):
+    """Upload never gates: a failing draft hydrated before upload runs is stored, flagged."""
+    _placeholder_draft(campaign / "predictions" / "stage_05")
+    assert _main(campaign, tmp_path, "upload", "--unit", "stage_05", "--phase", "preview") == 0
+    capsys.readouterr()
+    (row,) = _rows(tmp_path)
+    assert row["lint_ok"] is False and row["lint"]["attempt"] == 1
 
 
 def test_no_draft_is_an_honest_failure(campaign, tmp_path, capsys):
@@ -231,8 +315,19 @@ def test_feedback_digest_groups_verdicts_with_notes_lint_and_prose(campaign, tmp
     assert "Too long. Paragraphs too long" in text and "the chase-incentive paragraph lands" in text
     assert "| long | 2 |" in text                      # the recurring note theme
     assert "> # " in text and "> ## Stage read" in text   # the prose itself, quoted
-    assert "**Lint:** clean" in text
+    assert "**Lint:** name order (advisory) " in text   # the 10-01 draft named riders surname first (chip EE)
     # --since after every review: nothing reviewed, the pending count still honest
     assert editorial_feedback.main(["--store", "fake", "--store-root", str(tmp_path / "store"),
                                     "--out-dir", str(out_dir), "--since", "2999-01-01"]) == 0
     assert "Nothing has been reviewed yet." in files[0].read_text()
+
+
+def test_the_digest_counts_how_often_the_retry_was_needed():
+    rows = [{"lint": {"attempt": 2, "retried": True, "counts": {"placeholders": 0},
+                      "first_attempt": {"ok": False, "counts": {"placeholders": 129, "lexicon": 0}}}, "lint_ok": True},
+            {"lint": {"attempt": 1, "retried": False, "advisory_counts": {"name_order": 4}}, "lint_ok": True},
+            {"lint": {"ok": True}, "lint_ok": True}]                  # stored before chip EE: not counted
+    assert editorial_feedback.retry_tally(rows) == "Needed the lint retry: 1 of 2; still failing after it: 0."
+    assert editorial_feedback.lint_summary(rows[0]["lint"]) == "second attempt; the first failed on placeholders 129"
+    assert editorial_feedback.lint_summary(rows[1]["lint"]) == "name order (advisory) 4"
+    assert editorial_feedback.retry_tally(rows[2:]) is None

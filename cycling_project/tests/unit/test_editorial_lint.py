@@ -50,7 +50,7 @@ def test_lexicon_file_is_versioned(lexicon):
 def test_clean_paragraph_passes(lexicon):
     report = lp.lint_sections({"retro_key_vs_oracle": CLEAN}, facts=FACTS, config=CONFIG, lexicon=lexicon)
     assert report["ok"], report
-    assert report["checks"] == {"lexicon": True, "numerals": True, "key": True}
+    assert report["checks"] == {"lexicon": True, "numerals": True, "key": True, "name_order": False}
 
 
 def test_value_bet_paragraph_fails_lexicon(lexicon):

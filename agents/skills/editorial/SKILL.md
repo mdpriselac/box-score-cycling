@@ -1,6 +1,6 @@
 ---
 name: editorial
-version: 1.1.0
+version: 1.2.0
 description: Write the campaign's stage-preview and stage-retro prose from a frozen facts bundle, in the house style, framed as information capture and never as betting advice.
 ---
 
@@ -96,9 +96,13 @@ artifact; the narrative may only reference races and metrics present in it.
   reader sees braces instead of facts.
   `placeholders_used` is a plain-English list of facts you left out because
   the bundle does not carry them — it is not a templating mechanism.
-- Riders are named exactly as the bundle names them (the bundle's
-  `rider_name` / `name` fields; a market name may differ in word order —
-  prefer the results/board form).
+- Riders are named in prose by the bundle's `display_name` — given name
+  first ("Gleb Syritsa", "Mathieu van der Poel"), already worked out for you.
+  The bundle's `name` is the surname-first database form ("Syritsa Gleb");
+  it is a join key, not prose, and you never reorder a name yourself.
+  When a sentence quotes a table or board row, either form is fine, but keep
+  one form within a sentence. A list of abandons carries `display_names`
+  beside `names`; a scorecard row carries `winner_display_name`.
 - The key is stated with its weights exactly as approved: "gc_day 0.6 /
   res_2 0.4". Scenario-level keys are quoted the same way, attributed to
   their scenario.
@@ -120,7 +124,7 @@ artifact; the narrative may only reference races and metrics present in it.
    checks each numeral token against the bundle; the draft is rejected on
    a miss). Dates, the stage number, the year and climb statistics present
    in `route` are fine.
-3. Cite riders by name as in the bundle.
+3. Cite riders by their bundle `display_name`; never invent or reorder a name.
 4. Never restate the key with different weights, and never invent a key
    for a scenario that has none in the bundle.
 5. Forbidden language (a lexicon linter enforces this): stake, staking,
@@ -144,5 +148,7 @@ every numeral not found in the bundle (remove the number or replace it with
 the bundle's value), every double-curly-brace placeholder token (write the bundle's
 literal value in its place, or drop the claim if the bundle lacks it), and
 every key restatement that does not match the approved key (quote the
-approved weights). Fix exactly those and return the
-whole JSON again.
+approved weights), every schema error, and — advisory — every surname-first
+`name` written where a `display_name` exists (`name_order`: use the
+`display_name` it gives). Fix exactly those and return the
+whole JSON again. There is no second retry: the reply is stored as it is.

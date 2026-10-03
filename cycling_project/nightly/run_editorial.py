@@ -38,7 +38,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
-from cycling_project.nightly import lint_prose
+from cycling_project.nightly import lint_prose, rider_names
 from cycling_project.nightly.secrets import load_local_env, redact
 from cycling_project.nightly.store_local import open_store
 
@@ -455,6 +455,11 @@ def build_facts_bundle(campaign_dir: Path, unit: str, artifact: str, *, db_path:
     if gc_block:
         bundle["gc"] = gc_block
         sources.update(gc_sources)
+    # chip EE (2026-10-03): ``name`` stays FirstCycling's surname-first join key; prose uses
+    # ``display_name`` (UCI split first, particle-aware heuristic second — rider_names.py).
+    # A preview's names come from earlier stages' captures only, like the rest of its bundle.
+    rider_names.annotate_bundle(bundle, rider_names.campaign_name_book(
+        campaign_dir, exclude_units=() if retro else (unit,)))
     bundle["manifest"] = {"generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
                           "sources": sources}
     return bundle
@@ -464,7 +469,8 @@ def load_or_build_facts(campaign_dir: Path, unit: str, artifact: str, *, db_path
     pred_dir = Path(campaign_dir) / "predictions" / unit
     driver_facts = pred_dir / "retro_facts.json"
     if artifact == "stage_retro" and driver_facts.exists():
-        return _load_json(driver_facts), "retro_facts.json"
+        facts = _load_json(driver_facts)        # one written before chip EE has no display names
+        return rider_names.annotate_bundle(facts, rider_names.campaign_name_book(campaign_dir)), "retro_facts.json"
     return build_facts_bundle(campaign_dir, unit, artifact, db_path=db_path), "built"
 
 
@@ -786,6 +792,23 @@ def merge_gc_note(gc_config: Dict[str, Any], note: str) -> Dict[str, Any]:
 # driver
 # --------------------------------------------------------------------------
 
+#: The skill's own retry wording ("If the draft comes back with a lint report"); the
+#: coordinator sends the same sentence from prompt revision 10.
+RETRY_INSTRUCTION = "Lint report — fix exactly these and return the whole JSON again:"
+
+
+def attempt_fields(attempts: List[Dict[str, Any]]) -> Dict[str, Any]:
+    """``attempt`` / ``retried`` / ``first_attempt`` for a stored row's ``lint`` (chip EE), so the
+    digest can count how often the one retry was needed."""
+    linted = [a for a in attempts if "lint_ok" in a or "error" in a]
+    if not linted:
+        return {}
+    first = linted[0]
+    return {"attempt": len(linted), "retried": len(linted) > 1,
+            "first_attempt": {"ok": bool(first.get("lint_ok")), "counts": first.get("lint_counts"),
+                              **({"error": first["error"]} if first.get("error") else {})}}
+
+
 def _lint_record(record: Dict[str, Any], bundle: Dict[str, Any], config: Dict[str, Any], *,
                  lexicon: Dict[str, Any]) -> Dict[str, Any]:
     max_stage = (bundle.get("campaign") or {}).get("n_stages") or lint_prose.DEFAULT_MAX_STAGE
@@ -860,9 +883,8 @@ def run(artifact: str, campaign_dir: Path, unit: str, *, apply: bool = False, mo
             break
         messages = messages + [
             {"role": "assistant", "content": response.content if response is not None else text},
-            {"role": "user", "content": "Lint report — fix exactly these and return the whole record again:\n"
-                                        + json.dumps({k: report[k] for k in ("lexicon", "numerals", "key", "placeholders")},
-                                                     ensure_ascii=False, indent=1)},
+            {"role": "user", "content": RETRY_INSTRUCTION + "\n"
+                                        + json.dumps(lint_prose.retry_report(report), ensure_ascii=False)},
         ]
 
     if record is None:
@@ -881,7 +903,8 @@ def run(artifact: str, campaign_dir: Path, unit: str, *, apply: bool = False, mo
         store = open_store(store_kind, runs_dir or (campaign_dir / "runs"), role="agent")
         errors = validate_record(record, unit=unit)
         lint = {**(report or {}), "validation": {"ok": not errors, "errors": errors},
-                "source_file": out_path.name, "facts_source": facts_path.name}
+                "source_file": out_path.name, "facts_source": facts_path.name,
+                **attempt_fields(draft["attempts"])}
         row = store.insert_editorial_draft(None, draft["campaign"], unit, draft_phase(artifact, unit),
                                            review_markdown(record), kind="prose", author="agent", lint=lint,
                                            lint_ok=bool(report and report["ok"]) and not errors,

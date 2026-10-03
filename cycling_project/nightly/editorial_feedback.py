@@ -88,7 +88,25 @@ def lint_summary(lint: Any) -> str:
         bits.append(f"lint error: {lint['error']}")
     if (lint.get("checks") or {}).get("numerals") is False:
         bits.append("numerals not checked (no facts bundle beside the draft)")
+    names = (lint.get("advisory_counts") or {}).get("name_order")
+    if names:
+        bits.append(f"name order (advisory) {names}")
+    if lint.get("retried"):
+        first = lint.get("first_attempt") or {}
+        fc = first.get("counts") or {}
+        bits.append("second attempt; the first failed on "
+                    + (", ".join(f"{k} {v}" for k, v in fc.items() if v) or "the schema" if first else "an unrecorded lint"))
     return "; ".join(bits) if bits else "clean"
+
+
+def retry_tally(rows: Iterable[Dict[str, Any]]) -> Optional[str]:
+    """How often the one lint retry was needed (rows stored since chip EE carry ``lint.attempt``)."""
+    tracked = [r for r in rows if isinstance(r.get("lint"), dict) and r["lint"].get("attempt")]
+    if not tracked:
+        return None
+    retried = sum(1 for r in tracked if r["lint"].get("retried"))
+    still = sum(1 for r in tracked if r["lint"].get("retried") and not r.get("lint_ok"))
+    return f"Needed the lint retry: {retried} of {len(tracked)}; still failing after it: {still}."
 
 
 def _quote(text: str) -> str:
@@ -101,6 +119,9 @@ def render(rows: List[Dict[str, Any]], *, pending: int, since: Optional[str], to
     lines.append(f"Reviewed drafts{f' since {since}' if since else ''}: **{len(rows)}** — "
                  + " · ".join(f"{VERDICT_TITLES[v].lower()} {tally.get(v, 0)}" for v in VERDICT_ORDER)
                  + f". Still waiting for a review: {pending}.")
+    tally_line = retry_tally(rows)
+    if tally_line:
+        lines += ["", tally_line]
     lines += ["", "Written by `python -m cycling_project.nightly.editorial_feedback` from `editorial_drafts`. "
               "This is the input to the next revision of `agents/skills/editorial/SKILL.md` and its lexicon; "
               "nothing here reaches the live agent on its own.", ""]

@@ -4,7 +4,10 @@ results for those units captured, run the deterministic driver for each due camp
 auditable ledger behind. You run a checklist; you do not do the racing analysis, the parsing or the
 prediction arithmetic yourself — the driver, the parser and the specialist agents do those.
 
-Prompt revision 9 (2026-10-03): stage 0 runs in the background and you poll its log; a tool call
+Prompt revision 10 (2026-10-03): the driver's `editorial` command lints a draft before it stores it;
+a first draft that fails comes back to you once for the editorial agent's one retry, then
+`editorial --final` stores the reply (the skill always promised that retry; before this the cloud
+never ran it). Revision 9 (2026-10-03): stage 0 runs in the background and you poll its log; a tool call
 that times out KILLS its process in this sandbox, so a foreground bootstrap longer than ~300 s
 dies half-done (the 2026-10-03 tick stopped there and did nothing). Revision 8 (2026-10-03): before the campaign threads run, the units a plan lists under
 `route_research` get one **route-researcher** task per campaign (step 3b), so a preview's bundle
@@ -165,16 +168,26 @@ step and report it in your summary — never re-implement a driver step by hand.
      documents. Save the returned JSON verbatim beside the bundle as
      `predictions/<unit>/editorial_draft_<artifact>.json` (for example
      `editorial_draft_stage_preview.json`) — that exact name, because the driver reads it there —
-     and then store it:
+     and then check and store it:
      `PYTHONUNBUFFERED=1 uv run python -m cycling_project.nightly editorial --campaign <slug> --unit <unit>`.
      The unit's `upload` already ran inside `night`, so without this command the draft dies with
-     the container. It inserts the draft into `editorial_drafts` for the owner's review (a draft
-     that fails the lint is stored too, flagged), ships the file as an artifact, is safe to run
-     twice and touches nothing else. Report its JSON and exit code; an exit 20 is filed like any
-     other failure. Never merge prose into a page yourself.
+     the container. It lints the draft first. A clean draft is inserted into `editorial_drafts` for
+     the owner's review at once (exit 0). A draft that fails the lint is NOT stored yet: the command
+     exits 10 with `"kind": "editorial_lint_failed"` and a compact `lint_report` (per draft file:
+     `lexicon`, `numerals`, `key`, `placeholders`, `schema`, `name_order`, each finding with its
+     section and token). This exit 10 writes no operator task and is yours to answer, once: send
+     that `lint_report` JSON verbatim back to the SAME editorial thread with the line "Lint report —
+     fix exactly these and return the whole JSON again:", save the reply verbatim over the same
+     `editorial_draft_<artifact>.json`, then store it with
+     `PYTHONUNBUFFERED=1 uv run python -m cycling_project.nightly editorial --campaign <slug> --unit <unit> --final`.
+     `--final` stores the retry with both attempts' lint results, pass or fail. There is never a
+     second retry: whatever the editorial thread returns the second time is stored. If the thread
+     returns nothing usable, run the `--final` command on the file as it stands. The command ships
+     the files as artifacts, is safe to run twice and touches nothing else. Report its JSON and
+     exit code; an exit 20 is filed like any other failure. Never merge prose into a page yourself.
 5. **Exit codes.** Exit 10 → the driver has already written the `operator_task`; let it stand, stop
-   that campaign's remaining units, move on. The one exception is `day_key_needed`, which is yours
-   to answer tonight (step 4). `startlist_needed` is not: it means FirstCycling has not published
+   that campaign's remaining units, move on. The exceptions are `day_key_needed`, which is yours
+   to answer tonight (step 4), and `editorial_lint_failed`, which is the editorial retry (step 4). `startlist_needed` is not: it means FirstCycling has not published
    the field yet, the Mac's daily horizon capture will hand it over, and there is nothing for you or
    for ops-triage to do — never try to fetch a start list. Exit 20 → delegate one task to **ops-triage** with the
    step, `error_class`, `log_path`, the unit's `results/` and `predictions/` directories and the run
