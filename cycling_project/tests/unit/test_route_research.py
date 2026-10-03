@@ -317,3 +317,169 @@ def test_the_research_log_is_not_a_rendered_board(campaign):
     from cycling_project.nightly.driver import NON_BOARD_JSON
     assert {"route_research.json", "route_raw.json"} <= NON_BOARD_JSON
     assert route_facts.SCALAR_FIELDS[-2:] == ("finale", "notes")
+
+
+# ---------------------------------------------------------------------------
+# per-race mode (round 2): gather once, cache verbatim, transcribe per stage
+
+
+PDF_BYTES = b"%PDF-1.4 CRO Race 2026 road book (fixture)\n%%EOF"
+STAGE_PAGE = "https://crorace.com/en/etape/stage-3/"
+
+
+def gather_blocks(record=None, docs=None):
+    import base64
+
+    docs = docs if docs is not None else [
+        (ROADBOOK, {"type": "base64", "media_type": "application/pdf",
+                    "data": base64.b64encode(PDF_BYTES).decode()}),
+        (STAGE_PAGE, {"type": "text", "media_type": "text/plain", "data": "Stage 3 Krk - Labin 174,5 km"}),
+    ]
+    blocks = []
+    for i, (url, source) in enumerate(docs):
+        blocks += [{"type": "server_tool_use", "id": f"f{i}", "name": "web_fetch", "input": {"url": url}},
+                   {"type": "web_fetch_tool_result", "tool_use_id": f"f{i}",
+                    "content": {"type": "web_fetch_result", "url": url, "retrieved_at": "2026-09-27T12:07:51Z",
+                                "content": {"type": "document", "title": "t", "source": source}}}]
+    record = record if record is not None else {
+        "found": True, "notes": None,
+        "sources": [{"url": ROADBOOK, "title": "Road book", "kind": "road_book", "stages": []},
+                    {"url": STAGE_PAGE, "title": "Stage 3", "kind": "stage_page", "stages": [3]}]}
+    blocks.append({"type": "tool_use", "id": "g1", "name": rr.GATHER_TOOL_NAME, "input": record})
+    return blocks
+
+
+def stage_record(stage, found=True):
+    return {"found_stage_page": found, "distance_km": "174,5 km" if stage == 3 else "114,5 km",
+            "vertical_metres": "3300 m", "profile_class": None,
+            "start": "Krk" if stage == 3 else "Biograd na Moru",
+            "finish": "Labin" if stage == 3 else "Novalja", "climbs_listed": True,
+            "climbs": [{"name": "Skitača", "category": "1", "km_mark": "153,0", "km_to_go": "21,5",
+                        "length_km": None, "gradient_pct": None, "source_url": ROADBOOK}],
+            "finale": "Uphill finish.", "notes": None,
+            "sources": [{"url": ROADBOOK, "title": "Road book", "supports": "all"}]}
+
+
+def text_message(payload):
+    return SimpleNamespace(content=[{"type": "text", "text": json.dumps(payload)}], stop_reason="end_turn",
+                           _request_id="req_t", usage={"input_tokens": 50, "output_tokens": 1000,
+                                                       "cache_creation_input_tokens": 0,
+                                                       "cache_read_input_tokens": 49000})
+
+
+class FilesClient(FakeClient):
+    def __init__(self, *messages):
+        super().__init__(*messages)
+        self.uploads = []
+        self.files = SimpleNamespace(upload=self._upload)
+
+    def _upload(self, file):
+        self.uploads.append(file[0])
+        return SimpleNamespace(id=f"file_{len(self.uploads)}")
+
+
+@pytest.mark.unit
+def test_per_race_gathers_once_caches_verbatim_and_transcribes_each_stage(campaign):
+    client = FilesClient(message(gather_blocks(), searches=2, fetches=2),
+                         text_message(stage_record(2)), text_message(stage_record(3)))
+    out = rr.research_race(campaign, ["stage_02", "stage_03"], client=client)
+    assert [r["mode"] for r in out] == ["gather", "per_race", "per_race"]
+    index = rr.load_sources(campaign)
+    roadbook = next(s for s in index["sources"] if s["url"] == ROADBOOK)
+    assert (rr.sources_dir(campaign) / roadbook["file"]).read_bytes() == PDF_BYTES      # verbatim
+    assert roadbook["retrieved_at"] == "2026-09-27T12:07:51Z" and roadbook["media_type"] == "application/pdf"
+    raw = json.loads((campaign / "predictions" / "stage_03" / "route_raw.json").read_text())
+    assert raw["mode"] == "per_race" and raw["sources"][0]["seen_via"] == "route_sources_cache"
+    assert raw["sources"][0]["fetched_at"] == "2026-09-27T12:07:51Z"
+    route = json.loads((campaign / "predictions" / "stage_03" / "route.json").read_text())
+    assert route["climbs"][0]["name"] == "Skitača" and route["distance_km"] == 174.5
+    # the gather has the web tools; the transcriptions have none and share one document prefix
+    gather, t2, t3 = client.requests
+    assert {t.get("type") for t in gather["tools"]} >= {"web_search_20260209", "web_fetch_20250910"}
+    assert "tools" not in t2 and t2["output_config"]["format"]["type"] == "json_schema"
+    docs2 = [b for b in t2["messages"][0]["content"] if b["type"] == "document"]
+    docs3 = [b for b in t3["messages"][0]["content"] if b["type"] == "document"]
+    assert docs2 == docs3 and docs2[-1]["cache_control"] == {"type": "ephemeral"}
+    assert client.uploads == []                                   # small PDFs go inline
+    # the cache is not a unit and not a board
+    assert rr.needs_research(campaign, "route_sources")[0] is False
+
+
+@pytest.mark.unit
+def test_a_second_run_reads_the_cache_and_never_searches(campaign):
+    rr.research_race(campaign, ["stage_03"], client=FilesClient(message(gather_blocks()),
+                                                               text_message(stage_record(3))))
+    (campaign / "predictions" / "stage_02").mkdir(exist_ok=True)
+    client = FilesClient(text_message(stage_record(2)))
+    out = rr.research_race(campaign, ["stage_02"], client=client)
+    assert [r["mode"] for r in out] == ["per_race"] and len(client.requests) == 1
+    assert "tools" not in client.requests[0]
+
+
+@pytest.mark.unit
+def test_a_stage_the_cache_misses_falls_back_to_the_per_stage_conversation(campaign):
+    client = FilesClient(message(gather_blocks()), text_message(stage_record(3, found=False)),
+                         message(transcript(urls=ALL_URLS)))
+    out = rr.research_race(campaign, ["stage_03"], client=client)
+    res = out[-1]
+    assert res["mode"] == "per_stage" and res["status"] == "written"
+    assert res["fallback_from_per_race"]["transcribe_reason"].startswith("the researcher found no page")
+    assert {t.get("type") for t in client.requests[-1]["tools"]} >= {"web_search_20260209"}
+
+
+@pytest.mark.unit
+def test_without_fallback_a_miss_is_logged_once(campaign):
+    client = FilesClient(message(gather_blocks()), text_message(stage_record(3, found=False)))
+    out = rr.research_race(campaign, ["stage_03"], client=client, fallback=False)
+    assert out[-1]["status"] == "nothing_found" and out[-1]["mode"] == "per_race"
+    assert rr.needs_research(campaign, "stage_03")[0] is False
+
+
+@pytest.mark.unit
+def test_a_listed_page_that_was_never_fetched_is_not_cached(campaign):
+    record = {"found": True, "notes": None,
+              "sources": [{"url": ROADBOOK, "title": "rb", "kind": "road_book", "stages": []},
+                          {"url": "https://never.example/x", "title": None, "kind": "other", "stages": []}]}
+    rr.research_race(campaign, ["stage_03"], client=FilesClient(message(gather_blocks(record=record)),
+                                                               text_message(stage_record(3))))
+    index = rr.load_sources(campaign)
+    assert [s["url"] for s in index["sources"]] == [ROADBOOK]
+    assert index["uncached"] == [{"url": "https://never.example/x", "reason": "not fetched in this conversation",
+                                  "shape": {}}]
+
+
+@pytest.mark.unit
+def test_a_large_pdf_goes_through_the_files_api_once_per_run(campaign, monkeypatch):
+    monkeypatch.setattr(rr, "INLINE_PDF_MAX_BYTES", 10)
+    (campaign / "predictions" / "stage_02").mkdir()
+    client = FilesClient(message(gather_blocks()), text_message(stage_record(2)), text_message(stage_record(3)))
+    rr.research_race(campaign, ["stage_02", "stage_03"], client=client)
+    assert len(client.uploads) == 1
+    sources = [[b["source"] for b in r["messages"][0]["content"] if b["type"] == "document"][0]
+               for r in client.requests[1:]]
+    assert sources[0] == sources[1] == {"type": "file", "file_id": "file_1"}
+
+
+@pytest.mark.unit
+def test_auto_mode_prefers_per_race_when_several_stages_qualify(campaign):
+    client = FilesClient(message(gather_blocks()), text_message(stage_record(3)))
+    (campaign / "predictions" / "stage_02").mkdir()             # stage 2 qualifies too
+    out = rr.research_auto(campaign, "stage_03", client=client)
+    assert out["mode"] == "per_race" and out["gather"]["mode"] == "gather"
+    assert out["cost_usd"] == pytest.approx(out["gather"]["cost_usd"] + rr.cost_usd(
+        {"input_tokens": 50, "output_tokens": 1000, "cache_read_input_tokens": 49000}), abs=1e-4)
+
+
+@pytest.mark.unit
+def test_auto_mode_uses_one_conversation_for_a_lone_stage(campaign):
+    cfg = json.loads((campaign / "campaign.json").read_text())
+    cfg["stages"] = [s for s in cfg["stages"] if s["number"] != 2]
+    (campaign / "campaign.json").write_text(json.dumps(cfg, ensure_ascii=False))
+    out = rr.research_auto(campaign, "stage_03", client=FilesClient(message(transcript(urls=ALL_URLS))))
+    assert out["mode"] == "per_stage" and rr.load_sources(campaign) is None
+
+
+@pytest.mark.unit
+def test_french_road_book_climbing_notation_parses():
+    assert parse_number("3083m D+", field="v") == (3083.0, None)
+    assert parse_number("3083 m d+", field="v") == (3083.0, None)

@@ -133,7 +133,9 @@ def parse_number(value: Any, *, field: str) -> tuple[float | None, str | None]:
     if not m:
         return None, f"{field}: cannot read a number from {value!r}"
     trailing = cleaned[m.end():].strip()
-    if trailing and not re.fullmatch(r"(km|m|%|meter|metres|meters|pct)\.?", trailing,
+    # "3083m D+" is the French road-book notation for climbing (dénivelé positif),
+    # Tour de Luxembourg 2026; the unit may carry it.
+    if trailing and not re.fullmatch(r"(km|m|%|meter|metres|meters|pct)\.?(\s*D\+)?", trailing,
                                      re.IGNORECASE):
         return None, f"{field}: unexpected text after the number in {value!r}"
     return float(m.group(0)), None

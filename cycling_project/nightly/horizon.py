@@ -839,7 +839,10 @@ def capture_campaign(due: Due, store: Any, *, fetcher: Fetcher, db_path: Optiona
                     research_budget["left"] -= 1
 
                 def _research(unit=unit) -> Dict[str, Any]:
-                    return (researcher or route_research_mod.research_unit)(campaign.dir, unit)
+                    # research_auto: per-race (gather the race's sources once, then a cheap
+                    # transcription per stage) when the race has a source cache or several
+                    # stages qualify; the per-stage conversation otherwise.
+                    return (researcher or route_research_mod.research_auto)(campaign.dir, unit)
 
                 try:
                     detail = run.step(f"route_research:{unit}", _research)
@@ -851,6 +854,10 @@ def capture_campaign(due: Due, store: Any, *, fetcher: Fetcher, db_path: Optiona
                             pred / "route.json"]
                 run.say(f"  {campaign.slug} {unit}: route research {detail.get('status')} "
                         f"route={detail.get('route_facts')} cost=${detail.get('cost_usd')}")
+            # The source cache's index and gather log travel with the handover; the cached
+            # documents themselves (a road book can be 20+ MB) stay on the Mac, gitignored.
+            sources = route_research_mod.sources_dir(campaign.dir)
+            written += [sources / route_research_mod.SOURCES_INDEX, sources / route_research_mod.GATHER_LOG]
 
         # -- campaign.json
         stages = run.step("stages", lambda: update_stages(
