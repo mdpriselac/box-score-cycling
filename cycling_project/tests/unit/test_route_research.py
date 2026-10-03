@@ -480,6 +480,66 @@ def test_auto_mode_uses_one_conversation_for_a_lone_stage(campaign):
 
 
 @pytest.mark.unit
+def test_a_cached_road_book_stage_without_a_label_grades_complete(campaign):
+    """Owner decision (chip Z1 round 3): CRO st3 from the road book has distance, 3300 m and
+    four climbs but no printed stage-type label; that is complete, the label listed as absent."""
+    client = FilesClient(message(gather_blocks()), text_message(stage_record(3)))
+    rr.research_race(campaign, ["stage_03"], client=client)
+    route = json.loads((campaign / "predictions" / "stage_03" / "route.json").read_text())
+    assert route["route_facts"] == "complete", route["missing_fields"] + route["errors"] + route["warnings"]
+    assert route["profile_class"] is None
+    assert route["missing_fields"] == [] and route["optional_missing"] == ["profile_class"]
+
+
+def _grade(campaign, raw):
+    _write_raw(campaign, raw)
+    return ingest_route(campaign, "stage_03")
+
+
+SOURCED = {"researched_by": "x", "sources": [{"url": ROADBOOK, "fetched_at": "t"}],
+           "vertical_metres": "3300 m",
+           "climbs": [{"name": "Sv. Jelena", "km_mark": "109,0", "source_url": ROADBOOK},
+                      {"name": "Skitača", "km_mark": "153,0", "source_url": ROADBOOK}]}
+
+
+@pytest.mark.unit
+def test_profile_class_is_optional_only_for_a_sourced_research_layer(campaign):
+    route = _grade(campaign, SOURCED)
+    assert route["route_facts"] == "complete" and route["optional_missing"] == ["profile_class"]
+    # a legacy transcription (no researched_by) still needs the label
+    legacy = {k: v for k, v in SOURCED.items() if k != "researched_by"}
+    route = _grade(campaign, legacy)
+    assert route["route_facts"] == "partial" and route["missing_fields"] == ["profile_class"]
+    assert route["optional_missing"] == []
+
+
+@pytest.mark.unit
+def test_a_sourced_layer_still_needs_vertical_and_climbs(campaign):
+    route = _grade(campaign, {**SOURCED, "vertical_metres": None})
+    assert route["route_facts"] == "partial" and route["missing_fields"] == ["vertical_metres"]
+    route = _grade(campaign, {k: v for k, v in SOURCED.items() if k != "climbs"})
+    assert route["route_facts"] == "partial" and "climbs" in route["missing_fields"]
+    route = _grade(campaign, {**{k: v for k, v in SOURCED.items() if k != "climbs"}, "climbs_listed": False})
+    assert route["route_facts"] == "complete"                    # known-empty counts
+
+
+@pytest.mark.unit
+def test_disorder_and_errors_still_downgrade_a_sourced_layer(campaign):
+    route = _grade(campaign, {**SOURCED, "climbs": list(reversed(SOURCED["climbs"]))})
+    assert route["route_facts"] == "partial" and route["climbs_ordered"] is False
+    route = _grade(campaign, {**SOURCED, "climbs": [{"name": "Skitača", "km_mark": "153,0",
+                                                     "source_url": "https://elsewhere.example/x"}]})
+    assert route["route_facts"] == "partial"
+
+
+@pytest.mark.unit
+def test_a_firstcycling_only_stage_is_still_partial(campaign):
+    route = json.loads((campaign / "predictions" / "stage_03" / "route.json").read_text())
+    assert route["route_facts"] == "partial" and "profile_class" in route["missing_fields"]
+    assert route["optional_missing"] == []
+
+
+@pytest.mark.unit
 def test_french_road_book_climbing_notation_parses():
     assert parse_number("3083m D+", field="v") == (3083.0, None)
     assert parse_number("3083 m d+", field="v") == (3083.0, None)

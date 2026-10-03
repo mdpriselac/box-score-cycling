@@ -69,7 +69,14 @@ reason and the field goes to null):
 ``route_facts`` grades the result:
 
 * ``complete``  — distance, vertical, profile class and the climb list are
-  all known and valid (``climbs_listed: false`` counts as known-empty);
+  all known and valid (``climbs_listed: false`` counts as known-empty).
+  When the route comes from a **sourced research layer** (``researched_by``
+  with valid sources), ``profile_class`` is optional: road books rarely print
+  a stage-type label (CRO Race and Tour de Luxembourg 2026 did not), so
+  distance + vertical + a validated climb list is ``complete`` and the absent
+  label is listed, non-blocking, in ``optional_missing`` (owner decision,
+  chip Z1 round 3, 2026-10-02). Errors, warnings and climb disorder still
+  downgrade to ``partial``; a FirstCycling-only stage is still ``partial``;
 * ``partial``   — something is known, something is missing or flagged;
 * ``missing``   — no usable input at all. Recorded, never invented.
 """
@@ -100,6 +107,9 @@ SCALAR_FIELDS = ("distance_km", "vertical_metres", "profile_class", "start", "fi
 
 # Fields that must all be known and valid for a `complete` grade.
 REQUIRED_FOR_COMPLETE = ("distance_km", "vertical_metres", "profile_class")
+# With a sourced research layer these stop blocking `complete` and are reported
+# in `optional_missing` instead (owner decision, chip Z1 round 3, 2026-10-02).
+OPTIONAL_WITH_RESEARCH = ("profile_class",)
 
 
 class RouteFactsError(Exception):
@@ -532,7 +542,10 @@ def ingest_route(campaign_dir: Path, unit: str, *, write: bool = True) -> dict:
 
     # ---- grade -----------------------------------------------------------
     known_climbs = bool(climbs) or climbs_listed is False
-    missing_fields = [f for f in REQUIRED_FOR_COMPLETE if merged.get(f) is None]
+    optional = OPTIONAL_WITH_RESEARCH if research else ()
+    missing_fields = [f for f in REQUIRED_FOR_COMPLETE
+                      if merged.get(f) is None and f not in optional]
+    optional_missing = [f for f in optional if merged.get(f) is None]
     if not known_climbs:
         missing_fields.append("climbs")
 
@@ -564,6 +577,7 @@ def ingest_route(campaign_dir: Path, unit: str, *, write: bool = True) -> dict:
         "notes": merged.get("notes"),
         "researched_by": raw.get("researched_by") if research else None,
         "missing_fields": missing_fields,
+        "optional_missing": optional_missing,
         "errors": errors,
         "warnings": warnings,
         "rejected": rejected,
@@ -627,6 +641,8 @@ def main(argv: list[str] | None = None) -> int:
               f"  sources={sorted(set(route['field_sources'].values()))}")
         for field in route["missing_fields"]:
             print(f"  missing: {field}")
+        for field in route["optional_missing"]:
+            print(f"  absent (optional, not blocking): {field}")
         for err in route["errors"]:
             print(f"  ERROR: {err}")
         for warn in route["warnings"]:

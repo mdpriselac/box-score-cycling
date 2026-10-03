@@ -142,9 +142,16 @@ What to remember:
   fix CRO st4 (an HC climb 53 km out, then a flat finish, keyed as a sprint
   where a small group won) or CRO st5 (a cat-2 climb 16 km out, keyed as a
   selective day, which ended in a reduced sprint). Those are judgment misses
-  that route facts alone do not settle. All four route.json files grade
+  that route facts alone do not settle. All four route.json files graded
   `partial` only because neither road book prints a stage-type label
-  (`profile_class`), and the reader names "route facts partial" in its flag.
+  (`profile_class`), and the reader named "route facts partial" in its flag.
+  **Owner decision (round 3):** a stage sourced by a research layer, with
+  distance, vertical and a validated climb list (or `climbs_listed: false`),
+  now grades `complete` without a label. The absent label is listed,
+  non-blocking, in `optional_missing`. Errors, warnings and climb disorder
+  still downgrade to `partial`, and FirstCycling-only stages stay `partial`.
+  Re-graded for free, all six CRO stages and Lux st5 are now `complete`. The
+  re-key table above was run under the old grade.
 - **The transcription is verbatim, so the numbers are European.** "174,5 km"
   parsed as 1745 and "10,8%" as 108. Only the range checks stopped them
   (reject, never default). `parse_number` now reads a comma followed by one
