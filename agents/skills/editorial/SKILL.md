@@ -1,6 +1,6 @@
 ---
 name: editorial
-version: 1.2.0
+version: 1.3.0
 description: Write the campaign's stage-preview and stage-retro prose from a frozen facts bundle, in the house style, framed as information capture and never as betting advice.
 ---
 
@@ -75,6 +75,16 @@ empty strings when the bundle lacks the facts for them):
 6. `race_state` — the classification going forward: leader, gaps, GC
    market, GC heads, abandons, what the next stages ask.
 
+The scorecard counts the key that priced each board: a row's
+`key_of_record` is the human key when one was logged, otherwise the
+day-key agent's key (`author` "agent"); quote the tally as given.
+
+A one-day race (bundle `one_day` true, unit `race`) has no day key and
+`scorecard.applicable` is false: say that day-key scoring does not apply to
+a one-day race, never that the scorecard is missing or unavailable. Its
+retro still reports the result and where the winner and podium sat on each
+board; `race_state` may be an empty string.
+
 ### `monthly_review`
 
 Stub in this version: return the schema with `headline` set to
@@ -103,6 +113,8 @@ artifact; the narrative may only reference races and metrics present in it.
   When a sentence quotes a table or board row, either form is fine, but keep
   one form within a sentence. A list of abandons carries `display_names`
   beside `names`; a scorecard row carries `winner_display_name`.
+- Refer to riders by name or by role ("the winner", "the winner's group"),
+  not by gendered pronoun.
 - The key is stated with its weights exactly as approved: "gc_day 0.6 /
   res_2 0.4". Scenario-level keys are quoted the same way, attributed to
   their scenario.

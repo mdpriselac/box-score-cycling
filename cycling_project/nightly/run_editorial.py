@@ -41,6 +41,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple
 from cycling_project.nightly import lint_prose, rider_names
 from cycling_project.nightly.secrets import load_local_env, redact
 from cycling_project.nightly.store_local import open_store
+from cycling_project.nightly.uci_acquire import is_one_day_unit
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 SKILL_PATH = lint_prose.SKILL_DIR / "SKILL.md"
@@ -177,7 +178,45 @@ def _prior_results_dir(results_root: Path, stage: int) -> Optional[Path]:
     return None
 
 
-def _scorecard_block(review_dir: Path, stage: Optional[int], *, include_stage: bool) -> Dict[str, Any]:
+#: A one-day race prices one board with no day key, so there is nothing for the key ledger to score.
+ONE_DAY_SCORECARD = {"applicable": False,
+                     "reason": "one-day race: no day key is set, so day-key scoring does not apply"}
+
+
+def key_of_record(row: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    """The key that priced the board for one ``key_scorecard.json`` row, and its score.
+
+    A human key lives in ``day_key``/``exact``/...; a board priced from the day-key agent's
+    record (``day_key_author: agent`` — every unattended cloud campaign) leaves those null
+    BY DESIGN and carries its read in ``agent_*`` (score_day_keys keeps the tier-3 card
+    unkeyed for it).  Before 2026-10-04 the editorial tally read only the human fields, so
+    an agent-keyed campaign reported "0 stages scored" (Langkawi stage 8, draft 5).
+    A replay record never priced a board and is not a key of record.
+    """
+    if row.get("day_key"):
+        return {"author": "human", "key": row["day_key"], "key_source": row.get("key_source"),
+                "exact": row.get("exact"), "covered": row.get("covered"),
+                "weight_on_true": row.get("weight_on_true")}
+    if row.get("agent_key") and not row.get("agent_replay"):
+        return {"author": "agent", "key": row["agent_key"], "key_source": "agent",
+                "exact": row.get("agent_exact"), "covered": row.get("agent_covered"),
+                "weight_on_true": row.get("agent_weight_on_true"), "flagged": row.get("agent_flagged")}
+    return None
+
+
+def _tally(rows: List[Dict[str, Any]]) -> Dict[str, Any]:
+    return {
+        "stages_scored": len(rows),
+        "exact": sum(1 for r in rows if r.get("exact")),
+        "covered": sum(1 for r in rows if r.get("covered")),
+        "mean_weight_on_true": round(sum(float(r.get("weight_on_true") or 0) for r in rows) / len(rows), 2) if rows else None,
+    }
+
+
+def _scorecard_block(review_dir: Path, stage: Optional[int], *, include_stage: bool,
+                     one_day: bool = False) -> Dict[str, Any]:
+    if one_day:
+        return dict(ONE_DAY_SCORECARD)
     path = review_dir / "key_scorecard.json"
     if not path.exists():
         return {"available": False}
@@ -192,17 +231,16 @@ def _scorecard_block(review_dir: Path, stage: Optional[int], *, include_stage: b
             continue
         entry = {k: r.get(k) for k in ("stage", "oracle_item", "day_class", "rule_type", "wg_size",
                                        "winner", "winner_gc_morning", "front5_gc_median", "day_key",
-                                       "exact", "covered", "weight_on_true", "key_source")}
+                                       "exact", "covered", "weight_on_true", "key_source",
+                                       "agent_key", "agent_exact", "agent_covered", "agent_weight_on_true",
+                                       "agent_flagged")}
+        entry["key_of_record"] = key_of_record(r)
         ledger.append(entry)
         if s == stage:
             this = entry
-    scored = [r for r in ledger if r.get("day_key")]
-    tally = {
-        "stages_scored": len(scored),
-        "exact": sum(1 for r in scored if r.get("exact")),
-        "covered": sum(1 for r in scored if r.get("covered")),
-        "mean_weight_on_true": round(sum(float(r.get("weight_on_true") or 0) for r in scored) / len(scored), 2) if scored else None,
-    }
+    scored = [r["key_of_record"] for r in ledger if r.get("key_of_record")]
+    tally = {**_tally(scored),
+             "by_author": {a: sum(1 for k in scored if k["author"] == a) for a in ("human", "agent")}}
     return {"available": True, "stage": this, "tally": tally, "ledger": ledger}
 
 
@@ -371,11 +409,12 @@ def build_facts_bundle(campaign_dir: Path, unit: str, artifact: str, *, db_path:
     config = _load_json(cfg_path)
     campaign = _load_json(campaign_dir / "campaign.json") if (campaign_dir / "campaign.json").exists() else {}
     stage = unit_number(unit)
+    one_day = is_one_day_unit(unit)
     retro = artifact == "stage_retro"
     sources: Dict[str, str] = {f"predictions/{unit}/scenarios.json": _sha256(cfg_path)}
 
     bundle: Dict[str, Any] = {
-        "bundle_kind": "minimal", "artifact": artifact, "unit": unit, "stage": stage,
+        "bundle_kind": "minimal", "artifact": artifact, "unit": unit, "stage": stage, "one_day": one_day,
         "campaign": {"slug": campaign.get("slug", campaign_dir.name), "name": campaign.get("name"),
                      "n_stages": len(campaign.get("stages") or []) or None,
                      "void_stages": config.get("void_stages") or campaign.get("void_stages") or []},
@@ -404,7 +443,9 @@ def build_facts_bundle(campaign_dir: Path, unit: str, artifact: str, *, db_path:
 
     results_root = campaign_dir / "results"
     results_rows: Optional[List[Dict[str, Any]]] = None
-    if retro and stage is not None:
+    # A one-day unit (``race``) has no stage number but its results sit at results/race/ all the
+    # same; until 2026-10-04 this read ``stage is not None`` and a one-day retro saw no result.
+    if retro and (stage is not None or one_day):
         res_dir = results_root / unit
         res_csv = res_dir / "results.csv"
         if res_csv.exists():
@@ -438,7 +479,7 @@ def build_facts_bundle(campaign_dir: Path, unit: str, artifact: str, *, db_path:
             bundle["abandons"] = {"since": prior.name, "n": len(gone), "names": gone,
                                   "riders_left": len(cur_ids)}
 
-    bundle["scorecard"] = _scorecard_block(campaign_dir / "review", stage, include_stage=retro)
+    bundle["scorecard"] = _scorecard_block(campaign_dir / "review", stage, include_stage=retro, one_day=one_day)
     bundle["market"] = _market_block(campaign_dir, config.get("odds_capture"), config.get("event_id"))
     if bundle["market"].get("available") and bundle.get("gc_morning"):
         gc10 = {_name_key(r["name"]) for r in bundle["gc_morning"]["top"][:10]}
@@ -503,6 +544,9 @@ def task_line(artifact: str, bundle: Dict[str, Any]) -> str:
                 f"({json.dumps(bundle.get('config', {}).get('day_key'))}) with exactly these weights. "
                 f"Write one scenario note per non-post-hoc scenario key: "
                 f"{[k for k, v in bundle.get('config', {}).get('scenarios', {}).items() if not v.get('post_hoc')]}.")
+    if artifact == "stage_retro" and bundle.get("one_day") and not bundle.get("config", {}).get("day_key"):
+        return (f"Task: write the `stage_retro` record for {race} {unit}. This is a one-day race: no day key "
+                f"was set, so day-key scoring does not apply (say so; it is not missing data).")
     if artifact == "stage_retro":
         return (f"Task: write the `stage_retro` record for {race} {unit}. The approved key was "
                 f"{json.dumps(bundle.get('config', {}).get('day_key'))}; quote it with exactly these weights.")

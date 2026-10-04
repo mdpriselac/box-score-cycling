@@ -728,9 +728,17 @@ def test_a_one_day_settle_ingests_and_builds_the_one_day_page(uci_campaign, tmp_
     assert "gc.csv" not in out["ingest"]["written"]
     steps = _steps(tmp_path)
     assert ("seed_state_cache", "skipped") in steps      # no within-race state to reconstruct
-    assert ("gc_config", "skipped") in steps and ("retro_facts", "skipped") in steps
+    assert ("gc_config", "skipped") in steps
     assert ("oneday_page", "skipped") in steps           # dry run records scripts, never runs them
     assert not any(step == "stage_page" for step, _ in steps)
+    # The editorial retro reads these (2026-10-04: Emilia/Münsterland drafts saw no result without them)
+    assert ("retro_facts", "ok") in steps
+    facts = json.loads((pred / "retro_facts.json").read_text())
+    assert facts["one_day"] is True and facts["stage"] is None
+    assert facts["results"]["winner"] == "Pidcock Thomas" and facts["results"]["n_classified"] == 82
+    assert facts["results"]["top"][0]["place"] == 1 and facts["results"]["winning_time_s"] == 16388.0
+    assert facts["scorecard"]["applicable"] is False and "available" not in facts["scorecard"]
+    assert facts["key_vs_oracle"]["applicable"] is False
 
 
 def test_the_driver_names_the_one_day_page_the_builder_writes(uci_campaign):

@@ -993,8 +993,9 @@ class Driver:
                 db_path=self.db_path, stage=stage, void_stages=c.void_stages))
             self.script("hindsight_predict", self._predict_argv(cfg_path, no_log=True), lock=True)
 
-        # 5. retro facts
-        if stage is not None and (c.pred_dir(unit) / "scenarios.json").exists():
+        # 5. retro facts — a one-day settle writes them too (2026-10-04: without them the
+        # editorial bundle for Emilia/Münsterland was rebuilt with no result in it).
+        if (stage is not None or oneday.is_one_day_unit(unit)) and (c.pred_dir(unit) / "scenarios.json").exists():
             out["retro_facts"] = self.step("retro_facts", lambda: self._retro_facts(unit))
         else:
             self.step("retro_facts", lambda: None, skip="no scenario config for this unit")
@@ -1301,9 +1302,10 @@ class Driver:
         return out
 
     def _retro_facts(self, unit: str) -> Dict[str, Any]:
-        from cycling_project.nightly.run_editorial import build_facts_bundle
+        from cycling_project.nightly.run_editorial import ONE_DAY_SCORECARD, build_facts_bundle, key_of_record
         c = self.campaign
         stage = c.stage_of(unit)
+        one_day = oneday.is_one_day_unit(unit)
         id_map = self._rider_id_map()
         bundle = build_facts_bundle(c.dir, unit, "stage_retro", db_path=self.db_path if self.db_path.exists() else None,
                                     id_map=id_map, name_fallback=False)
@@ -1318,7 +1320,8 @@ class Driver:
                 pass
         wg = None
         rule = None
-        card_row = next((r for r in (_read_json(c.dir / "review" / "key_scorecard.json", []) or []) if r.get("stage") == stage), None)
+        card_row = None if stage is None else next(
+            (r for r in (_read_json(c.dir / "review" / "key_scorecard.json", []) or []) if r.get("stage") == stage), None)
         if card_row:
             wg, rule = card_row.get("wg_size"), card_row.get("rule_type")
         if wg is None and gaps:
@@ -1343,10 +1346,15 @@ class Driver:
         rjson = _read_json(res_dir / "results.json", {}) or {}
         results["provisional_identities"] = list(rjson.get("provisional_identities") or [])
         results["identity_policy"] = rjson.get("identity_policy")
-        bundle["key_vs_oracle"] = ({k: card_row.get(k) for k in ("day_key", "key_source", "oracle_item", "day_class", "exact",
-                                                                  "covered", "weight_on_true", "agent_key", "agent_exact",
-                                                                  "agent_covered", "agent_weight_on_true", "agent_flagged")}
-                                   if card_row else {"scored": False})
+        if card_row:
+            bundle["key_vs_oracle"] = {k: card_row.get(k) for k in ("day_key", "key_source", "oracle_item", "day_class", "exact",
+                                                                    "covered", "weight_on_true", "agent_key", "agent_exact",
+                                                                    "agent_covered", "agent_weight_on_true", "agent_flagged")}
+            bundle["key_vs_oracle"]["key_of_record"] = key_of_record(card_row)
+        elif one_day:
+            bundle["key_vs_oracle"] = {"scored": False, **ONE_DAY_SCORECARD}
+        else:
+            bundle["key_vs_oracle"] = {"scored": False}
         bundle["retrieval_summary"] = [{
             "scenario_key": b.get("scenario_key"), "post_hoc": b.get("post_hoc"),
             "pool15_with_key": (b.get("retrieval") or {}).get("top15_finishers_in_top15_with_key"),

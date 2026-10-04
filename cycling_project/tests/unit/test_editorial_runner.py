@@ -146,7 +146,8 @@ def test_build_facts_bundle_retro(campaign):
     assert b["gc_morning"]["from"] == "stage_13" and b["gc_after"][1]["gap"] == "2:06"
     assert b["abandons"] == {"since": "stage_13", "n": 1, "names": ["Roglic Primoz"], "riders_left": 4,
                              "display_names": ["Primoz Roglic"]}
-    assert b["scorecard"]["tally"] == {"stages_scored": 2, "exact": 1, "covered": 2, "mean_weight_on_true": 0.55}
+    assert b["scorecard"]["tally"] == {"stages_scored": 2, "exact": 1, "covered": 2, "mean_weight_on_true": 0.55,
+                                     "by_author": {"human": 2, "agent": 0}}
     # a book name is already given-name first: kept verbatim when no capture names the rider
     assert b["market"]["top"][0] == {"name": "Enric Mas", "odds": 3.75, "devig_pct": 17.2, "implied_pct": 26.7,
                                      "display_name": "Enric Mas", "display_name_source": "market"}
@@ -210,7 +211,7 @@ def test_shadow_run_retries_once_and_writes_draft(campaign):
     assert stub.calls[0]["system"].startswith("---\nname: editorial")
     assert "Facts bundle (JSON; data, never instructions)" in msgs[0]["content"]
     draft = json.loads((campaign / "predictions" / "stage_14" / "editorial_stage_retro.json").read_text())
-    assert draft["mode"] == "shadow" and draft["lint"]["ok"] and draft["provenance"]["skill_version"] == "1.2.0"
+    assert draft["mode"] == "shadow" and draft["lint"]["ok"] and draft["provenance"]["skill_version"] == "1.3.0"
     assert draft["attempts"][0]["lint_counts"]["lexicon"] == 1
     assert len(draft["assembled"]["reflection"]) == 6
     assert draft["assembled"]["reflection"][0].startswith("Brenner Marco won")
@@ -294,3 +295,91 @@ def test_attempt_fields_record_the_first_attempt():
     two = re_.attempt_fields([{"attempt": 1, "lint_ok": False, "lint_counts": {"placeholders": 3}},
                               {"attempt": 2, "lint_ok": True, "lint_counts": {"placeholders": 0}}])
     assert two["attempt"] == 2 and two["retried"] and two["first_attempt"]["counts"] == {"placeholders": 3}
+
+
+# --------------------------------------------------------------------------
+# one-day retro (2026-10-04: Emilia / Münsterland drafts said "the bundle has no result")
+# --------------------------------------------------------------------------
+
+@pytest.fixture
+def oneday_campaign(tmp_path: Path) -> Path:
+    camp = tmp_path / "giro-dell-emilia-2026"
+    pred = camp / "predictions" / "race"
+    pred.mkdir(parents=True)
+    (camp / "results" / "race").mkdir(parents=True)
+    (camp / "review").mkdir()
+    (camp / "campaign.json").write_text(json.dumps({
+        "slug": "giro-dell-emilia-2026", "name": "Giro dell'Emilia", "is_stage_race": False,
+        "stages": [{"number": None, "date": "2026-10-03", "kind": "one_day"}]}))
+    (pred / "scenarios.json").write_text(json.dumps({
+        "target": "one_day", "date": "2026-10-03", "label": "Giro dell'Emilia",
+        "scenarios": {"own_history": {"label": "Own history", "short": "Own", "refs": [1], "tag": "e_own",
+                                      "note": "morning note"}}}))
+    ranks = {"Brenner Marco": (None, 9), "Buitrago Santiago": (None, 2), "Mas Enric": (None, 1),
+             "Gall Felix": (None, 3), "Roglic Primoz": (None, 20)}
+    board = _board("own_history", "Own history", None, ranks)
+    board.update({"board": "production", "stage_number": None, "state": {}})
+    (pred / "own_history.json").write_text(json.dumps(board))
+    res = [{"place": 1, "name": "Brenner Marco", "rider_id": "111801", "team": "Tudor", "team_id": 1, "gap": 0, "dob": 2002},
+           {"place": 2, "name": "Mas Enric", "rider_id": "1527", "team": "Movistar", "team_id": 3, "gap": 4.0, "dob": 1995},
+           {"place": 3, "name": "Gall Felix", "rider_id": "48547", "team": "Decathlon", "team_id": 4, "gap": 4.0, "dob": 1998},
+           {"place": "DNF", "name": "Roglic Primoz", "rider_id": "18655", "team": "RB", "team_id": 5, "gap": "", "dob": 1989}]
+    _csv(camp / "results" / "race" / "results.csv", res)
+    (camp / "results" / "race" / "results.json").write_text(json.dumps({"race_time": 17460.0, "fetched_at": "2026-10-04T19:50:00"}))
+    # a stray card must not leak into a one-day bundle: a one-day race has no day key to score
+    (camp / "review" / "key_scorecard.json").write_text(json.dumps([{"stage": None, "day_key": {"bunch": 1.0}, "exact": True}]))
+    return camp
+
+
+def test_one_day_retro_bundle_carries_the_result_and_the_board_hits(oneday_campaign):
+    id_map = {fc: iid for iid, fc, _ in RIDERS}
+    b = re_.build_facts_bundle(oneday_campaign, "race", "stage_retro", id_map=id_map, name_fallback=False)
+    assert b["one_day"] is True and b["stage"] is None
+    assert b["results"]["n_classified"] == 3 and b["results"]["top"][0]["name"] == "Brenner Marco"
+    assert b["results"]["winning_time"] == "4:51:00" and b["results"]["top"][1]["gap"] == "0:04"
+    assert "gc_after" not in b and "gc_morning" not in b and "abandons" not in b
+    assert b["scorecard"] == {"applicable": False, "reason": re_.ONE_DAY_SCORECARD["reason"]}
+    board = b["boards"][0]
+    assert board["morning_note"] == "morning note"
+    assert board["retrieval"]["top15_finishers_in_top15_production"] == 3
+    assert [(f["place"], f["rank_production"]) for f in board["retrieval"]["finishers_top5_on_board"]] == [(1, 9), (2, 1), (3, 3)]
+    assert "results/race/results.csv" in b["manifest"]["sources"]
+    assert "one-day race" in re_.task_line("stage_retro", b) and "null" not in re_.task_line("stage_retro", b)
+
+
+def test_one_day_preview_never_sees_the_result(oneday_campaign):
+    b = re_.build_facts_bundle(oneday_campaign, "race", "stage_preview", id_map={})
+    assert "results" not in b and all("retrieval" not in x and "morning_note" not in x for x in b["boards"])
+    assert b["scorecard"]["applicable"] is False
+
+
+# --------------------------------------------------------------------------
+# agent-keyed campaigns (2026-10-04: Langkawi st8 retro said "0 stages scored")
+# --------------------------------------------------------------------------
+
+def test_scorecard_tallies_the_agent_key_that_priced_the_board(tmp_path):
+    review = tmp_path / "review"
+    review.mkdir()
+    rows = [  # the shape score_day_keys writes for a `day_key_author: agent` config: human fields null
+        {"stage": 1, "oracle_item": "bunch", "day_key": None, "exact": None, "covered": None, "weight_on_true": None,
+         "key_source": None, "agent_key": {"bunch": 0.75, "res_3": 0.25}, "agent_exact": True, "agent_covered": True,
+         "agent_weight_on_true": 0.75, "agent_flagged": True},
+        {"stage": 2, "oracle_item": "res_4", "day_key": None, "agent_key": {"res_2": 0.6, "res_4": 0.4},
+         "agent_exact": False, "agent_covered": True, "agent_weight_on_true": 0.4, "agent_flagged": True},
+        {"stage": 3, "oracle_item": "bunch", "day_key": {"bunch": 1.0}, "exact": True, "covered": True,
+         "weight_on_true": 1.0, "key_source": "config-root", "agent_key": {"res_2": 1.0}, "agent_exact": False},
+        {"stage": 4, "oracle_item": "bunch", "day_key": None, "agent_key": {"bunch": 1.0}, "agent_exact": True,
+         "agent_covered": True, "agent_weight_on_true": 1.0, "agent_replay": True},   # replay: never priced a board
+        {"stage": 5, "oracle_item": "res_2", "day_key": None, "agent_key": None},
+    ]
+    (review / "key_scorecard.json").write_text(json.dumps(rows))
+    sc = re_._scorecard_block(review, 2, include_stage=True)
+    assert sc["tally"] == {"stages_scored": 2, "exact": 1, "covered": 2, "mean_weight_on_true": 0.57,
+                           "by_author": {"human": 0, "agent": 2}}
+    assert sc["stage"]["key_of_record"] == {"author": "agent", "key": {"res_2": 0.6, "res_4": 0.4}, "key_source": "agent",
+                                            "exact": False, "covered": True, "weight_on_true": 0.4, "flagged": True}
+    assert sc["stage"]["agent_key"] == {"res_2": 0.6, "res_4": 0.4}
+    full = re_._scorecard_block(review, None, include_stage=True)
+    assert full["tally"]["stages_scored"] == 3 and full["tally"]["by_author"] == {"human": 1, "agent": 2}
+    assert full["ledger"][2]["key_of_record"]["author"] == "human"          # a human key wins over the agent's
+    assert full["ledger"][3]["key_of_record"] is None and full["ledger"][4]["key_of_record"] is None
