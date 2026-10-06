@@ -1,8 +1,19 @@
-# The single scheduled deployment (NIGHTLY_AGENT_WORKFLOW.md §1 "Decisions", §2.3).
+# The scheduled deployments (NIGHTLY_AGENT_WORKFLOW.md §1 "Decisions", §2.3).
 #
-# One nightly tick at 19:45 UTC (execution jitter ≤ 9 min); one session; the coordinator fans out
-# one self thread per due campaign. Budget is copied onto every fired session ($25.00 = "2500" cents).
-# The deployment is created PAUSED and is never unpaused by provision.py — unpausing is the user's
+# Two ticks a day (owner decision 2026-10-05), one deployment each — a deployment holds exactly one
+# cron schedule (one expression, one IANA timezone), and the two minutes differ:
+#   * `nightly`       19:45 UTC = 12:45 PDT / 11:45 PST — European evening, Asian small hours.
+#                     Kept on UTC on purpose: unchanged since 2026-09-06, and the Mac's 10:30-local
+#                     horizon capture keeps ≥ 75 min of margin either side of the US DST switch.
+#   * `nightly-late`  23:00 America/Los_Angeles (DST-safe) = 07:00–08:00 Europe, race morning —
+#                     FirstCycling posts European start lists overnight European time, after the
+#                     19:45 tick; the Mac's 22:00-local horizon capture hands them over first.
+# Each tick is a separate session from the same release bundle + artifact overlay; the planner
+# skips any unit the other tick already previewed (boards overlaid back) or settled (results.csv),
+# and previews nothing ahead of a stage that is on the road (Asia at 23:00 PT is mid-afternoon).
+# The budget is per fired SESSION ($25.00 = "2500" cents each), so the daily ceiling is $50; a
+# tick with nothing due stops after `plan` and costs little.
+# A deployment is created PAUSED and is never unpaused by provision.py — unpausing is the user's
 # step (README §5). Manual runs work while paused (`ant beta:deployments run`).
 #
 # Deliberately absent: `resources` — no github_repository (the container must not hold a repo
@@ -18,6 +29,20 @@ deployments:
       type: cron
       expression: "45 19 * * *"
       timezone: UTC
+    budget_usd: "25.00"
+    initial_events:
+      - type: user.message
+        text: Run the nightly cycle.
+    create_paused: true
+  - name: nightly-late
+    description: Race-morning cycling coverage (23:00 Pacific) — previews whose start lists appeared overnight European time, plus settles that were not ready at 19:45 UTC.
+    agent: nightly-coordinator
+    environment: cycling-cloud
+    vaults: [cycling-nightly]
+    schedule:
+      type: cron
+      expression: "0 23 * * *"
+      timezone: America/Los_Angeles
     budget_usd: "25.00"
     initial_events:
       - type: user.message

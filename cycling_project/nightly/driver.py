@@ -841,6 +841,14 @@ class Driver:
         # state, and ``has_boards`` would stop it ever being rebuilt.
         preview_window_end = today + dt.timedelta(days=horizon_days - (0 if self._day_has_started(today) else 1))
         latest_archived = c.latest_results_stage() if c.is_stage_race else None
+        # A stage race with a stage on the road right now (race-local day started, not over)
+        # previews nothing beyond it: tomorrow's board needs today's result for its race state,
+        # and ``has_boards`` would stop it being rebuilt once that result lands.  With one tick
+        # this never bit (19:45 UTC is evening in Europe and the small hours in Asia); the second
+        # tick at 23:00 Pacific (2026-10-05) is mid-afternoon in Shanghai, so Guangxi's next
+        # stage is left to the 12:45 tick, which previews it after today's has settled.
+        on_road = c.is_stage_race and self._day_has_started(today) and not self._day_is_over(today) and any(
+            d == str(today) and (n is None or n not in void) for n, d in entries)
         dated = [dt.date.fromisoformat(d) for _n, d in entries if d]
         if dated and max(dated) < today - dt.timedelta(days=FINISHED_AFTER_DAYS):
             return {"campaign": c.slug, "today": str(today), "timezone": c.timezone,
@@ -890,7 +898,9 @@ class Driver:
             # the old ``today < d`` test dropped it.  Once racing can have begun, the window
             # shuts: a board built then would not be a preview.
             research = False
-            if d <= preview_window_end and not self._day_has_started(d) and not has_boards:
+            if d <= preview_window_end and not self._day_has_started(d) and not has_boards and on_road and d > today:
+                flags.append("prior_stage_on_road")
+            elif d <= preview_window_end and not self._day_has_started(d) and not has_boards:
                 due.append("preview")
                 if not prev_settled:
                     flags.append("blocked")

@@ -8,11 +8,14 @@
   checkout (never a worktree: a worktree has no .env, and the capture wants the
   real campaign directories and the real SQLite database).
 
-  Timing: the cloud tick is 19:45 UTC.  This Mac runs on US Pacific time, so
-  10:30 local = 17:30 UTC — about two hours of margin, enough for a slow
-  Cloudflare challenge and a dozen rate-limited requests.  If the tick moves,
-  or the Mac moves timezone, re-time this job: a capture that lands AFTER the
-  tick is a capture the cloud only sees the following night.
+  Timing: this is the first of two daily captures (2026-10-05).  It feeds the
+  cloud tick at 19:45 UTC.  This Mac runs on US Pacific time, so 10:30 local =
+  17:30 UTC in PDT / 18:30 UTC in PST — 75 to 135 minutes of margin, enough for a
+  slow Cloudflare challenge and a dozen rate-limited requests.  The second
+  capture, com.cycling.horizon.late.plist (22:00 local), feeds the 23:00 Pacific
+  tick with the start lists FirstCycling posts overnight European time.  If a
+  tick moves, or the Mac moves timezone, re-time these jobs: a capture that
+  lands AFTER its tick is a capture the cloud only sees on the next one.
 
   A VISIBLE Chrome window is required (SCRAPER_USE_BROWSER=1, headless is
   detected), so the job is deliberately scheduled for the middle of the working

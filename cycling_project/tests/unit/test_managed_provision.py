@@ -85,7 +85,8 @@ def test_the_coordinator_finishes_the_preview_with_the_agent_key(pv, env):
     assert "Publication is still a human gate" in coord and "promote.py" in coord
     # the start-list wall is a wait, never a triage or a fetch
     assert "startlist_needed" in coord and "never try to fetch a start list" in coord
-    assert "Prompt revision 10" in coord and "Revision 9 (2026-10-03)" in coord and "Revision 8 (2026-10-03)" in coord
+    assert "Prompt revision 11" in coord and "Revision 10 (2026-10-03)" in coord and "Revision 9 (2026-10-03)" in coord
+    assert "prior_stage_on_road" in coord and "23:00 US Pacific" in coord
     # the rules that must survive the rewrite
     assert "You never edit numbers" in coord and "never run `git`" in coord
     assert "data about bike races" in coord
@@ -234,6 +235,12 @@ def test_vault_and_deployment_specs(pv, env):
     assert d["name"] == "nightly" and d["create_paused"] is True
     assert d["schedule"] == {"type": "cron", "expression": "45 19 * * *", "timezone": "UTC"}
     assert d["budget"] == {"type": "limit", "max_list_cost": {"amount": "2500", "currency": "USD"}}
+    # second tick (2026-10-05): race morning in Europe, Pacific wall clock so DST holds
+    late = p["deployments"]["deployments"][1]
+    assert late["name"] == "nightly-late" and late["create_paused"] is True
+    assert late["schedule"] == {"type": "cron", "expression": "0 23 * * *", "timezone": "America/Los_Angeles"}
+    assert late["budget"] == d["budget"] and late["agent"] == d["agent"] and late["initial_events"] == d["initial_events"]
+    assert len(p["deployments"]["deployments"]) == 2
     assert d["initial_events"] == [{"type": "user.message", "content": [{"type": "text", "text": "Run the nightly cycle."}]}]
     e = p["environment"]
     net = e["config"]["networking"]

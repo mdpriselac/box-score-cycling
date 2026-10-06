@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Late horizon capture (22:00 local) — the Mac's handover to the 23:00 Pacific
+  cloud tick (added 2026-10-05).  Same command as com.cycling.horizon.plist plus
+  `--max-age-hours 10`, so anything the 10:30 run captured (11.5 h earlier) is
+  re-fetched: FirstCycling posts European start lists overnight European time
+  (Tre Valli Varesine 2026: placeholder at 10:30 PT, 170 riders by 21:44 PT).
+  A separate job because one LaunchAgent runs one argument list at every time.
+  Both jobs append to the same performance_eval/runs/horizon_<date>.log.
+
+  ---- the notes below are the morning job's, and hold for this one too ----
+
+  Runs `python -m cycling_project.nightly.horizon --store auto --route-research`
+  (PAID web research of route facts, per race, capped by --max-route-research;
+  added 2026-10-03, chip Z1) from the MAIN
+  checkout (never a worktree: a worktree has no .env, and the capture wants the
+  real campaign directories and the real SQLite database).
+
+  Timing: this is the first of two daily captures (2026-10-05).  It feeds the
+  cloud tick at 19:45 UTC.  This Mac runs on US Pacific time, so 10:30 local =
+  17:30 UTC in PDT / 18:30 UTC in PST — 75 to 135 minutes of margin, enough for a
+  slow Cloudflare challenge and a dozen rate-limited requests.  The second
+  capture, com.cycling.horizon.late.plist (22:00 local), feeds the 23:00 Pacific
+  tick with the start lists FirstCycling posts overnight European time.  If a
+  tick moves, or the Mac moves timezone, re-time these jobs: a capture that
+  lands AFTER its tick is a capture the cloud only sees on the next one.
+
+  A VISIBLE Chrome window is required (SCRAPER_USE_BROWSER=1, headless is
+  detected), so the job is deliberately scheduled for the middle of the working
+  day, while someone is logged in.  launchd runs it in the user's GUI session
+  (this is a LaunchAgent, not a LaunchDaemon); if the Mac is asleep at 10:30,
+  launchd runs it at wake.
+-->
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.cycling.horizon.late</string>
+
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/zsh</string>
+    <string>-lc</string>
+    <string>cd "$HOME/Documents/Cycling Project" &amp;&amp; mkdir -p performance_eval/runs &amp;&amp; exec caffeinate -i uv run python -m cycling_project.nightly.horizon --store auto --route-research --max-age-hours 10 &gt;&gt; "performance_eval/runs/horizon_$(date +%Y-%m-%d).log" 2&gt;&amp;1</string>
+  </array>
+
+  <key>StartCalendarInterval</key>
+  <dict>
+    <key>Hour</key><integer>22</integer>
+    <key>Minute</key><integer>0</integer>
+  </dict>
+
+  <!-- Credentials come from ~/.config/cycling-project/{env,secrets.env} through
+       cycling_project.nightly.secrets.load_local_env; nothing secret is set here. -->
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>PATH</key>
+    <string>~/.local/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+    <key>PYTHONUNBUFFERED</key>
+    <string>1</string>
+  </dict>
+
+  <key>RunAtLoad</key>
+  <false/>
+  <key>StandardOutPath</key>
+  <string>/tmp/com.cycling.horizon.late.out</string>
+  <key>StandardErrorPath</key>
+  <string>/tmp/com.cycling.horizon.late.err</string>
+</dict>
+</plist>

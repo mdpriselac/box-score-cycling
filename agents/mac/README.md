@@ -5,7 +5,7 @@ the UCI gives it a calendar and results but no field and no route, and Kambi
 lists WorldTour only. Everything else is captured here, on the owner's Mac,
 and handed over as Supabase artifacts.
 
-## `com.cycling.horizon.plist` — daily horizon capture
+## `com.cycling.horizon.plist` + `com.cycling.horizon.late.plist` — horizon capture
 
     uv run python -m cycling_project.nightly.horizon --store auto
 
@@ -20,21 +20,33 @@ run is a `runs` row with phase `horizon` and `host = 'mac'`.
 challenge — so the job is scheduled during the working day, in a logged-in GUI
 session, and the window will appear while it runs. Do not close it mid-run.
 
-Timing: the cloud tick is **19:45 UTC**; the job runs at **10:30 local**
-(17:30 UTC on US Pacific). Re-time it if the tick or the Mac's timezone moves —
-a capture that lands after the tick is only seen the following night.
+Timing: two captures a day (2026-10-05), one per cloud tick:
+
+| Job | Local time | Feeds | Extra flag |
+|---|---|---|---|
+| `com.cycling.horizon` | 10:30 | 19:45 UTC tick (12:45 PDT / 11:45 PST) | — |
+| `com.cycling.horizon.late` | 22:00 | 23:00 Pacific tick (race morning in Europe) | `--max-age-hours 10` |
+
+FirstCycling posts European start lists overnight European time (Tre Valli
+Varesine 2026: placeholder at 10:30 PT, 170 riders at 21:44 PT), so the late
+job re-fetches anything the 10:30 run captured. Both append to the same
+`horizon_<date>.log`. Re-time them if a tick or the Mac's timezone moves — a
+capture that lands after its tick is only seen by the next one. If the Mac is
+asleep at 22:00, launchd runs the job at wake, which may be after the race.
 
 ### Install / remove
 
 ```bash
-cp agents/mac/com.cycling.horizon.plist ~/Library/LaunchAgents/
-launchctl load   ~/Library/LaunchAgents/com.cycling.horizon.plist     # enable
-launchctl unload ~/Library/LaunchAgents/com.cycling.horizon.plist     # disable
-launchctl list | grep com.cycling.horizon                             # is it loaded?
-launchctl start  com.cycling.horizon                                  # run it now
+cp agents/mac/com.cycling.horizon.plist agents/mac/com.cycling.horizon.late.plist ~/Library/LaunchAgents/
+launchctl load   ~/Library/LaunchAgents/com.cycling.horizon.plist          # enable (each job)
+launchctl load   ~/Library/LaunchAgents/com.cycling.horizon.late.plist
+launchctl unload ~/Library/LaunchAgents/com.cycling.horizon.late.plist     # disable
+launchctl list | grep com.cycling.horizon                                  # both loaded?
+launchctl start  com.cycling.horizon.late                                  # run it now
 ```
 
-Reload after editing the plist: `unload`, then `load`.
+Reload after editing a plist: `unload`, then `load`. launchd's own output goes
+to `/tmp/com.cycling.horizon{,.late}.{out,err}`.
 
 ### Where it logs
 
