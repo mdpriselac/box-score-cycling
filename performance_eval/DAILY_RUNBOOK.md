@@ -143,6 +143,24 @@ dated 2026-09-18 in Asia/Shanghai, was listed as settle-due at 03:45 local and
 an acquisition task was filed for a stage nobody had ridden. Under the clock
 rule that same tick previews it instead, which is what it is: a morning read.
 
+**Two ticks a day** (owner decision 2026-10-05): 19:45 UTC (12:45 PDT / 11:45
+PST) and 23:00 America/Los_Angeles (DST-safe; 07:00–08:00 in Europe). FirstCycling
+posts European start lists overnight European time, so the 19:45 tick (Europe's
+evening) often finds a placeholder; the 23:00 tick is race morning in Europe,
+before the 09:00 cut-off, and previews with the real field. What each tick does:
+
+| Race | 19:45 UTC tick | 23:00 PT tick |
+|---|---|---|
+| Europe, one-day | preview the evening before | preview race morning if not yet done; settle the previous day's race |
+| Europe, stage race | settle today's stage, preview tomorrow's | settle anything 19:45 could not; preview today's stage if not yet done |
+| Asia (e.g. Guangxi, UTC+8) | 03:45 local: settle yesterday, preview today | 14:00 local, stage on the road: nothing (a later stage carries flag `prior_stage_on_road`) — unless a settle is still due |
+
+Nothing runs twice: each tick hydrates the other's uploads through the artifact
+overlay, so a previewed unit has boards (`has_boards`) and a settled unit has
+`results.csv`, and the plan drops it. The 23:00 tick's margin is thin — its
+preview must start before 09:00 local in Europe, i.e. within ~60 min of the
+tick (jitter ≤ 9 min, stage 0 several minutes).
+
 ---
 
 ## 3. Before you start
@@ -804,16 +822,18 @@ so mark the config `post_hoc` and the page prints a banner naming the leak.
 
 ---
 
-## 6a. Horizon capture (Mac, daily)
+## 6a. Horizon capture (Mac, twice daily)
 
 The cloud cannot fetch a start list, a stage page or a route: FirstCycling and
 PCS are behind Cloudflare, the UCI serves results only, Kambi lists WorldTour
 only. The Mac captures them the same day and hands them over as artifacts.
 
 ```bash
-# scheduled: agents/mac/com.cycling.horizon.plist, 10:30 local (17:30 UTC),
-# about two hours before the 19:45 UTC tick
-uv run python -m cycling_project.nightly.horizon --store auto
+# scheduled: agents/mac/com.cycling.horizon.plist, 10:30 local, before the 19:45 UTC tick
+uv run python -m cycling_project.nightly.horizon --store auto --route-research
+# scheduled: agents/mac/com.cycling.horizon.late.plist, 22:00 local, before the 23:00 PT tick —
+# --max-age-hours 10 re-fetches what 10:30 captured (the overnight European start lists)
+uv run python -m cycling_project.nightly.horizon --store auto --route-research --max-age-hours 10
 
 # what it would do — no fetch, no writes, fake store
 uv run python -m cycling_project.nightly.horizon --dry-run --days 4
@@ -849,7 +869,9 @@ Notes that bite:
 - **A visible Chrome window is required** (`SCRAPER_USE_BROWSER=1`); run it
   while logged in, and do not close the window mid-run.
 - It is idempotent: anything younger than `--max-age-hours` (20) is reused, so
-  a second run the same day makes no requests at all.
+  a second run the same day makes no requests at all — which is why the 22:00
+  job passes `--max-age-hours 10`. A placeholder list (too few riders, unlinked)
+  never writes a handover, so either run retries it.
 - A campaign that fails files a `horizon_failed` operator task (urgency
   `routine`) and the command still exits **0** — one bad race never costs the
   others their handover. Check the inbox, then re-run just that campaign.
@@ -862,8 +884,9 @@ Notes that bite:
 
 ## 7. Cloud variant — the nightly
 
-One scheduled Managed Agents deployment, 19:45 UTC, one session, one thread
-per due race. The full design is `NIGHTLY_AGENT_WORKFLOW.md`; what matters
+Two scheduled Managed Agents deployments — `nightly` at 19:45 UTC and
+`nightly-late` at 23:00 America/Los_Angeles (§2, "Two ticks a day") — each one
+session with one thread per due race, $25 budget per session. The full design is `NIGHTLY_AGENT_WORKFLOW.md`; what matters
 for this runbook:
 
 1. **`bootstrap`** downloads the newest **approved** release bundle from

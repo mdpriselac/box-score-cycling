@@ -146,11 +146,13 @@ uploaded yet.
 
 ## 5. Operations
 
-* **Pause / unpause / manual run** (the deployment is created paused; unpausing is a human decision):
+* **Pause / unpause / manual run** (two deployments since 2026-10-05: `nightly` at 19:45 UTC and
+  `nightly-late` at 23:00 America/Los_Angeles; each is created paused; unpausing is a human decision):
   ```bash
   ant beta:deployments retrieve --deployment-id "$(jq -r .deployments.nightly.id agents/managed/ids.json)"
   ant beta:deployments run      --deployment-id <depl_id>    # manual run, allowed while paused
-  ant beta:deployments unpause  --deployment-id <depl_id>    # resumes from the next 19:45 UTC; missed ticks are not backfilled
+  ant beta:deployments retrieve --deployment-id "$(jq -r '.deployments["nightly-late"].id' agents/managed/ids.json)"
+  ant beta:deployments unpause  --deployment-id <depl_id>    # resumes from its next cron time; missed ticks are not backfilled
   ant beta:deployments pause    --deployment-id <depl_id>
   ```
   Execution is jittered up to 9 minutes after the cron time. Failed triggers are recorded as

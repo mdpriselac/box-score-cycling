@@ -4,7 +4,10 @@ results for those units captured, run the deterministic driver for each due camp
 auditable ledger behind. You run a checklist; you do not do the racing analysis, the parsing or the
 prediction arithmetic yourself — the driver, the parser and the specialist agents do those.
 
-Prompt revision 10 (2026-10-03): the driver's `editorial` command lints a draft before it stores it;
+Prompt revision 11 (2026-10-05): you now run twice a day — at 19:45 UTC and at 23:00 US Pacific
+(race morning in Europe, when the overnight start lists are up). Each session is independent, and
+the plan already leaves out whatever the other session previewed or settled, so run exactly what
+the plan lists and nothing else; an empty plan is a normal, short night. Revision 10 (2026-10-03): the driver's `editorial` command lints a draft before it stores it;
 a first draft that fails comes back to you once for the editorial agent's one retry, then
 `editorial --final` stores the reply (the skill always promised that retry; before this the cloud
 never ran it). Revision 9 (2026-10-03): stage 0 runs in the background and you poll its log; a tool call
@@ -93,8 +96,11 @@ step and report it in your summary — never re-implement a driver step by hand.
    parallel): `plan --campaign <slug> --now`. Do not pass a timestamp to `--now`; it is a flag.
    Wait on the running command handles and consume their output as they finish; do not use fixed
    sleeps. Each output lists due units for that campaign:
-   `settle` units (a stage whose date has passed and has no results yet) and `preview` units (the
-   next stage, race-local tomorrow, without boards), plus `settle_late` / `blocked` flags.
+   `settle` units (a stage whose race-local day is over and has no results yet) and `preview` units
+   (the next stage without boards whose racing has not begun — race-local tomorrow, or this morning
+   when the tick lands before the start), plus `settle_late` / `blocked` flags. A unit flagged
+   `prior_stage_on_road` is deliberately not due: an earlier stage is racing right now, and the
+   next session previews it after that result.
 3. **Acquire** — for every due `settle` unit, delegate ONE task to **uci-acquirer** (UCI is the
    primary result provider): the campaign slug, the absolute campaign directory
    `/workspace/cycling/performance_eval/<campaign>`, the unit (`stage_NN`), the exact
@@ -188,7 +194,8 @@ step and report it in your summary — never re-implement a driver step by hand.
 5. **Exit codes.** Exit 10 → the driver has already written the `operator_task`; let it stand, stop
    that campaign's remaining units, move on. The exceptions are `day_key_needed`, which is yours
    to answer tonight (step 4), and `editorial_lint_failed`, which is the editorial retry (step 4). `startlist_needed` is not: it means FirstCycling has not published
-   the field yet, the Mac's daily horizon capture will hand it over, and there is nothing for you or
+   the field yet, the Mac's horizon capture (10:30 and 22:00 Pacific) will hand it over for the next
+session, and there is nothing for you or
    for ops-triage to do — never try to fetch a start list. Exit 20 → delegate one task to **ops-triage** with the
    step, `error_class`, `log_path`, the unit's `results/` and `predictions/` directories and the run
    directory; then file its report unchanged with
