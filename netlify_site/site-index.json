@@ -1,14 +1,80 @@
 {
- "generated_at": "2026-10-02 17:29",
+ "generated_at": "2026-10-06 16:44",
  "site_name": "Cycling Race Predictor",
  "races": [
+  {
+   "slug": "tre-valli-varesine",
+   "year": 2026,
+   "name": "Tre Valli Varesine 2026",
+   "short_name": "Tre Valli Varesine 2026",
+   "type": "one_day",
+   "status": "in_progress",
+   "automated": true,
+   "start_date": "2026-10-06",
+   "end_date": "2026-10-06",
+   "blurb": "Nightly model run and results record for Tre Valli Varesine.",
+   "campaign_dir": "performance_eval/tre-valli-varesine-2026",
+   "url": "/race/tre-valli-varesine/2026",
+   "pages": {},
+   "stages": [
+    {
+     "stage": null,
+     "unit": "race",
+     "kind": "race",
+     "date": "2026-10-06",
+     "label": "Tre Valli Varesine",
+     "status": "predicted",
+     "predicted": true,
+     "post_hoc": false,
+     "url": "/race/tre-valli-varesine/2026/prediction",
+     "asset": "/tre-valli-varesine-2026.html"
+    }
+   ],
+   "n_stages": 1,
+   "n_settled": 0,
+   "n_predicted": 1,
+   "post_hoc": false
+  },
+  {
+   "slug": "coppa-bernocchi",
+   "year": 2026,
+   "name": "Coppa Bernocchi 2026",
+   "short_name": "Coppa Bernocchi 2026",
+   "type": "one_day",
+   "status": "settled",
+   "automated": true,
+   "start_date": "2026-10-05",
+   "end_date": "2026-10-05",
+   "blurb": "Nightly model run and results record for Coppa Bernocchi.",
+   "campaign_dir": "performance_eval/coppa-bernocchi-2026",
+   "url": "/race/coppa-bernocchi/2026",
+   "pages": {},
+   "stages": [
+    {
+     "stage": null,
+     "unit": "race",
+     "kind": "race",
+     "date": "2026-10-05",
+     "label": "Coppa Bernocchi (no prediction made)",
+     "status": "settled",
+     "predicted": true,
+     "post_hoc": true,
+     "url": "/race/coppa-bernocchi/2026/prediction",
+     "asset": "/coppa-bernocchi-2026.html"
+    }
+   ],
+   "n_stages": 1,
+   "n_settled": 1,
+   "n_predicted": 1,
+   "post_hoc": true
+  },
   {
    "slug": "giro-dell-emilia",
    "year": 2026,
    "name": "Giro dell'Emilia 2026",
    "short_name": "Giro dell'Emilia 2026",
    "type": "one_day",
-   "status": "upcoming",
+   "status": "settled",
    "automated": true,
    "start_date": "2026-10-03",
    "end_date": "2026-10-03",
@@ -23,7 +89,7 @@
      "kind": "race",
      "date": "2026-10-03",
      "label": "Giro dell'Emilia",
-     "status": "predicted",
+     "status": "settled",
      "predicted": true,
      "post_hoc": false,
      "url": "/race/giro-dell-emilia/2026/prediction",
@@ -31,7 +97,7 @@
     }
    ],
    "n_stages": 1,
-   "n_settled": 0,
+   "n_settled": 1,
    "n_predicted": 1,
    "post_hoc": false
   },
@@ -41,7 +107,7 @@
    "name": "Münsterland Giro 2026",
    "short_name": "Münsterland Giro 2026",
    "type": "one_day",
-   "status": "upcoming",
+   "status": "settled",
    "automated": true,
    "start_date": "2026-10-03",
    "end_date": "2026-10-03",
@@ -56,7 +122,7 @@
      "kind": "race",
      "date": "2026-10-03",
      "label": "Münsterland Giro",
-     "status": "predicted",
+     "status": "settled",
      "predicted": true,
      "post_hoc": false,
      "url": "/race/munsterland-giro/2026/prediction",
@@ -64,7 +130,7 @@
     }
    ],
    "n_stages": 1,
-   "n_settled": 0,
+   "n_settled": 1,
    "n_predicted": 1,
    "post_hoc": false
   },
@@ -74,7 +140,7 @@
    "name": "Tour de Langkawi 2026",
    "short_name": "Tour de Langkawi 2026",
    "type": "stage_race",
-   "status": "in_progress",
+   "status": "settled",
    "automated": true,
    "start_date": "2026-09-27",
    "end_date": "2026-10-04",
@@ -197,7 +263,7 @@
      "kind": "stage",
      "date": "2026-10-03",
      "label": "Stage 7 — Melaka → Batu Pahat, 159.1 km",
-     "status": "predicted",
+     "status": "settled",
      "predicted": true,
      "url": "/race/tour-de-langkawi/2026/stage-07",
      "asset": "/tour-de-langkawi-2026-stage07.html",
@@ -214,16 +280,21 @@
      "kind": "stage",
      "date": "2026-10-04",
      "label": "Stage 8 — Muar → Putrajaya, 183.8 km",
-     "status": "upcoming",
-     "predicted": false,
-     "url": null,
-     "asset": null,
-     "post_hoc": false
+     "status": "settled",
+     "predicted": true,
+     "url": "/race/tour-de-langkawi/2026/stage-08",
+     "asset": "/tour-de-langkawi-2026-stage08.html",
+     "post_hoc": false,
+     "day_key": {
+      "bunch": 0.7,
+      "res_3": 0.22,
+      "res_7": 0.08
+     }
     }
    ],
    "n_stages": 8,
-   "n_settled": 6,
-   "n_predicted": 7,
+   "n_settled": 8,
+   "n_predicted": 8,
    "post_hoc": false
   },
   {
@@ -2387,6 +2458,8 @@
  "default_month": "2026-10",
  "aliases": {
   "/index.html": "/model",
+  "/tre-valli-varesine-2026.html": "/race/tre-valli-varesine/2026/prediction",
+  "/coppa-bernocchi-2026.html": "/race/coppa-bernocchi/2026/prediction",
   "/giro-dell-emilia-2026.html": "/race/giro-dell-emilia/2026/prediction",
   "/munsterland-giro-2026.html": "/race/munsterland-giro/2026/prediction",
   "/tour-de-langkawi-2026-gc.html": "/race/tour-de-langkawi/2026/gc",
@@ -2397,6 +2470,7 @@
   "/tour-de-langkawi-2026-stage05.html": "/race/tour-de-langkawi/2026/stage-05",
   "/tour-de-langkawi-2026-stage06.html": "/race/tour-de-langkawi/2026/stage-06",
   "/tour-de-langkawi-2026-stage07.html": "/race/tour-de-langkawi/2026/stage-07",
+  "/tour-de-langkawi-2026-stage08.html": "/race/tour-de-langkawi/2026/stage-08",
   "/omloop-van-het-houtland-2026.html": "/race/omloop-van-het-houtland/2026/prediction",
   "/cro-race-2026-gc.html": "/race/cro-race/2026/gc",
   "/cro-race-2026-stages.html": "/race/cro-race/2026/stages",
@@ -2510,6 +2584,24 @@
    "chrome": true,
    "active": "model"
   },
+  "/race/tre-valli-varesine/2026": {
+   "asset": "/_frame/race/tre-valli-varesine-2026.html"
+  },
+  "/race/tre-valli-varesine/2026/prediction": {
+   "asset": "/tre-valli-varesine-2026.html",
+   "base": true,
+   "chrome": true,
+   "active": "races"
+  },
+  "/race/coppa-bernocchi/2026": {
+   "asset": "/_frame/race/coppa-bernocchi-2026.html"
+  },
+  "/race/coppa-bernocchi/2026/prediction": {
+   "asset": "/coppa-bernocchi-2026.html",
+   "base": true,
+   "chrome": true,
+   "active": "races"
+  },
   "/race/giro-dell-emilia/2026": {
    "asset": "/_frame/race/giro-dell-emilia-2026.html"
   },
@@ -2575,6 +2667,12 @@
   },
   "/race/tour-de-langkawi/2026/stage-07": {
    "asset": "/tour-de-langkawi-2026-stage07.html",
+   "base": true,
+   "chrome": true,
+   "active": "races"
+  },
+  "/race/tour-de-langkawi/2026/stage-08": {
+   "asset": "/tour-de-langkawi-2026-stage08.html",
    "base": true,
    "chrome": true,
    "active": "races"

@@ -15,7 +15,7 @@
       "number": null,
       "date": "2026-10-08",
       "towns": null,
-      "distance_km": null,
+      "distance_km": 185.0,
       "kind": "one_day"
     }
   ],
