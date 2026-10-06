@@ -41,8 +41,15 @@ def restage_message(specs: list[str]) -> str:
         "An earlier release staged the wrong or no site pages for the units below; the current release "
         "carries the fix. For each line, run exactly that command from /workspace/cycling (the --force "
         "flag makes the driver ignore the unit's completed marker), then report its JSON status and exit "
-        "code. Do not edit any file, config, result or prediction; do not delegate for these; if a command "
-        "exits 20, report it and continue with the next.\n\n" + cmds + "\n"
+        "code. When a command exits 0, redo that unit's editorial draft exactly as your step-4 editorial "
+        "rule says for a succeeded settle (stage_retro) or preview (stage_preview): rebuild the facts "
+        "bundle with run_editorial --facts-only, delegate to editorial, save the reply over "
+        "predictions/<unit>/editorial_draft_<artifact>.json, store it with the driver's `editorial` "
+        "command, and give it the one lint retry with --final if that exits 10 editorial_lint_failed. "
+        "The rebuilt draft replaces one written from an older release's facts, so it is new, not a "
+        "duplicate. Delegating to editorial is the only delegation allowed here. Do not edit any other "
+        "file, config, result or prediction; if a command exits 20, report it and continue with the "
+        "next.\n\n" + cmds + "\n"
     )
 
 
