@@ -400,6 +400,62 @@ def test_a_bad_back_marker_gap_is_blanked_but_a_top_gap_still_rejects(campaign):
     assert not rep.ok and "gaps" in [c["name"] for c in rep.failing]
 
 
+def test_doubled_separator_is_repaired_as_an_absolute_time():
+    """2026-10-07 Tre Valli Varesine place 33: '04::35:45' behind a 4:34:25 winner = +1:20."""
+    assert ui.normalise_result_value("04::35:45") == "04:35:45"
+    assert ui.normalise_result_value("+1::20") == "+1:20"
+    for untouched in ("04:35:45", "+1:20", "", "04::3:45", "04::35:4x", "DNF", "::"):
+        assert ui.normalise_result_value(untouched) is None, untouched
+    doc = {"results": [
+        {"values": {"rank": "1", "firstname": "Winner", "lastname": "One", "result": "4:34:25"}},
+        {"values": {"rank": "2", "firstname": "Second", "lastname": "Two", "result": "+1:15"}},
+        {"values": {"rank": "3", "firstname": "Third", "lastname": "Three", "result": "04::35:45"}},
+        {"values": {"rank": "4", "firstname": "Fourth", "lastname": "Four", "result": ""}},
+    ]}
+    rows = ui.parse_rider_results(doc, "gc")
+    assert rows[0].absolute_seconds == 16465.0
+    assert [r.gap_seconds for r in rows] == [0.0, 75.0, 80.0, 80.0]
+    assert rows[2].result_raw == "04::35:45" and rows[2].result_normalised == "04:35:45"
+
+
+def test_an_unparsed_gap_poisons_its_same_time_run():
+    doc = {"results": [
+        {"values": {"rank": "1", "firstname": "Winner", "lastname": "One", "result": "4:34:25"}},
+        {"values": {"rank": "2", "firstname": "Second", "lastname": "Two", "result": "+1:15"}},
+        {"values": {"rank": "3", "firstname": "Third", "lastname": "Three", "result": "4:3?:45"}},
+        {"values": {"rank": "4", "firstname": "Fourth", "lastname": "Four", "result": ""}},
+        {"values": {"rank": "5", "firstname": "Fifth", "lastname": "Five", "result": "+2:00"}},
+    ]}
+    assert [r.gap_seconds for r in ui.parse_rider_results(doc, "gc")] == [0.0, 75.0, None, None, 120.0]
+
+
+def test_a_doubled_separator_back_marker_settles_with_a_warning(campaign):
+    """Place 33 (+5:29 behind a 4:15:09 winner) published as the absolute '04::20:38'."""
+    _set_result(campaign, 33, "04::20:38")
+    rep = _ingest(campaign)
+    assert rep.ok, rep.failing
+    assert any("malformed result strings repaired" in w and "'04::20:38'" in w for w in rep.warnings)
+    gaps = next(c for c in rep.checks if c.name == "gaps")
+    assert gaps.detail["repaired"] and not gaps.detail["blanked"]
+    rows = {r["place"]: r for r in csv.DictReader((campaign / "results/stage_14/results.csv").open(encoding="utf-8"))}
+    assert rows["33"]["gap"] == rows["32"]["gap"] != ""                  # +5:29, same as place 32
+
+
+def test_an_unparsed_back_marker_gap_is_blanked_but_a_top_gap_still_rejects(campaign):
+    last = _set_result(campaign, 33, "04:2?:38")
+    rep = _ingest(campaign)
+    assert rep.ok, rep.failing
+    assert any("unparsed gaps outside the top gate blanked" in w for w in rep.warnings)
+    rows = {r["place"]: r for r in csv.DictReader((campaign / "results/stage_14/results.csv").open(encoding="utf-8"))}
+    assert rows["33"]["gap"] == "" and rows["34"]["gap"] != ""
+    # the same unreadable time inside the top gate (TOP_STAGE) still refuses the result
+    shutil.rmtree(campaign / "results/stage_14/uci"); shutil.copytree(UCI, campaign / "results/stage_14/uci")
+    (campaign / "results/stage_14/results.csv").unlink()
+    _set_result(campaign, ui.TOP_STAGE, "04:2?:38")
+    rep = _ingest(campaign, write=False)
+    assert not rep.ok and "gaps" in [c["name"] for c in rep.failing]
+
+
 def _rename_rider(campaign, old_last: str, new_last: str) -> None:
     """Rename a rider consistently in stage.json (results + podium) and gc.json."""
     for f in ("stage.json", "gc.json"):

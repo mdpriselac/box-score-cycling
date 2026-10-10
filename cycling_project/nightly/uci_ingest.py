@@ -88,6 +88,9 @@ REQUIRED_KINDS = tuple(k for k, (_t, req) in CLASSIFICATIONS.items() if req)
 ONE_DAY_STAGE_KEY = "race"      # what a one-day results.json puts in its ``stage`` field
 ABSOLUTE_TIME_RE = re.compile(r"^\d{1,2}:\d{2}:\d{2}(?:\.\d+)?$|^\d{1,3}:\d{2}(?:\.\d+)?$")
 GAP_RE = re.compile(r"^\+\s*(\d+(?::\d{2}){0,2}(?:\.\d+)?)$")
+# A recoverable UCI typo: a well-formed time whose separators are doubled (2026-10-07 Tre Valli
+# Varesine place 33: '04::35:45' = absolute 4:35:45).  Nothing else is repaired.
+REPEATED_SEPARATOR_RE = re.compile(r"^\+?\s*\d+(?::+\d{2}){1,2}(?:\.\d+)?$")
 DISCIPLINE_FOR_ROAD = "ROA"
 # Identity policy inside the top-15 stage / top-20 GC gate (operator ruling 2026-09-16).
 IDENTITY_POLICIES = ("strict", "provisional")
@@ -115,6 +118,7 @@ class UciRow:
     gap_seconds: Optional[float] = None
     absolute_seconds: Optional[float] = None
     same_time: bool = False
+    result_normalised: Optional[str] = None     # set when a recoverable typo in ``result_raw`` was repaired
 
     @property
     def rider(self) -> ident.UciRider:
@@ -170,6 +174,20 @@ def parse_result_value(value: str) -> Tuple[Optional[float], Optional[float], bo
     return None, None, False
 
 
+def normalise_result_value(value: str) -> Optional[str]:
+    """The repaired string when ``value`` is a recoverable typo (doubled ``:`` separators), else None.
+
+    ``'04::35:45'`` → ``'04:35:45'``; a string without a doubled separator, or one that would
+    still not be a time after collapsing, is not touched.
+    """
+    v = (value or "").strip()
+    if "::" not in v or not REPEATED_SEPARATOR_RE.match(v):
+        return None
+    fixed = re.sub(r":{2,}", ":", v)
+    gap, absolute, _same = parse_result_value(fixed)
+    return fixed if gap is not None or absolute is not None else None
+
+
 def parse_rider_results(doc: Dict[str, Any], kind: str) -> List[UciRow]:
     rows: List[UciRow] = []
     if not isinstance(doc, dict) or not isinstance(doc.get("results"), list):
@@ -192,7 +210,9 @@ def parse_rider_results(doc: Dict[str, Any], kind: str) -> List[UciRow]:
                      age=int(age) if isinstance(age, int) or (isinstance(age, str) and age.isdigit()) else None,
                      nationality=str(v.get("nationality") or "").strip() or None)
         if status == "classified":
-            gap, absolute, same = parse_result_value(result)
+            fixed = normalise_result_value(result)
+            row.result_normalised = fixed
+            gap, absolute, same = parse_result_value(fixed if fixed is not None else result)
             row.same_time = same
             if winner_abs is None and place == 1:
                 row.absolute_seconds = absolute
@@ -210,8 +230,9 @@ def parse_rider_results(doc: Dict[str, Any], kind: str) -> List[UciRow]:
                 # publish ``0:01`` / ``0:14`` as gaps.  A post-winner value
                 # smaller than the winning time cannot be an absolute finish.
                 row.gap_seconds = absolute
-            if row.gap_seconds is not None:
-                prev_gap = row.gap_seconds
+            # An unparsed row poisons the same-time run behind it: those riders share ITS
+            # (unknown) time, not the last parsed one.
+            prev_gap = row.gap_seconds
         rows.append(row)
     return rows
 
@@ -482,9 +503,18 @@ def ingest(campaign_dir: Path, unit: str, *, crosswalk_csv: Optional[Path] = Non
     checks.append(Check("riders_unique", not dup and not dup_gc, {"stage_duplicates": dup[:10], "gc_duplicates": dup_gc[:10]}))
     problems: List[str] = []
     soft: List[str] = []
+    unparsed_soft: List[str] = []
+    repaired: List[str] = []
     prev = -1.0
     for r in classified:
+        if r.result_normalised is not None:
+            repaired.append(f"place {r.place}: {r.result_raw!r} read as {r.result_normalised!r} (gap {r.gap_seconds})")
         if r.gap_seconds is None:
+            if r.place is not None and r.place > TOP_STAGE:
+                # 2026-10-07 Tre Valli Varesine: a back-marker's time the parser cannot read.  Outside
+                # the top gate it is blanked like a non-monotone slip; inside it the result is refused.
+                unparsed_soft.append(f"place {r.place}: gap unparsed ({r.result_raw!r}) — blanked")
+                continue
             problems.append(f"place {r.place}: gap unparsed ({r.result_raw!r})")
             continue
         if r.gap_seconds < 0:
@@ -501,8 +531,13 @@ def ingest(campaign_dir: Path, unit: str, *, crosswalk_csv: Optional[Path] = Non
         prev = max(prev, r.gap_seconds)
     if soft:
         report.warnings.append("non-monotone gaps outside the top gate blanked: " + "; ".join(soft[:8]))
+    if unparsed_soft:
+        report.warnings.append("unparsed gaps outside the top gate blanked: " + "; ".join(unparsed_soft[:8]))
+    if repaired:
+        report.warnings.append("malformed result strings repaired (doubled separators): " + "; ".join(repaired[:8]))
     checks.append(Check("gaps", not problems and winner is not None and winner.absolute_seconds is not None,
-                        {"winning_time": report.winning_time, "problems": problems[:20], "blanked": soft[:20]}))
+                        {"winning_time": report.winning_time, "problems": problems[:20], "blanked": (soft + unparsed_soft)[:20],
+                         "repaired": repaired[:20]}))
     checks.append(Check("statuses", not unknown, {"unrecognised": [(r.rank_text, r.result_raw, r.display) for r in unknown][:10],
                                                    "abandons": sorted({r.status for r in abandons})}))
 
