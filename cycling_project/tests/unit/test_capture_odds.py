@@ -516,3 +516,22 @@ def test_wait_for_stage_polls_until_the_market_posts(campaign, monkeypatch):
                   "--poll-minutes", "15"], sleep=slept.append)
     assert rc == 0
     assert 15 * 60 in slept, "one 15-minute poll wait before the market posted"
+
+
+def test_one_day_race_event_is_keyed_race():
+    """A one-day race's Kambi event ('Il Lombardia 2026') has no stage number, so it used to
+    go unrecorded and the driver (which looks up kambi_event_ids['race']) never priced the board."""
+    mod = _load_module()
+    one_day = {"stages": [{"number": None, "date": "2026-10-10", "kind": "one_day"}]}
+    result = {"event_ids": {}, "unkeyed_event_ids": ["1029420799"]}
+    mod.one_day_race_key(one_day, result, log=lambda *_: None)
+    assert result["event_ids"] == {"race": "1029420799"}
+
+    two = {"event_ids": {}, "unkeyed_event_ids": ["1", "2"]}
+    mod.one_day_race_key(one_day, two, log=lambda *_: None)
+    assert two["event_ids"] == {}                      # ambiguous: never guess
+
+    stage_race = {"stages": [{"number": 1, "kind": "stage"}]}
+    third = {"event_ids": {}, "unkeyed_event_ids": ["3"]}
+    mod.one_day_race_key(stage_race, third, log=lambda *_: None)
+    assert third["event_ids"] == {}

@@ -582,6 +582,7 @@ def capture_snapshot(hit: dict, out_dir: Path, hhmm: str, *, log=print,
         "csv_file": f"win_odds_{hhmm}.csv",
         "event_ids": {k: v for k, v in
                       ((event_key(ev), str(ev["id"])) for ev in events) if k},
+        "unkeyed_event_ids": [str(ev["id"]) for ev in events if event_key(ev) is None],
         "events": len(markets),
         "overrounds": prov["overrounds"],
     }
@@ -796,6 +797,7 @@ def main(argv: list[str] | None = None, *, sleep=time.sleep) -> int:
 
     # --- normal path -------------------------------------------------------
     result = capture_snapshot(hit, out_dir, hhmm, log=log, sleep=sleep)
+    one_day_race_key(campaign, result, log=log)
     summary.update({"status": "ok", "brand": hit["brand"], **result})
     if campaign_dir and not args.no_write_campaign:
         record_ids(campaign_dir, campaign, result["event_ids"], log=log)
@@ -803,6 +805,25 @@ def main(argv: list[str] | None = None, *, sleep=time.sleep) -> int:
     if args.json:
         print(json.dumps(summary, indent=1))
     return 0
+
+
+def is_one_day(campaign: dict) -> bool:
+    stages = campaign.get("stages") or []
+    return bool(stages) and all((st or {}).get("kind") == "one_day" for st in stages)
+
+
+def one_day_race_key(campaign: dict, result: dict, *, log=print) -> None:
+    """A one-day race's event has no stage number and no classification word, so
+    ``event_key`` returns None and its id was never recorded: the driver looks the id
+    up under the unit ``race``.  Key it there when exactly one such event matched."""
+    if not is_one_day(campaign) or "race" in result["event_ids"]:
+        return
+    unkeyed = result.get("unkeyed_event_ids") or []
+    if len(unkeyed) == 1:
+        result["event_ids"]["race"] = unkeyed[0]
+        log(f"One-day race: event {unkeyed[0]} recorded as 'race'")
+    elif unkeyed:
+        log(f"One-day race: {len(unkeyed)} unkeyed events matched; not guessing which is the race")
 
 
 def record_ids(campaign_dir: Path, campaign: dict, ids: dict[str, str], *,
