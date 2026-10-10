@@ -91,7 +91,14 @@ def parse_start_list(html_content: str) -> List[Team]:
     
     try:
         soup = BeautifulSoup(html_content, 'html.parser')
-        
+
+        # FirstCycling's 2026-10 redesign: <div class="start-grid"> holding one
+        # <div class="start-team"> per team (name in .start-team-head, riders in
+        # table.rider-table).  The old wrapper/.back layout is kept below.
+        grid = soup.find('div', class_='start-grid')
+        if grid is not None:
+            return _parse_start_grid(grid)
+
         # Find the wrapper div
         wrapper = soup.find('div', id='wrapper')
         if not wrapper:
@@ -188,6 +195,35 @@ def parse_start_list(html_content: str) -> List[Team]:
     except Exception as e:
         logger.error(f"Error parsing startlist HTML: {e}")
         raise
+
+
+def _parse_start_grid(grid) -> List[Team]:
+    """Teams and riders from the 2026-10 ``start-grid`` layout."""
+    teams = []
+    for block in grid.find_all('div', class_='start-team'):
+        head = block.find(class_='start-team-head')
+        team_link = head.find('a') if head else None
+        team_name = (team_link.get_text(strip=True) if team_link
+                     else head.get_text(strip=True) if head else "")
+        team_id = extract_team_id(team_link.get('href')) if team_link else None
+        riders = []
+        table = block.find('table')
+        for row in (table.find_all('tr') if table else []):
+            cells = row.find_all('td')
+            if len(cells) < 2:
+                continue
+            rider_link = cells[1].find('a')
+            riders.append(Rider(
+                name=cells[1].get_text(strip=True, separator=' '),
+                rider_id=extract_rider_id(rider_link.get('href')) if rider_link else None,
+                number=cells[0].get_text(strip=True),
+                team_name=team_name,
+                team_id=team_id,
+            ))
+        teams.append(Team(name=team_name, team_id=team_id, riders=riders))
+        logger.info(f"Added team {team_name} with {len(riders)} riders")
+    logger.info(f"Parsing complete. Found {len(teams)} teams with a total of {sum(len(t.riders) for t in teams)} riders")
+    return teams
 
 
 def get_startlist_stats(teams: List[Team]) -> Dict[str, Any]:

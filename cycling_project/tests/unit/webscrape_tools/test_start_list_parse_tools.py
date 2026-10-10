@@ -120,3 +120,30 @@ def test_team_dataclass():
     assert len(team.riders) == 2
     assert team.riders[0].name == "Rider 1"
     assert team.riders[1].name == "Rider 2"
+
+START_GRID_HTML = """
+<html><body><div class="start-grid">
+<div class="start-team"><div class="start-team-head"><span class="fc-ellipsis">
+<a href="team.php?l=25778" title="UAE Team Emirates-XRG">UAE Team Emirates-XRG</a></span></div>
+<table class="fc-table rider-table"><tbody>
+<tr class="fc-filter-row"><td class="center is-muted">1</td>
+<td class="fc-ellipsis"><span class="flag flag-us"></span><a href="rider.php?r=48539&amp;y=2026"><span class="surname">McNulty</span> Brandon</a></td></tr>
+<tr class="fc-filter-row"><td class="center is-muted">3</td>
+<td class="fc-ellipsis"><a href="rider.php?r=155993&amp;y=2026"><span class="surname">del Toro</span> Isaac</a></td></tr>
+</tbody></table></div>
+<div class="start-team"><div class="start-team-head"><a href="team.php?l=7">Team Y</a></div>
+<table class="rider-table"><tbody>
+<tr><td>11</td><td><a href="rider.php?r=42&amp;y=2026"><span class="surname">Rider</span> B</a></td></tr>
+</tbody></table></div>
+</div></body></html>
+"""
+
+
+def test_parse_start_list_start_grid_layout():
+    """FirstCycling's 2026-10 redesign (div.start-grid / div.start-team) parses like the old layout."""
+    teams = parse_start_list(START_GRID_HTML)
+    assert [t.name for t in teams] == ["UAE Team Emirates-XRG", "Team Y"]
+    assert teams[0].team_id == "25778"
+    assert [(r.number, r.name, r.rider_id) for r in teams[0].riders] == [
+        ("1", "McNulty Brandon", "48539"), ("3", "del Toro Isaac", "155993")]
+    assert teams[1].riders[0].team_name == "Team Y"
