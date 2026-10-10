@@ -23,7 +23,18 @@ Acceptance policy (auto-accept threshold ``AUTO_ACCEPT`` = 0.97):
   surname: ``BUITRAGO SANCHEZ Santiago`` ↔ ``Buitrago Santiago``; or the
   FirstCycling name carries an extra token), given name identical, unique in
   scope, and either team compatible or age consistent → 0.97 (evidence
-  recorded);
+  recorded). When several riders match that way, one is picked only by
+  positive evidence: the only one in the race's field (campaign roster or
+  cached start list), else the only one age, else team, fits while every
+  other one conflicts;
+* a hyphenated FirstCycling surname of which UCI keeps the first half
+  (``FISHER Finn Lachlan Fox`` ↔ ``Fisher-Black Finn``), given name
+  identical, unique, team matching → 0.97 (else a proposal);
+* a nickname together with an extra UCI given name (``WRIGHT Alfred
+  Brockwell`` ↔ ``Wright Fred``), unique → a named proposal (≤ 0.95, the
+  plain nickname rule's scale);
+* FirstCycling initials for two or more UCI given names (``AUGUST Andrew
+  Jacob`` ↔ ``August AJ``), unique, team matching → a named proposal (0.90–0.92);
 * nickname-resolved names (``Chris`` ↔ ``Christopher``), homonyms, fuzzy
   similarity, age/nationality-only support, and extended names without age or
   team corroboration → a proposal (< 0.97), never an acceptance.
@@ -103,6 +114,7 @@ class Candidate:
     teams: frozenset                            # raw team strings seen for the rider
     source: str                                 # 'roster' | 'crosswalk' | 'db'
     internal_id: Optional[int] = None
+    on_startlist: bool = True                   # in the race's field (campaign roster / cached start list)
 
     @property
     def key(self) -> str:
@@ -140,7 +152,8 @@ def roster_candidates(roster: Dict[str, Dict[str, str]]) -> List[Candidate]:
     for fc, pres in roster.items():
         by = pres.get("dob") or ""
         out.append(Candidate(str(fc), pres.get("name", ""), int(by) if str(by).isdigit() else None,
-                             frozenset(t for t in (pres.get("team"),) if t), "roster"))
+                             frozenset(t for t in (pres.get("team"),) if t), "roster",
+                             on_startlist=str(pres.get("on_startlist", "1")) != "0"))
     return out
 
 
@@ -159,7 +172,8 @@ def crosswalk_candidates(csv_path: Optional[Path]) -> List[Candidate]:
             continue
         by = str(r.get("birth_year") or "")
         out.append(Candidate(fc, name, int(by) if by.isdigit() else None, frozenset(), "crosswalk",
-                             int(r["internal_rider_id"]) if str(r.get("internal_rider_id") or "").isdigit() else None))
+                             int(r["internal_rider_id"]) if str(r.get("internal_rider_id") or "").isdigit() else None,
+                             on_startlist=False))
     return out
 
 
@@ -171,7 +185,8 @@ def db_candidates(db_path: Optional[Path], fc_race_id: Optional[str], year: Opti
     except Exception as exc:  # noqa: BLE001 — the DB is the last-resort scope
         logger.warning("uci identity: riders table unavailable: %s", exc)
         return []
-    return [Candidate(r.fc_rider_id, r.name, r.birth_year, r.teams, "db", r.internal_id) for r in index.riders]
+    return [Candidate(r.fc_rider_id, r.name, r.birth_year, r.teams, "db", r.internal_id, on_startlist=False)
+            for r in index.riders]
 
 
 # ---------------------------------------------------------------------------
@@ -304,6 +319,97 @@ def _extended_match(rider: UciRider, cand: Candidate) -> bool:
     return False
 
 
+# Given names that share a nickname without one being the other's canonical form
+# (``crosswalk.NICKNAMES`` maps ``fred`` → ``frederick`` only; Fred Wright is an Alfred).
+EXTRA_NICKNAMES: Dict[str, Sequence[str]] = {"fred": ("alfred",), "alf": ("alfred",)}
+
+
+def _given_forms(token: str) -> Set[str]:
+    return {token, NICKNAMES.get(token, token), *EXTRA_NICKNAMES.get(token, ())}
+
+
+def _nickname_equivalent(a: str, b: str) -> bool:
+    return a != b and bool(_given_forms(a) & _given_forms(b))
+
+
+def _nickname_extended_match(rider: UciRider, cand: Candidate) -> bool:
+    """``_extended_match`` with nickname-resolved given names (``WRIGHT Alfred Brockwell`` ↔
+    ``Wright Fred``): every FC token is a UCI token or a nickname of a UCI given name, at least
+    one surname token matches exactly and at least one given name matches only by nickname."""
+    given = name_tokens(rider.firstname)
+    surname = set(name_tokens(rider.lastname))
+    cand_tokens = name_tokens(cand.name)
+    if not given or not surname or len(cand_tokens) < 2 or not (set(cand_tokens) & surname):
+        return False
+    via_nick, covered = False, set()
+    for t in cand_tokens:
+        if t in surname or t in given:
+            covered.add(t)
+            continue
+        nick = [g for g in given if _nickname_equivalent(t, g)]
+        if not nick:
+            return False
+        via_nick = True
+        covered.update(nick)
+    # the UCI name must really be extended; a plain nickname is the nickname rule's business
+    return via_nick and bool((set(given) | surname) - covered)
+
+
+def _hyphen_half_match(rider: UciRider, cand: Candidate) -> bool:
+    """UCI drops half of a hyphenated FC surname (``FISHER Finn Lachlan Fox`` ↔ ``Fisher-Black Finn``).
+
+    The FC name's leading word is the hyphenated surname: its first half must be a UCI surname
+    token, its other half must appear nowhere in the UCI name, and every remaining FC token must
+    be a UCI given name (so a given name always matches as well)."""
+    words = (cand.name or "").split()
+    if len(words) < 2 or "-" not in words[0]:
+        return False
+    halves = name_tokens(words[0])
+    rest = name_tokens(" ".join(words[1:]))
+    given = set(name_tokens(rider.firstname))
+    surname = set(name_tokens(rider.lastname))
+    if len(halves) < 2 or not rest or not given or not surname:
+        return False
+    if halves[0] not in surname or any(h in surname | given for h in halves[1:]):
+        return False
+    return set(rest) <= given
+
+
+def _initials_match(rider: UciRider, cand: Candidate) -> bool:
+    """FirstCycling writes the UCI given names as initials (``AUGUST Andrew Jacob`` ↔ ``August AJ``
+    or ``August A.J.``): the FC surname tokens equal the UCI surname tokens and the remaining FC
+    tokens, joined in order, spell the initials of at least two UCI given names."""
+    given = name_tokens(rider.firstname)
+    surname = name_tokens(rider.lastname)
+    if len(given) < 2 or not surname:
+        return False
+    cand_tokens = name_tokens(cand.name)
+    rest = [t for t in cand_tokens if t not in surname]
+    return ({t for t in cand_tokens if t in surname} == set(surname) and bool(rest)
+            and "".join(rest) == "".join(g[0] for g in given))
+
+
+def _disambiguate(rider: UciRider, ext: List[Candidate], season_year: Optional[int]):
+    """``(candidate, why)`` when exactly one of several extended-name candidates survives positive
+    evidence — being in the race's field, else age, else team — and ``(None, None)`` otherwise."""
+    on_list = [c for c in ext if c.on_startlist]
+    if len(on_list) == 1:
+        return on_list[0], f"the only one of {len(ext)} surname-extended candidates in the race's field"
+    pool = on_list or ext
+    for label, test in (("age", lambda c: _age_ok(rider, c, season_year)), ("team", lambda c: _team_ok(rider, c))):
+        fits = [c for c in pool if test(c) is True]
+        if len(fits) == 1 and all(test(c) is False for c in pool if c is not fits[0]):
+            return fits[0], f"{label} discriminates among {len(ext)} surname-extended candidates"
+    return None, None
+
+
+def _unique_rule_candidate(rider: UciRider, index: CandidateIndex, rule):
+    """``(unique candidate or None, every match)`` for one name rule, preferring the race's field."""
+    hits = [c for c in index.sharing_tokens(name_tokens(rider.full_name)) if rule(rider, c)]
+    pool = [c for c in hits if c.on_startlist] or hits
+    return (pool[0] if len(pool) == 1 else None), hits
+
+
 def resolve_rider(rider: UciRider, index: CandidateIndex, *, season_year: Optional[int],
                   aliases: Optional[Dict[str, Dict[str, str]]] = None) -> Resolution:
     alias = (aliases or {}).get(rider.key)
@@ -347,10 +453,18 @@ def resolve_rider(rider: UciRider, index: CandidateIndex, *, season_year: Option
 
     if ACCEPT_EXTENDED_SURNAMES:
         ext = [c for c in index.sharing_tokens(name_tokens(rider.full_name)) if _extended_match(rider, c)]
+        picked_why = None
+        if len(ext) > 1:
+            # 2026-10-07 Tre Valli: BUITRAGO SANCHEZ Santiago matched Buitrago Santiago (in the field)
+            # and Sanchez Santiago (riders table only).  Positive evidence may single one out.
+            picked, picked_why = _disambiguate(rider, ext, season_year)
+            if picked is not None:
+                ext = [picked]
         if len(ext) == 1:
             c = ext[0]
             age, team = _age_ok(rider, c, season_year), _team_ok(rider, c)
-            reasons = [f"surname extended on one side (uci {rider.display!r} vs fc {c.name!r})", "given name identical", "unique in scope"]
+            reasons = [f"surname extended on one side (uci {rider.display!r} vs fc {c.name!r})", "given name identical",
+                       picked_why or "unique in scope"]
             if age is False:
                 return Resolution(rider, c, 0.40, reasons + [f"age {rider.age} inconsistent with birth year {c.birth_year}"])
             if age is True:
@@ -364,7 +478,50 @@ def resolve_rider(rider: UciRider, index: CandidateIndex, *, season_year: Option
         if len(ext) > 1:
             return Resolution(rider, None, 0.50, ["surname-extended match is ambiguous"], ext)
 
+        # Hyphenated FC surname, UCI keeps only its first half: given name identical, team must agree.
+        c, hits = _unique_rule_candidate(rider, index, _hyphen_half_match)
+        if c is not None:
+            age, team = _age_ok(rider, c, season_year), _team_ok(rider, c)
+            reasons = [f"uci {rider.display!r} keeps the first half of hyphenated fc surname {c.name!r}",
+                       "given name identical", "unique in scope"]
+            if age is False:
+                return Resolution(rider, c, 0.40, reasons + [f"age {rider.age} inconsistent with birth year {c.birth_year}"])
+            if age is True:
+                reasons.append(f"age {rider.age} consistent with birth year {c.birth_year}")
+            if team is True:
+                return Resolution(rider, c, 0.97, reasons + ["team matches"])
+            return Resolution(rider, c, 0.80, reasons + ["team differs or unknown (proposal only)"])
+        if len(hits) > 1:
+            return Resolution(rider, None, 0.50, ["hyphenated-surname match is ambiguous"], hits)
+
     tokens = name_tokens(rider.full_name)
+
+    # Nickname plus an extra UCI given name (WRIGHT Alfred Brockwell ↔ Wright Fred): a named
+    # proposal on the plain nickname rule's scale (never above 0.95), never an acceptance.
+    c, hits = _unique_rule_candidate(rider, index, _nickname_extended_match)
+    if c is not None:
+        age, team = _age_ok(rider, c, season_year), _team_ok(rider, c)
+        reasons = [f"extended name after nickname resolution (uci {rider.display!r} vs fc {c.name!r}; proposal only)",
+                   "unique in scope"]
+        if age is False:
+            return Resolution(rider, c, 0.40, reasons + [f"age {rider.age} inconsistent with birth year {c.birth_year}"])
+        conf = 0.85
+        if age is True:
+            conf, reasons = 0.92, reasons + [f"age {rider.age} consistent with birth year {c.birth_year}"]
+        if team is True:
+            conf, reasons = min(0.95, conf + 0.03), reasons + ["team matches"]
+        return Resolution(rider, c, conf, reasons)
+    if len(hits) > 1:
+        return Resolution(rider, None, 0.50, ["nickname-extended match is ambiguous"], hits)
+
+    # FirstCycling initials for the UCI given names (AUGUST Andrew Jacob ↔ August AJ): a named
+    # proposal, never an acceptance, and only when the team agrees.
+    c, hits = _unique_rule_candidate(rider, index, _initials_match)
+    if c is not None and _team_ok(rider, c) is True and _age_ok(rider, c, season_year) is not False:
+        why = [f"fc given name in {c.name!r} = initials of the uci given names (proposal only)", "unique in scope", "team matches"]
+        if _age_ok(rider, c, season_year) is True:
+            return Resolution(rider, c, 0.92, why + [f"age {rider.age} consistent with birth year {c.birth_year}"])
+        return Resolution(rider, c, 0.90, why)
     nick_key = " ".join(sorted({NICKNAMES.get(t, t) for t in tokens}))
     if nick_key != key:
         nick = [c for c in index.sharing_tokens(tokens) if " ".join(sorted({NICKNAMES.get(t, t) for t in name_tokens(c.name)})) == nick_key]

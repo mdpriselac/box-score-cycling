@@ -320,6 +320,103 @@ def test_unique_extended_uci_name_uses_matching_age_when_team_history_is_stale()
     assert "age corroborates unique name" in "; ".join(res.reasons)
 
 
+# --- 2026-10-07 Tre Valli Varesine misses (owner-confirmed; FC names from the race's start list) ---
+
+def _field(*cands):
+    return ident.CandidateIndex([ident.Candidate(*c[:5], on_startlist=c[5] if len(c) > 5 else True) for c in cands])
+
+
+def test_nickname_plus_extra_given_name_resolves_wright():
+    index = _field(("63055", "Wright Fred", 1999, frozenset({"Bahrain Victorious"}), "roster"),
+                   ("1", "Wright Peter", 1999, frozenset({"Bahrain Victorious"}), "roster"))
+    res = ident.resolve_rider(ident.UciRider("Alfred Brockwell", "WRIGHT", team="BAHRAIN VICTORIOUS", age=27),
+                              index, season_year=2026)
+    # named, at the plain nickname rule's ceiling: nicknames are proposals, never acceptances
+    assert res.fc_rider_id == "63055" and not res.accepted and res.confidence == 0.95
+    assert "nickname resolution" in "; ".join(res.reasons)
+
+
+def test_nickname_plus_extra_given_name_negatives():
+    # an age conflict demotes the named candidate
+    index = _field(("63055", "Wright Fred", 1990, frozenset({"Bahrain Victorious"}), "roster"))
+    res = ident.resolve_rider(ident.UciRider("Alfred Brockwell", "WRIGHT", team="BAHRAIN VICTORIOUS", age=27),
+                              index, season_year=2026)
+    assert res.fc_rider_id == "63055" and res.confidence == 0.40
+    # Alfred is not a Frederick: the nickname table is not transitive
+    index = _field(("9", "Wright Frederick", 1999, frozenset({"Bahrain Victorious"}), "roster"))
+    res = ident.resolve_rider(ident.UciRider("Alfred Brockwell", "WRIGHT", team="BAHRAIN VICTORIOUS", age=27),
+                              index, season_year=2026)
+    assert not res.accepted
+
+
+def test_first_half_of_a_hyphenated_surname_resolves_fisher_black():
+    index = _field(("75998", "Fisher-Black Finn", 2001, frozenset({"Red Bull - BORA - hansgrohe"}), "roster"),
+                   ("2", "Fisher Tom", 2001, frozenset({"Red Bull - BORA - hansgrohe"}), "roster"))
+    res = ident.resolve_rider(ident.UciRider("Finn Lachlan Fox", "FISHER", team="RED BULL - BORA - HANSGROHE", age=25),
+                              index, season_year=2026)
+    assert res.accepted and res.fc_rider_id == "75998"
+    assert "hyphenated fc surname" in "; ".join(res.reasons)
+
+
+def test_hyphen_half_needs_the_team_and_a_unique_candidate():
+    rider = ident.UciRider("Finn Lachlan Fox", "FISHER", team="RED BULL - BORA - HANSGROHE", age=25)
+    other_team = _field(("75998", "Fisher-Black Finn", 2001, frozenset({"Other Team"}), "roster"))
+    res = ident.resolve_rider(rider, other_team, season_year=2026)
+    assert res.fc_rider_id == "75998" and not res.accepted
+    two = _field(("75998", "Fisher-Black Finn", 2001, frozenset({"Red Bull - BORA - hansgrohe"}), "roster"),
+                 ("3", "Fisher-Jones Finn", 2001, frozenset({"Red Bull - BORA - hansgrohe"}), "roster"))
+    res = ident.resolve_rider(rider, two, season_year=2026)
+    assert res.fc_rider_id is None and not res.accepted and "ambiguous" in "; ".join(res.reasons)
+    # a given name alone never matches: the hyphen's first half must be the UCI surname
+    res = ident.resolve_rider(ident.UciRider("Finn", "BLACK", team="RED BULL - BORA - HANSGROHE"), other_team, season_year=2026)
+    assert not res.accepted
+
+
+def test_ambiguous_extended_surname_prefers_the_rider_in_the_field():
+    """Sanchez Santiago (75464, b. 2000) came from the riders table, not the Tre Valli start list."""
+    index = _field(("81835", "Buitrago Santiago", 1999, frozenset({"Bahrain Victorious"}), "roster", True),
+                   ("75464", "Sanchez Santiago", 2000, frozenset(), "roster", False))
+    rider = ident.UciRider("Santiago", "BUITRAGO SANCHEZ", team="BAHRAIN VICTORIOUS", age=27)
+    res = ident.resolve_rider(rider, index, season_year=2026)
+    assert res.accepted and res.fc_rider_id == "81835"
+    assert "in the race's field" in "; ".join(res.reasons)
+    # neither in the field: age alone discriminates (27 in 2026 → 1998/1999)
+    index = _field(("81835", "Buitrago Santiago", 1999, frozenset(), "roster", False),
+                   ("75464", "Sanchez Santiago", 2000, frozenset(), "roster", False))
+    res = ident.resolve_rider(rider, index, season_year=2026)
+    assert res.fc_rider_id == "81835" and "age discriminates" in "; ".join(res.reasons)
+
+
+def test_ambiguous_extended_surname_stays_ambiguous_without_positive_evidence():
+    index = _field(("81835", "Buitrago Santiago", 1999, frozenset(), "roster"),
+                   ("75464", "Sanchez Santiago", 1998, frozenset(), "roster"))
+    res = ident.resolve_rider(ident.UciRider("Santiago", "BUITRAGO SANCHEZ", age=27), index, season_year=2026)
+    assert res.fc_rider_id is None and not res.accepted and "ambiguous" in "; ".join(res.reasons)
+
+
+def test_initials_of_the_uci_given_names_name_august_as_a_proposal():
+    index = _field(("179808", "August AJ", 2005, frozenset({"INEOS Grenadiers"}), "roster"),
+                   ("4", "August Peter", 2005, frozenset({"INEOS Grenadiers"}), "roster"))
+    res = ident.resolve_rider(ident.UciRider("Andrew Jacob", "AUGUST", team="INEOS GRENADIERS", age=21),
+                              index, season_year=2026)
+    assert res.fc_rider_id == "179808" and not res.accepted and res.confidence >= 0.90
+    assert "initials" in "; ".join(res.reasons)
+    dotted = _field(("179808", "August A.J.", 2005, frozenset({"INEOS Grenadiers"}), "roster"))
+    assert ident.resolve_rider(ident.UciRider("Andrew Jacob", "AUGUST", team="INEOS GRENADIERS"), dotted,
+                               season_year=2026).fc_rider_id == "179808"
+
+
+def test_initials_need_the_team_two_initials_and_the_right_letters():
+    rider = ident.UciRider("Andrew Jacob", "AUGUST", team="INEOS GRENADIERS", age=21)
+    other_team = _field(("179808", "August AJ", 2005, frozenset({"Other Team"}), "roster"))
+    assert ident.resolve_rider(rider, other_team, season_year=2026).fc_rider_id is None
+    wrong = _field(("5", "August AB", 2005, frozenset({"INEOS Grenadiers"}), "roster"))
+    assert ident.resolve_rider(rider, wrong, season_year=2026).fc_rider_id is None
+    one_initial = _field(("6", "August A", 2005, frozenset({"INEOS Grenadiers"}), "roster"))
+    assert ident.resolve_rider(ident.UciRider("Andrew", "AUGUST", team="INEOS GRENADIERS"), one_initial,
+                               season_year=2026).fc_rider_id is None
+
+
 def test_age_conflict_still_blocks_an_exact_unique_uci_name():
     index = ident.CandidateIndex([
         ident.Candidate("218657", "Iwamura Genji", 1990, frozenset(), "db"),
@@ -673,3 +770,25 @@ def test_agent_specs_keep_the_boundary():
     # the driver's UCI path contains no git invocation
     src = (root / "cycling_project/nightly/uci_acquire.py").read_text() + (root / "cycling_project/nightly/uci_ingest.py").read_text()
     assert "subprocess" not in src and "git" not in src.replace("digit", "").replace("legit", "")
+
+
+def test_db_roster_marks_the_start_list_so_buitrago_resolves(tmp_path):
+    """The one-day first-unit path: the fallback roster is the whole riders table, and only the
+    race's cached start list is the field (2026-10-07 Tre Valli Varesine)."""
+    import sqlite3
+    from cycling_project.nightly.pcs_ingest import db_roster
+    db = tmp_path / "slice.db"
+    con = sqlite3.connect(db)
+    con.execute("create table riders (fc_rider_id text, name text, birth_year int)")
+    con.execute("create table cached_start_lists (fc_race_id text, year int, rider_fc_id text, rider_name text, "
+                "team_name text, team_fc_id text)")
+    con.executemany("insert into riders values (?,?,?)", [("81835", "Buitrago Santiago", 1999),
+                                                          ("75464", "Sanchez Santiago", 2000)])
+    con.execute("insert into cached_start_lists values ('6', 2026, '81835', 'Buitrago Santiago', 'Bahrain Victorious', '1')")
+    con.commit(); con.close()
+    roster = db_roster(db, "6", 2026)
+    assert roster["81835"]["on_startlist"] == "1" and roster["75464"]["on_startlist"] == "0"
+    index = ident.CandidateIndex(ident.roster_candidates(roster))
+    res = ident.resolve_rider(ident.UciRider("Santiago", "BUITRAGO SANCHEZ", team="BAHRAIN VICTORIOUS", age=27),
+                              index, season_year=2026)
+    assert res.accepted and res.fc_rider_id == "81835"

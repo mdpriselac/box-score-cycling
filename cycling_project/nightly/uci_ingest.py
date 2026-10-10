@@ -587,7 +587,8 @@ def ingest(campaign_dir: Path, unit: str, *, crosswalk_csv: Optional[Path] = Non
         for slug, row in xw_rows.items():
             fc = str(row.get("fc_rider_id"))
             if fc and fc not in fallback and row.get("fc_name"):
-                fallback[fc] = {"name": row["fc_name"], "team": "", "team_id": "", "dob": str(row.get("birth_year") or "")}
+                fallback[fc] = {"name": row["fc_name"], "team": "", "team_id": "", "dob": str(row.get("birth_year") or ""),
+                                "on_startlist": "0"}
     index_ = ident.build_index(roster=roster or fallback, crosswalk_csv=crosswalk_csv, db_path=db_path,
                                fc_race_id=campaign.get("fc_race_id"), year=campaign.get("year"))
     aliases = ident.read_aliases(aliases_csv)
