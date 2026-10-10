@@ -147,6 +147,8 @@ def _make_perf_eval(root: Path) -> Path:
     perf = root / "performance_eval"
     unit = perf / "vuelta-2026" / "predictions" / "stage_15"
     unit.mkdir(parents=True)
+    (perf / "crosswalk").mkdir()
+    (perf / "crosswalk" / "uci_aliases.csv").write_text("uci_key,uci_name,fc_rider_id\nwright|alfred brockwell,WRIGHT Alfred Brockwell,63055\n")
     unit.joinpath("scenarios.json").write_text(json.dumps({
         "fc_race_id": 23, "year": 2026, "date": "2026-09-06", "stage": 15,
         "scenarios": {"a": {"label": "A", "tag": "a", "refs": [102]}},
@@ -345,6 +347,7 @@ def test_manifest_round_trip_and_bundle_contents(fake_project, tmp_path):
     assert "performance_eval/tour-de-france-2026/capture_odds.py" in files
     assert "performance_eval/tour-de-france-2026/build_review_dataset.py" not in files
     assert "performance_eval/DAILY_RUNBOOK.md" in files and "performance_eval/LESSONS.md" in files
+    assert "performance_eval/crosswalk/uci_aliases.csv" in files     # human aliases reach the cloud
     # the newest signature table (+ sidecar) ships; older stamps and unrelated gz files do not
     assert "experiments/selection_signatures_20260611_084046.csv.gz" in files
     assert "experiments/selection_signatures_20260611_084046.json" in files

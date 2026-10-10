@@ -10,6 +10,7 @@ bundle::
     performance_eval/<campaign>/…       campaign.json + odds/results/predictions/review
                                         for every campaign still in the horizon
     performance_eval/crosswalk/rider_crosswalk.csv   (when present)
+    performance_eval/crosswalk/uci_aliases.csv       (when present)
     experiments/selection_signatures_<stamp>.csv.gz  the newest per-competition
                                         signature table (+ its .json sidecar):
                                         hindsight references and the day-menu
@@ -367,12 +368,14 @@ def build_bundle(
             _copy(doc, out_dir / rel)
             add(rel, out_dir / rel)
 
-    # 6. crosswalk
-    crosswalk = perf_eval / "crosswalk" / "rider_crosswalk.csv"
-    if crosswalk.is_file():
-        rel = str(crosswalk.relative_to(project_root))
-        _copy(crosswalk, out_dir / rel)
-        add(rel, out_dir / rel)
+    # 6. crosswalk + the human-confirmed UCI aliases (uci_identity.ALIASES_CSV). Until
+    # 2026-10-09 only the crosswalk shipped, so the cloud never saw a confirmed alias.
+    for name in ("rider_crosswalk.csv", "uci_aliases.csv"):
+        crosswalk = perf_eval / "crosswalk" / name
+        if crosswalk.is_file():
+            rel = str(crosswalk.relative_to(project_root))
+            _copy(crosswalk, out_dir / rel)
+            add(rel, out_dir / rel)
 
     # 7. the newest per-competition signature table. `experiments/*.csv.gz` is gitignored and
     # belonged to no bundle group, so a hydrated container had none: every stage-race settle
