@@ -507,7 +507,11 @@ def campaign_roster(campaign_dir: Path, stage: Optional[int]) -> Dict[str, Dict[
 
 
 def db_roster(db_path: Optional[Path], fc_race_id: Optional[str], year: Optional[int]) -> Dict[str, Dict[str, str]]:
-    """Fallback presentation from the serving DB (cached startlist + riders.birth_year)."""
+    """Fallback presentation from the serving DB (cached startlist + riders.birth_year).
+
+    ``on_startlist`` is ``"1"`` for the riders on the race's cached start list (the field) and
+    ``"0"`` for the rest of the riders table — identity resolution prefers the former.
+    """
     if not db_path or not Path(db_path).exists():
         return {}
     out: Dict[str, Dict[str, str]] = {}
@@ -515,7 +519,8 @@ def db_roster(db_path: Optional[Path], fc_race_id: Optional[str], year: Optional
         con = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)
         try:
             for fc, name, by in con.execute("select fc_rider_id, name, birth_year from riders"):
-                out[str(fc)] = {"name": name or "", "team": "", "team_id": "", "dob": str(by) if by else ""}
+                out[str(fc)] = {"name": name or "", "team": "", "team_id": "", "dob": str(by) if by else "",
+                                "on_startlist": "0"}
             if fc_race_id is not None and year is not None:
                 for fc, name, team, team_fc in con.execute(
                         "select rider_fc_id, rider_name, team_name, team_fc_id from cached_start_lists "
@@ -524,6 +529,7 @@ def db_roster(db_path: Optional[Path], fc_race_id: Optional[str], year: Optional
                     row["team"] = team or row["team"]
                     row["team_id"] = str(team_fc) if team_fc else row["team_id"]
                     row["name"] = row["name"] or (name or "")
+                    row["on_startlist"] = "1"
         finally:
             con.close()
     except sqlite3.Error as exc:  # noqa: BLE001 — the roster is a fallback layer
