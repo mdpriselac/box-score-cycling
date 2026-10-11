@@ -1,14 +1,113 @@
 {
- "generated_at": "2026-10-06 16:44",
+ "generated_at": "2026-10-10 20:50",
  "site_name": "Cycling Race Predictor",
  "races": [
+  {
+   "slug": "paris-tours",
+   "year": 2026,
+   "name": "Paris - Tours 2026",
+   "short_name": "Paris - Tours 2026",
+   "type": "one_day",
+   "status": "upcoming",
+   "automated": true,
+   "start_date": "2026-10-11",
+   "end_date": "2026-10-11",
+   "blurb": "Nightly model run and results record for Paris - Tours.",
+   "campaign_dir": "performance_eval/paris-tours-2026",
+   "url": "/race/paris-tours/2026",
+   "pages": {},
+   "stages": [
+    {
+     "stage": null,
+     "unit": "race",
+     "kind": "race",
+     "date": "2026-10-11",
+     "label": "Paris - Tours",
+     "status": "predicted",
+     "predicted": true,
+     "post_hoc": false,
+     "url": "/race/paris-tours/2026/prediction",
+     "asset": "/paris-tours-2026.html"
+    }
+   ],
+   "n_stages": 1,
+   "n_settled": 0,
+   "n_predicted": 1,
+   "post_hoc": false
+  },
+  {
+   "slug": "il-lombardia",
+   "year": 2026,
+   "name": "Il Lombardia 2026",
+   "short_name": "Il Lombardia 2026",
+   "type": "one_day",
+   "status": "in_progress",
+   "automated": true,
+   "start_date": "2026-10-10",
+   "end_date": "2026-10-10",
+   "blurb": "Nightly model run and results record for Il Lombardia.",
+   "campaign_dir": "performance_eval/il-lombardia-2026",
+   "url": "/race/il-lombardia/2026",
+   "pages": {},
+   "stages": [
+    {
+     "stage": null,
+     "unit": "race",
+     "kind": "race",
+     "date": "2026-10-10",
+     "label": "Il Lombardia",
+     "status": "settled",
+     "predicted": true,
+     "post_hoc": false,
+     "url": "/race/il-lombardia/2026/prediction",
+     "asset": "/il-lombardia-2026.html"
+    }
+   ],
+   "n_stages": 1,
+   "n_settled": 1,
+   "n_predicted": 1,
+   "post_hoc": false
+  },
+  {
+   "slug": "gran-piemonte",
+   "year": 2026,
+   "name": "Gran Piemonte 2026",
+   "short_name": "Gran Piemonte 2026",
+   "type": "one_day",
+   "status": "settled",
+   "automated": true,
+   "start_date": "2026-10-08",
+   "end_date": "2026-10-08",
+   "blurb": "Nightly model run and results record for Gran Piemonte.",
+   "campaign_dir": "performance_eval/gran-piemonte-2026",
+   "url": "/race/gran-piemonte/2026",
+   "pages": {},
+   "stages": [
+    {
+     "stage": null,
+     "unit": "race",
+     "kind": "race",
+     "date": "2026-10-08",
+     "label": "Gran Piemonte",
+     "status": "settled",
+     "predicted": true,
+     "post_hoc": false,
+     "url": "/race/gran-piemonte/2026/prediction",
+     "asset": "/gran-piemonte-2026.html"
+    }
+   ],
+   "n_stages": 1,
+   "n_settled": 1,
+   "n_predicted": 1,
+   "post_hoc": false
+  },
   {
    "slug": "tre-valli-varesine",
    "year": 2026,
    "name": "Tre Valli Varesine 2026",
    "short_name": "Tre Valli Varesine 2026",
    "type": "one_day",
-   "status": "in_progress",
+   "status": "settled",
    "automated": true,
    "start_date": "2026-10-06",
    "end_date": "2026-10-06",
@@ -23,7 +122,7 @@
      "kind": "race",
      "date": "2026-10-06",
      "label": "Tre Valli Varesine",
-     "status": "predicted",
+     "status": "settled",
      "predicted": true,
      "post_hoc": false,
      "url": "/race/tre-valli-varesine/2026/prediction",
@@ -31,7 +130,7 @@
     }
    ],
    "n_stages": 1,
-   "n_settled": 0,
+   "n_settled": 1,
    "n_predicted": 1,
    "post_hoc": false
   },
@@ -2458,6 +2557,9 @@
  "default_month": "2026-10",
  "aliases": {
   "/index.html": "/model",
+  "/paris-tours-2026.html": "/race/paris-tours/2026/prediction",
+  "/il-lombardia-2026.html": "/race/il-lombardia/2026/prediction",
+  "/gran-piemonte-2026.html": "/race/gran-piemonte/2026/prediction",
   "/tre-valli-varesine-2026.html": "/race/tre-valli-varesine/2026/prediction",
   "/coppa-bernocchi-2026.html": "/race/coppa-bernocchi/2026/prediction",
   "/giro-dell-emilia-2026.html": "/race/giro-dell-emilia/2026/prediction",
@@ -2583,6 +2685,33 @@
    "asset": "/index.html",
    "chrome": true,
    "active": "model"
+  },
+  "/race/paris-tours/2026": {
+   "asset": "/_frame/race/paris-tours-2026.html"
+  },
+  "/race/paris-tours/2026/prediction": {
+   "asset": "/paris-tours-2026.html",
+   "base": true,
+   "chrome": true,
+   "active": "races"
+  },
+  "/race/il-lombardia/2026": {
+   "asset": "/_frame/race/il-lombardia-2026.html"
+  },
+  "/race/il-lombardia/2026/prediction": {
+   "asset": "/il-lombardia-2026.html",
+   "base": true,
+   "chrome": true,
+   "active": "races"
+  },
+  "/race/gran-piemonte/2026": {
+   "asset": "/_frame/race/gran-piemonte-2026.html"
+  },
+  "/race/gran-piemonte/2026/prediction": {
+   "asset": "/gran-piemonte-2026.html",
+   "base": true,
+   "chrome": true,
+   "active": "races"
   },
   "/race/tre-valli-varesine/2026": {
    "asset": "/_frame/race/tre-valli-varesine-2026.html"
