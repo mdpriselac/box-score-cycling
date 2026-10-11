@@ -637,6 +637,7 @@ class Driver:
         self.run = self.store.start_run(slug, unit, phase, release_tag=self.release_tag,
                                         meta={"dry_run": self.dry_run, "today": str(self.today), **(meta or {})})
         self.run.setdefault("run_id", str(uuid.uuid4()))
+        self.run_started_ts = time.time()      # ``_odds_files`` ships the snapshots written since
         self.built_pages = []
         self.record = {"run_id": self.run["run_id"], "campaign": slug, "unit": unit, "phase": phase,
                        "started_at": _utcnow(), "dry_run": self.dry_run, "today": str(self.today),
@@ -2048,6 +2049,44 @@ class Driver:
                 out.append((t, rel))
         return out
 
+    def _odds_files(self, unit: str) -> List[Path]:
+        """The ``odds/<day>/`` snapshot files a later container needs to read this unit's market.
+
+        2026-10-11: Il Lombardia's preview priced against ``odds/2026-10-10/markets_0403.json``
+        but never uploaded it; the next day's settle (a fresh container: release + artifact
+        overlay) built retro facts whose market block was ``missing``.  So the upload ships:
+
+        * every snapshot a config references through ``odds_capture`` — the unit's and the GC
+          board's (``_refresh_gc_config`` can point at an earlier capture) — as the triple
+          ``markets_HHMM.json`` / ``provenance_HHMM.json`` / ``win_odds_HHMM.csv``;
+        * the top-level files of any ``odds/<day>/`` written during this run (a capture that no
+          config references yet, a ``degraded.json``), never ``raw/`` and never older days.
+
+        The overlay restores them at the same campaign-relative path; promote reads only the
+        staging bucket, so these never become site pages.
+        """
+        c = self.campaign
+        odds_root = c.dir / "odds"
+        if not odds_root.is_dir():
+            return []
+        out: List[Path] = []
+        for cfg_path in (c.pred_dir(unit) / "scenarios.json", c.pred_dir("gc") / "scenarios.json"):
+            ref = (_read_json(cfg_path) or {}).get("odds_capture")
+            if not isinstance(ref, str) or _is_placeholder(ref):
+                continue
+            m = re.fullmatch(r"(\d{4}-\d{2}-\d{2})/markets_(\d{4})\.json", ref.strip())
+            if not m:
+                continue                      # not a snapshot path this driver writes; never trust it as one
+            day, hhmm = m.groups()
+            out += [odds_root / day / f"{stem}_{hhmm}.{ext}"
+                    for stem, ext in (("markets", "json"), ("provenance", "json"), ("win_odds", "csv"))]
+        since = getattr(self, "run_started_ts", None)
+        if since is not None:
+            for d in sorted(p for p in odds_root.iterdir() if p.is_dir()):
+                fresh = [f for f in sorted(d.iterdir()) if f.is_file() and f.stat().st_mtime >= since]
+                out += fresh
+        return [f for f in dict.fromkeys(out) if f.is_file()]
+
     def _upload(self, unit: str, phase: str) -> Dict[str, Any]:
         from cycling_project.nightly.store import STAGING_BUCKET
         c = self.campaign
@@ -2073,6 +2112,7 @@ class Driver:
                                                                              *AGENT_KEY_FILES, "agent_key_response.json",
                                                                              "retro_facts.json"))
             files += sorted(p for p in (pred / "bundle").rglob("*") if p.is_file()) if (pred / "bundle").is_dir() else []
+        files += self._odds_files(unit)
         for f in dict.fromkeys(files):                # a post-hoc settle globs the drafts twice
             if f.is_file():
                 key = f"{c.slug}/{f.relative_to(c.dir).as_posix()}"

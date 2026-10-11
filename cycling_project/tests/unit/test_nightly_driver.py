@@ -1101,3 +1101,49 @@ def test_an_explicit_unit_still_runs_on_an_attended_campaign(tmp_path, capsys):
     out = _out(capsys)
     # It reaches the start-list gate — i.e. the phase ran — rather than being skipped.
     assert code == 10 and out["operator_task"]["kind"] == "startlist_needed"
+
+
+# ---------------------------------------------------------------------------
+# odds snapshots survive the container (2026-10-11, Il Lombardia retro lost its market)
+# ---------------------------------------------------------------------------
+
+def _preview_upload(campaign, store):
+    d = drv.Driver(drv.Campaign.load(campaign), store=store, dry_run=True)
+    d.begin("stage_15", "preview")
+    # a capture written during this run, plus its raw/ dump, which never ships
+    fresh = campaign / "odds" / "2026-09-05"
+    (fresh / "markets_1900.json").write_text("{}")
+    (fresh / "raw").mkdir(exist_ok=True)
+    (fresh / "raw" / "listview_1900.json").write_text("{}")
+    return d._upload("stage_15", "preview")["artifacts"]
+
+
+def test_a_preview_upload_ships_the_odds_snapshot_its_config_references(campaign, tmp_path):
+    keys = _preview_upload(campaign, FakeStore(tmp_path / "store"))
+    odds = sorted(k.split("/vuelta-2026/", 1)[1] for k in keys if "/odds/" in k)
+    assert odds == ["odds/2026-09-05/markets_1720.json", "odds/2026-09-05/markets_1900.json",
+                    "odds/2026-09-05/provenance_1720.json", "odds/2026-09-05/win_odds_1720.csv"]
+    # neither raw/ nor an old day nothing references is re-uploaded
+    assert not any("/raw/" in k or "2026-09-04" in k for k in keys)
+
+
+def test_a_fresh_container_overlay_restores_the_snapshot_and_the_retro_market(campaign, tmp_path):
+    from cycling_project.nightly import bootstrap as bootstrap_mod
+    from cycling_project.nightly.run_editorial import _market_block
+    store = FakeStore(tmp_path / "store")
+    _preview_upload(campaign, store)
+    # the next day's container: a bundle that never saw the preview's capture
+    dest = tmp_path / "dest"
+    fresh_campaign = dest / "performance_eval" / "vuelta-2026"
+    shutil.copytree(campaign, fresh_campaign, ignore=shutil.ignore_patterns("odds"))
+    cfg = json.loads((fresh_campaign / "predictions" / "stage_15" / "scenarios.json").read_text())
+    before = _market_block(fresh_campaign, cfg["odds_capture"], cfg["event_id"])
+    assert before == {"available": False, "missing": "odds/2026-09-05/markets_1720.json"}
+
+    bootstrap_mod.overlay_artifacts(store, "data-2026-09-05", dest, manifest_files={})
+    for name in ("markets_1720.json", "provenance_1720.json", "win_odds_1720.csv"):
+        restored = fresh_campaign / "odds" / "2026-09-05" / name
+        assert restored.read_bytes() == (campaign / "odds" / "2026-09-05" / name).read_bytes()
+    assert not (fresh_campaign / "odds" / "2026-09-05" / "raw").exists()
+    after = _market_block(fresh_campaign, cfg["odds_capture"], cfg["event_id"])
+    assert after["available"] is True and after["source"] == "odds/2026-09-05/markets_1720.json"
