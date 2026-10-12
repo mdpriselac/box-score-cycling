@@ -56,6 +56,8 @@
   ],
   "timezone": "Asia/Shanghai",
   "kambi_match": "tour of guangxi",
+  "kambi_market": "none",
+  "kambi_market_note": "operator 2026-10-12: Kambi lists no Tour of Guangxi market on any brand; preview bookless",
   "kambi_localised_name": null,
   "kambi_event_ids": {},
   "pcs_slug": "tour-of-guangxi",

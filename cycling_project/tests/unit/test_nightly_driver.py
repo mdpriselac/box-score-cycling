@@ -661,6 +661,9 @@ def test_a_finished_campaign_has_nothing_due(campaign, tmp_path, capsys):
 def test_a_missing_book_market_only_blocks_worldtour_previews():
     assert drv.odds_required("wt")
     assert not drv.odds_required("pro") and not drv.odds_required("d1") and not drv.odds_required(None)
+    assert not drv.bookless_preview_ok({"category": "wt"})
+    assert drv.bookless_preview_ok({"category": "wt", "kambi_market": "none"})   # operator: no book exists
+    assert drv.bookless_preview_ok({"category": "pro"})
 
 
 # ---------------------------------------------------------------------------

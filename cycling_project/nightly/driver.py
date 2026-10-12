@@ -91,6 +91,15 @@ ODDS_REQUIRED_CATEGORIES = ("wt",)
 
 def odds_required(category: Optional[str]) -> bool:
     return str(category or "").lower() in ODDS_REQUIRED_CATEGORIES
+
+
+def bookless_preview_ok(cfg: Dict[str, Any]) -> bool:
+    """A preview Kambi did not match may continue without the book: below WorldTour always,
+    and on a WT race only when campaign.json carries ``kambi_market: "none"`` — the operator's
+    confirmation that Kambi does not price it (Tour of Guangxi 2026, task 145)."""
+    if str(cfg.get("kambi_market") or "").strip().lower() == "none":
+        return True
+    return not odds_required(cfg.get("category"))
 PHASES_UNIT = ("settle", "preview", "acquire", "ingest", "bundle", "validate", "upload")
 ONE_DAY_UNIT = "race"
 TEMPLATE_NAME = "TEMPLATE_scenarios.json"
@@ -1440,7 +1449,7 @@ class Driver:
 
         # 1. odds
         r = self.script("capture_odds", [self.python, SCRIPTS["capture_odds"], "--campaign", c.dir], ok_codes=(0, 1))
-        if not r.get("skipped") and r.get("returncode") == 1 and not odds_required(c.cfg.get("category")):
+        if not r.get("skipped") and r.get("returncode") == 1 and bookless_preview_ok(c.cfg):
             self._say(f"  note: Kambi lists no market for {c.slug} ({c.cfg.get('category')}): preview continues without the book benchmark")
             out["odds"] = {"market": None, "reason": "no_kambi_market", "category": c.cfg.get("category")}
         elif not r.get("skipped") and r.get("returncode") == 1:
