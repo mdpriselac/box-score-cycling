@@ -1,14 +1,148 @@
 {
- "generated_at": "2026-10-10 20:50",
+ "generated_at": "2026-10-13 19:49",
  "site_name": "Cycling Race Predictor",
  "races": [
+  {
+   "slug": "giro-del-veneto",
+   "year": 2026,
+   "name": "Giro del Veneto 2026",
+   "short_name": "Giro del Veneto 2026",
+   "type": "one_day",
+   "status": "upcoming",
+   "automated": true,
+   "start_date": "2026-10-14",
+   "end_date": "2026-10-14",
+   "blurb": "Nightly model run and results record for Giro del Veneto.",
+   "campaign_dir": "performance_eval/giro-del-veneto-2026",
+   "url": "/race/giro-del-veneto/2026",
+   "pages": {},
+   "stages": [
+    {
+     "stage": null,
+     "unit": "race",
+     "kind": "race",
+     "date": "2026-10-14",
+     "label": "Giro del Veneto",
+     "status": "predicted",
+     "predicted": true,
+     "post_hoc": false,
+     "url": "/race/giro-del-veneto/2026/prediction",
+     "asset": "/giro-del-veneto-2026.html"
+    }
+   ],
+   "n_stages": 1,
+   "n_settled": 0,
+   "n_predicted": 1,
+   "post_hoc": false
+  },
+  {
+   "slug": "tour-of-guangxi",
+   "year": 2026,
+   "name": "Tour of Guangxi 2026",
+   "short_name": "Tour of Guangxi 2026",
+   "type": "stage_race",
+   "status": "in_progress",
+   "automated": true,
+   "start_date": "2026-10-13",
+   "end_date": "2026-10-18",
+   "blurb": "Nightly model run and results record for Tour of Guangxi.",
+   "campaign_dir": "performance_eval/tour-of-guangxi-2026",
+   "url": "/race/tour-of-guangxi/2026",
+   "pages": {},
+   "stages": [
+    {
+     "stage": 1,
+     "unit": "stage_01",
+     "kind": "stage",
+     "date": "2026-10-13",
+     "label": "Stage 1",
+     "status": "settled",
+     "predicted": true,
+     "url": "/race/tour-of-guangxi/2026/stage-01",
+     "asset": "/tour-of-guangxi-2026-stage01.html",
+     "post_hoc": false,
+     "day_key": {
+      "bunch": 0.7,
+      "res_4": 0.3
+     }
+    },
+    {
+     "stage": 2,
+     "unit": "stage_02",
+     "kind": "stage",
+     "date": "2026-10-14",
+     "label": "Stage 2",
+     "status": "predicted",
+     "predicted": true,
+     "url": "/race/tour-of-guangxi/2026/stage-02",
+     "asset": "/tour-of-guangxi-2026-stage02.html",
+     "post_hoc": false,
+     "day_key": {
+      "bunch": 0.65,
+      "res_4": 0.35
+     }
+    },
+    {
+     "stage": 3,
+     "unit": "stage_03",
+     "kind": "stage",
+     "date": "2026-10-15",
+     "label": "Stage 3",
+     "status": "predicted",
+     "predicted": true,
+     "url": null,
+     "asset": null,
+     "post_hoc": false
+    },
+    {
+     "stage": 4,
+     "unit": "stage_04",
+     "kind": "stage",
+     "date": "2026-10-16",
+     "label": "Stage 4",
+     "status": "predicted",
+     "predicted": true,
+     "url": null,
+     "asset": null,
+     "post_hoc": false
+    },
+    {
+     "stage": 5,
+     "unit": "stage_05",
+     "kind": "stage",
+     "date": "2026-10-17",
+     "label": "Stage 5",
+     "status": "predicted",
+     "predicted": true,
+     "url": null,
+     "asset": null,
+     "post_hoc": false
+    },
+    {
+     "stage": 6,
+     "unit": "stage_06",
+     "kind": "stage",
+     "date": "2026-10-18",
+     "label": "Stage 6",
+     "status": "upcoming",
+     "predicted": false,
+     "url": null,
+     "asset": null,
+     "post_hoc": false
+    }
+   ],
+   "n_stages": 6,
+   "n_settled": 1,
+   "n_predicted": 5,
+   "post_hoc": false
+  },
   {
    "slug": "paris-tours",
    "year": 2026,
    "name": "Paris - Tours 2026",
    "short_name": "Paris - Tours 2026",
    "type": "one_day",
-   "status": "upcoming",
+   "status": "settled",
    "automated": true,
    "start_date": "2026-10-11",
    "end_date": "2026-10-11",
@@ -23,7 +157,7 @@
      "kind": "race",
      "date": "2026-10-11",
      "label": "Paris - Tours",
-     "status": "predicted",
+     "status": "settled",
      "predicted": true,
      "post_hoc": false,
      "url": "/race/paris-tours/2026/prediction",
@@ -31,7 +165,7 @@
     }
    ],
    "n_stages": 1,
-   "n_settled": 0,
+   "n_settled": 1,
    "n_predicted": 1,
    "post_hoc": false
   },
@@ -41,7 +175,7 @@
    "name": "Il Lombardia 2026",
    "short_name": "Il Lombardia 2026",
    "type": "one_day",
-   "status": "in_progress",
+   "status": "settled",
    "automated": true,
    "start_date": "2026-10-10",
    "end_date": "2026-10-10",
@@ -2557,6 +2691,9 @@
  "default_month": "2026-10",
  "aliases": {
   "/index.html": "/model",
+  "/giro-del-veneto-2026.html": "/race/giro-del-veneto/2026/prediction",
+  "/tour-of-guangxi-2026-stage01.html": "/race/tour-of-guangxi/2026/stage-01",
+  "/tour-of-guangxi-2026-stage02.html": "/race/tour-of-guangxi/2026/stage-02",
   "/paris-tours-2026.html": "/race/paris-tours/2026/prediction",
   "/il-lombardia-2026.html": "/race/il-lombardia/2026/prediction",
   "/gran-piemonte-2026.html": "/race/gran-piemonte/2026/prediction",
@@ -2685,6 +2822,30 @@
    "asset": "/index.html",
    "chrome": true,
    "active": "model"
+  },
+  "/race/giro-del-veneto/2026": {
+   "asset": "/_frame/race/giro-del-veneto-2026.html"
+  },
+  "/race/giro-del-veneto/2026/prediction": {
+   "asset": "/giro-del-veneto-2026.html",
+   "base": true,
+   "chrome": true,
+   "active": "races"
+  },
+  "/race/tour-of-guangxi/2026": {
+   "asset": "/_frame/race/tour-of-guangxi-2026.html"
+  },
+  "/race/tour-of-guangxi/2026/stage-01": {
+   "asset": "/tour-of-guangxi-2026-stage01.html",
+   "base": true,
+   "chrome": true,
+   "active": "races"
+  },
+  "/race/tour-of-guangxi/2026/stage-02": {
+   "asset": "/tour-of-guangxi-2026-stage02.html",
+   "base": true,
+   "chrome": true,
+   "active": "races"
   },
   "/race/paris-tours/2026": {
    "asset": "/_frame/race/paris-tours-2026.html"

@@ -1,0 +1,42 @@
+[
+ {
+  "stage": 1,
+  "oracle_item": "bunch",
+  "day_class": "bunch",
+  "rule_type": "mass_sprint",
+  "wg_size": 134,
+  "wg_prop": 0.9178,
+  "winning_time": 10823.0,
+  "winner": "Magnier Paul",
+  "winner_gc_morning": null,
+  "front5_gc_median": null,
+  "top15_shares": {
+   "sprint": 0.867,
+   "mountain": 0.0,
+   "hilly": 0.067,
+   "rolling": 0.0,
+   "breakaway": 0.0,
+   "time_trial": 0.067
+  },
+  "top15_unknown": 0.0,
+  "day_key": null,
+  "exact": null,
+  "covered": null,
+  "weight_on_true": null,
+  "key_source": null,
+  "scored_at": "2026-10-13T19:51:34.567628",
+  "agent_key": {
+   "bunch": 0.7,
+   "res_4": 0.3
+  },
+  "agent_exact": true,
+  "agent_covered": true,
+  "agent_weight_on_true": 0.7,
+  "agent_flagged": true,
+  "agent_self_flag": true,
+  "agent_family_covered": true,
+  "agent_confidence": 0.55,
+  "agent_replay": false,
+  "agent_scored_at": "2026-10-13T19:51:34.567796"
+ }
+]
