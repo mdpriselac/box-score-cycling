@@ -69,3 +69,17 @@ class TestDegenerate:
     def test_no_date_in_container(self):
         s = soup("<div id='raceSub'>Grand Tour, France</div>")
         assert extract_race_date(s) is None
+
+
+class TestBannerMarkup2026_10:
+    """2026-10 redesign: the date moved to <div class='team-banner-info'>."""
+
+    def test_one_day_banner(self):
+        s = soup("<div class='team-banner-text'><h1>2026 Il Lombardia</h1>"
+                 "<div class='team-banner-info'>WorldTour · Monument · 10th October 2026 · Italy"
+                 "<span class='team-banner-social'></span></div></div>")
+        assert extract_race_date(s) == "2026-10-10"
+
+    def test_stage_banner(self):
+        s = soup("<div class='team-banner-info'>WorldTour · Stage race · 6th stage, 18th October 2026 · China</div>")
+        assert extract_race_date(s) == "2026-10-18"

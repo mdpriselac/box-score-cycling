@@ -239,10 +239,17 @@ def parse_rider_row(table_race_result_row: BeautifulSoup, table_head_order: Dict
         rider_col_idx = table_head_order.get('rider')
         if rider_col_idx is not None:
             rider_cell = rider_result_cols[rider_col_idx]
-            rider_name = rider_cell.get_text(strip=True, separator=' ')
+            rider_link = rider_cell.find('a')
+            # Since the 2026-10 redesign the cell also carries a mobile-only
+            # <span class="m-team"> after the link; the name is the link text.
+            if rider_link is not None and rider_link.get_text(strip=True):
+                rider_name = rider_link.get_text(strip=True, separator=' ')
+            else:
+                for extra in rider_cell.select('.m-team'):
+                    extra.extract()
+                rider_name = rider_cell.get_text(strip=True, separator=' ')
             rider_result_dict['name'] = rider_name
             
-            rider_link = rider_cell.find('a')
             if rider_link and rider_link.get('href'):
                 rider_id = extract_rider_id(rider_link.get('href'))
                 rider_result_dict['rider_id'] = rider_id
@@ -417,7 +424,13 @@ def extract_race_date(race_page_soup: BeautifulSoup) -> Optional[str]:
             if race_sub:
                 date_str = race_sub.get_text(strip=True, separator=' ')
         if date_str is None:
-            logger.warning("No date container found (div#race h2 / div#raceSub)")
+            # 2026-10 redesign: a banner line, "WorldTour · Monument · 10th October 2026 · Italy"
+            # (stage pages: "... · 6th stage, 18th October 2026 · China").
+            banner = body.find('div', class_='team-banner-info')
+            if banner:
+                date_str = banner.get_text(strip=True, separator=' ')
+        if date_str is None:
+            logger.warning("No date container found (div#race h2 / div#raceSub / div.team-banner-info)")
             return None
         logger.debug(f"Found date string: '{date_str}'")
 
