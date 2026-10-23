@@ -306,10 +306,13 @@ def _pickle_result_counts(race) -> Tuple[int, bool]:
     The GC flag requires a numeric place: mid-race, race.results holds only
     the DNF board (place='DNF'), which is not a final GC.
     """
+    # A stage counts only with a CLASSIFIED (numeric-place) row: a cancelled
+    # stage can carry a lone DNF row (Vuelta 2026 stage 3: 'Kirsch Alex', DNF),
+    # which migrates to no results and made the race look "grown" every run.
     n_stages = sum(
         1 for s in (getattr(race, "stages", None) or [])
-        if getattr(s, "results", None)
-        and (s.name or "").strip().upper() != "GC"
+        if (s.name or "").strip().upper() != "GC"
+        and any(str(r.get("place", "")).strip().isdigit() for r in (getattr(s, "results", None) or []))
     )
     has_gc = any(
         str(r.get("place", "")).strip().isdigit()

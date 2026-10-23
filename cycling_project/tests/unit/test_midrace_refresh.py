@@ -465,3 +465,13 @@ def test_race_without_competitions_is_incomplete(tmp_path):
     conn.commit()
     conn.close()
     assert _get_incomplete_race_keys(db, [2026]) == {("9", 2026, "wt")}
+
+
+@pytest.mark.unit
+def test_cancelled_stage_with_lone_dnf_row_is_not_counted():
+    """Vuelta 2026 stage 3 was cancelled; its pickle carries one DNF row, which migrates to
+    no results, so counting it made the race look 'grown' and re-migrate every run."""
+    cancelled = Stage(name="Stage: 03", url="u", date=YESTERDAY,
+                      results=[{"name": "Kirsch Alex", "place": "DNF"}])
+    race = _stage_race("Vuelta", 23, COMPLETE + [cancelled], gc_results=True)
+    assert _pickle_result_counts(race) == (2, True)
