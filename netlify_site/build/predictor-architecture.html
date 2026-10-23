@@ -317,115 +317,45 @@
   <span class="toggle-hint">Direct links: <code>#plain</code> (friendly version), <code>#tdf</code> (Tour predictions), <code>#books</code> (model vs bookmakers), <code>#heads</code> (how the heads disagree).</span>
 </div>
 
-<!-- STAGES:START -->
+<!-- CAMPAIGN-LINKS:START -->
 <style>
-.stage-strip{max-width:1020px;margin:10px auto 0;font-family:var(--sans);
-  font-size:13px;color:var(--slate);display:flex;flex-wrap:wrap;gap:6px 14px;
-  align-items:center;justify-content:center}
-.stage-strip a{color:var(--blue);text-decoration:none;border-bottom:1px solid var(--blue-soft);font-weight:600}
-.stage-strip .done{color:var(--green)}
+.gt-diaries{max-width:1020px;margin:28px auto 0;font-family:var(--sans)}
+.gt-diaries .gtd-kicker{font-size:12px;font-weight:700;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--slate);margin:0 0 12px}
+.gt-diaries .gtd-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px}
+.gt-diaries .gtd-card{background:var(--card);border:1px solid var(--line);border-radius:10px;
+  padding:18px 20px 16px}
+.gt-diaries h3{font-family:var(--serif);font-size:20px;line-height:1.25;margin:0;color:var(--ink)}
+.gt-diaries .gtd-dates{font-size:12.5px;color:var(--slate);margin:2px 0 8px}
+.gt-diaries .gtd-summary{font-family:var(--serif);font-size:15px;line-height:1.5;
+  color:var(--ink);margin:0 0 12px}
+.gt-diaries .gtd-links{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 14px}
+.gt-diaries .gtd-links a{font-size:13px;font-weight:600;text-decoration:none;color:var(--blue);
+  border:1px solid var(--line);border-radius:999px;padding:5px 12px;background:var(--paper)}
+.gt-diaries .gtd-links a.gtd-primary{background:var(--blue-soft);border-color:var(--blue-soft)}
+.gt-diaries .gtd-links a:hover,.gt-diaries .gtd-stages a:hover{border-color:var(--blue)}
+.gt-diaries .gtd-stages-label{font-size:11.5px;color:var(--slate);margin:0 0 6px}
+.gt-diaries .gtd-stages{display:grid;grid-template-columns:repeat(auto-fill,minmax(30px,1fr));gap:5px}
+.gt-diaries .gtd-stages a,.gt-diaries .gtd-stages span{display:block;text-align:center;
+  font-size:12px;font-weight:600;line-height:28px;border-radius:6px;border:1px solid var(--line);
+  text-decoration:none;font-variant-numeric:tabular-nums}
+.gt-diaries .gtd-stages a{color:var(--blue);background:var(--paper)}
+.gt-diaries .gtd-stages span{color:var(--slate);opacity:.6}
+.gt-diaries .gtd-stages span.cancelled{text-decoration:line-through;opacity:.75;background:var(--line)}
+.gt-diaries .gtd-more{font-size:13.5px;color:var(--slate);margin:14px 0 0;line-height:1.55}
+.gt-diaries .gtd-more a{color:var(--blue);font-weight:600;text-decoration:none;
+  border-bottom:1px solid var(--blue-soft)}
+@media (max-width:560px){.gt-diaries .gtd-card{padding:16px}}
 </style>
-<div class="stage-strip"><b style="color:var(--ink)">Tour diary:</b> <a href="stages.html"><b>Stage-by-stage predictions &amp; reflections →</b></a> · <a href="gc.html"><b>GC tracker</b></a> · <a href="review.html"><b>Post-race review</b></a> · <a href="stage02.html">Stage 2</a> <span class="done">✓</span> · <a href="stage03.html">Stage 3</a> <span class="done">✓</span> · <a href="stage04.html">Stage 4</a> <span class="done">✓</span> · <a href="stage05.html">Stage 5</a> <span class="done">✓</span> · <a href="stage06.html">Stage 6</a> <span class="done">✓</span> · <a href="stage07.html">Stage 7</a> <span class="done">✓</span> · <a href="stage08.html">Stage 8</a> <span class="done">✓</span> · <a href="stage09.html">Stage 9</a> <span class="done">✓</span> · <a href="stage10.html">Stage 10</a> <span class="done">✓</span> · <a href="stage11.html">Stage 11</a> <span class="done">✓</span> · <a href="stage12.html">Stage 12</a> <span class="done">✓</span> · <a href="stage13.html">Stage 13</a> <span class="done">✓</span> · <a href="stage14.html">Stage 14</a> <span class="done">✓</span> · <a href="stage15.html">Stage 15</a> <span class="done">✓</span> · <a href="stage16.html">Stage 16</a> <span class="done">✓</span> · <a href="stage17.html">Stage 17</a> <span class="done">✓</span> · <a href="stage18.html">Stage 18</a> <span class="done">✓</span> · <a href="stage19.html">Stage 19</a> <span class="done">✓</span> · <a href="stage20.html">Stage 20</a> <span class="done">✓</span> · <a href="stage21.html">Stage 21</a> <span class="done">✓</span></div>
-<!-- STAGES:END -->
-
-<!-- VUELTA-STAGES:START -->
-<style>
-.stage-strip{max-width:1020px;margin:10px auto 0;font-family:var(--sans);
-  font-size:13px;color:var(--slate);display:flex;flex-wrap:wrap;gap:6px 14px;
-  align-items:center;justify-content:center}
-.stage-strip a{color:var(--blue);text-decoration:none;border-bottom:1px solid var(--blue-soft);font-weight:600}
-.stage-strip .done{color:var(--green)}
-</style>
-<div class="stage-strip"><b style="color:var(--ink)">Vuelta diary:</b> <a href="vuelta-stages.html"><b>Stage-by-stage predictions &amp; reflections →</b></a> · <a href="vuelta-gc.html"><b>GC tracker</b></a> · <a href="vuelta-review.html"><b>Post-race review</b></a> · <a href="vuelta-stage01.html">Stage 1</a> <span class="done">✓</span> · <a href="vuelta-stage02.html">Stage 2</a> <span class="done">✓</span> · <a href="vuelta-stage03.html">Stage 3</a> · <a href="vuelta-stage04.html">Stage 4</a> <span class="done">✓</span> · <a href="vuelta-stage05.html">Stage 5</a> <span class="done">✓</span> · <a href="vuelta-stage06.html">Stage 6</a> <span class="done">✓</span> · <a href="vuelta-stage07.html">Stage 7</a> <span class="done">✓</span> · <a href="vuelta-stage08.html">Stage 8</a> <span class="done">✓</span> · <a href="vuelta-stage09.html">Stage 9</a> <span class="done">✓</span> · <a href="vuelta-stage10.html">Stage 10</a> <span class="done">✓</span> · <a href="vuelta-stage11.html">Stage 11</a> <span class="done">✓</span> · <a href="vuelta-stage12.html">Stage 12</a> <span class="done">✓</span> · <a href="vuelta-stage13.html">Stage 13</a> <span class="done">✓</span> · <a href="vuelta-stage14.html">Stage 14</a> <span class="done">✓</span> · <a href="vuelta-stage15.html">Stage 15</a> <span class="done">✓</span> · <a href="vuelta-stage16.html">Stage 16</a> <span class="done">✓</span> · <a href="vuelta-stage17.html">Stage 17</a> <span class="done">✓</span> · <a href="vuelta-stage18.html">Stage 18</a> <span class="done">✓</span> · <a href="vuelta-stage19.html">Stage 19</a> <span class="done">✓</span> · <a href="vuelta-stage20.html">Stage 20</a> <span class="done">✓</span> · <a href="vuelta-stage21.html">Stage 21</a> <span class="done">✓</span></div>
-<!-- VUELTA-STAGES:END -->
-
-<!-- TOUR-OF-ISTANBUL-2026:START -->
-<style>
-.stage-strip{max-width:1020px;margin:10px auto 0;font-family:var(--sans);
-  font-size:13px;color:var(--slate);display:flex;flex-wrap:wrap;gap:6px 14px;
-  align-items:center;justify-content:center}
-.stage-strip a{color:var(--blue);text-decoration:none;border-bottom:1px solid var(--blue-soft);font-weight:600}
-.stage-strip .done{color:var(--green)}
-</style>
-<div class="stage-strip"><b style="color:var(--ink)">Race diary:</b> <a href="tour-of-istanbul-2026-stages.html"><b>Stage-by-stage predictions &amp; reflections →</b></a> · <a href="tour-of-istanbul-2026-gc.html"><b>GC tracker</b></a> · <a href="tour-of-istanbul-2026-stage01.html">Stage 1</a> <span class="done">✓</span></div>
-<!-- TOUR-OF-ISTANBUL-2026:END -->
-
-<!-- ZLM-TOUR-2026:START -->
-<style>
-.stage-strip{max-width:1020px;margin:10px auto 0;font-family:var(--sans);
-  font-size:13px;color:var(--slate);display:flex;flex-wrap:wrap;gap:6px 14px;
-  align-items:center;justify-content:center}
-.stage-strip a{color:var(--blue);text-decoration:none;border-bottom:1px solid var(--blue-soft);font-weight:600}
-.stage-strip .done{color:var(--green)}
-</style>
-<div class="stage-strip"><b style="color:var(--ink)">Race diary:</b> <a href="zlm-tour-2026-stages.html"><b>Stage-by-stage predictions &amp; reflections →</b></a> · <a href="zlm-tour-2026-gc.html"><b>GC tracker</b></a> · <a href="zlm-tour-2026-stage01.html">Stage 1</a> <span class="done">✓</span></div>
-<!-- ZLM-TOUR-2026:END -->
-
-<!-- GIRO-D-ABRUZZO-2026:START -->
-<style>
-.stage-strip{max-width:1020px;margin:10px auto 0;font-family:var(--sans);
-  font-size:13px;color:var(--slate);display:flex;flex-wrap:wrap;gap:6px 14px;
-  align-items:center;justify-content:center}
-.stage-strip a{color:var(--blue);text-decoration:none;border-bottom:1px solid var(--blue-soft);font-weight:600}
-.stage-strip .done{color:var(--green)}
-</style>
-<div class="stage-strip"><b style="color:var(--ink)">Race diary:</b> <a href="giro-d-abruzzo-2026-stages.html"><b>Stage-by-stage predictions &amp; reflections →</b></a> · <a href="giro-d-abruzzo-2026-gc.html"><b>GC tracker</b></a> · <a href="giro-d-abruzzo-2026-stage01.html">Stage 1</a> <span class="done">✓</span> · <a href="giro-d-abruzzo-2026-stage02.html">Stage 2</a> <span class="done">✓</span> · <a href="giro-d-abruzzo-2026-stage03.html">Stage 3</a> <span class="done">✓</span> · <a href="giro-d-abruzzo-2026-stage04.html">Stage 4</a> <span class="done">✓</span></div>
-<!-- GIRO-D-ABRUZZO-2026:END -->
-
-<!-- TOUR-DE-LUXEMBOURG-2026:START -->
-<style>
-.stage-strip{max-width:1020px;margin:10px auto 0;font-family:var(--sans);
-  font-size:13px;color:var(--slate);display:flex;flex-wrap:wrap;gap:6px 14px;
-  align-items:center;justify-content:center}
-.stage-strip a{color:var(--blue);text-decoration:none;border-bottom:1px solid var(--blue-soft);font-weight:600}
-.stage-strip .done{color:var(--green)}
-</style>
-<div class="stage-strip"><b style="color:var(--ink)">Race diary:</b> <a href="tour-de-luxembourg-2026-stages.html"><b>Stage-by-stage predictions &amp; reflections →</b></a> · <a href="tour-de-luxembourg-2026-gc.html"><b>GC tracker</b></a> · <a href="tour-de-luxembourg-2026-stage01.html">Stage 1</a> <span class="done">✓</span> · <a href="tour-de-luxembourg-2026-stage02.html">Stage 2</a> <span class="done">✓</span> · <a href="tour-de-luxembourg-2026-stage03.html">Stage 3</a> <span class="done">✓</span> · <a href="tour-de-luxembourg-2026-stage04.html">Stage 4</a> <span class="done">✓</span> · <a href="tour-de-luxembourg-2026-stage05.html">Stage 5</a> <span class="done">✓</span></div>
-<!-- TOUR-DE-LUXEMBOURG-2026:END -->
-
-<!-- TOUR-OF-TAIHU-LAKE-2026:START -->
-<style>
-.stage-strip{max-width:1020px;margin:10px auto 0;font-family:var(--sans);
-  font-size:13px;color:var(--slate);display:flex;flex-wrap:wrap;gap:6px 14px;
-  align-items:center;justify-content:center}
-.stage-strip a{color:var(--blue);text-decoration:none;border-bottom:1px solid var(--blue-soft);font-weight:600}
-.stage-strip .done{color:var(--green)}
-</style>
-<div class="stage-strip"><b style="color:var(--ink)">Race diary:</b> <a href="tour-of-taihu-lake-2026-stages.html"><b>Stage-by-stage predictions &amp; reflections →</b></a> · <a href="tour-of-taihu-lake-2026-gc.html"><b>GC tracker</b></a> · <a href="tour-of-taihu-lake-2026-stage02.html">Stage 2</a> <span class="done">✓</span> · <a href="tour-of-taihu-lake-2026-stage03.html">Stage 3</a> <span class="done">✓</span> · <a href="tour-of-taihu-lake-2026-stage04.html">Stage 4</a> <span class="done">✓</span></div>
-<!-- TOUR-OF-TAIHU-LAKE-2026:END -->
-
-<!-- OKOLO-SLOVENSKA-2026:START -->
-<style>
-.stage-strip{max-width:1020px;margin:10px auto 0;font-family:var(--sans);
-  font-size:13px;color:var(--slate);display:flex;flex-wrap:wrap;gap:6px 14px;
-  align-items:center;justify-content:center}
-.stage-strip a{color:var(--blue);text-decoration:none;border-bottom:1px solid var(--blue-soft);font-weight:600}
-.stage-strip .done{color:var(--green)}
-</style>
-<div class="stage-strip"><b style="color:var(--ink)">Race diary:</b> <a href="okolo-slovenska-2026-stages.html"><b>Stage-by-stage predictions &amp; reflections →</b></a> · <a href="okolo-slovenska-2026-gc.html"><b>GC tracker</b></a> · <a href="okolo-slovenska-2026-stage01.html">Stage 1</a> <span class="done">✓</span> · <a href="okolo-slovenska-2026-stage02.html">Stage 2</a> <span class="done">✓</span> · <a href="okolo-slovenska-2026-stage03.html">Stage 3</a> <span class="done">✓</span> · <a href="okolo-slovenska-2026-stage04.html">Stage 4</a> <span class="done">✓</span> · <a href="okolo-slovenska-2026-stage05.html">Stage 5</a> <span class="done">✓</span></div>
-<!-- OKOLO-SLOVENSKA-2026:END -->
-
-<!-- TOUR-OF-HUANGSHAN-2026:START -->
-<style>
-.stage-strip{max-width:1020px;margin:10px auto 0;font-family:var(--sans);
-  font-size:13px;color:var(--slate);display:flex;flex-wrap:wrap;gap:6px 14px;
-  align-items:center;justify-content:center}
-.stage-strip a{color:var(--blue);text-decoration:none;border-bottom:1px solid var(--blue-soft);font-weight:600}
-.stage-strip .done{color:var(--green)}
-</style>
-<div class="stage-strip"><b style="color:var(--ink)">Race diary:</b> <a href="tour-of-huangshan-2026-stages.html"><b>Stage-by-stage predictions &amp; reflections →</b></a> · <a href="tour-of-huangshan-2026-gc.html"><b>GC tracker</b></a> · <a href="tour-of-huangshan-2026-stage01.html">Stage 1</a> <span class="done">✓</span> · <a href="tour-of-huangshan-2026-stage02.html">Stage 2</a> <span class="done">✓</span> · <a href="tour-of-huangshan-2026-stage03.html">Stage 3</a> <span class="done">✓</span></div>
-<!-- TOUR-OF-HUANGSHAN-2026:END -->
-
-<!-- CRO-RACE-2026:START -->
-<style>
-.stage-strip{max-width:1020px;margin:10px auto 0;font-family:var(--sans);
-  font-size:13px;color:var(--slate);display:flex;flex-wrap:wrap;gap:6px 14px;
-  align-items:center;justify-content:center}
-.stage-strip a{color:var(--blue);text-decoration:none;border-bottom:1px solid var(--blue-soft);font-weight:600}
-.stage-strip .done{color:var(--green)}
-</style>
-<div class="stage-strip"><b style="color:var(--ink)">Race diary:</b> <a href="cro-race-2026-stages.html"><b>Stage-by-stage predictions &amp; reflections →</b></a> · <a href="cro-race-2026-gc.html"><b>GC tracker</b></a> · <a href="cro-race-2026-stage01.html">Stage 1</a> <span class="done">✓</span> · <a href="cro-race-2026-stage02.html">Stage 2</a></div>
-<!-- CRO-RACE-2026:END -->
+<div class="gt-diaries" aria-labelledby="gtd-title">
+<p class="gtd-kicker" id="gtd-title">The two Grand Tours we covered by hand</p>
+<div class="gtd-grid">
+<article class="gtd-card"><h3>Tour de France 2026</h3><p class="gtd-dates">4–26 July · 21 stages</p><p class="gtd-summary">Every stage predicted the evening before and settled the evening after: the model&#x27;s first full Grand Tour in public, measured against the market throughout.</p><div class="gtd-links"><a href="/race/tour-de-france/2026/review" class="gtd-primary">Post-race review →</a><a href="/race/tour-de-france/2026/gc">GC tracker</a><a href="/race/tour-de-france/2026/stages">All stages</a></div><p class="gtd-stages-label">Stage pages</p><div class="gtd-stages"><span title="No page for stage 1">1</span><a href="/race/tour-de-france/2026/stage-02" title="Stage 2">2</a><a href="/race/tour-de-france/2026/stage-03" title="Stage 3">3</a><a href="/race/tour-de-france/2026/stage-04" title="Stage 4">4</a><a href="/race/tour-de-france/2026/stage-05" title="Stage 5">5</a><a href="/race/tour-de-france/2026/stage-06" title="Stage 6">6</a><a href="/race/tour-de-france/2026/stage-07" title="Stage 7">7</a><a href="/race/tour-de-france/2026/stage-08" title="Stage 8">8</a><a href="/race/tour-de-france/2026/stage-09" title="Stage 9">9</a><a href="/race/tour-de-france/2026/stage-10" title="Stage 10">10</a><a href="/race/tour-de-france/2026/stage-11" title="Stage 11">11</a><a href="/race/tour-de-france/2026/stage-12" title="Stage 12">12</a><a href="/race/tour-de-france/2026/stage-13" title="Stage 13">13</a><a href="/race/tour-de-france/2026/stage-14" title="Stage 14">14</a><a href="/race/tour-de-france/2026/stage-15" title="Stage 15">15</a><a href="/race/tour-de-france/2026/stage-16" title="Stage 16">16</a><a href="/race/tour-de-france/2026/stage-17" title="Stage 17">17</a><a href="/race/tour-de-france/2026/stage-18" title="Stage 18">18</a><a href="/race/tour-de-france/2026/stage-19" title="Stage 19">19</a><a href="/race/tour-de-france/2026/stage-20" title="Stage 20">20</a><a href="/race/tour-de-france/2026/stage-21" title="Stage 21">21</a></div></article>
+<article class="gtd-card"><h3>Vuelta a España 2026</h3><p class="gtd-dates">22 August – 13 September · 21 stages</p><p class="gtd-summary">Day-type keys chosen each morning, stage predictions published before the start, and a GC tracker that followed the race as it reshaped itself.</p><div class="gtd-links"><a href="/race/vuelta-a-espana/2026/review" class="gtd-primary">Post-race review →</a><a href="/race/vuelta-a-espana/2026/gc">GC tracker</a><a href="/race/vuelta-a-espana/2026/stages">All stages</a></div><p class="gtd-stages-label">Stage pages · stage 3 cancelled</p><div class="gtd-stages"><a href="/race/vuelta-a-espana/2026/stage-01" title="Stage 1">1</a><a href="/race/vuelta-a-espana/2026/stage-02" title="Stage 2">2</a><span class="cancelled" title="Stage 3 was cancelled">3</span><a href="/race/vuelta-a-espana/2026/stage-04" title="Stage 4">4</a><a href="/race/vuelta-a-espana/2026/stage-05" title="Stage 5">5</a><a href="/race/vuelta-a-espana/2026/stage-06" title="Stage 6">6</a><a href="/race/vuelta-a-espana/2026/stage-07" title="Stage 7">7</a><a href="/race/vuelta-a-espana/2026/stage-08" title="Stage 8">8</a><a href="/race/vuelta-a-espana/2026/stage-09" title="Stage 9">9</a><a href="/race/vuelta-a-espana/2026/stage-10" title="Stage 10">10</a><a href="/race/vuelta-a-espana/2026/stage-11" title="Stage 11">11</a><a href="/race/vuelta-a-espana/2026/stage-12" title="Stage 12">12</a><a href="/race/vuelta-a-espana/2026/stage-13" title="Stage 13">13</a><a href="/race/vuelta-a-espana/2026/stage-14" title="Stage 14">14</a><a href="/race/vuelta-a-espana/2026/stage-15" title="Stage 15">15</a><a href="/race/vuelta-a-espana/2026/stage-16" title="Stage 16">16</a><a href="/race/vuelta-a-espana/2026/stage-17" title="Stage 17">17</a><a href="/race/vuelta-a-espana/2026/stage-18" title="Stage 18">18</a><a href="/race/vuelta-a-espana/2026/stage-19" title="Stage 19">19</a><a href="/race/vuelta-a-espana/2026/stage-20" title="Stage 20">20</a><a href="/race/vuelta-a-espana/2026/stage-21" title="Stage 21">21</a></div></article>
+</div>
+<p class="gtd-more">Since the Vuelta the nightly pipeline runs on its own: one-day races and stage races, each with its prediction and result pages (48 races so far). <a href="/races">Browse them in the race archive →</a></p>
+</div>
+<!-- CAMPAIGN-LINKS:END -->
 
 <!-- ================= HEADS VIEW ================= -->
 <div id="view-heads" hidden>

@@ -20,8 +20,11 @@ scripts contains hand-written numbers — re-check them after data changes.
 
 ## Daily stage pages (added 2026-07-04)
 
-One page per Tour stage (`netlify_site/stageNN.html`), linked from a strip
-under the view toggle on index.html. Per stage:
+One page per Tour stage (`netlify_site/stageNN.html`), linked from the
+race-diary block under the view toggle on index.html (`campaign_links.py`:
+one card per hand-covered Grand Tour with review / GC / stage-grid links, and
+one line sending every automated campaign to `/races`; it replaced the
+per-campaign strips in 2026-10). Per stage:
 
 1. Write `performance_eval/tour-de-france-2026/predictions/stage_NN/scenarios.json`
    — scenario definitions (real reference comps and/or synthetic terrain-score
@@ -34,8 +37,9 @@ under the view toggle on index.html. Per stage:
    release, scenario, active field, profile, day key, or race state creates a
    distinct opinion. Use `--no-log` for artifact-only dry reruns.
 3. `python3 netlify_site/build/build_stage_page.py <scenarios.json>`
-   — writes stageNN.html, refreshes the stage strip (STAGES markers in
-   predictor-architecture.html), reruns make_netlify.py.
+   — writes stageNN.html, re-renders the race-diary block (CAMPAIGN-LINKS
+   markers in predictor-architecture.html), reruns make_netlify.py.
+   `python3 netlify_site/build/campaign_links.py` refreshes just that block.
 4. After the stage: run the results capture
    (`performance_eval/tour-de-france-2026/capture_results.py`), then rerun
    step 3 — the page picks up the archived results and appends the
@@ -51,7 +55,7 @@ main heads pre-race and adds the state-aware GC outlook head
 card from the latest GC run.
 
 `build_gc_tracker.py <gc scenarios.json>` writes the full tracker page —
-`netlify_site/[prefix]gc.html`, already linked from the stage strip and the
+`netlify_site/[prefix]gc.html`, already linked from the race-diary card and the
 hub's GC card. It takes the GC config path (no argument = the TdF config, so
 the Tour's `gc.html` still builds from a bare call), resolves the results and
 prediction archives against that config's own campaign directory, and reads
@@ -63,7 +67,7 @@ the count back to the calendar stage before pulling that evening's `gc.csv`.
 
 `build_stage_page.py` also regenerates `stages.html` — the Tour-diary hub
 (one card per stage: scenario picks, book favourite, status chip, winner +
-reflection once settled), linked from the strip on index.html. To add a
+reflection once settled), linked from the race-diary card on index.html. To add a
 post-stage reflection, put a `"reflection"` field (string or list of
 paragraphs) in the stage's scenarios.json and rerun step 3 — it renders on
 both the stage page and its hub card.

@@ -7,8 +7,8 @@ Generate a per-stage prediction page for the netlify site.
 Reads the stage's scenario config + the per-scenario prediction JSONs written
 by predict_stage_scenarios.py (+ the archived FirstCycling results, once the
 stage has been raced and capture_results.py has run), writes
-netlify_site/[prefix]stageNN.html, refreshes that campaign's stage-links
-strip in predictor-architecture.html (between its own markers), and reruns
+netlify_site/[prefix]stageNN.html, refreshes the shared race-diary links
+block in predictor-architecture.html (campaign_links.py), and reruns
 make_netlify.py so index.html stays current.
 
 Rerun after the stage to append the results section — the page upgrades in
@@ -29,9 +29,11 @@ from pathlib import Path
 HERE = Path(__file__).parent
 SITE_DIR = HERE.parent
 PROJECT_ROOT = SITE_DIR.parent
-if str(PROJECT_ROOT) not in sys.path:
-    sys.path.insert(0, str(PROJECT_ROOT))
+for _p in (PROJECT_ROOT, HERE):  # HERE too: tests load this file via runpy
+    if str(_p) not in sys.path:
+        sys.path.insert(0, str(_p))
 from cycling_project.nightly import site_paths  # noqa: E402  (one rule for page names, chip W)
+import campaign_links  # noqa: E402  (same directory; the /model race-diary block)
 # Campaign archives — rebound in main() from the config's own campaign
 # directory (<campaign>/predictions/stage_NN/scenarios.json), so the builder
 # reads the right race's data. These defaults keep the TdF paths for any
@@ -164,15 +166,6 @@ CSS = """
   .footer{margin-top:80px;padding-top:16px;border-top:1px solid var(--line);
           font-family:var(--sans);font-size:12.5px;color:var(--slate)}
 """
-
-STRIP_CSS = """<style>
-.stage-strip{max-width:1020px;margin:10px auto 0;font-family:var(--sans);
-  font-size:13px;color:var(--slate);display:flex;flex-wrap:wrap;gap:6px 14px;
-  align-items:center;justify-content:center}
-.stage-strip a{color:var(--blue);text-decoration:none;border-bottom:1px solid var(--blue-soft);font-weight:600}
-.stage-strip .done{color:var(--green)}
-</style>"""
-
 
 def esc(s):
     return html.escape(str(s)) if s is not None else ""
@@ -669,31 +662,6 @@ def all_stage_entries():
     return entries
 
 
-def stage_strip():
-    """Rebuild the stage-links strip from every generated stage page."""
-    items = []
-    for cfg in sorted(PREDICTIONS_ROOT.glob("stage_*/scenarios.json")):
-        c = json.loads(cfg.read_text())
-        n = int(c["stage"])
-        name = site_paths.stage_page_name(CAMPAIGN["prefix"], n)
-        page = SITE_DIR / name
-        if page.exists():
-            results = RESULTS_ROOT / f"stage_{n:02d}" / "results.json"
-            mark = ' <span class="done">✓</span>' if results.exists() else ""
-            items.append(f'<a href="{name}">Stage {n}</a>{mark}')
-    if not items:
-        return ""
-    pfx = CAMPAIGN["prefix"]
-    lead = (f'<a href="{site_paths.stages_index_name(pfx)}"><b>Stage-by-stage predictions '
-            '&amp; reflections →</b></a> · '
-            f'<a href="{site_paths.gc_tracker_name(pfx)}"><b>GC tracker</b></a>')
-    for href, label in CAMPAIGN.get("extra_links") or []:
-        lead += f' · <a href="{href}"><b>{label}</b></a>'
-    return (STRIP_CSS + '\n<div class="stage-strip"><b style="color:var(--ink)">'
-            f'{CAMPAIGN["diary_label"]}:</b> ' + lead + " · "
-            + " · ".join(items) + "</div>")
-
-
 def hub_card(config, scen, results):
     n = int(config["stage"])
     picks = []
@@ -876,20 +844,9 @@ Kambi (Unibet) archive; results from FirstCycling. Full methodology on the
 
 
 def inject_strip():
-    src = SOURCE_HTML.read_text()
-    # Each campaign owns its own marker pair, so publishing the Vuelta diary
-    # leaves the Tour's strip in place (and vice versa).
-    mk = CAMPAIGN["marker"]
-    start, end = f"<!-- {mk}:START -->", f"<!-- {mk}:END -->"
-    block = f"{start}\n{stage_strip()}\n{end}"
-    if start in src:
-        pre = src.split(start)[0]
-        post = src.split(end)[1]
-        src = pre + block + post
-    else:
-        anchor = "<!-- ================= HEADS VIEW ================= -->"
-        src = src.replace(anchor, block + "\n\n" + anchor)
-    SOURCE_HTML.write_text(src)
+    # One shared race-diary block for every campaign (campaign_links.py); the
+    # old per-campaign strips are folded into it on the first run.
+    campaign_links.inject(SOURCE_HTML, SITE_DIR)
 
 
 def main():
@@ -975,7 +932,7 @@ odds archive {esc(book_note)} · all runs logged to prediction_log for settlemen
 
     build_stages_hub()
     inject_strip()
-    print("Refreshed stage strip in predictor-architecture.html")
+    print("Refreshed race-diary links in predictor-architecture.html")
     runpy.run_path(str(HERE / "make_netlify.py"))
 
 
