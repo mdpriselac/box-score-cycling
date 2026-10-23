@@ -1,14 +1,80 @@
 {
- "generated_at": "2026-10-13 19:49",
+ "generated_at": "2026-10-23 10:49",
  "site_name": "Cycling Race Predictor",
  "races": [
+  {
+   "slug": "japan-cup",
+   "year": 2026,
+   "name": "Japan Cup 2026",
+   "short_name": "Japan Cup 2026",
+   "type": "one_day",
+   "status": "settled",
+   "automated": true,
+   "start_date": "2026-10-18",
+   "end_date": "2026-10-18",
+   "blurb": "Nightly model run and results record for Japan Cup.",
+   "campaign_dir": "performance_eval/japan-cup-2026",
+   "url": "/race/japan-cup/2026",
+   "pages": {},
+   "stages": [
+    {
+     "stage": null,
+     "unit": "race",
+     "kind": "race",
+     "date": "2026-10-18",
+     "label": "Japan Cup",
+     "status": "settled",
+     "predicted": true,
+     "post_hoc": false,
+     "url": "/race/japan-cup/2026/prediction",
+     "asset": "/japan-cup-2026.html"
+    }
+   ],
+   "n_stages": 1,
+   "n_settled": 1,
+   "n_predicted": 1,
+   "post_hoc": false
+  },
+  {
+   "slug": "veneto-classic",
+   "year": 2026,
+   "name": "Veneto Classic 2026",
+   "short_name": "Veneto Classic 2026",
+   "type": "one_day",
+   "status": "settled",
+   "automated": true,
+   "start_date": "2026-10-18",
+   "end_date": "2026-10-18",
+   "blurb": "Nightly model run and results record for Veneto Classic.",
+   "campaign_dir": "performance_eval/veneto-classic-2026",
+   "url": "/race/veneto-classic/2026",
+   "pages": {},
+   "stages": [
+    {
+     "stage": null,
+     "unit": "race",
+     "kind": "race",
+     "date": "2026-10-18",
+     "label": "Veneto Classic",
+     "status": "settled",
+     "predicted": true,
+     "post_hoc": false,
+     "url": "/race/veneto-classic/2026/prediction",
+     "asset": "/veneto-classic-2026.html"
+    }
+   ],
+   "n_stages": 1,
+   "n_settled": 1,
+   "n_predicted": 1,
+   "post_hoc": false
+  },
   {
    "slug": "giro-del-veneto",
    "year": 2026,
    "name": "Giro del Veneto 2026",
    "short_name": "Giro del Veneto 2026",
    "type": "one_day",
-   "status": "upcoming",
+   "status": "settled",
    "automated": true,
    "start_date": "2026-10-14",
    "end_date": "2026-10-14",
@@ -23,7 +89,7 @@
      "kind": "race",
      "date": "2026-10-14",
      "label": "Giro del Veneto",
-     "status": "predicted",
+     "status": "settled",
      "predicted": true,
      "post_hoc": false,
      "url": "/race/giro-del-veneto/2026/prediction",
@@ -31,7 +97,7 @@
     }
    ],
    "n_stages": 1,
-   "n_settled": 0,
+   "n_settled": 1,
    "n_predicted": 1,
    "post_hoc": false
   },
@@ -41,7 +107,7 @@
    "name": "Tour of Guangxi 2026",
    "short_name": "Tour of Guangxi 2026",
    "type": "stage_race",
-   "status": "in_progress",
+   "status": "settled",
    "automated": true,
    "start_date": "2026-10-13",
    "end_date": "2026-10-18",
@@ -72,7 +138,7 @@
      "kind": "stage",
      "date": "2026-10-14",
      "label": "Stage 2",
-     "status": "predicted",
+     "status": "settled",
      "predicted": true,
      "url": "/race/tour-of-guangxi/2026/stage-02",
      "asset": "/tour-of-guangxi-2026-stage02.html",
@@ -88,11 +154,15 @@
      "kind": "stage",
      "date": "2026-10-15",
      "label": "Stage 3",
-     "status": "predicted",
+     "status": "settled",
      "predicted": true,
-     "url": null,
-     "asset": null,
-     "post_hoc": false
+     "url": "/race/tour-of-guangxi/2026/stage-03",
+     "asset": "/tour-of-guangxi-2026-stage03.html",
+     "post_hoc": false,
+     "day_key": {
+      "bunch": 0.65,
+      "res_4": 0.35
+     }
     },
     {
      "stage": 4,
@@ -100,11 +170,15 @@
      "kind": "stage",
      "date": "2026-10-16",
      "label": "Stage 4",
-     "status": "predicted",
+     "status": "settled",
      "predicted": true,
-     "url": null,
-     "asset": null,
-     "post_hoc": false
+     "url": "/race/tour-of-guangxi/2026/stage-04",
+     "asset": "/tour-of-guangxi-2026-stage04.html",
+     "post_hoc": false,
+     "day_key": {
+      "bunch": 0.6,
+      "res_4": 0.4
+     }
     },
     {
      "stage": 5,
@@ -112,11 +186,15 @@
      "kind": "stage",
      "date": "2026-10-17",
      "label": "Stage 5",
-     "status": "predicted",
+     "status": "settled",
      "predicted": true,
-     "url": null,
-     "asset": null,
-     "post_hoc": false
+     "url": "/race/tour-of-guangxi/2026/stage-05",
+     "asset": "/tour-of-guangxi-2026-stage05.html",
+     "post_hoc": false,
+     "day_key": {
+      "bunch": 0.65,
+      "res_4": 0.35
+     }
     },
     {
      "stage": 6,
@@ -124,16 +202,21 @@
      "kind": "stage",
      "date": "2026-10-18",
      "label": "Stage 6",
-     "status": "upcoming",
-     "predicted": false,
-     "url": null,
-     "asset": null,
-     "post_hoc": false
+     "status": "settled",
+     "predicted": true,
+     "url": "/race/tour-of-guangxi/2026/stage-06",
+     "asset": "/tour-of-guangxi-2026-stage06.html",
+     "post_hoc": false,
+     "day_key": {
+      "res_4": 0.45,
+      "res_2": 0.35,
+      "gc_day": 0.2
+     }
     }
    ],
    "n_stages": 6,
-   "n_settled": 1,
-   "n_predicted": 5,
+   "n_settled": 6,
+   "n_predicted": 6,
    "post_hoc": false
   },
   {
@@ -2691,9 +2774,15 @@
  "default_month": "2026-10",
  "aliases": {
   "/index.html": "/model",
+  "/japan-cup-2026.html": "/race/japan-cup/2026/prediction",
+  "/veneto-classic-2026.html": "/race/veneto-classic/2026/prediction",
   "/giro-del-veneto-2026.html": "/race/giro-del-veneto/2026/prediction",
   "/tour-of-guangxi-2026-stage01.html": "/race/tour-of-guangxi/2026/stage-01",
   "/tour-of-guangxi-2026-stage02.html": "/race/tour-of-guangxi/2026/stage-02",
+  "/tour-of-guangxi-2026-stage03.html": "/race/tour-of-guangxi/2026/stage-03",
+  "/tour-of-guangxi-2026-stage04.html": "/race/tour-of-guangxi/2026/stage-04",
+  "/tour-of-guangxi-2026-stage05.html": "/race/tour-of-guangxi/2026/stage-05",
+  "/tour-of-guangxi-2026-stage06.html": "/race/tour-of-guangxi/2026/stage-06",
   "/paris-tours-2026.html": "/race/paris-tours/2026/prediction",
   "/il-lombardia-2026.html": "/race/il-lombardia/2026/prediction",
   "/gran-piemonte-2026.html": "/race/gran-piemonte/2026/prediction",
@@ -2823,6 +2912,24 @@
    "chrome": true,
    "active": "model"
   },
+  "/race/japan-cup/2026": {
+   "asset": "/_frame/race/japan-cup-2026.html"
+  },
+  "/race/japan-cup/2026/prediction": {
+   "asset": "/japan-cup-2026.html",
+   "base": true,
+   "chrome": true,
+   "active": "races"
+  },
+  "/race/veneto-classic/2026": {
+   "asset": "/_frame/race/veneto-classic-2026.html"
+  },
+  "/race/veneto-classic/2026/prediction": {
+   "asset": "/veneto-classic-2026.html",
+   "base": true,
+   "chrome": true,
+   "active": "races"
+  },
   "/race/giro-del-veneto/2026": {
    "asset": "/_frame/race/giro-del-veneto-2026.html"
   },
@@ -2843,6 +2950,30 @@
   },
   "/race/tour-of-guangxi/2026/stage-02": {
    "asset": "/tour-of-guangxi-2026-stage02.html",
+   "base": true,
+   "chrome": true,
+   "active": "races"
+  },
+  "/race/tour-of-guangxi/2026/stage-03": {
+   "asset": "/tour-of-guangxi-2026-stage03.html",
+   "base": true,
+   "chrome": true,
+   "active": "races"
+  },
+  "/race/tour-of-guangxi/2026/stage-04": {
+   "asset": "/tour-of-guangxi-2026-stage04.html",
+   "base": true,
+   "chrome": true,
+   "active": "races"
+  },
+  "/race/tour-of-guangxi/2026/stage-05": {
+   "asset": "/tour-of-guangxi-2026-stage05.html",
+   "base": true,
+   "chrome": true,
+   "active": "races"
+  },
+  "/race/tour-of-guangxi/2026/stage-06": {
+   "asset": "/tour-of-guangxi-2026-stage06.html",
    "base": true,
    "chrome": true,
    "active": "races"
