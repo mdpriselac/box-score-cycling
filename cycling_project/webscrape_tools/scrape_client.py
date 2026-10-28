@@ -11,7 +11,7 @@ logger = get_logger("scrape_client")
 
 
 def _browser_backend_enabled() -> bool:
-    """SCRAPER_USE_BROWSER=1/true/yes selects the headed-Chrome backend."""
+    """SCRAPER_USE_BROWSER=1/true/yes asked for the private browser backend."""
     return os.getenv("SCRAPER_USE_BROWSER", "").strip().lower() in ("1", "true", "yes")
 
 
@@ -19,23 +19,17 @@ class WebClient:
     def __init__(self, base_url: str):
         self.base_url = base_url.rstrip('/')
 
-        # Browser backend: when FirstCycling's Cloudflare JS challenge blocks
-        # cloudscraper, drive real system Chrome via Playwright instead (see
-        # browser_client.py). Opt-in via SCRAPER_USE_BROWSER so nothing changes
-        # for callers that don't need it. The backend mimics the small slice of
-        # the Response API the scrapers use (.text/.status_code/.raise_for_status).
+        # The browser-backed fetcher used for FirstCycling is not part of the public
+        # copy. Bring your own data source, or your own fetcher behind this interface
+        # (.text / .status_code / .raise_for_status()).
         self._browser = None
         if _browser_backend_enabled():
-            # Shared, process-wide headed Chrome: one window reused across every
-            # WebClient in the session (the scrapers build a fresh client per
-            # race). close() leaves it open; it's torn down at process exit.
-            from cycling_project.webscrape_tools.browser_client import get_shared_fetcher
-            self._browser = get_shared_fetcher()
-            self.client = None
-            logger.info(f"WebClient initialized (shared browser backend) for {base_url}")
-        else:
-            self.client = self._build_scraper()
-            logger.info(f"WebClient initialized with base URL: {base_url}")
+            raise RuntimeError(
+                "SCRAPER_USE_BROWSER is set, but the browser backend is not included in "
+                "this repository. Unset it, or supply your own fetcher."
+            )
+        self.client = self._build_scraper()
+        logger.info(f"WebClient initialized with base URL: {base_url}")
 
         # Track request timing for rate limiting
         self.last_request_time = 0
@@ -68,7 +62,8 @@ class WebClient:
             time.sleep(sleep_time)
 
         # Clear cookies before each request. FirstCycling's Cloudflare layer
-        # so we force cloudscraper to re-solve the challenge each time.
+        # rejects reused cookies after the first response, so we force
+        # cloudscraper to re-solve the challenge each time.
         self.client.cookies.clear()
 
         try:

@@ -16,9 +16,8 @@ fills the campaign's stage metadata, and uploads all of it as
 `nightly bootstrap` overlays onto the release bundle on the next tick. Every
 run is a `runs` row with phase `horizon` and `host = 'mac'`.
 
-**A visible Chrome window is required.** `SCRAPER_USE_BROWSER=1` drives real
-challenge — so the job is scheduled during the working day, in a logged-in GUI
-session, and the window will appear while it runs. Do not close it mid-run.
+**This job needs the private browser backend**, which isn't part of this repo, so it runs on the
+Mac during the working day, in a logged-in GUI session.
 
 Timing: two captures a day (2026-10-05), one per cloud tick:
 

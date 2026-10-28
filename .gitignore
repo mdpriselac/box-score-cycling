@@ -175,3 +175,6 @@ performance_eval/runs/fakestore/
 # embeds the project's Supabase URL + publishable key and is never deployed
 # (see netlify_site/.assetsignore and the Worker guard). Operator-local only.
 netlify_site/_frame/ops.html
+
+# Managed Agents ids written by provision.py (kept private)
+agents/managed/ids*.json

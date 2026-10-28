@@ -17,8 +17,7 @@
   tick moves, or the Mac moves timezone, re-time these jobs: a capture that
   lands AFTER its tick is a capture the cloud only sees on the next one.
 
-  A VISIBLE Chrome window is required (SCRAPER_USE_BROWSER=1, headless is
-  detected), so the job is deliberately scheduled for the middle of the working
+  It needs the private browser backend (not in this repo), so the job is deliberately scheduled for the middle of the working
   day, while someone is logged in.  launchd runs it in the user's GUI session
   (this is a LaunchAgent, not a LaunchDaemon); if the Mac is asleep at 10:30,
   launchd runs it at wake.

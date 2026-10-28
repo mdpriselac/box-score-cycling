@@ -306,7 +306,7 @@ hr { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
   <a class="flow-card c-scrape" href="#stage1">
     <div class="num">STAGE 01</div>
     <div class="title">Scrape</div>
-    <div class="line">FirstCycling HTML → pickled <span class="mono">Race</span> objects (headed-Chrome backend)</div>
+    <div class="line">FirstCycling HTML → pickled <span class="mono">Race</span> objects</div>
   </a>
   <a class="flow-card c-storage" href="#stage2">
     <div class="num">STAGE 02</div>
@@ -365,11 +365,8 @@ hr { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
       <div class="io-box">Race URLs per tour/year
 (wt / pro / d1, rolling 45-day lookback)
 
-Backends:
-  browser (headed Chrome)   ← default via .env
-  cloudscraper              ← legacy fallback
-Rate limit: 5 s + jitter (browser)
-            3-8 s (cloudscraper)</div>
+Backend: cloudscraper
+Rate limit: 3-8 s + jitter</div>
     </div>
     <div class="stage-col">
       <h4>Key Transformations</h4>
@@ -394,12 +391,9 @@ Race {
   </div>
 
   <div class="gotcha">
-    FirstCycling sits behind a site-wide Cloudflare JS challenge (2026-06) that 403s
-    cloudscraper, plain HTTP, and TLS-impersonation clients. The fix is an <em>honest</em>
-    real browser at light, rate-limited load — deliberately <strong>no</strong>
-    stealth/fingerprint-spoofing libraries. Scraping is still the most failure-prone step;
-    the pipeline supports <span class="mono">--skip-scrape</span> and nothing downstream
-    needs live network.
+    Bring your own data: the public copy ships the scrapers' parsing code, not a way past any
+    site's bot protection. Scraping is the most failure-prone step; the pipeline supports
+    <span class="mono">--skip-scrape</span> and nothing downstream needs live network.
   </div>
 
   <div class="files">
@@ -1190,7 +1184,7 @@ gc_outlook_* (when mid-race)</div>
   train_lambdarank_production, gc_outlook, dnf_predictor, contested_rating,
   contest_signature_features, live_form, future_race_loader, inference, evaluation}.py</span>,
   <span class="mono">engineering_tools/{feature_precomputation, form_team_features, stage_race_state}.py</span>,
-  <span class="mono">webscrape_tools/{browser_client, scrape_client}.py</span>,
+  <span class="mono">webscrape_tools/scrape_client.py</span>,
   <span class="mono">web/app.py</span>, <span class="mono">models/production/metadata.json</span>.
 </p>
 

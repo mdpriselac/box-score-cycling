@@ -11,9 +11,7 @@ from pathlib import Path
 _PROJECT_ROOT = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(_PROJECT_ROOT))
 
-# Load .env before any scraping so the startlist fetch picks up the browser
-# backend (SCRAPER_USE_BROWSER) — FirstCycling's Cloudflare challenge 403s
-# cloudscraper, so future-race predictions need the headed-Chrome path.
+# Load .env before any scraping so the startlist fetch sees the scraper settings.
 try:
     from dotenv import load_dotenv
     load_dotenv(_PROJECT_ROOT / ".env")
